@@ -1097,6 +1097,7 @@ export class DatabaseStorage implements IStorage {
         scheduledStart: op.scheduled_start,
         scheduledEnd: op.scheduled_end,
         priority: op.priority || 5,
+        jobPriority: op.priority || 5, // CRITICAL FIX: Add jobPriority field for frontend scheduler
         setupTime: op.setup_hours || 0,
         runTime: op.cycle_hrs || 0,
         teardownTime: op.post_processing_hours || 0,

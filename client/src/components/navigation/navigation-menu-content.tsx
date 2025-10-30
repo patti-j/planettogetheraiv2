@@ -101,6 +101,16 @@ export function NavigationMenuContent({ isPinned, onTogglePin, onClose, isOpen }
   const allItems = getAllNavigationItems();
   const currentIndex = allItems.findIndex(item => item.href === location);
 
+  // Filter recent pages to exclude items already in main navigation to avoid duplicates
+  const filteredRecentPages = recentPages.filter(page => {
+    // Check if this page path exists in any navigation group
+    const isInMainNav = navigationGroups.some(group => 
+      group.features.some(feature => feature.href === page.path)
+    );
+    // Only show in Recent Pages if NOT in main navigation
+    return !isInMainNav;
+  });
+
   const handleItemClick = (item: any) => {
     // Handle external links (e.g., HTML files)
     if (item.isExternal || item.href.endsWith('.html')) {
@@ -236,7 +246,7 @@ export function NavigationMenuContent({ isPinned, onTogglePin, onClose, isOpen }
       </div>
 
       {/* Recent Pages Section - Only show in list mode and when there are recent pages */}
-      {layoutMode === 'list' && recentPages.length > 0 && (
+      {layoutMode === 'list' && filteredRecentPages.length > 0 && (
         <div className="px-3 py-2 border-b flex-shrink-0">
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-2">
@@ -255,7 +265,7 @@ export function NavigationMenuContent({ isPinned, onTogglePin, onClose, isOpen }
           
           <ScrollArea className="h-32 w-full navigation-menu-scroll" style={{ touchAction: 'pan-y', WebkitOverflowScrolling: 'touch' }}>
             <div className="space-y-0.5 pr-2">
-              {recentPages.slice(0, userPreferences?.dashboardLayout?.maxRecentPages || 5).map((page, pageIndex) => {
+              {filteredRecentPages.slice(0, userPreferences?.dashboardLayout?.maxRecentPages || 5).map((page, pageIndex) => {
                 const IconComponent = getIconComponent(page.icon || 'FileText');
                 // Find the color from navigation config
                 const getColorForPage = () => {
@@ -411,7 +421,7 @@ export function NavigationMenuContent({ isPinned, onTogglePin, onClose, isOpen }
             // Hierarchical Layout - Show collapsible categories
             <>
               {/* Recent Pages as Collapsible Category - Only show when there are recent pages */}
-              {recentPages.length > 0 && (
+              {filteredRecentPages.length > 0 && (
                 <div className="px-3 py-2 border-b border-border/40">
                   {/* Recent Pages Header - Clickable to expand/collapse */}
                   <Button
@@ -427,7 +437,7 @@ export function NavigationMenuContent({ isPinned, onTogglePin, onClose, isOpen }
                     </div>
                     <div className="flex items-center gap-1">
                       <span className="text-xs text-muted-foreground">
-                        {recentPages.length}
+                        {filteredRecentPages.length}
                       </span>
                       <Button
                         variant="ghost"
@@ -447,7 +457,7 @@ export function NavigationMenuContent({ isPinned, onTogglePin, onClose, isOpen }
                   {/* Recent Pages Items - Only shown when expanded */}
                   {expandedGroups.has('Recent Pages') && (
                     <div className="mt-1 ml-3 space-y-0.5">
-                      {recentPages.map((page, pageIndex) => {
+                      {filteredRecentPages.map((page, pageIndex) => {
                         const IconComponent = getIconComponent(page.icon || 'FileText');
                         const isActive = location === page.path;
                         
