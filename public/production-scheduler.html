@@ -1687,10 +1687,11 @@
                 // Transform PT operations into Bryntum events format
                 // CRITICAL: Load operations but DON'T use overlapping scheduled times
                 let events = ptOperations.map((operation, index) => {
-                    // Log job names and priorities for debugging
+                    // Log job names and priorities for debugging  
                     if (index < 5) {
                         console.log(`Operation ${index}: ${operation.name}`);
-                        console.log(`  jobPriority: ${operation.jobPriority}, job_priority: ${operation.job_priority}, priority: ${operation.priority}`);
+                        console.log(`  Raw API data:`, operation);
+                        console.log(`  jobPriority: ${operation.jobPriority}, priority: ${operation.priority}`);
                         console.log(`  Full operation object keys:`, Object.keys(operation));
                     }
                     
@@ -1755,7 +1756,7 @@
                         // Additional PT operation data
                         jobId: operation.jobExternalId || operation.jobId || operation.job_id, // Use jobExternalId for dependency generation
                         jobName: operation.jobName,
-                        jobPriority: operation.jobPriority || operation.job_priority || 999, // CRITICAL: Add priority for sorting
+                        jobPriority: operation.jobPriority || operation.priority || 999, // CRITICAL: Map priority field from API
                         jobDueDate: operation.dueDate, // CRITICAL: Add job Need-By date for ALAP scheduling
                         operationName: operation.name,
                         resourceName: operation.resourceName,
@@ -3579,16 +3580,16 @@
                     
                     // Get the job priority (1=highest priority, 5=lowest priority)
                     const getPriority = (event) => {
-                        const priority = event.jobPriority || event.job_priority || 
-                               event.ptData?.jobPriority || event.ptData?.job_priority ||
-                               event.data?.jobPriority || event.data?.job_priority ||
+                        // Try to get priority from event (already mapped from API)
+                        const priority = event.jobPriority || 
+                               event.ptData?.jobPriority || event.ptData?.priority ||
+                               event.data?.jobPriority || event.data?.priority ||
                                999; // Default low priority if not found
                         
                         // DIAGNOSTIC: Log what we're seeing
                         if (priority === 999) {
                             console.log('🔍 Priority 999 for', event.name, ':', { 
-                                jobPriority: event.jobPriority, 
-                                job_priority: event.job_priority,
+                                jobPriority: event.jobPriority,
                                 ptData: event.ptData,
                                 data: event.data,
                                 allKeys: Object.keys(event)
