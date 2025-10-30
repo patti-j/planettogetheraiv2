@@ -247,7 +247,7 @@
     "forecast_days": 30,
     "item": "FG1",
     "cache_key": "c8219affe0f601ae",
-    "cached_at": "2025-10-26T22:35:02.577007",
+    "cached_at": "2025-10-30T04:17:47.978604",
     "planning_areas": [
       "BI01",
       "BI02"
@@ -259,11 +259,11 @@
     ],
     "hyperparameter_tuning": false,
     "metrics": {
-      "mape": 62.159108945788574,
-      "rmse": 851.8631774833327,
-      "accuracy": 37.840891054211426
+      "mape": 36.330404239843205,
+      "rmse": 33.293624206598345,
+      "accuracy": 63.669595760156795
     },
-    "training_points": 5
+    "training_points": 1609
   },
   "aee455e03768493f": {
     "schema": "publish",
@@ -275,7 +275,7 @@
     "forecast_days": 30,
     "item": "FG2",
     "cache_key": "aee455e03768493f",
-    "cached_at": "2025-10-26T22:35:02.826089",
+    "cached_at": "2025-10-30T04:17:48.199430",
     "planning_areas": [
       "BI01",
       "BI02"
@@ -287,11 +287,11 @@
     ],
     "hyperparameter_tuning": false,
     "metrics": {
-      "mape": 43.21898204022988,
-      "rmse": 393.31004423991004,
-      "accuracy": 56.78101795977012
+      "mape": 37.027340085014764,
+      "rmse": 29.47219878629632,
+      "accuracy": 62.972659914985236
     },
-    "training_points": 4
+    "training_points": 1536
   },
   "88b25be4d103eb94": {
     "schema": "publish",
@@ -303,7 +303,7 @@
     "forecast_days": 30,
     "item": "SUB1",
     "cache_key": "88b25be4d103eb94",
-    "cached_at": "2025-10-26T22:35:03.034626",
+    "cached_at": "2025-10-30T04:17:48.488702",
     "planning_areas": [
       "BI01",
       "BI02"
@@ -315,11 +315,11 @@
     ],
     "hyperparameter_tuning": false,
     "metrics": {
-      "mape": 20.053420230126324,
-      "rmse": 179.07439264171748,
-      "accuracy": 79.94657976987368
+      "mape": 44.80450187196459,
+      "rmse": 43.45412834015759,
+      "accuracy": 55.19549812803541
     },
-    "training_points": 4
+    "training_points": 373
   },
   "61b0231eff834c5b": {
     "schema": "publish",
@@ -331,7 +331,7 @@
     "forecast_days": 30,
     "item": "SUB2",
     "cache_key": "61b0231eff834c5b",
-    "cached_at": "2025-10-26T22:35:03.306108",
+    "cached_at": "2025-10-30T04:17:48.662450",
     "planning_areas": [
       "BI01",
       "BI02"
@@ -343,11 +343,11 @@
     ],
     "hyperparameter_tuning": false,
     "metrics": {
-      "mape": 34.49510912740083,
-      "rmse": 288.32011723083076,
-      "accuracy": 65.50489087259916
+      "mape": 42.05390724249908,
+      "rmse": 70.99575492930624,
+      "accuracy": 57.94609275750092
     },
-    "training_points": 4
+    "training_points": 209
   },
   "274f381f5cc4d1ac": {
     "schema": "publish",
@@ -359,7 +359,7 @@
     "forecast_days": 30,
     "item": "SUB3",
     "cache_key": "274f381f5cc4d1ac",
-    "cached_at": "2025-10-26T22:35:03.503879",
+    "cached_at": "2025-10-30T04:17:48.845234",
     "planning_areas": [
       "BI01",
       "BI02"
@@ -371,11 +371,11 @@
     ],
     "hyperparameter_tuning": false,
     "metrics": {
-      "mape": 47.94621249105655,
-      "rmse": 390.7704395166042,
-      "accuracy": 52.05378750894345
+      "mape": 49.19876005210339,
+      "rmse": 113.92574513859797,
+      "accuracy": 50.80123994789661
     },
-    "training_points": 4
+    "training_points": 108
   },
   "7f90317a7d050fc4": {
     "schema": "publish",
