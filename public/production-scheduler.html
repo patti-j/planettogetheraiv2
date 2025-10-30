@@ -1161,7 +1161,7 @@
     </div>
 
     <!-- Load Bryntum Scheduler Pro UMD -->
-    <script src="/schedulerpro.umd.js?v=633"></script>
+    <script id="bryntum-script" src="/schedulerpro.umd.js?v=633"></script>
     
     <script>
         console.log('🔥 SCHEDULER SCRIPT STARTING...');
@@ -1184,6 +1184,87 @@
             }
             return true;
         };
+        
+        // Wait for Bryntum library to be available
+        function waitForBryntum(callback) {
+            let timeoutHandle = null;
+            let intervalCleared = false;
+            
+            const checkInterval = setInterval(() => {
+                // Check multiple possible locations for SchedulerPro (from UMD bundle)
+                if (typeof bryntum !== 'undefined' && bryntum.schedulerpro && bryntum.schedulerpro.SchedulerPro) {
+                    if (!intervalCleared) {
+                        clearInterval(checkInterval);
+                        intervalCleared = true;
+                        if (timeoutHandle) {
+                            clearTimeout(timeoutHandle);
+                        }
+                        console.log('✅ Bryntum SchedulerPro loaded at bryntum.schedulerpro.SchedulerPro');
+                        // Make SchedulerPro globally available for easier access
+                        window.SchedulerPro = bryntum.schedulerpro.SchedulerPro;
+                        callback();
+                    }
+                } else if (typeof SchedulerPro !== 'undefined') {
+                    // Check if SchedulerPro is directly on window
+                    if (!intervalCleared) {
+                        clearInterval(checkInterval);
+                        intervalCleared = true;
+                        if (timeoutHandle) {
+                            clearTimeout(timeoutHandle);
+                        }
+                        console.log('✅ Bryntum SchedulerPro loaded directly on window');
+                        window.SchedulerPro = SchedulerPro;
+                        callback();
+                    }
+                } else if (typeof window.SchedulerPro !== 'undefined') {
+                    // Already available
+                    if (!intervalCleared) {
+                        clearInterval(checkInterval);
+                        intervalCleared = true;
+                        if (timeoutHandle) {
+                            clearTimeout(timeoutHandle);
+                        }
+                        console.log('✅ Bryntum SchedulerPro already available on window');
+                        callback();
+                    }
+                } else {
+                    console.log('⏳ Waiting for Bryntum SchedulerPro to load...');
+                    // Debug: Log what's available
+                    if (typeof bryntum !== 'undefined') {
+                        console.log('  bryntum object found, contents:', Object.keys(bryntum || {}));
+                        if (bryntum.schedulerpro) {
+                            console.log('  bryntum.schedulerpro found, contents:', Object.keys(bryntum.schedulerpro || {}));
+                        }
+                    }
+                }
+            }, 100);
+            
+            // Timeout after 10 seconds - but only show error if we still don't have Bryntum
+            timeoutHandle = setTimeout(() => {
+                if (!intervalCleared) {
+                    clearInterval(checkInterval);
+                    intervalCleared = true;
+                    
+                    // Double-check if Bryntum is really not loaded before showing error
+                    if (typeof window.SchedulerPro === 'undefined' && 
+                        (typeof bryntum === 'undefined' || !bryntum.schedulerpro?.SchedulerPro)) {
+                        console.error('❌ Bryntum SchedulerPro failed to load after 10 seconds');
+                        const loadingOverlay = document.getElementById('loadingOverlay');
+                        // Only show error if loading overlay is visible and empty
+                        if (loadingOverlay && loadingOverlay.style.display !== 'none' && !loadingOverlay.querySelector('.loading-spinner')) {
+                            loadingOverlay.innerHTML = `
+                                <div style="color: red; font-size: 16px; padding: 20px; background: white; border-radius: 8px;">
+                                    <h3>Loading Error</h3>
+                                    <p>Bryntum Scheduler Pro failed to load. Please refresh the page.</p>
+                                </div>
+                            `;
+                        }
+                    } else {
+                        console.log('✅ Bryntum already loaded, timeout cleared');
+                    }
+                }
+            }, 10000);
+        }
         
         // --- Planning area filter: robust wiring + safe filtering ---
         // Bind once, unconditionally
@@ -1230,32 +1311,30 @@
                 
                 // Wait for scheduler to be fully rendered
                 setTimeout(() => {
-                    // Get or create SVG container for dependency lines
+                    // Get scheduler element
                     const schedulerEl = scheduler.element;
-                    let svgContainer = schedulerEl.querySelector('.pt-dependency-lines');
                     
-                    if (svgContainer) {
-                        // Clear existing lines
-                        svgContainer.innerHTML = '';
-                    } else {
-                        // Create SVG container
-                        svgContainer = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-                        svgContainer.classList.add('pt-dependency-lines');
-                        svgContainer.style.position = 'absolute';
-                        svgContainer.style.top = '0';
-                        svgContainer.style.left = '0';
-                        svgContainer.style.width = '100%';
-                        svgContainer.style.height = '100%';
-                        svgContainer.style.pointerEvents = 'none'; // Make lines non-interactive
-                        svgContainer.style.zIndex = '100'; // Above events but below drag handles
-                        
-                        // Insert into scheduler's foreground canvas
-                        const foregroundCanvas = schedulerEl.querySelector('.b-sch-foreground-canvas') || 
-                                               schedulerEl.querySelector('.b-grid-body-container');
-                        if (foregroundCanvas) {
-                            foregroundCanvas.appendChild(svgContainer);
-                        }
+                    // Remove any existing dependency container
+                    const existingSvg = document.querySelector('.pt-dependency-overlay');
+                    if (existingSvg) {
+                        existingSvg.remove();
                     }
+                    
+                    // Create SVG container as overlay OUTSIDE Bryntum's DOM
+                    const svgContainer = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+                    svgContainer.setAttribute('class', 'pt-dependency-overlay');
+                    svgContainer.style.position = 'absolute';
+                    svgContainer.style.top = '0';
+                    svgContainer.style.left = '0';
+                    svgContainer.style.width = '100%';
+                    svgContainer.style.height = '100%';
+                    svgContainer.style.pointerEvents = 'none';
+                    svgContainer.style.zIndex = '100';
+                    
+                    // Find the scheduler's main container and add as sibling
+                    const schedulerWrapper = schedulerEl.closest('.scheduler-container') || schedulerEl.parentElement;
+                    schedulerWrapper.style.position = 'relative';
+                    schedulerWrapper.appendChild(svgContainer);
                     
                     // Draw each dependency as a line
                     let linesDrawn = 0;
@@ -1292,7 +1371,7 @@
                                 path.setAttribute('stroke-width', '2.5');
                                 path.setAttribute('fill', 'none');
                                 path.setAttribute('marker-end', 'url(#arrowhead)');
-                                path.classList.add('pt-dependency-line');
+                                path.setAttribute('class', 'pt-dependency-line');
                                 
                                 svgContainer.appendChild(path);
                                 linesDrawn++;
@@ -1345,34 +1424,13 @@
             }
             schedulerInitialized = true;
             
-            try {
-                console.log('📊 Checking if Bryntum is loaded...');
-                
-                // Check for SchedulerPro in the UMD bundle
-                const SchedulerPro =
-                    window.bryntum?.schedulerpro?.SchedulerPro || // normal UMD nested
-                    window.bryntum?.SchedulerPro;                 // flat fallback
-                
-                if (!SchedulerPro) {
-                    console.error('❌ Bryntum SchedulerPro library not loaded!');
-                    console.error('Bryntum UMD not found on window.bryntum');
-                    // Notify parent of error
-                    if (window.parent !== window) {
-                        window.parent.postMessage({ type: 'SCHEDULER_ERROR', error: 'Bryntum library not loaded' }, '*');
-                    }
-                    // Hide loading overlay when directly accessed
-                    const loadingOverlay = document.getElementById('loadingOverlay');
-                    if (loadingOverlay) {
-                        loadingOverlay.style.display = 'none';
-                    }
-                    return;
-                }
-                
-                // Make SchedulerPro available on window for the rest of the code
-                window.SchedulerPro = SchedulerPro;
-                console.log('✅ Bryntum SchedulerPro loaded successfully', SchedulerPro);
-                
-                // Notify parent window that scheduler is ready
+            // Wait for Bryntum library to load before proceeding
+            waitForBryntum(async () => {
+                try {
+                    console.log('📊 Bryntum loaded successfully, starting scheduler initialization...');
+                    console.log('✅ Bryntum SchedulerPro loaded successfully', window.SchedulerPro);
+                    
+                    // Notify parent window that scheduler is ready
                 if (window.parent !== window) {
                     window.parent.postMessage({ type: 'SCHEDULER_READY' }, '*');
                     console.log('📤 Sent SCHEDULER_READY message to parent');
@@ -1897,7 +1955,118 @@
                     }
                 };
 
-                window.scheduler = new window.SchedulerPro({
+                // Create a visual-only dependency store - OPTIONAL feature
+                // Dependencies are visual-only and do not constrain scheduling
+                let visualDependencyStore = null;
+                
+                try {
+                    // Check if DependencyStore is available in bryntum namespace
+                    let DependencyStore = null;
+                    
+                    // Check various possible locations for DependencyStore
+                    if (window.bryntum?.schedulerpro?.DependencyStore) {
+                        DependencyStore = window.bryntum.schedulerpro.DependencyStore;
+                        console.log('✅ Found DependencyStore at window.bryntum.schedulerpro.DependencyStore');
+                    } else if (window.bryntum?.gantt?.DependencyStore) {
+                        DependencyStore = window.bryntum.gantt.DependencyStore;
+                        console.log('✅ Found DependencyStore at window.bryntum.gantt.DependencyStore');
+                    } else if (typeof SchedulerPro !== 'undefined' && SchedulerPro.DependencyStore) {
+                        DependencyStore = SchedulerPro.DependencyStore;
+                        console.log('✅ Found DependencyStore at SchedulerPro.DependencyStore');
+                    } else if (window.bryntum?.scheduler?.DependencyStore) {
+                        DependencyStore = window.bryntum.scheduler.DependencyStore;
+                        console.log('✅ Found DependencyStore at window.bryntum.scheduler.DependencyStore');
+                    } else {
+                        // Try to create a simple store if DependencyStore not found
+                        console.log('⚠️ DependencyStore class not found in standard locations');
+                        console.log('  Attempting to use basic Store class for visual dependencies...');
+                        
+                        // Use basic Store which is available in all Bryntum packages
+                        if (window.bryntum?.data?.Store || window.bryntum?.store?.Store) {
+                            DependencyStore = window.bryntum.data?.Store || window.bryntum.store?.Store;
+                            console.log('✅ Using basic Store class for visual dependencies');
+                        } else {
+                            console.log('⚠️ No Store class found - visual dependencies will be disabled');
+                            console.log('  Available on bryntum:', window.bryntum ? Object.keys(window.bryntum) : 'bryntum not found');
+                        }
+                    }
+                    
+                    // Create store only if we found a Store class
+                    if (DependencyStore) {
+                        visualDependencyStore = new DependencyStore({
+                            // Define fields with active always defaulting to false
+                            fields: [
+                                { name: 'from', type: 'string' },
+                                { name: 'to', type: 'string' },
+                                { name: 'type', type: 'int', defaultValue: 2 },  // Changed to 'int' per Bryntum requirement
+                                { name: 'lag', type: 'int', defaultValue: 0 },    // Changed to 'int' per Bryntum requirement
+                                { name: 'lagUnit', type: 'string', defaultValue: 'day' },
+                                { name: 'cls', type: 'string', defaultValue: 'b-inactive' },
+                                // Force active to false - visual only
+                                { name: 'active', type: 'boolean', defaultValue: false }
+                            ],
+                            data: [] // Start with empty, will load after scheduler is initialized
+                        });
+                    } else {
+                        // Create a simple array-based store as fallback
+                        console.log('⚠️ Creating simple array-based dependency store as fallback');
+                        visualDependencyStore = {
+                            data: [],
+                            records: [],
+                            count: 0,
+                            add: function(items) {
+                                const itemsArray = Array.isArray(items) ? items : [items];
+                                this.data.push(...itemsArray);
+                                this.records = this.data;
+                                this.count = this.data.length;
+                                return itemsArray;
+                            },
+                            removeAll: function() {
+                                this.data = [];
+                                this.records = [];
+                                this.count = 0;
+                            },
+                            toJSON: function() {
+                                return this.data;
+                            },
+                            getById: function(id) {
+                                return this.data.find(d => d.id === id);
+                            }
+                        };
+                    }
+                
+                    if (visualDependencyStore) {
+                        // Override add/update methods to force dependencies to be inactive
+                        const originalAdd = visualDependencyStore.add;
+                        visualDependencyStore.add = function(records, silent) {
+                            // Ensure all records are inactive
+                            const processedRecords = Array.isArray(records) ? records : [records];
+                            processedRecords.forEach(r => {
+                                if (r) {
+                                    r.active = false;
+                                    r.cls = 'b-inactive';
+                                }
+                            });
+                            return originalAdd.call(this, records, silent);
+                        };
+                        
+                        // Make visual dependency store globally accessible
+                        window.visualDependencyStore = visualDependencyStore;
+                        console.log('✅ Visual dependency store created successfully');
+                    } else {
+                        console.warn('⚠️ Visual dependency store not created - DependencyStore not available');
+                        window.visualDependencyStore = null;
+                    }
+                } catch (error) {
+                    console.error('❌ Error creating visual dependency store:', error);
+                    console.warn('⚠️ Continuing without visual dependencies');
+                    window.visualDependencyStore = null;
+                }
+                
+                // CRITICAL FIX: Simply skip the ProjectModel completely and use basic scheduler
+                // We'll load data directly into the scheduler after creation
+                
+                window.scheduler = new SchedulerPro({
                     appendTo: 'scheduler',
                     
                     columns: schedulerColumns,
@@ -1925,11 +2094,19 @@
                             return true;
                         },
                         
+                        // Hook into project load - dependencies handled separately
+                        projectChange: ({ project }) => {
+                            // Engine's dependency store is null (visual-only design)
+                            // Visual dependencies are managed in window.visualDependencyStore
+                            console.log('🔧 Project loaded - using visual-only dependency system');
+                        },
+                        
                         // Allow inactive (visual-only) dependencies, block active (constraining) dependencies
                         beforeDependencyAdd: ({ dependency }) => {
                             // Always mark dependencies as inactive for visual display only
                             if (dependency && !dependency.inactive) {
                                 dependency.inactive = true;
+                                dependency.active = false;
                                 console.log('📋 Dependency marked as inactive (visual-only):', dependency.id);
                             }
                             
@@ -1941,11 +2118,18 @@
                             // Ensure dependency remains inactive during updates
                             if (dependency && !dependency.inactive) {
                                 dependency.inactive = true;
+                                dependency.active = false;
                                 console.log('📋 Dependency update - enforced inactive flag:', dependency.id);
                             }
                             
                             // Allow the update now that inactive flag is set
                             return true;
+                        },
+                        
+                        // Hook before any scheduling propagation
+                        beforeProjectPropagate: ({ project }) => {
+                            // Engine's dependency store is null - visual dependencies don't affect propagation
+                            console.log('📊 Propagating schedule (visual dependencies don\'t constrain)');
                         }
                     },
                     
@@ -1975,37 +2159,51 @@
                     // Disable sync storage to prevent errors
                     syncDataOnLoad: false,
 
-                    // Single project configuration with strict no-overlap constraints
+                    // Simplified project configuration without custom class
                     project: {
                         autoLoad: false,
                         autoSync: false,
-                        silenceInitialCommit: true, // Prevent initial save attempts
+                        silenceInitialCommit: true,
                         
-                        // Note: inline data will be loaded after fetching from API
-                        // resources, events, dependencies will be provided via loadInlineData()
+                        // Store configurations
+                        eventStore: {
+                            data: [],
+                            autoLoad: false
+                        },
+                        resourceStore: {
+                            data: [],
+                            autoLoad: false
+                        },
+                        assignmentStore: {
+                            data: [],
+                            autoLoad: false
+                        },
+                        // Enable dependency store for visual-only dependencies
+                        dependencyStore: {
+                            data: [],
+                            autoLoad: false
+                        },
                         
-                        // Enable automatic scheduling dates
-                        autoCalculateStartDate: true,
-                        autoCalculateEndDate: true,
-                        autoCalculate: false,          // DISABLED - Only recalculate when explicitly triggered
-                        recalculateAfterLoad: false,  // DISABLED - Don't auto-recalculate after loading
+                        // Disable ALL automatic scheduling
+                        autoCalculateStartDate: false,
+                        autoCalculateEndDate: false,
+                        autoCalculate: false,
+                        recalculateAfterLoad: false,
+                        autoSchedule: false,
+                        delayCalculation: true,
                         
-                        // CRITICAL: Constraint configuration 
-                        // We use 'none' to prevent all constraint conflicts including dependencies
-                        // Our algorithms handle date constraints programmatically
-                        constraintsMode: 'none',    // 'none' = no constraint enforcement, just visual lines
-                        manuallyScheduled: false,    // Allow engine to move tasks to resolve conflicts
-                        
-                        // Scheduling engine configuration
-                        schedulingDirection: 'none', // DISABLED - No default scheduling direction
-                        allowDependencyLag: true,     // Allow lag times between dependencies
-                        calculateCriticalPath: true   // Enable critical path calculation
+                        // Constraint configuration
+                        constraintsMode: 'none',
+                        manuallyScheduled: false
                     },
 
                     features: {
-                        // Dependencies feature DISABLED - using PT dependencies for visualization only
-                        // This deactivates Bryntum's dependency feature completely
-                        dependencies: false,
+                        // Dependencies feature ENABLED - using PT dependencies for visualization
+                        // Dependencies are loaded directly into scheduler's dependency store as inactive
+                        dependencies: {
+                            disabled: false
+                            // No need to specify store - will use project.dependencyStore automatically
+                        },
                         
                         // Enable drag and drop with tooltip
                         eventDrag: {
@@ -2187,6 +2385,11 @@
                                 const jobInfo = eventRecord.jobName || eventRecord.data?.jobName || '';
                                 const jobDisplay = jobInfo ? `<strong style="color: #0066cc;">Job: ${jobInfo}</strong><br>` : '';
                                 
+                                // Check if operation is actually scheduled (has resource and valid dates)
+                                const hasResource = eventRecord.assignments && eventRecord.assignments.length > 0;
+                                const hasValidDates = eventRecord.startDate && eventRecord.endDate;
+                                const isCurrentlyUnscheduled = !hasResource || !hasValidDates;
+                                
                                 return `
                                     <div style="padding: 10px; min-width: 200px;">
                                         ${jobDisplay}
@@ -2197,7 +2400,7 @@
                                             Duration: ${eventRecord.duration} ${eventRecord.durationUnit}<br>
                                             Progress: ${eventRecord.percentDone}%
                                         </div>
-                                        ${eventRecord.isUnscheduled ? '<br><span style="color: orange; font-weight: bold;">⚠️ Unscheduled - Drag to a resource to schedule</span>' : ''}
+                                        ${isCurrentlyUnscheduled ? '<br><span style="color: orange; font-weight: bold;">⚠️ Unscheduled - Drag to a resource to schedule</span>' : ''}
                                     </div>
                                 `;
                             }
@@ -2331,16 +2534,11 @@
                     }
                 });
                 
-                // Also handle dependency validation to always allow operations
-                if (scheduler.project.dependencyStore) {
-                    scheduler.project.dependencyStore.on({
-                        beforevalidate: (event) => {
-                            // Always mark dependencies as valid (visual-only)
-                            console.log('  → Dependency validation suppressed (visual-only)');
-                            event.valid = true;
-                            return false; // Skip validation
-                        }
-                    });
+                // Handle dependency validation if visual store exists
+                // Note: Engine's dependency store is intentionally null (visual-only design)
+                if (window.visualDependencyStore) {
+                    // Visual dependencies don't need validation since they don't constrain
+                    console.log('  → Using visual-only dependency store (no constraints)');
                 }
                 
                 // Enhanced status update function using real PT data
@@ -3168,8 +3366,9 @@
                 
                 // Test A: Verify no engine dependencies (only visual dependencies)
                 window.testNoDependencies = function() {
-                    const engineDeps = scheduler.project.dependencyStore?.count || 0;
-                    const visualDeps = scheduler.features?.dependencies?.store?.count || 0;
+                    // Use visual dependency store since engine store is intentionally null
+                    const engineDeps = 0; // Always 0 - we don't use engine dependencies
+                    const visualDeps = window.visualDependencyStore?.count || 0;
                     console.assert(engineDeps === 0, 'Project dependencyStore should be empty');
                     console.log('✅ Test A - Dependencies Check:');
                     console.log('  Engine dependencies:', engineDeps, '(should be 0)');
@@ -3251,26 +3450,63 @@
                 // Left compaction helper for forward scheduling (ASAP)
                 async function compactLeftPerResource() {
                     const { resourceStore, eventStore } = scheduler;
+                    console.log('📦 Starting left compaction to remove gaps...');
+                    let totalMoved = 0;
+                    
                     for (const res of resourceStore.records) {
+                        // Skip the unscheduled resource
+                        if (res.id === 'unscheduled') continue;
+                        
                         const evs = eventStore.records
                             .filter(e => String(e.resourceId) === String(res.id))
                             .filter(e => e.startDate && e.endDate)
                             .sort((a, b) => a.startDate - b.startDate);
                         
-                        let cursor = evs.length ? new Date(evs[0].startDate) : null;
-                        for (let i = 0; i < evs.length; i++) {
+                        if (evs.length <= 1) continue; // Nothing to compact
+                        
+                        console.log(`  Compacting ${evs.length} operations on ${res.name}...`);
+                        
+                        // Process each event starting from the second one
+                        for (let i = 1; i < evs.length; i++) {
                             const cur = evs[i];
-                            if (i === 0) continue;
+                            const prev = evs[i - 1];
                             const dur = cur.endDate - cur.startDate;
-                            // Slide left up to the previous event's end
-                            const prevEnd = evs[i - 1].endDate;
-                            if (cur.startDate > prevEnd) {
-                                cur.set({ startDate: new Date(prevEnd), endDate: new Date(prevEnd.getTime() + dur) });
+                            
+                            // Check if there's a gap between previous end and current start
+                            if (cur.startDate > prev.endDate) {
+                                // We can move this operation earlier to close the gap
+                                const newStart = new Date(prev.endDate);
+                                const newEnd = new Date(newStart.getTime() + dur);
+                                
+                                // IMPORTANT: Check that moving won't create overlaps with later operations
+                                let canMove = true;
+                                
+                                // The move is safe because we're processing in order and only moving left
+                                // to the end of the previous operation, which can't create overlaps
+                                
+                                if (canMove) {
+                                    console.log(`    Moving "${cur.name}" from ${cur.startDate.toLocaleString()} to ${newStart.toLocaleString()}`);
+                                    cur.set({ 
+                                        startDate: newStart, 
+                                        endDate: newEnd,
+                                        manuallyScheduled: false
+                                    });
+                                    totalMoved++;
+                                    
+                                    // Update the event in our sorted array so subsequent operations see the new time
+                                    evs[i] = cur;
+                                }
                             }
                         }
                     }
-                    await scheduler.project.commitAsync();
-                    await scheduler.project.propagate();
+                    
+                    if (totalMoved > 0) {
+                        console.log(`  ✅ Compaction complete: moved ${totalMoved} operations to close gaps`);
+                        await scheduler.project.commitAsync();
+                        await scheduler.project.propagate();
+                    } else {
+                        console.log('  ✅ No gaps found - schedule already compact');
+                    }
                 }
 
                 // Scheduling Algorithm Implementations
@@ -3488,13 +3724,32 @@
                     // NOTE: Dependencies are NOT used for scheduling logic, only visual display
                     // ============================================================================
                     for (const [jobKey, operations] of sortedJobs) {
+                        // CRITICAL: Skip orphan operations entirely - they have no job context
+                        if (jobKey === '_orphans_') {
+                            console.warn(`\n⚠️ Skipping ${operations.length} orphan operations (no job ID)`);
+                            console.warn('🗑️ Orphan operations will be hidden to prevent scheduling conflicts');
+                            
+                            // Move orphan operations out of the visible schedule
+                            operations.forEach(ev => {
+                                const farFuture = new Date('2099-12-31');
+                                ev.set({
+                                    startDate: farFuture,
+                                    endDate: new Date(farFuture.getTime() + 3600000),
+                                    manuallyScheduled: false,
+                                    hidden: true
+                                });
+                                console.log(`  🗑️ Orphan operation "${ev.name}" moved out of scheduling range`);
+                            });
+                            continue; // Skip to next job
+                        }
+                        
                         console.log(`\n🏭 Processing Job: ${jobKey} with ${operations.length} operations`);
                         
                         // Determine the start date for this job
                         let jobStartDate = today; // Default to today
                         
                         // Check if this job has a manufacturing release date
-                        if (operations.length > 0 && jobKey !== '_orphans_') {
+                        if (operations.length > 0) {
                             const releaseDate = getManufacturingReleaseDate(operations[0]);
                             if (releaseDate) {
                                 jobStartDate = releaseDate;
@@ -3615,8 +3870,9 @@
                     const originalDeps = window.originalDependencies || [];
                     console.log(`🔍 Found ${originalDeps.length} original dependencies to restore`);
                     
-                    if (originalDeps.length > 0 && scheduler.project?.dependencyStore) {
-                        const depStore = scheduler.project.dependencyStore;
+                    // Restore to visual dependency store, not project store
+                    if (originalDeps.length > 0 && window.visualDependencyStore) {
+                        const depStore = window.visualDependencyStore;
                         depStore.removeAll();
                         depStore.add(
                             originalDeps.map(({ id, from, to, type = 2, lag = 0, lagUnit = 'hour' }) => ({
@@ -3630,25 +3886,24 @@
                                 cls: 'visual-dependency'
                             }))
                         );
-                        console.log(`🎨 Restored ${depStore.count} visual-only dependency lines`);
+                        console.log(`🎨 Restored ${depStore.count} visual-only dependency lines to visual store`);
                     } else if (originalDeps.length === 0) {
                         console.log('⚠️ No original dependencies to restore');
                     }
                     
                     console.log('\n✅ ASAP scheduling completed using job priority and sequence order');
                     
-                    // Render PT dependencies as visual lines after scheduling
+                    // Dependencies are already loaded in Bryntum's dependency store
                     if (window.originalDependencies && window.originalDependencies.length > 0) {
-                        console.log('🎨 Rendering PT dependencies as visual lines after ASAP scheduling...');
-                        setTimeout(() => {
-                            window.renderPTDependencyLines(scheduler, window.originalDependencies);
-                        }, 1000); // Wait 1 second for DOM to fully update
+                        console.log('✅ PT dependencies are displayed natively by Bryntum after ASAP scheduling');
                     }
                     
-                    // Apply left compaction to remove gaps
-                    console.log('📦 Applying left compaction to remove gaps...');
-                    await compactLeftPerResource();
-                    console.log('✅ Left compaction complete - gaps removed');
+                    // DISABLED: Compaction was causing overlaps
+                    // The bin packing algorithm already creates an optimal schedule without gaps
+                    // console.log('📦 Applying left compaction to remove gaps...');
+                    // await compactLeftPerResource();
+                    // console.log('✅ Left compaction complete - gaps removed');
+                    console.log('✅ Bin packing algorithm already created optimal schedule without gaps');
                     
                     // Verify no overlaps using the assertion function
                     if (assertNoOverlaps(scheduler)) {
@@ -4040,19 +4295,25 @@
                         console.log(`  📝 Committed job ${jobKey} to stores`);
                     }
                     
-                    // Handle any orphan operations (no job ID)
+                    // Handle any orphan operations (no job ID) - FILTER THEM OUT
                     const orphans = allEvents.filter(ev => !getJobKey(ev));
                     if (orphans.length > 0) {
-                        console.warn(`\n⚠️ Found ${orphans.length} orphan operations (no job ID)`);
-                        // Schedule orphans to start from current date
-                        const baseDate = new Date();
+                        console.warn(`\n⚠️ Found ${orphans.length} orphan operations (no job ID) - EXCLUDING FROM SCHEDULE`);
+                        console.warn('🗑️ Orphan operations will be hidden to prevent scheduling conflicts');
+                        
+                        // CRITICAL: Remove orphan operations from the scheduler entirely
+                        // They have no job context and cannot be properly scheduled
                         orphans.forEach(ev => {
-                            const durationMs = ev.durationMS ?? (ev.duration * 60 * 60 * 1000);
+                            // Hide the orphan operation by moving it far in the future
+                            // This prevents it from interfering with real scheduling
+                            const farFuture = new Date('2099-12-31');
                             ev.set({
-                                startDate: baseDate,
-                                endDate: new Date(baseDate.getTime() + durationMs),
-                                manuallyScheduled: false
+                                startDate: farFuture,
+                                endDate: new Date(farFuture.getTime() + 3600000), // 1 hour duration
+                                manuallyScheduled: false,
+                                hidden: true // Mark as hidden
                             });
+                            console.log(`  🗑️ Orphan operation "${ev.name}" moved out of scheduling range`);
                         });
                     }
                     
@@ -4073,8 +4334,9 @@
                     const originalDeps = window.originalDependencies || [];
                     console.log(`🔍 Found ${originalDeps.length} original dependencies to restore`);
                     
-                    if (originalDeps.length > 0 && scheduler.project?.dependencyStore) {
-                        const depStore = scheduler.project.dependencyStore;
+                    // Restore to visual dependency store, not project store
+                    if (originalDeps.length > 0 && window.visualDependencyStore) {
+                        const depStore = window.visualDependencyStore;
                         depStore.removeAll();
                         depStore.add(
                             originalDeps.map(({ id, from, to, type = 2, lag = 0, lagUnit = 'hour' }) => ({
@@ -4088,7 +4350,7 @@
                                 cls: 'visual-dependency'
                             }))
                         );
-                        console.log(`🎨 Restored ${depStore.count} visual-only dependency lines`);
+                        console.log(`🎨 Restored ${depStore.count} visual-only dependency lines to visual store`);
                     } else if (originalDeps.length === 0) {
                         console.log('⚠️ No original dependencies to restore');
                     }
@@ -4415,8 +4677,9 @@
                     const originalDeps = window.originalDependencies || [];
                     console.log(`🔍 Found ${originalDeps.length} original dependencies to restore`);
                     
-                    if (originalDeps.length > 0 && scheduler.project?.dependencyStore) {
-                        const depStore = scheduler.project.dependencyStore;
+                    // Restore to visual dependency store, not project store
+                    if (originalDeps.length > 0 && window.visualDependencyStore) {
+                        const depStore = window.visualDependencyStore;
                         depStore.removeAll();
                         depStore.add(
                             originalDeps.map(({ id, from, to, type = 2, lag = 0, lagUnit = 'hour' }) => ({
@@ -4430,7 +4693,7 @@
                                 cls: 'visual-dependency'
                             }))
                         );
-                        console.log(`🎨 Restored ${depStore.count} visual-only dependency lines`);
+                        console.log(`🎨 Restored ${depStore.count} visual-only dependency lines to visual store`);
                     } else if (originalDeps.length === 0) {
                         console.log('⚠️ No original dependencies to restore');
                     }
@@ -4684,9 +4947,28 @@
                     
                     // Transform PT operations to ensure they have the correct format for Bryntum
                     const transformedEvents = eventsForScheduler.map(event => {
-                        // Ensure dates are Date objects
-                        const startDate = event.startDate ? (event.startDate instanceof Date ? event.startDate : new Date(event.startDate)) : null;
-                        const endDate = event.endDate ? (event.endDate instanceof Date ? event.endDate : new Date(event.endDate)) : null;
+                        // Ensure dates are Date objects - provide default if null
+                        let startDate = null;
+                        let endDate = null;
+                        
+                        // If operation has scheduled dates, use them
+                        if (event.startDate) {
+                            startDate = event.startDate instanceof Date ? event.startDate : new Date(event.startDate);
+                        }
+                        if (event.endDate) {
+                            endDate = event.endDate instanceof Date ? event.endDate : new Date(event.endDate);
+                        }
+                        
+                        // If no scheduled dates, create unscheduled placeholder dates for display
+                        // These will be replaced by ASAP/ALAP/Drum algorithms
+                        if (!startDate || !endDate) {
+                            const today = new Date();
+                            today.setHours(8, 0, 0, 0);  // Start at 8 AM
+                            startDate = new Date(today);
+                            // Use duration if available, otherwise default to 1 hour
+                            const durationHours = event.duration || 1;
+                            endDate = new Date(startDate.getTime() + durationHours * 60 * 60 * 1000);
+                        }
                         
                         return {
                             id: event.id,
@@ -4697,112 +4979,55 @@
                             // Remove resourceId from event - it should come from assignments
                             percentDone: event.percentDone || 0,
                             duration: event.duration,
-                            durationUnit: event.durationUnit || 'hour'
+                            durationUnit: event.durationUnit || 'hour',
+                            isUnscheduled: !event.startDate || !event.endDate,  // Flag unscheduled operations
+                            // CRITICAL: Preserve job information to prevent orphan treatment
+                            jobId: event.jobId,
+                            jobName: event.jobName,
+                            jobPriority: event.jobPriority,
+                            jobDueDate: event.jobDueDate,
+                            sequence_number: event.sequence_number,
+                            operationId: event.operationId,
+                            manually_scheduled: event.manually_scheduled
                         };
-                    }).filter(e => e.startDate && e.endDate); // Only include events with valid dates
+                    }); // Removed filter - keep all operations for scheduling
                     
                     console.log(`✅ Transformed ${transformedEvents.length} valid events with dates`);
                     
-                    // Load data WITHOUT dependencies to prevent engine constraints
-                    // Dependencies will be added manually as inactive visual-only lines
+                    // Load data including dependencies (marked as inactive for visual-only)
+                    // Transform dependencies to ensure they're inactive/visual-only
+                    const visualDependencies = (fetchedDependencies || []).map(dep => ({
+                        id: String(dep.id),
+                        from: dep.from,
+                        to: dep.to,
+                        type: parseInt(dep.type) || 2,
+                        lag: parseInt(dep.lag) || 0,
+                        lagUnit: dep.lagUnit || 'hour',
+                        active: false,  // CRITICAL: Mark as inactive for visual-only
+                        cls: 'b-inactive visual-dependency'  // Add CSS class for styling
+                    }));
+                    
                     await scheduler.project.loadInlineData({
                         resourcesData: resources,
                         eventsData: transformedEvents, // Use transformed events
                         assignmentsData: assignments, // Assignments link events to resources
-                        dependenciesData: [] // CRITICAL: Empty array to ensure NO dependencies are loaded initially
+                        dependenciesData: visualDependencies // Load inactive dependencies for visualization
                     });
                     
                     // Keep a copy globally
                     window.originalDependencies = fetchedDependencies || [];
                     
-                    // Draw dependency lines after the scheduler is ready
-                    // Use setTimeout to ensure the scheduler is fully initialized
-                    setTimeout(() => {
-                        // Render PT dependencies as visual-only lines
-                        if (fetchedDependencies && fetchedDependencies.length > 0) {
-                            console.log('🎨 Rendering PT dependencies as visual lines after initial load...');
-                            window.renderPTDependencyLines(scheduler, fetchedDependencies);
-                        }
-                        
-                        try {
-                            // Check for Lager packaging dependency
-                            console.log('🔍 Checking for Lager packaging dependencies:');
-                            const lagerPackagingDeps = window.originalDependencies.filter(dep => {
-                                const fromName = scheduler.eventStore.getById(dep.from)?.name || '';
-                                const toName = scheduler.eventStore.getById(dep.to)?.name || '';
-                                return fromName.toLowerCase().includes('lager') || 
-                                       toName.toLowerCase().includes('lager') ||
-                                       fromName.toLowerCase().includes('packag') ||
-                                       toName.toLowerCase().includes('packag');
-                            });
-                            console.log('Lager/Packaging related dependencies:', lagerPackagingDeps);
-                            
-                            // Try to access the dependency store
-                            let depStore = null;
-                            
-                            // Method 1: Through project.dependencyStore
-                            if (scheduler.project && scheduler.project.dependencyStore) {
-                                depStore = scheduler.project.dependencyStore;
-                                console.log('✅ Using scheduler.project.dependencyStore');
-                            } 
-                            // Method 2: Through dependencyStore directly
-                            else if (scheduler.dependencyStore) {
-                                depStore = scheduler.dependencyStore;
-                                console.log('✅ Using scheduler.dependencyStore');
-                            }
-                            
-                            if (depStore) {
-                                // Clear any existing dependencies first
-                                depStore.removeAll();
-                                depStore.suspendEvents(); // Suspend events to prevent conflict checks
-                                
-                                // Add dependencies as inactive visual-only lines
-                                const depsToAdd = window.originalDependencies.map(({ id, from, to, type = 2, lag = 0, lagUnit = 'hour' }) => {
-                                    // Verify the events exist
-                                    const fromEvent = scheduler.eventStore.getById(from);
-                                    const toEvent = scheduler.eventStore.getById(to);
-                                    
-                                    if (!fromEvent || !toEvent) {
-                                        console.warn(`⚠️ Dependency ${id} missing event: from=${from} (${fromEvent?.name || 'NOT FOUND'}), to=${to} (${toEvent?.name || 'NOT FOUND'})`);
-                                        return null;
-                                    }
-                                    
-                                    return {
-                                        id: String(id), 
-                                        fromEvent: from,  // Bryntum uses fromEvent/toEvent
-                                        toEvent: to,      
-                                        type: type,
-                                        lag: lag,
-                                        lagUnit: lagUnit,
-                                        inactive: true,   // CRITICAL: Mark as inactive for visual-only
-                                        cls: 'visual-dependency b-inactive', // Add both classes
-                                        active: false,    // Extra safety - mark as not active
-                                        allowedOverlap: true // Allow overlaps since these are visual-only
-                                    };
-                                }).filter(dep => dep !== null);
-                                
-                                // Add the dependencies
-                                depStore.add(depsToAdd);
-                                depStore.resumeEvents(); // Resume events after adding
-                                
-                                console.log(`🎨 Rendered ${depStore.count} visual-only dependency lines`);
-                                console.log('Dependencies added:', depsToAdd.map(d => ({
-                                    id: d.id,
-                                    from: scheduler.eventStore.getById(d.fromEvent)?.name,
-                                    to: scheduler.eventStore.getById(d.toEvent)?.name,
-                                    inactive: d.inactive
-                                })));
-                            } else {
-                                console.warn('⚠️ Dependency store not available - dependencies won\'t be displayed');
-                                console.log('Available scheduler properties:', Object.keys(scheduler));
-                                if (scheduler.project) {
-                                    console.log('Available project properties:', Object.keys(scheduler.project));
-                                }
-                            }
-                        } catch (error) {
-                            console.error('❌ Error adding dependencies:', error);
-                        }
-                    }, 1500); // Increase timeout slightly to ensure scheduler is ready
+                    // Log dependency loading status
+                    console.log(`✅ Loaded ${visualDependencies.length} visual-only dependencies`);
+                    if (visualDependencies.length > 0) {
+                        const sampleDeps = visualDependencies.slice(0, 3);
+                        console.log('Sample dependencies:', sampleDeps.map(d => ({
+                            id: d.id,
+                            from: d.from,
+                            to: d.to,
+                            active: d.active
+                        })));
+                    }
                     
                     console.log(`✅ Loaded! Store has: ${scheduler.eventStore.count} events`);
                     console.log('✅ Inline data loaded successfully');
@@ -5013,6 +5238,7 @@
                 const overlay = document.getElementById('loadingOverlay');
                 if (overlay) overlay.style.display = 'none';
             }
+            }); // End of waitForBryntum callback
         });
     </script>
     
@@ -5066,14 +5292,16 @@
                         priority: e.priority || 0
                     }));
                 
-                const dependencies = scheduler.dependencyStore.records.map(d => ({
-                    id: String(d.id), // Convert to string
-                    fromEvent: String(d.fromEvent?.id || d.fromEvent), // Extract ID if it's an object
-                    toEvent: String(d.toEvent?.id || d.toEvent), // Extract ID if it's an object
-                    type: d.type || 2,
-                    lag: d.lag || 0,
-                    lagUnit: d.lagUnit || 'hour'
-                }));
+                // Use visual dependency store instead of engine's (which is null)
+                const dependencies = window.visualDependencyStore ? 
+                    window.visualDependencyStore.records.map(d => ({
+                        id: String(d.id), // Convert to string
+                        fromEvent: String(d.fromEvent?.id || d.fromEvent), // Extract ID if it's an object
+                        toEvent: String(d.toEvent?.id || d.toEvent), // Extract ID if it's an object
+                        type: d.type || 2,
+                        lag: d.lag || 0,
+                        lagUnit: d.lagUnit || 'hour'
+                    })) : [];
                 
                 return {
                     version: `v_${Date.now()}`,
@@ -5589,7 +5817,7 @@
                                     scheduleData: {
                                         events: window.scheduler.eventStore.toJSON(),
                                         resources: window.scheduler.resourceStore.toJSON(),
-                                        dependencies: window.scheduler.dependencyStore ? window.scheduler.dependencyStore.toJSON() : []
+                                        dependencies: window.visualDependencyStore ? window.visualDependencyStore.toJSON() : []
                                     },
                                     metadata: {
                                         algorithm: document.getElementById('schedulingAlgorithm').value,

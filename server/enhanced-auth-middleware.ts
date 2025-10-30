@@ -30,18 +30,12 @@ interface AuthResult {
 // Enhanced authentication middleware supporting JWT and API keys
 export async function enhancedAuth(req: AuthenticatedRequest, res: Response, next: NextFunction) {
   try {
-    // Development bypass - automatically provide admin access
-    if (process.env.NODE_ENV === 'development') {
-      console.log("🔧 [Enhanced Auth] Development mode: Providing automatic admin access");
-      req.user = {
-        id: 1,
-        username: 'admin',
-        email: 'admin@planettogether.com',
-        type: 'user',
-        permissions: ['*']
-      };
-      return next();
-    }
+    // DISABLED AUTO-LOGIN - User must manually log in
+    // if (process.env.NODE_ENV === 'development') {
+    //   console.log("🔧 [Enhanced Auth] Development mode: Providing automatic admin access");
+    //   req.user = {...};
+    //   return next();
+    // }
 
     const authResult = await authenticateRequest(req);
     

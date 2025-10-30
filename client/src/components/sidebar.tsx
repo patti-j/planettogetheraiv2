@@ -160,7 +160,8 @@ export default function Sidebar() {
       item.href === "/constraints" || // TEMPORARY: Always show constraints for debugging
       item.href === "/analytics" ||  // Show analytics for admin
       item.href === "/reports" ||  // Show reports for admin
-      item.href === "/schedule"; // Show schedule for admin
+      item.href === "/schedule" || // Show schedule for admin
+      item.href === "/user-access-management"; // TEMPORARY: Always show User & Access Management
     
     // Check permission for other items
     const hasPermissionForItem = hasPermission(item.feature || "", item.action || "");
@@ -261,6 +262,7 @@ export default function Sidebar() {
     { icon: Code, label: "Extension Studio", href: "/extension-studio", active: location === "/extension-studio", feature: "systems-management", action: "view" },
     { icon: FileSearch, label: "Logs", href: "/error-logs", active: location === "/error-logs", feature: "systems-management", action: "view" },
     { icon: Layers, label: "Canvas", href: "/canvas", active: location === "/canvas", feature: "", action: "" },
+    { icon: Shield, label: "User & Access Management", href: "/user-access-management", active: location === "/user-access-management" || location === "/role-management" || location === "/user-role-assignments-page", feature: "user-management", action: "view" },
     { icon: GraduationCap, label: "Training", href: "/training", active: location === "/training", feature: "training", action: "view" },
     { icon: Building, label: "Industry Templates", href: "/industry-templates", active: location === "/industry-templates", feature: "industry-templates", action: "view" },
     { icon: Presentation, label: "Presentation System", href: "/presentation-system", active: location === "/presentation-system" || location === "/presentation-studio", feature: "training", action: "view" },

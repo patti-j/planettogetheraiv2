@@ -2029,6 +2029,72 @@ export const algorithmFeedbackVotes = pgTable("algorithm_feedback_votes", {
   createdAt: timestamp("created_at").defaultNow()
 });
 
+// ============================================
+// Algorithm Requirements Management Tables
+// ============================================
+
+export const algorithmRequirements = pgTable("algorithm_requirements", {
+  id: serial("id").primaryKey(),
+  name: varchar("name", { length: 200 }).notNull(),
+  description: text("description"),
+  requirementType: varchar("requirement_type", { length: 50 }).notNull(), // 'functional' or 'policy'
+  category: varchar("category", { length: 100 }), // e.g., 'capacity', 'timing', 'sequencing', 'resource'
+  priority: varchar("priority", { length: 20 }).default("high"), // 'critical', 'high', 'medium', 'low'
+  
+  // Validation criteria
+  validationRule: text("validation_rule"), // SQL or JSON rule definition
+  validationType: varchar("validation_type", { length: 50 }), // 'sql', 'json', 'custom'
+  validationParameters: jsonb("validation_parameters").default(sql`'{}'::jsonb`),
+  
+  // Metadata
+  isRelaxable: boolean("is_relaxable").default(false), // For policy requirements
+  impactDescription: text("impact_description"), // What happens if requirement is violated
+  exampleScenarios: jsonb("example_scenarios").default(sql`'[]'::jsonb`),
+  
+  createdBy: integer("created_by").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow()
+});
+
+export const algorithmRequirementAssociations = pgTable("algorithm_requirement_associations", {
+  id: serial("id").primaryKey(),
+  algorithmId: integer("algorithm_id").references(() => optimizationAlgorithms.id).notNull(),
+  requirementId: integer("requirement_id").references(() => algorithmRequirements.id).notNull(),
+  
+  // Association configuration
+  isEnabled: boolean("is_enabled").default(true),
+  enforcementLevel: varchar("enforcement_level", { length: 50 }).default("strict"), // 'strict', 'soft', 'warning'
+  customParameters: jsonb("custom_parameters").default(sql`'{}'::jsonb`), // Algorithm-specific parameters for this requirement
+  
+  // Tracking
+  associatedBy: integer("associated_by").references(() => users.id),
+  associatedAt: timestamp("associated_at").defaultNow()
+});
+
+export const algorithmRequirementValidations = pgTable("algorithm_requirement_validations", {
+  id: serial("id").primaryKey(),
+  algorithmId: integer("algorithm_id").references(() => optimizationAlgorithms.id).notNull(),
+  requirementId: integer("requirement_id").references(() => algorithmRequirements.id).notNull(),
+  testRunId: integer("test_run_id").references(() => algorithmTests.id),
+  
+  // Validation results
+  validationStatus: varchar("validation_status", { length: 50 }).notNull(), // 'passed', 'failed', 'warning', 'skipped'
+  validationMessage: text("validation_message"),
+  violationCount: integer("violation_count").default(0),
+  violationDetails: jsonb("violation_details").default(sql`'[]'::jsonb`),
+  
+  // Performance metrics
+  validationTime: integer("validation_time_ms"),
+  resourcesChecked: integer("resources_checked"),
+  constraintsEvaluated: integer("constraints_evaluated"),
+  
+  // Test context
+  testData: jsonb("test_data").default(sql`'{}'::jsonb`),
+  testEnvironment: varchar("test_environment", { length: 50 }),
+  
+  validatedAt: timestamp("validated_at").defaultNow()
+});
+
 export const optimizationProfiles = pgTable("optimization_profiles", {
   id: serial("id").primaryKey(),
   name: varchar("name", { length: 200 }).notNull(),
@@ -2135,6 +2201,22 @@ export const insertAlgorithmFeedbackSchema = createInsertSchema(algorithmFeedbac
   .omit({ id: true, createdAt: true, updatedAt: true });
 export type InsertAlgorithmFeedback = z.infer<typeof insertAlgorithmFeedbackSchema>;
 export type AlgorithmFeedback = typeof algorithmFeedback.$inferSelect;
+
+// Algorithm Requirements Types
+export const insertAlgorithmRequirementSchema = createInsertSchema(algorithmRequirements)
+  .omit({ id: true, createdAt: true, updatedAt: true });
+export type InsertAlgorithmRequirement = z.infer<typeof insertAlgorithmRequirementSchema>;
+export type AlgorithmRequirement = typeof algorithmRequirements.$inferSelect;
+
+export const insertAlgorithmRequirementAssociationSchema = createInsertSchema(algorithmRequirementAssociations)
+  .omit({ id: true, associatedAt: true });
+export type InsertAlgorithmRequirementAssociation = z.infer<typeof insertAlgorithmRequirementAssociationSchema>;
+export type AlgorithmRequirementAssociation = typeof algorithmRequirementAssociations.$inferSelect;
+
+export const insertAlgorithmRequirementValidationSchema = createInsertSchema(algorithmRequirementValidations)
+  .omit({ id: true, validatedAt: true });
+export type InsertAlgorithmRequirementValidation = z.infer<typeof insertAlgorithmRequirementValidationSchema>;
+export type AlgorithmRequirementValidation = typeof algorithmRequirementValidations.$inferSelect;
 
 export const insertOptimizationProfileSchema = createInsertSchema(optimizationProfiles)
   .omit({ id: true, createdAt: true, updatedAt: true });
@@ -2319,6 +2401,125 @@ export const savedForecasts = pgTable("saved_forecasts", {
 });
 
 // ============================================
+// Business Goals & Strategic Planning
+// ============================================
+
+export const businessGoals = pgTable("business_goals", {
+  id: serial("id").primaryKey(),
+  goalTitle: varchar("goal_title", { length: 255 }).notNull(),
+  goalDescription: text("goal_description"),
+  goalType: varchar("goal_type", { length: 50 }), // strategic, operational, tactical
+  priority: varchar("priority", { length: 20 }), // low, medium, high, critical
+  owner: integer("owner").references(() => users.id),
+  startDate: timestamp("start_date"),
+  targetDate: timestamp("target_date"),
+  targetValue: decimal("target_value"),
+  targetUnit: varchar("target_unit", { length: 50 }), // %, $, units, etc.
+  category: varchar("category", { length: 100 }),
+  goalWeight: integer("goal_weight").default(100),
+  businessJustification: text("business_justification"),
+  status: varchar("status", { length: 50 }).default("not_started"), // not_started, in_progress, at_risk, completed
+  progress: decimal("progress").default("0"), // percentage completion
+  createdBy: integer("created_by").references(() => users.id),
+  updatedBy: integer("updated_by").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow()
+});
+
+export const goalProgress = pgTable("goal_progress", {
+  id: serial("id").primaryKey(),
+  goalId: integer("goal_id").references(() => businessGoals.id).notNull(),
+  progressDate: timestamp("progress_date").notNull(),
+  progressValue: decimal("progress_value").notNull(),
+  progressPercentage: decimal("progress_percentage"),
+  notes: text("notes"),
+  reportedBy: integer("reported_by").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow()
+});
+
+export const goalRisks = pgTable("goal_risks", {
+  id: serial("id").primaryKey(),
+  goalId: integer("goal_id").references(() => businessGoals.id).notNull(),
+  riskTitle: varchar("risk_title", { length: 255 }).notNull(),
+  riskDescription: text("risk_description"),
+  probability: varchar("probability", { length: 20 }), // low, medium, high
+  impact: varchar("impact", { length: 20 }), // low, medium, high
+  riskScore: integer("risk_score"), // calculated from probability x impact
+  mitigationPlan: text("mitigation_plan"),
+  status: varchar("status", { length: 50 }).default("identified"), // identified, mitigating, resolved
+  assignedTo: integer("assigned_to").references(() => users.id),
+  identifiedDate: timestamp("identified_date").defaultNow(),
+  resolvedDate: timestamp("resolved_date"),
+  createdBy: integer("created_by").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow()
+});
+
+export const goalIssues = pgTable("goal_issues", {
+  id: serial("id").primaryKey(),
+  goalId: integer("goal_id").references(() => businessGoals.id).notNull(),
+  issueTitle: varchar("issue_title", { length: 255 }).notNull(),
+  issueDescription: text("issue_description"),
+  severity: varchar("severity", { length: 20 }), // low, medium, high, critical
+  status: varchar("status", { length: 50 }).default("open"), // open, in_progress, resolved
+  rootCause: text("root_cause"),
+  resolutionPlan: text("resolution_plan"),
+  assignedTo: integer("assigned_to").references(() => users.id),
+  estimatedResolutionDate: timestamp("estimated_resolution_date"),
+  actualResolutionDate: timestamp("actual_resolution_date"),
+  createdBy: integer("created_by").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow()
+});
+
+export const goalActions = pgTable("goal_actions", {
+  id: serial("id").primaryKey(),
+  goalId: integer("goal_id").references(() => businessGoals.id).notNull(),
+  actionTitle: varchar("action_title", { length: 255 }).notNull(),
+  actionDescription: text("action_description"),
+  actionType: varchar("action_type", { length: 50 }), // strategic_initiative, operational_task, etc.
+  priority: varchar("priority", { length: 20 }), // low, medium, high, critical
+  assignedTo: integer("assigned_to").references(() => users.id),
+  budget: decimal("budget"),
+  expectedImpact: text("expected_impact"),
+  successCriteria: text("success_criteria"),
+  dependencies: text("dependencies"),
+  startDate: timestamp("start_date"),
+  targetDate: timestamp("target_date"),
+  completionDate: timestamp("completion_date"),
+  status: varchar("status", { length: 50 }).default("pending"), // pending, in_progress, completed, cancelled
+  progress: decimal("progress").default("0"),
+  // Resource requirements
+  resourcesPeople: text("resources_people"),
+  resourcesEquipment: text("resources_equipment"),
+  resourcesSkills: text("resources_skills"),
+  resourcesExternalSupport: text("resources_external_support"),
+  createdBy: integer("created_by").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow()
+});
+
+export const goalKpis = pgTable("goal_kpis", {
+  id: serial("id").primaryKey(),
+  goalId: integer("goal_id").references(() => businessGoals.id).notNull(),
+  kpiDefinitionId: integer("kpi_definition_id"), // Link to KPI definitions if exists
+  kpiName: varchar("kpi_name", { length: 255 }).notNull(),
+  kpiDescription: text("kpi_description"),
+  targetValue: decimal("target_value"),
+  targetUnit: varchar("target_unit", { length: 50 }),
+  targetPeriod: varchar("target_period", { length: 50 }), // daily, weekly, monthly, quarterly, yearly
+  startDate: timestamp("start_date"),
+  endDate: timestamp("end_date"),
+  measurementFrequency: varchar("measurement_frequency", { length: 50 }), 
+  dataSource: varchar("data_source", { length: 255 }),
+  owner: integer("owner").references(() => users.id),
+  status: varchar("status", { length: 50 }).default("active"), // active, paused, completed
+  createdBy: integer("created_by").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow()
+});
+
+// ============================================
 // Master Data Types
 // ============================================
 
@@ -2374,3 +2575,56 @@ export const insertAutonomousOptimizationSchema = createInsertSchema(autonomousO
 });
 export type InsertAutonomousOptimization = z.infer<typeof insertAutonomousOptimizationSchema>;
 export type AutonomousOptimization = typeof autonomousOptimization.$inferSelect;
+
+// Business Goals types
+export const insertBusinessGoalSchema = createInsertSchema(businessGoals).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true
+});
+export type InsertBusinessGoal = z.infer<typeof insertBusinessGoalSchema>;
+export type BusinessGoal = typeof businessGoals.$inferSelect;
+
+// Goal Progress types
+export const insertGoalProgressSchema = createInsertSchema(goalProgress).omit({
+  id: true,
+  createdAt: true
+});
+export type InsertGoalProgress = z.infer<typeof insertGoalProgressSchema>;
+export type GoalProgress = typeof goalProgress.$inferSelect;
+
+// Goal Risks types
+export const insertGoalRiskSchema = createInsertSchema(goalRisks).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true
+});
+export type InsertGoalRisk = z.infer<typeof insertGoalRiskSchema>;
+export type GoalRisk = typeof goalRisks.$inferSelect;
+
+// Goal Issues types
+export const insertGoalIssueSchema = createInsertSchema(goalIssues).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true
+});
+export type InsertGoalIssue = z.infer<typeof insertGoalIssueSchema>;
+export type GoalIssue = typeof goalIssues.$inferSelect;
+
+// Goal Actions types
+export const insertGoalActionSchema = createInsertSchema(goalActions).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true
+});
+export type InsertGoalAction = z.infer<typeof insertGoalActionSchema>;
+export type GoalAction = typeof goalActions.$inferSelect;
+
+// Goal KPIs types
+export const insertGoalKpiSchema = createInsertSchema(goalKpis).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true
+});
+export type InsertGoalKpi = z.infer<typeof insertGoalKpiSchema>;
+export type GoalKpi = typeof goalKpis.$inferSelect;

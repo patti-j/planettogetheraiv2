@@ -59,7 +59,13 @@ import {
 // Import PT Tables from minimal schema matching actual database structure
 import {
   ptJobs,
-  ptJobOperations
+  ptJobOperations,
+  businessGoals,
+  goalProgress,
+  goalRisks,
+  goalIssues,
+  goalActions,
+  goalKpis
 } from "@shared/schema";
 import { insertUserSchema, insertCompanyOnboardingSchema, insertUserPreferencesSchema, insertSchedulingMessageSchema, widgets } from "@shared/schema";
 import { systemMonitoringAgent } from "./monitoring-agent";
@@ -404,26 +410,11 @@ router.get("/api/auth/me", async (req, res) => {
   console.log(`Authorization header: ${req.headers.authorization ? 'Bearer ***' : 'None'}`);
   console.log(`Session userId: ${req.session.userId}`);
   
-  // Development bypass - automatically provide admin access
-  if (process.env.NODE_ENV === 'development') {
-    console.log("🔧 Development mode: Providing automatic admin access");
-    return res.json({
-      user: {
-        id: 1,
-        username: "admin",
-        email: "admin@planettogether.com",
-        firstName: "Admin",
-        lastName: "User",
-        roles: [{
-          id: 1,
-          name: "Administrator",
-          description: "System administrator with full access",
-          permissions: []
-        }],
-        permissions: ["*"] // Full access in dev mode
-      }
-    });
-  }
+  // DISABLED AUTO-LOGIN - User must manually log in
+  // if (process.env.NODE_ENV === 'development') {
+  //   console.log("🔧 Development mode: Providing automatic admin access");
+  //   return res.json({...});
+  // }
   
   const authHeader = req.headers.authorization;
   let tokenData = null;
@@ -10443,6 +10434,179 @@ router.post("/api/algorithm-governance/approvals", enhancedAuth, async (req, res
   }
 });
 
+// ============================================
+// Algorithm Requirements Management Routes
+// ============================================
+
+// Get all algorithm requirements
+router.get("/api/algorithm-requirements", async (req, res) => {
+  try {
+    const filters = {
+      requirementType: req.query.requirementType as string,
+      category: req.query.category as string,
+      priority: req.query.priority as string
+    };
+    
+    const requirements = await storage.getAlgorithmRequirements(filters);
+    res.json(requirements);
+  } catch (error) {
+    console.error("Error fetching algorithm requirements:", error);
+    res.status(500).json({ error: "Failed to fetch algorithm requirements" });
+  }
+});
+
+// Get single algorithm requirement
+router.get("/api/algorithm-requirements/:id", async (req, res) => {
+  try {
+    const requirement = await storage.getAlgorithmRequirement(parseInt(req.params.id));
+    if (!requirement) {
+      return res.status(404).json({ error: "Algorithm requirement not found" });
+    }
+    res.json(requirement);
+  } catch (error) {
+    console.error("Error fetching algorithm requirement:", error);
+    res.status(500).json({ error: "Failed to fetch algorithm requirement" });
+  }
+});
+
+// Create algorithm requirement
+router.post("/api/algorithm-requirements", enhancedAuth, async (req, res) => {
+  try {
+    const requirement = await storage.createAlgorithmRequirement(req.body);
+    res.json(requirement);
+  } catch (error) {
+    console.error("Error creating algorithm requirement:", error);
+    res.status(500).json({ error: "Failed to create algorithm requirement" });
+  }
+});
+
+// Update algorithm requirement
+router.put("/api/algorithm-requirements/:id", enhancedAuth, async (req, res) => {
+  try {
+    const requirement = await storage.updateAlgorithmRequirement(
+      parseInt(req.params.id),
+      req.body
+    );
+    if (!requirement) {
+      return res.status(404).json({ error: "Algorithm requirement not found" });
+    }
+    res.json(requirement);
+  } catch (error) {
+    console.error("Error updating algorithm requirement:", error);
+    res.status(500).json({ error: "Failed to update algorithm requirement" });
+  }
+});
+
+// Delete algorithm requirement
+router.delete("/api/algorithm-requirements/:id", enhancedAuth, async (req, res) => {
+  try {
+    const success = await storage.deleteAlgorithmRequirement(parseInt(req.params.id));
+    if (!success) {
+      return res.status(404).json({ error: "Algorithm requirement not found" });
+    }
+    res.json({ success: true });
+  } catch (error) {
+    console.error("Error deleting algorithm requirement:", error);
+    res.status(500).json({ error: "Failed to delete algorithm requirement" });
+  }
+});
+
+// Get algorithm requirement associations
+router.get("/api/algorithm-requirement-associations", async (req, res) => {
+  try {
+    const algorithmId = req.query.algorithmId ? parseInt(req.query.algorithmId as string) : undefined;
+    const requirementId = req.query.requirementId ? parseInt(req.query.requirementId as string) : undefined;
+    
+    const associations = await storage.getAlgorithmRequirementAssociations(algorithmId, requirementId);
+    res.json(associations);
+  } catch (error) {
+    console.error("Error fetching algorithm requirement associations:", error);
+    res.status(500).json({ error: "Failed to fetch algorithm requirement associations" });
+  }
+});
+
+// Create algorithm requirement association
+router.post("/api/algorithm-requirement-associations", enhancedAuth, async (req, res) => {
+  try {
+    const association = await storage.createAlgorithmRequirementAssociation(req.body);
+    res.json(association);
+  } catch (error) {
+    console.error("Error creating algorithm requirement association:", error);
+    res.status(500).json({ error: "Failed to create algorithm requirement association" });
+  }
+});
+
+// Update algorithm requirement association
+router.put("/api/algorithm-requirement-associations/:id", enhancedAuth, async (req, res) => {
+  try {
+    const association = await storage.updateAlgorithmRequirementAssociation(
+      parseInt(req.params.id),
+      req.body
+    );
+    if (!association) {
+      return res.status(404).json({ error: "Algorithm requirement association not found" });
+    }
+    res.json(association);
+  } catch (error) {
+    console.error("Error updating algorithm requirement association:", error);
+    res.status(500).json({ error: "Failed to update algorithm requirement association" });
+  }
+});
+
+// Delete algorithm requirement association
+router.delete("/api/algorithm-requirement-associations/:id", enhancedAuth, async (req, res) => {
+  try {
+    const success = await storage.deleteAlgorithmRequirementAssociation(parseInt(req.params.id));
+    if (!success) {
+      return res.status(404).json({ error: "Algorithm requirement association not found" });
+    }
+    res.json({ success: true });
+  } catch (error) {
+    console.error("Error deleting algorithm requirement association:", error);
+    res.status(500).json({ error: "Failed to delete algorithm requirement association" });
+  }
+});
+
+// Get algorithm requirement validations
+router.get("/api/algorithm-requirement-validations", async (req, res) => {
+  try {
+    const filters = {
+      algorithmId: req.query.algorithmId ? parseInt(req.query.algorithmId as string) : undefined,
+      requirementId: req.query.requirementId ? parseInt(req.query.requirementId as string) : undefined,
+      testRunId: req.query.testRunId ? parseInt(req.query.testRunId as string) : undefined,
+      validationStatus: req.query.validationStatus as string
+    };
+    
+    const validations = await storage.getAlgorithmRequirementValidations(filters);
+    res.json(validations);
+  } catch (error) {
+    console.error("Error fetching algorithm requirement validations:", error);
+    res.status(500).json({ error: "Failed to fetch algorithm requirement validations" });
+  }
+});
+
+// Create algorithm requirement validation
+router.post("/api/algorithm-requirement-validations", enhancedAuth, async (req, res) => {
+  try {
+    const validation = await storage.createAlgorithmRequirementValidation(req.body);
+    res.json(validation);
+  } catch (error) {
+    console.error("Error creating algorithm requirement validation:", error);
+    res.status(500).json({ error: "Failed to create algorithm requirement validation" });
+  }
+});
+
+// Get latest validations for an algorithm
+router.get("/api/algorithm-requirement-validations/latest/:algorithmId", async (req, res) => {
+  try {
+    const validations = await storage.getLatestValidations(parseInt(req.params.algorithmId));
+    res.json(validations);
+  } catch (error) {
+    console.error("Error fetching latest validations:", error);
+    res.status(500).json({ error: "Failed to fetch latest validations" });
+  }
+});
+
 // Execute algorithm by name (generic endpoint for Production Scheduler integration)
 // This endpoint executes algorithms server-side using the Optimization Studio
 // algorithm implementations and returns the optimized schedule.
@@ -11780,6 +11944,389 @@ router.delete("/api/forecasting/saved-forecast/:id", requireAuth, async (req, re
       error: "Failed to delete saved forecast",
       message: error.message 
     });
+  }
+});
+
+// ============================================================================
+// AI SCENARIO GENERATION ENDPOINTS
+// ============================================================================
+
+// Generate AI-powered manufacturing scenarios
+router.post("/api/scenarios/generate", requireAuth, async (req, res) => {
+  try {
+    const { prompt, template, selectedPlants, includeCurrentData } = req.body;
+    
+    // Validate request
+    if (!prompt && !template) {
+      return res.status(400).json({ 
+        error: "Either prompt or template is required" 
+      });
+    }
+
+    // Generate comprehensive scenario suggestions using AI
+    const systemPrompt = `You are a manufacturing scenario planning expert. Generate realistic manufacturing scenarios for analysis and planning.
+    
+    Consider the following aspects:
+    1. Production scheduling strategies (fastest, most efficient, balanced)
+    2. Resource optimization and utilization
+    3. Delivery time optimization
+    4. Cost efficiency improvements
+    5. Capacity planning and expansion
+    6. Demand surge handling
+    7. Supply chain disruptions
+    
+    Format the response as a JSON object with the following structure:
+    {
+      "scenarios": [
+        {
+          "name": "Scenario name",
+          "description": "Detailed description",
+          "scheduling_strategy": "fastest|most_efficient|balanced",
+          "optimization_priorities": ["delivery_time", "resource_utilization", "cost_efficiency"],
+          "constraints": {
+            "max_overtime_hours": number,
+            "resource_availability": {}
+          },
+          "predicted_metrics": {
+            "production_efficiency": number (0-100),
+            "on_time_delivery": number (0-100),
+            "resource_utilization": number (0-100),
+            "cost_savings": number
+          },
+          "implementation_steps": ["step1", "step2", ...],
+          "risks": ["risk1", "risk2", ...],
+          "benefits": ["benefit1", "benefit2", ...]
+        }
+      ]
+    }`;
+
+    const userPrompt = template ? 
+      `Generate a manufacturing scenario based on the template: ${template}. ${prompt || ''}` :
+      `Generate manufacturing scenarios based on: ${prompt}`;
+
+    // Call AI service  
+    const aiResponse = await maxAI.generateResponse(systemPrompt, userPrompt);
+    
+    // Parse AI response
+    let scenarios;
+    try {
+      // Try to extract JSON from the response
+      const jsonMatch = aiResponse.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        scenarios = JSON.parse(jsonMatch[0]);
+      } else {
+        // Fallback: create a basic scenario from the text response
+        scenarios = {
+          scenarios: [{
+            name: "AI Generated Scenario",
+            description: aiResponse,
+            scheduling_strategy: "balanced",
+            optimization_priorities: ["delivery_time", "resource_utilization"],
+            constraints: {},
+            predicted_metrics: {
+              production_efficiency: 85,
+              on_time_delivery: 90,
+              resource_utilization: 75,
+              cost_savings: 0
+            },
+            implementation_steps: [],
+            risks: [],
+            benefits: []
+          }]
+        };
+      }
+    } catch (parseError) {
+      console.error("Error parsing AI response:", parseError);
+      // Return a structured response even if parsing fails
+      scenarios = {
+        scenarios: [{
+          name: "Scenario Analysis",
+          description: aiResponse,
+          scheduling_strategy: "balanced",
+          optimization_priorities: ["delivery_time", "resource_utilization"],
+          constraints: {},
+          predicted_metrics: {
+            production_efficiency: 85,
+            on_time_delivery: 90,
+            resource_utilization: 75,
+            cost_savings: 0
+          }
+        }]
+      };
+    }
+
+    res.json(scenarios);
+  } catch (error: any) {
+    console.error("Error generating scenarios:", error);
+    res.status(500).json({ 
+      error: "Failed to generate scenarios",
+      message: error.message 
+    });
+  }
+});
+
+// Create and save a schedule scenario
+router.post("/api/schedule-scenarios", requireAuth, async (req, res) => {
+  try {
+    const { name, description, status, configuration, metrics } = req.body;
+    
+    // Validate request
+    if (!name) {
+      return res.status(400).json({ error: "Scenario name is required" });
+    }
+
+    // For now, return a mock saved scenario (storage methods need to be implemented)
+    const scenario = {
+      id: Math.floor(Math.random() * 1000),
+      name,
+      description: description || '',
+      status: status || 'draft',
+      createdBy: req.user?.id || 1,
+      configuration: configuration || {},
+      metrics: metrics || null,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+
+    res.json(scenario);
+  } catch (error: any) {
+    console.error("Error creating scenario:", error);
+    res.status(500).json({ 
+      error: "Failed to create scenario",
+      message: error.message 
+    });
+  }
+});
+
+// ============================================================================
+// BUSINESS GOALS & STRATEGIC PLANNING ENDPOINTS
+// ============================================================================
+
+// Get all business goals
+router.get("/api/business-goals", requireAuth, async (req, res) => {
+  try {
+    const goals = await db.select().from(businessGoals).orderBy(businessGoals.priority);
+    res.json(goals);
+  } catch (error: any) {
+    console.error("Error fetching business goals:", error);
+    res.status(500).json({ error: "Failed to fetch business goals" });
+  }
+});
+
+// Create a new business goal
+router.post("/api/business-goals", requireAuth, async (req, res) => {
+  try {
+    const goalData = {
+      ...req.body,
+      createdBy: req.user?.id,
+      updatedBy: req.user?.id
+    };
+    
+    const [newGoal] = await db.insert(businessGoals).values(goalData).returning();
+    res.json(newGoal);
+  } catch (error: any) {
+    console.error("Error creating business goal:", error);
+    res.status(500).json({ error: "Failed to create business goal" });
+  }
+});
+
+// Update a business goal
+router.put("/api/business-goals/:id", requireAuth, async (req, res) => {
+  try {
+    const goalId = parseInt(req.params.id);
+    const goalData = {
+      ...req.body,
+      updatedBy: req.user?.id,
+      updatedAt: new Date()
+    };
+    
+    const [updatedGoal] = await db.update(businessGoals)
+      .set(goalData)
+      .where(eq(businessGoals.id, goalId))
+      .returning();
+      
+    res.json(updatedGoal);
+  } catch (error: any) {
+    console.error("Error updating business goal:", error);
+    res.status(500).json({ error: "Failed to update business goal" });
+  }
+});
+
+// Delete a business goal
+router.delete("/api/business-goals/:id", requireAuth, async (req, res) => {
+  try {
+    const goalId = parseInt(req.params.id);
+    await db.delete(businessGoals).where(eq(businessGoals.id, goalId));
+    res.status(204).send();
+  } catch (error: any) {
+    console.error("Error deleting business goal:", error);
+    res.status(500).json({ error: "Failed to delete business goal" });
+  }
+});
+
+// Get goal progress
+router.get("/api/goal-progress", requireAuth, async (req, res) => {
+  try {
+    const progress = await db.select().from(goalProgress).orderBy(goalProgress.progressDate);
+    res.json(progress);
+  } catch (error: any) {
+    console.error("Error fetching goal progress:", error);
+    res.status(500).json({ error: "Failed to fetch goal progress" });
+  }
+});
+
+// Create goal progress entry
+router.post("/api/goal-progress", requireAuth, async (req, res) => {
+  try {
+    const progressData = {
+      ...req.body,
+      reportedBy: req.user?.id
+    };
+    
+    const [newProgress] = await db.insert(goalProgress).values(progressData).returning();
+    res.json(newProgress);
+  } catch (error: any) {
+    console.error("Error creating goal progress:", error);
+    res.status(500).json({ error: "Failed to create goal progress" });
+  }
+});
+
+// Get goal risks
+router.get("/api/goal-risks", requireAuth, async (req, res) => {
+  try {
+    const risks = await db.select().from(goalRisks).orderBy(goalRisks.riskScore);
+    res.json(risks);
+  } catch (error: any) {
+    console.error("Error fetching goal risks:", error);
+    res.status(500).json({ error: "Failed to fetch goal risks" });
+  }
+});
+
+// Create goal risk
+router.post("/api/goal-risks", requireAuth, async (req, res) => {
+  try {
+    const riskData = {
+      ...req.body,
+      createdBy: req.user?.id
+    };
+    
+    const [newRisk] = await db.insert(goalRisks).values(riskData).returning();
+    res.json(newRisk);
+  } catch (error: any) {
+    console.error("Error creating goal risk:", error);
+    res.status(500).json({ error: "Failed to create goal risk" });
+  }
+});
+
+// Get goal issues
+router.get("/api/goal-issues", requireAuth, async (req, res) => {
+  try {
+    const issues = await db.select().from(goalIssues).orderBy(goalIssues.severity);
+    res.json(issues);
+  } catch (error: any) {
+    console.error("Error fetching goal issues:", error);
+    res.status(500).json({ error: "Failed to fetch goal issues" });
+  }
+});
+
+// Create goal issue
+router.post("/api/goal-issues", requireAuth, async (req, res) => {
+  try {
+    const issueData = {
+      ...req.body,
+      createdBy: req.user?.id
+    };
+    
+    const [newIssue] = await db.insert(goalIssues).values(issueData).returning();
+    res.json(newIssue);
+  } catch (error: any) {
+    console.error("Error creating goal issue:", error);
+    res.status(500).json({ error: "Failed to create goal issue" });
+  }
+});
+
+// Get goal actions
+router.get("/api/goal-actions", requireAuth, async (req, res) => {
+  try {
+    const actions = await db.select().from(goalActions).orderBy(goalActions.priority);
+    res.json(actions);
+  } catch (error: any) {
+    console.error("Error fetching goal actions:", error);
+    res.status(500).json({ error: "Failed to fetch goal actions" });
+  }
+});
+
+// Create goal action
+router.post("/api/goal-actions", requireAuth, async (req, res) => {
+  try {
+    const actionData = {
+      ...req.body,
+      createdBy: req.user?.id
+    };
+    
+    const [newAction] = await db.insert(goalActions).values(actionData).returning();
+    res.json(newAction);
+  } catch (error: any) {
+    console.error("Error creating goal action:", error);
+    res.status(500).json({ error: "Failed to create goal action" });
+  }
+});
+
+// Get goal KPIs
+router.get("/api/goal-kpis", requireAuth, async (req, res) => {
+  try {
+    const kpis = await db.select().from(goalKpis).orderBy(goalKpis.kpiName);
+    res.json(kpis);
+  } catch (error: any) {
+    console.error("Error fetching goal KPIs:", error);
+    res.status(500).json({ error: "Failed to fetch goal KPIs" });
+  }
+});
+
+// Create goal KPI
+router.post("/api/goal-kpis", requireAuth, async (req, res) => {
+  try {
+    const kpiData = {
+      ...req.body,
+      createdBy: req.user?.id
+    };
+    
+    const [newKpi] = await db.insert(goalKpis).values(kpiData).returning();
+    res.json(newKpi);
+  } catch (error: any) {
+    console.error("Error creating goal KPI:", error);
+    res.status(500).json({ error: "Failed to create goal KPI" });
+  }
+});
+
+// Placeholder endpoints for KPI definitions (if not already implemented)
+router.get("/api/smart-kpi-definitions", requireAuth, async (req, res) => {
+  try {
+    // Return empty array for now if table doesn't exist
+    res.json([]);
+  } catch (error: any) {
+    console.error("Error fetching KPI definitions:", error);
+    res.status(500).json({ error: "Failed to fetch KPI definitions" });
+  }
+});
+
+router.get("/api/smart-kpi-targets/:id", requireAuth, async (req, res) => {
+  try {
+    // Return empty array for now if table doesn't exist
+    res.json([]);
+  } catch (error: any) {
+    console.error("Error fetching KPI targets:", error);
+    res.status(500).json({ error: "Failed to fetch KPI targets" });
+  }
+});
+
+router.get("/api/smart-kpi-actuals/:id", requireAuth, async (req, res) => {
+  try {
+    // Return empty array for now if table doesn't exist
+    res.json([]);
+  } catch (error: any) {
+    console.error("Error fetching KPI actuals:", error);
+    res.status(500).json({ error: "Failed to fetch KPI actuals" });
   }
 });
 

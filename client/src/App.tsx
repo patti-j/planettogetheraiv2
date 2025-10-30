@@ -52,63 +52,12 @@ function useAuthStatus() {
         return;
       }
       
-      // Development mode auto-authentication - bypass login requirement
-      const isDev = import.meta.env.MODE === 'development';
-      if (isDev) {
-        console.log('🔧 [App.tsx] Development mode: Auto-authenticating user');
-        
-        // Check if we already have a token
-        const existingToken = localStorage.getItem('auth_token');
-        if (existingToken) {
-          // Verify the existing token is still valid
-          try {
-            const response = await fetch('/api/auth/me', {
-              headers: {
-                'Authorization': `Bearer ${existingToken}`
-              }
-            });
-            
-            if (response.ok) {
-              const userData = await response.json();
-              localStorage.setItem('user', JSON.stringify(userData));
-              setIsAuthenticated(true);
-              setIsLoading(false);
-              return;
-            }
-            // Token is invalid, remove it
-            localStorage.removeItem('auth_token');
-          } catch (error) {
-            console.error('Error validating existing dev token:', error);
-            localStorage.removeItem('auth_token');
-          }
-        }
-        
-        // Fetch a new development token
-        try {
-          console.log('🔧 Fetching development authentication token...');
-          const response = await fetch('/api/auth/dev-token');
-          
-          if (response.ok) {
-            const data = await response.json();
-            
-            // Store the token and user data
-            localStorage.setItem('auth_token', data.token);
-            localStorage.setItem('user', JSON.stringify(data.user));
-            
-            console.log('🔧 Development token stored successfully');
-            setIsAuthenticated(true);
-          } else {
-            console.error('Failed to get development token');
-            setIsAuthenticated(false);
-          }
-        } catch (error) {
-          console.error('Error fetching development token:', error);
-          setIsAuthenticated(false);
-        }
-        
-        setIsLoading(false);
-        return;
-      }
+      // DISABLED AUTO-LOGIN - User must manually log in
+      // const isDev = import.meta.env.MODE === 'development';
+      // if (isDev) { ... auto-login code ... }
+      
+      // Always require manual authentication
+      console.log('🔧 [App.tsx] Manual authentication required');
       
       // Check token-based authentication
       try {
@@ -125,16 +74,26 @@ function useAuthStatus() {
           }
         });
         
+        console.log('🔐 [App.tsx] Auth check response:', {
+          status: response.status,
+          ok: response.ok,
+          hasToken: !!token,
+          tokenPreview: token?.substring(0, 20) + '...'
+        });
+        
         if (response.status === 401) {
           // Token invalid/expired - clear it
+          console.error('🔐 [App.tsx] Token invalid/expired (401), clearing localStorage');
           localStorage.removeItem('auth_token');
           setIsAuthenticated(false);
         } else if (response.ok) {
           const userData = await response.json();
+          console.log('🔐 [App.tsx] Authentication successful, user:', userData.user?.username);
           localStorage.setItem('user', JSON.stringify(userData));
           setIsAuthenticated(true);
         } else {
           // Authentication failed
+          console.error('🔐 [App.tsx] Authentication failed with status:', response.status);
           setIsAuthenticated(false);
         }
       } catch (error) {

@@ -33,6 +33,12 @@ export async function apiRequest(
     headers['Authorization'] = `Bearer ${token}`;
   }
   
+  // Add explicit logout header for development mode
+  const hasExplicitlyLoggedOut = localStorage.getItem('dev_explicit_logout') === 'true';
+  if (hasExplicitlyLoggedOut) {
+    headers['X-Dev-Explicit-Logout'] = 'true';
+  }
+  
   try {
     const res = await fetch(url, {
       method: method.toUpperCase(),
@@ -70,6 +76,12 @@ export const getQueryFn: <T>(options: {
     const token = localStorage.getItem('auth_token');
     if (token) {
       headers['Authorization'] = `Bearer ${token}`;
+    }
+    
+    // Add explicit logout header for development mode
+    const hasExplicitlyLoggedOut = localStorage.getItem('dev_explicit_logout') === 'true';
+    if (hasExplicitlyLoggedOut) {
+      headers['X-Dev-Explicit-Logout'] = 'true';
     }
     
     const res = await fetch(queryKey.join("/") as string, {

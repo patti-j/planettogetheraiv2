@@ -330,7 +330,7 @@ export default function AIScenarioCreator() {
                   <Loader2 className="h-4 w-4 animate-spin" />
                   <span className="text-sm text-gray-500">Loading plants...</span>
                 </div>
-              ) : plants.length === 0 ? (
+              ) : (plants as Plant[]).length === 0 ? (
                 <div className="text-center py-8">
                   <Factory className="h-12 w-12 mx-auto text-gray-400 mb-4" />
                   <p className="text-gray-500">
@@ -575,7 +575,10 @@ export default function AIScenarioCreator() {
                       </Badge>
                     </CardTitle>
                     <CardDescription>
-                      {scenario.description}
+                      {typeof scenario.description === 'object' && scenario.description !== null 
+                        ? (scenario.description.content || 
+                           JSON.stringify(scenario.description, null, 2))
+                        : scenario.description}
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-4">
@@ -588,14 +591,14 @@ export default function AIScenarioCreator() {
                             <TrendingUp className="h-5 w-5 mx-auto mb-1 text-blue-500" />
                             <div className="text-sm font-medium">Efficiency</div>
                             <div className="text-lg font-bold text-blue-600">
-                              {scenario.predicted_metrics.efficiency_score}%
+                              {scenario.predicted_metrics.production_efficiency || scenario.predicted_metrics.efficiency_score || 0}%
                             </div>
                           </div>
                           <div className="text-center p-3 bg-green-50 rounded-lg">
                             <Target className="h-5 w-5 mx-auto mb-1 text-green-500" />
                             <div className="text-sm font-medium">On-Time</div>
                             <div className="text-lg font-bold text-green-600">
-                              {scenario.predicted_metrics.on_time_delivery_percent}%
+                              {scenario.predicted_metrics.on_time_delivery || scenario.predicted_metrics.on_time_delivery_percent || 0}%
                             </div>
                           </div>
                         </div>

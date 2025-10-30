@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Force Logout</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background: #f0f2f5;
+        }
+        .container {
+            text-align: center;
+            padding: 40px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            max-width: 400px;
+        }
+        button {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            font-size: 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin: 10px;
+        }
+        button:hover {
+            background: #2563eb;
+        }
+        .success {
+            color: #10b981;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Manual Logout Control</h1>
+        <p>Use this page to force logout and access the login screen</p>
+        
+        <button onclick="forceLogout()">Force Logout</button>
+        <button onclick="clearLogout()">Clear Logout (Allow Auto-Login)</button>
+        
+        <div id="status"></div>
+    </div>
+    
+    <script>
+        function forceLogout() {
+            // Set the explicit logout flag
+            localStorage.setItem('dev_explicit_logout', 'true');
+            
+            // Clear all authentication tokens
+            localStorage.removeItem('auth_token');
+            localStorage.removeItem('user');
+            localStorage.removeItem('portal_token');
+            localStorage.removeItem('portal_user');
+            
+            // Clear session storage too
+            sessionStorage.clear();
+            
+            // Show status
+            document.getElementById('status').innerHTML = '<p class="success">✓ Logout forced. Redirecting to login...</p>';
+            
+            // Redirect to login after a short delay
+            setTimeout(() => {
+                window.location.href = '/login';
+            }, 1000);
+        }
+        
+        function clearLogout() {
+            // Remove the explicit logout flag
+            localStorage.removeItem('dev_explicit_logout');
+            
+            // Show status
+            document.getElementById('status').innerHTML = '<p class="success">✓ Auto-login enabled. Redirecting to home...</p>';
+            
+            // Redirect to home
+            setTimeout(() => {
+                window.location.href = '/home';
+            }, 1000);
+        }
+        
+        // Show current status
+        const hasLogoutFlag = localStorage.getItem('dev_explicit_logout') === 'true';
+        document.getElementById('status').innerHTML = hasLogoutFlag 
+            ? '<p>Current status: <strong>Logged out</strong> (manual login required)</p>'
+            : '<p>Current status: <strong>Auto-login enabled</strong></p>';
+    </script>
+</body>
+</html>

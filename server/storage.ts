@@ -13,6 +13,8 @@ import {
   algorithmTests, algorithmDeployments, algorithmFeedback,
   algorithmFeedbackComments, algorithmFeedbackVotes,
   algorithmGovernanceApprovals,
+  // Algorithm Requirements tables
+  algorithmRequirements, algorithmRequirementAssociations, algorithmRequirementValidations,
   type User, type InsertUser, type Role, type Permission, type UserRole, type RolePermission,
   type CompanyOnboarding, type InsertCompanyOnboarding,
   type UserPreferences, type InsertUserPreferences,
@@ -38,6 +40,10 @@ import {
   type AlgorithmDeployment, type InsertAlgorithmDeployment,
   type AlgorithmFeedback, type InsertAlgorithmFeedback,
   type AlgorithmGovernanceApproval, type InsertAlgorithmGovernanceApproval,
+  // Algorithm Requirements types
+  type AlgorithmRequirement, type InsertAlgorithmRequirement,
+  type AlgorithmRequirementAssociation, type InsertAlgorithmRequirementAssociation,
+  type AlgorithmRequirementValidation, type InsertAlgorithmRequirementValidation,
   // Master Data types
   items, capabilities,
   type Item, type InsertItem,
@@ -263,6 +269,38 @@ export interface IStorage {
   createSavedForecast(data: InsertSavedForecast): Promise<SavedForecast>;
   updateSavedForecast(id: number, data: Partial<InsertSavedForecast>): Promise<SavedForecast | undefined>;
   deleteSavedForecast(id: number): Promise<boolean>;
+
+  // Optimization Studio
+  getOptimizationAlgorithms(category?: string, status?: string): Promise<OptimizationAlgorithm[]>;
+  getStandardAlgorithms(): Promise<OptimizationAlgorithm[]>;
+  getAlgorithmTests(): Promise<AlgorithmTest[]>;
+  getAlgorithmDeployments(): Promise<AlgorithmDeployment[]>;
+  getAlgorithmFeedback(): Promise<AlgorithmFeedback[]>;
+  getGovernanceApprovals(): Promise<AlgorithmGovernanceApproval[]>;
+  getGovernanceDeployments(): Promise<any[]>;
+  createOptimizationAlgorithm(algorithm: InsertOptimizationAlgorithm): Promise<OptimizationAlgorithm>;
+  updateOptimizationAlgorithm(id: number, data: Partial<InsertOptimizationAlgorithm>): Promise<OptimizationAlgorithm | undefined>;
+  createAlgorithmTest(test: InsertAlgorithmTest): Promise<AlgorithmTest>;
+  createAlgorithmFeedback(feedback: InsertAlgorithmFeedback): Promise<AlgorithmFeedback>;
+  createGovernanceApproval(approval: InsertAlgorithmGovernanceApproval): Promise<AlgorithmGovernanceApproval>;
+
+  // Algorithm Requirements Management
+  getAlgorithmRequirements(filters?: { requirementType?: string; category?: string; priority?: string }): Promise<AlgorithmRequirement[]>;
+  getAlgorithmRequirement(id: number): Promise<AlgorithmRequirement | undefined>;
+  createAlgorithmRequirement(data: InsertAlgorithmRequirement): Promise<AlgorithmRequirement>;
+  updateAlgorithmRequirement(id: number, data: Partial<InsertAlgorithmRequirement>): Promise<AlgorithmRequirement | undefined>;
+  deleteAlgorithmRequirement(id: number): Promise<boolean>;
+
+  // Algorithm Requirement Associations
+  getAlgorithmRequirementAssociations(algorithmId?: number, requirementId?: number): Promise<AlgorithmRequirementAssociation[]>;
+  createAlgorithmRequirementAssociation(data: InsertAlgorithmRequirementAssociation): Promise<AlgorithmRequirementAssociation>;
+  updateAlgorithmRequirementAssociation(id: number, data: Partial<InsertAlgorithmRequirementAssociation>): Promise<AlgorithmRequirementAssociation | undefined>;
+  deleteAlgorithmRequirementAssociation(id: number): Promise<boolean>;
+
+  // Algorithm Requirement Validations  
+  getAlgorithmRequirementValidations(filters?: { algorithmId?: number; requirementId?: number; testRunId?: number; validationStatus?: string }): Promise<AlgorithmRequirementValidation[]>;
+  createAlgorithmRequirementValidation(data: InsertAlgorithmRequirementValidation): Promise<AlgorithmRequirementValidation>;
+  getLatestValidations(algorithmId: number): Promise<AlgorithmRequirementValidation[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -1980,6 +2018,193 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error('Error creating approval:', error);
       throw error;
+    }
+  }
+
+  // ============================================
+  // Algorithm Requirements Management Methods
+  // ============================================
+
+  async getAlgorithmRequirements(filters?: { requirementType?: string; category?: string; priority?: string }): Promise<AlgorithmRequirement[]> {
+    try {
+      let query = db.select().from(algorithmRequirements);
+      
+      const conditions = [];
+      if (filters?.requirementType) conditions.push(eq(algorithmRequirements.requirementType, filters.requirementType));
+      if (filters?.category) conditions.push(eq(algorithmRequirements.category, filters.category));
+      if (filters?.priority) conditions.push(eq(algorithmRequirements.priority, filters.priority));
+      
+      if (conditions.length > 0) {
+        query = query.where(and(...conditions));
+      }
+      
+      return await query.orderBy(desc(algorithmRequirements.createdAt));
+    } catch (error) {
+      console.error('Error fetching algorithm requirements:', error);
+      return [];
+    }
+  }
+
+  async getAlgorithmRequirement(id: number): Promise<AlgorithmRequirement | undefined> {
+    try {
+      const [requirement] = await db.select()
+        .from(algorithmRequirements)
+        .where(eq(algorithmRequirements.id, id));
+      return requirement || undefined;
+    } catch (error) {
+      console.error('Error fetching algorithm requirement:', error);
+      return undefined;
+    }
+  }
+
+  async createAlgorithmRequirement(data: InsertAlgorithmRequirement): Promise<AlgorithmRequirement> {
+    try {
+      const [created] = await db.insert(algorithmRequirements)
+        .values(data)
+        .returning();
+      return created;
+    } catch (error) {
+      console.error('Error creating algorithm requirement:', error);
+      throw error;
+    }
+  }
+
+  async updateAlgorithmRequirement(id: number, data: Partial<InsertAlgorithmRequirement>): Promise<AlgorithmRequirement | undefined> {
+    try {
+      const [updated] = await db.update(algorithmRequirements)
+        .set({ ...data, updatedAt: new Date() })
+        .where(eq(algorithmRequirements.id, id))
+        .returning();
+      return updated;
+    } catch (error) {
+      console.error('Error updating algorithm requirement:', error);
+      return undefined;
+    }
+  }
+
+  async deleteAlgorithmRequirement(id: number): Promise<boolean> {
+    try {
+      const result = await db.delete(algorithmRequirements)
+        .where(eq(algorithmRequirements.id, id));
+      return result.count > 0;
+    } catch (error) {
+      console.error('Error deleting algorithm requirement:', error);
+      return false;
+    }
+  }
+
+  // Algorithm Requirement Associations
+
+  async getAlgorithmRequirementAssociations(algorithmId?: number, requirementId?: number): Promise<AlgorithmRequirementAssociation[]> {
+    try {
+      let query = db.select().from(algorithmRequirementAssociations);
+      
+      const conditions = [];
+      if (algorithmId) conditions.push(eq(algorithmRequirementAssociations.algorithmId, algorithmId));
+      if (requirementId) conditions.push(eq(algorithmRequirementAssociations.requirementId, requirementId));
+      
+      if (conditions.length > 0) {
+        query = query.where(and(...conditions));
+      }
+      
+      return await query.orderBy(desc(algorithmRequirementAssociations.associatedAt));
+    } catch (error) {
+      console.error('Error fetching algorithm requirement associations:', error);
+      return [];
+    }
+  }
+
+  async createAlgorithmRequirementAssociation(data: InsertAlgorithmRequirementAssociation): Promise<AlgorithmRequirementAssociation> {
+    try {
+      const [created] = await db.insert(algorithmRequirementAssociations)
+        .values(data)
+        .returning();
+      return created;
+    } catch (error) {
+      console.error('Error creating algorithm requirement association:', error);
+      throw error;
+    }
+  }
+
+  async updateAlgorithmRequirementAssociation(id: number, data: Partial<InsertAlgorithmRequirementAssociation>): Promise<AlgorithmRequirementAssociation | undefined> {
+    try {
+      const [updated] = await db.update(algorithmRequirementAssociations)
+        .set(data)
+        .where(eq(algorithmRequirementAssociations.id, id))
+        .returning();
+      return updated;
+    } catch (error) {
+      console.error('Error updating algorithm requirement association:', error);
+      return undefined;
+    }
+  }
+
+  async deleteAlgorithmRequirementAssociation(id: number): Promise<boolean> {
+    try {
+      const result = await db.delete(algorithmRequirementAssociations)
+        .where(eq(algorithmRequirementAssociations.id, id));
+      return result.count > 0;
+    } catch (error) {
+      console.error('Error deleting algorithm requirement association:', error);
+      return false;
+    }
+  }
+
+  // Algorithm Requirement Validations
+
+  async getAlgorithmRequirementValidations(filters?: { algorithmId?: number; requirementId?: number; testRunId?: number; validationStatus?: string }): Promise<AlgorithmRequirementValidation[]> {
+    try {
+      let query = db.select().from(algorithmRequirementValidations);
+      
+      const conditions = [];
+      if (filters?.algorithmId) conditions.push(eq(algorithmRequirementValidations.algorithmId, filters.algorithmId));
+      if (filters?.requirementId) conditions.push(eq(algorithmRequirementValidations.requirementId, filters.requirementId));
+      if (filters?.testRunId) conditions.push(eq(algorithmRequirementValidations.testRunId, filters.testRunId));
+      if (filters?.validationStatus) conditions.push(eq(algorithmRequirementValidations.validationStatus, filters.validationStatus));
+      
+      if (conditions.length > 0) {
+        query = query.where(and(...conditions));
+      }
+      
+      return await query.orderBy(desc(algorithmRequirementValidations.validatedAt));
+    } catch (error) {
+      console.error('Error fetching algorithm requirement validations:', error);
+      return [];
+    }
+  }
+
+  async createAlgorithmRequirementValidation(data: InsertAlgorithmRequirementValidation): Promise<AlgorithmRequirementValidation> {
+    try {
+      const [created] = await db.insert(algorithmRequirementValidations)
+        .values(data)
+        .returning();
+      return created;
+    } catch (error) {
+      console.error('Error creating algorithm requirement validation:', error);
+      throw error;
+    }
+  }
+
+  async getLatestValidations(algorithmId: number): Promise<AlgorithmRequirementValidation[]> {
+    try {
+      // Get the latest validation for each requirement for this algorithm
+      const validations = await db.select()
+        .from(algorithmRequirementValidations)
+        .where(eq(algorithmRequirementValidations.algorithmId, algorithmId))
+        .orderBy(desc(algorithmRequirementValidations.validatedAt));
+      
+      // Group by requirementId and get the latest one for each
+      const latestMap = new Map<number, AlgorithmRequirementValidation>();
+      for (const validation of validations) {
+        if (!latestMap.has(validation.requirementId)) {
+          latestMap.set(validation.requirementId, validation);
+        }
+      }
+      
+      return Array.from(latestMap.values());
+    } catch (error) {
+      console.error('Error fetching latest validations:', error);
+      return [];
     }
   }
 

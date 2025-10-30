@@ -166,69 +166,14 @@ export function useAuth() {
     refetchInterval: false, // Disable auto-refetch to prevent login page issues
     // Handle 401 errors gracefully - treat as not authenticated rather than error
     queryFn: async ({ queryKey }) => {
-      // Development mode auto-login: bypass authentication for easier previews
-      const isDev = import.meta.env.MODE === 'development';
+      // DISABLED AUTO-LOGIN - User must manually log in
+      // const isDev = import.meta.env.MODE === 'development';
+      // if (isDev) { ... auto-login code ... }
       
       // Token-based authentication - get token from localStorage
       let token = localStorage.getItem('auth_token');
       if (!token) {
-        // In development mode, fetch a development token
-        if (isDev) {
-          console.log('🔧 [useAuth] Development mode: Fetching development token...');
-          try {
-            const devTokenResponse = await fetch('/api/auth/dev-token');
-            if (devTokenResponse.ok) {
-              const devData = await devTokenResponse.json();
-              
-              // Store the token and user data
-              localStorage.setItem('auth_token', devData.token);
-              localStorage.setItem('user', JSON.stringify(devData.user));
-              
-              console.log('🔧 [useAuth] Development token stored successfully');
-              token = devData.token;
-              
-              // Return the user data with proper permissions
-              if (devData.user.roles && Array.isArray(devData.user.roles)) {
-                devData.user.roles = devData.user.roles.map((role: any) => {
-                  if (!role.permissions || role.permissions.length === 0) {
-                    return createRoleStructure(role.name);
-                  }
-                  return role;
-                });
-              } else {
-                devData.user.roles = [createRoleStructure('Administrator')];
-              }
-              
-              return devData.user;
-            } else {
-              console.error('Failed to get development token from server');
-              // Fallback to local user object
-              const devUser = {
-                id: 1,
-                username: "admin",
-                email: "admin@planettogether.com",
-                firstName: "Admin",
-                lastName: "User",
-                isActive: true,
-                roles: [createRoleStructure('Administrator')]
-              };
-              return devUser;
-            }
-          } catch (error) {
-            console.error('Error fetching development token:', error);
-            // Fallback to local user object
-            const devUser = {
-              id: 1,
-              username: "admin",
-              email: "admin@planettogether.com",
-              firstName: "Admin",
-              lastName: "User",
-              isActive: true,
-              roles: [createRoleStructure('Administrator')]
-            };
-            return devUser;
-          }
-        }
+        console.log('🔧 [useAuth] No token found, manual login required');
         return null;
       }
 
@@ -241,22 +186,7 @@ export function useAuth() {
       if (res.status === 401) {
         // Token invalid/expired - clear it
         localStorage.removeItem('auth_token');
-        
-        // In development mode, fall back to auto-login even with invalid token
-        if (isDev) {
-          console.log('🔧 Development mode: Token invalid, using auto-login as admin user');
-          const devUser = {
-            id: 1,
-            username: "admin",
-            email: "admin@planettogether.com",
-            firstName: "Admin",
-            lastName: "User",
-            isActive: true,
-            roles: [createRoleStructure('Administrator')]
-          };
-          return devUser;
-        }
-        
+        console.log('🔧 [useAuth] Token invalid/expired, manual login required');
         return null;
       }
 
@@ -308,7 +238,15 @@ export function useAuth() {
         
         // Token-based auth - store token in localStorage
         if (userData.token) {
+          console.log('🔐 [Login] Storing auth token in localStorage');
           localStorage.setItem('auth_token', userData.token);
+          console.log('🔐 [Login] Token stored successfully, preview:', userData.token.substring(0, 20) + '...');
+          
+          // Verify token was actually saved
+          const savedToken = localStorage.getItem('auth_token');
+          console.log('🔐 [Login] Verification - token retrieved from localStorage:', savedToken ? 'YES' : 'NO');
+        } else {
+          console.error('🔐 [Login] ERROR: No token in response from server!');
         }
         
         // CRITICAL FIX: Ensure permissions are properly set
@@ -349,6 +287,13 @@ export function useAuth() {
     },
     onSuccess: async (data) => {
       try {
+        // Clear the explicit logout flag since user is now logging in
+        const isDev = import.meta.env.MODE === 'development';
+        if (isDev) {
+          localStorage.removeItem('dev_explicit_logout');
+          console.log('🔧 Cleared explicit logout flag after successful login');
+        }
+        
         // Detect if user is on mobile device
         const isMobile = window.innerWidth <= 480 || /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
         const redirectPath = isMobile ? '/mobile-home' : '/home';
@@ -431,6 +376,13 @@ export function useAuth() {
       } catch (error) {
         console.error("Server logout failed:", error);
         // Continue with local cleanup even if server fails
+      }
+      
+      // Set flag to track explicit logout in development mode
+      const isDev = import.meta.env.MODE === 'development';
+      if (isDev) {
+        localStorage.setItem('dev_explicit_logout', 'true');
+        console.log("✓ Marked explicit logout in development mode");
       }
       
       // Clear only authentication-related items from localStorage
