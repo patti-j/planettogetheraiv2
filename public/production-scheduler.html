@@ -3837,7 +3837,13 @@
                         timeline.sort((a, b) => a.start.getTime() - b.start.getTime());
                         
                         // Check if we can fit before the first operation
-                        if (timeline[0].start.getTime() - earliestPossibleStart.getTime() >= duration) {
+                        // CRITICAL FIX: Must check that we can start at or after earliestPossibleStart
+                        // AND still finish before the first operation starts
+                        const firstOpStart = timeline[0].start.getTime();
+                        const earliestTime = earliestPossibleStart.getTime();
+                        
+                        if (earliestTime + duration <= firstOpStart) {
+                            // We can fit before the first operation, starting at earliest possible time
                             return earliestPossibleStart;
                         }
                         
@@ -3849,19 +3855,19 @@
                             
                             // Check if this gap is big enough and respects earliest start
                             if (gapSize >= duration) {
-                                // If gap starts after or at earliest possible start, use gap start
-                                if (gapStart.getTime() >= earliestPossibleStart.getTime()) {
-                                    return gapStart;
-                                }
-                                // If gap ends late enough to fit operation after earliest start
-                                else if (earliestPossibleStart.getTime() + duration <= gapEnd.getTime()) {
-                                    return earliestPossibleStart;
+                                // The operation must start at or after earliestPossibleStart
+                                const actualStart = Math.max(gapStart.getTime(), earliestPossibleStart.getTime());
+                                
+                                // Check if starting at actualStart, we can still fit within the gap
+                                if (actualStart + duration <= gapEnd.getTime()) {
+                                    return new Date(actualStart);
                                 }
                             }
                         }
                         
                         // No gaps found, schedule after the last operation
                         const lastEnd = timeline[timeline.length - 1].end;
+                        // CRITICAL: Must respect earliestPossibleStart constraint for sequence order
                         return new Date(Math.max(lastEnd.getTime(), earliestPossibleStart.getTime()));
                     }
                     
