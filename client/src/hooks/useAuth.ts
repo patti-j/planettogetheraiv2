@@ -238,7 +238,15 @@ export function useAuth() {
         
         // Token-based auth - store token in localStorage
         if (userData.token) {
+          console.log('🔐 [Login] Storing auth token in localStorage');
           localStorage.setItem('auth_token', userData.token);
+          console.log('🔐 [Login] Token stored successfully, preview:', userData.token.substring(0, 20) + '...');
+          
+          // Verify token was actually saved
+          const savedToken = localStorage.getItem('auth_token');
+          console.log('🔐 [Login] Verification - token retrieved from localStorage:', savedToken ? 'YES' : 'NO');
+        } else {
+          console.error('🔐 [Login] ERROR: No token in response from server!');
         }
         
         // CRITICAL FIX: Ensure permissions are properly set

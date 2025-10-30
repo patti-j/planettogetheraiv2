@@ -74,16 +74,26 @@ function useAuthStatus() {
           }
         });
         
+        console.log('🔐 [App.tsx] Auth check response:', {
+          status: response.status,
+          ok: response.ok,
+          hasToken: !!token,
+          tokenPreview: token?.substring(0, 20) + '...'
+        });
+        
         if (response.status === 401) {
           // Token invalid/expired - clear it
+          console.error('🔐 [App.tsx] Token invalid/expired (401), clearing localStorage');
           localStorage.removeItem('auth_token');
           setIsAuthenticated(false);
         } else if (response.ok) {
           const userData = await response.json();
+          console.log('🔐 [App.tsx] Authentication successful, user:', userData.user?.username);
           localStorage.setItem('user', JSON.stringify(userData));
           setIsAuthenticated(true);
         } else {
           // Authentication failed
+          console.error('🔐 [App.tsx] Authentication failed with status:', response.status);
           setIsAuthenticated(false);
         }
       } catch (error) {
