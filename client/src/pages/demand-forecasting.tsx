@@ -190,9 +190,6 @@ export default function DemandForecasting() {
   const [forecastName, setForecastName] = useState<string>("");
   const [forecastDescription, setForecastDescription] = useState<string>("");
   
-  // Data analysis state
-  const [dataAnalysis, setDataAnalysis] = useState<DataAnalysis | null>(null);
-  const [showRecommendations, setShowRecommendations] = useState<boolean>(false);
   
   // Fetch SQL Server tables
   const { data: tablesData, isLoading: isLoadingTables } = useQuery({
@@ -412,46 +409,6 @@ export default function DemandForecasting() {
     }
   });
   
-  // Analyze data mutation for intelligent recommendations
-  const analyzeMutation = useMutation({
-    mutationFn: async (data: any) => {
-      return await apiRequest("/api/forecasting/analyze", {
-        method: "POST",
-        body: data
-      });
-    },
-    onSuccess: (data) => {
-      if (data.success && data.analysis) {
-        setDataAnalysis(data.analysis);
-        setShowRecommendations(true);
-        
-        // Auto-select first recommended model
-        if (data.analysis.recommended_models && data.analysis.recommended_models.length > 0) {
-          const modelMap: { [key: string]: string } = {
-            'random_forest': 'Random Forest',
-            'linear_regression': 'Linear Regression',
-            'arima': 'ARIMA',
-            'prophet': 'Prophet'
-          };
-          const recommendedModel = modelMap[data.analysis.recommended_models[0]] || 'Random Forest';
-          setModelType(recommendedModel);
-          
-          toast({
-            title: "Data Analysis Complete",
-            description: `Recommended model: ${recommendedModel}`,
-          });
-        }
-      }
-    },
-    onError: (error: any) => {
-      console.error("Analysis error:", error);
-      toast({
-        variant: "destructive",
-        title: "Analysis Failed",
-        description: error.message || "Failed to analyze data"
-      });
-    }
-  });
 
   // Auto-select first item when in individual mode and forecast is available
   useEffect(() => {
@@ -1364,16 +1321,7 @@ export default function DemandForecasting() {
             
             {/* Model Type */}
             <div className="space-y-2">
-              <Label className="flex items-center gap-2">
-                Model Type
-                {dataAnalysis && dataAnalysis.recommended_models && dataAnalysis.recommended_models.includes(
-                  modelType.toLowerCase().replace(' ', '_')
-                ) && (
-                  <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded">
-                    Recommended
-                  </span>
-                )}
-              </Label>
+              <Label>Model Type</Label>
               <Combobox
                 options={[
                   { value: "Random Forest", label: "Random Forest" },
@@ -1414,46 +1362,44 @@ export default function DemandForecasting() {
             </Label>
           </div>
 
-          {/* AI Model Recommendations */}
-          {showRecommendations && dataAnalysis && (
+          {/* Model Information */}
+          {modelType && (
             <Alert className="bg-blue-50 border-blue-200">
-              <Sparkles className="h-4 w-4 text-blue-600" />
-              <AlertTitle className="text-blue-900">AI Model Recommendations</AlertTitle>
-              <AlertDescription className="space-y-3 text-blue-800">
-                <div>
-                  <strong>Recommended Models:</strong>{" "}
-                  {dataAnalysis.recommended_models.map((model, idx) => (
-                    <span key={model} className="inline-block">
-                      {model.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
-                      {idx < dataAnalysis.recommended_models.length - 1 && ", "}
-                    </span>
-                  ))}
-                </div>
-                <div>
-                  <strong>Analysis Results:</strong>
-                  <ul className="list-disc list-inside mt-1 space-y-1 text-sm">
-                    {dataAnalysis.reasoning.map((reason, idx) => (
-                      <li key={idx}>{reason}</li>
-                    ))}
-                  </ul>
-                </div>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mt-2 text-sm">
-                  <div>
-                    <span className="font-medium">Data Points:</span> {dataAnalysis.data_points}
-                  </div>
-                  <div>
-                    <span className="font-medium">Intermittency:</span>{" "}
-                    {(dataAnalysis.intermittency_ratio * 100).toFixed(1)}%
-                  </div>
-                  <div>
-                    <span className="font-medium">Trend:</span>{" "}
-                    {dataAnalysis.trend_strength > 0.3 ? "Strong" : "Weak"}
-                  </div>
-                  <div>
-                    <span className="font-medium">Seasonality:</span>{" "}
-                    {dataAnalysis.seasonality_detected ? "Yes" : "No"}
-                  </div>
-                </div>
+              <Info className="h-4 w-4 text-blue-600" />
+              <AlertTitle className="text-blue-900">About {modelType}</AlertTitle>
+              <AlertDescription className="space-y-2 text-blue-800 text-sm">
+                {modelType === "Random Forest" && (
+                  <>
+                    <p><strong>Best for:</strong> Complex non-linear patterns, multiple product categories with varying demand patterns</p>
+                    <p><strong>Handles:</strong> Irregular demand, outliers, multiple influencing factors, intermittent demand</p>
+                    <p><strong>Characteristics:</strong> High accuracy, robust to outliers, no data distribution assumptions, handles missing values well</p>
+                    <p className="text-xs italic">💡 Recommended for items with sporadic or unpredictable ordering patterns</p>
+                  </>
+                )}
+                {modelType === "ARIMA" && (
+                  <>
+                    <p><strong>Best for:</strong> Time series with clear trends and regular seasonality patterns</p>
+                    <p><strong>Handles:</strong> Regular ordering patterns, predictable business cycles, steady demand</p>
+                    <p><strong>Characteristics:</strong> Excellent for short-term forecasts, captures trends and seasonality, requires consistent historical data</p>
+                    <p className="text-xs italic">💡 Ideal for products with regular, predictable demand patterns</p>
+                  </>
+                )}
+                {modelType === "Prophet" && (
+                  <>
+                    <p><strong>Best for:</strong> Business forecasting with holidays, events, and special promotions</p>
+                    <p><strong>Handles:</strong> Missing data, outliers, multiple seasonalities, special events impact</p>
+                    <p><strong>Characteristics:</strong> Robust to missing data, handles holidays/events well, good for medium to long-term forecasts</p>
+                    <p className="text-xs italic">💡 Perfect for seasonal products affected by holidays and promotions</p>
+                  </>
+                )}
+                {modelType === "Linear Regression" && (
+                  <>
+                    <p><strong>Best for:</strong> Simple linear trends, steady growth or decline patterns</p>
+                    <p><strong>Handles:</strong> Stable demand with clear linear relationships, baseline forecasting</p>
+                    <p><strong>Characteristics:</strong> Fast computation, highly interpretable, good baseline model, works with limited data</p>
+                    <p className="text-xs italic">💡 Great starting point for products with steady, predictable growth</p>
+                  </>
+                )}
               </AlertDescription>
             </Alert>
           )}
@@ -1576,52 +1522,6 @@ export default function DemandForecasting() {
 
           {/* Action Buttons */}
           <div className="flex gap-2">
-            <Button
-              variant="outline"
-              onClick={async () => {
-                // Validate that we have all required fields
-                if (!selectedTable || !dateColumn || !itemColumn || !quantityColumn) {
-                  toast({
-                    variant: "destructive",
-                    title: "Missing Configuration",
-                    description: "Please select table and all required columns first"
-                  });
-                  return;
-                }
-                
-                // For now, we'll need to fetch the data first
-                // The analyze endpoint will need to fetch from SQL Server
-                toast({
-                  title: "Analyzing Data",
-                  description: "Fetching and analyzing your data patterns..."
-                });
-                
-                // Since we don't have tableData loaded, we'll pass the configuration
-                // and let the backend fetch the data
-                analyzeMutation.mutate({
-                  schema: selectedTable.schema,
-                  table: selectedTable.name,
-                  dateCol: dateColumn,
-                  itemCol: itemColumn,
-                  qtyCol: quantityColumn,
-                  forecastMode: forecastMode,
-                  items: forecastMode === 'individual' ? selectedItems : items
-                });
-              }}
-              disabled={!selectedTable || !dateColumn || !itemColumn || !quantityColumn || analyzeMutation.isPending}
-            >
-              {analyzeMutation.isPending ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Analyzing...
-                </>
-              ) : (
-                <>
-                  <Sparkles className="mr-2 h-4 w-4" />
-                  Analyze Data
-                </>
-              )}
-            </Button>
             <Button
               onClick={handleTrain}
               disabled={trainMutation.isPending || !!trainingProgress}
