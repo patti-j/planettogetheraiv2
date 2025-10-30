@@ -1750,9 +1750,9 @@ export default function DemandForecasting() {
                           className="w-48 h-8"
                         />
                         <Combobox
-                          options={[
-                            { value: "Overall", label: "Overall (All Items)" },
-                            ...(forecastMutation.data.forecastedItemNames || [])
+                          options={
+                            // Don't include "Overall" option in individual mode
+                            (forecastMutation.data.forecastedItemNames || [])
                               .filter((item: string) => 
                                 item.toLowerCase().includes(forecastSearchQuery.toLowerCase())
                               )
@@ -1760,7 +1760,7 @@ export default function DemandForecasting() {
                                 value: item,
                                 label: item
                               }))
-                          ]}
+                          }
                           value={selectedForecastItem}
                           onValueChange={setSelectedForecastItem}
                           placeholder="Select item..."
