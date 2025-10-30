@@ -1765,7 +1765,7 @@
                         jobId: operation.jobExternalId || operation.jobId || operation.job_id, // Use jobExternalId for dependency generation
                         jobExternalId: operation.jobExternalId || operation.job_external_id || operation.batch_id, // Store batch ID separately
                         jobName: operation.jobName,
-                        jobPriority: operation.jobPriority || operation.priority || 999, // CRITICAL: Map priority field from API
+                        jobPriority: Number(operation.jobPriority), // Direct mapping from API - no fallbacks
                         jobDueDate: operation.dueDate, // CRITICAL: Add job Need-By date for ALAP scheduling
                         operationName: operation.name,
                         resourceName: operation.resourceName,
@@ -3609,21 +3609,15 @@
                     
                     // Get the job priority (1=highest priority, 5=lowest priority)
                     const getPriority = (event) => {
-                        // Try to get priority from event (already mapped from API)
-                        const priority = event.jobPriority || 
-                               event.ptData?.jobPriority || event.ptData?.priority ||
-                               event.data?.jobPriority || event.data?.priority ||
-                               999; // Default low priority if not found
+                        // Direct access to jobPriority - no fallbacks
+                        const priority = event.jobPriority;
                         
-                        // DIAGNOSTIC: Log what we're seeing
-                        if (priority === 999) {
-                            console.log('🔍 Priority 999 for', event.name, ':', { 
-                                jobPriority: event.jobPriority,
-                                ptData: event.ptData,
-                                data: event.data,
-                                allKeys: Object.keys(event)
-                            });
+                        // Log if priority is undefined or NaN
+                        if (!priority || isNaN(priority)) {
+                            console.log('⚠️ No priority for', event.name, '- jobPriority:', event.jobPriority);
+                            return 999; // Default low priority only if truly missing
                         }
+                        
                         return priority;
                     };
                     
