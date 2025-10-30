@@ -3639,8 +3639,8 @@
                         // Sort by job PRIORITY ascending
                         // Priority 1 (highest) should schedule first and finish first
                         // Priority 5 (lowest) should schedule last and finish last
-                        const priorityA = getJobPriority(opsA[0]);
-                        const priorityB = getJobPriority(opsB[0]);
+                        const priorityA = getPriority(opsA[0]);
+                        const priorityB = getPriority(opsB[0]);
                         
                         if (priorityA !== priorityB) {
                             return priorityA - priorityB; // Ascending: 1, 2, 3, 4, 5
