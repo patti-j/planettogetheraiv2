@@ -4204,12 +4204,22 @@
                     const scheduler = window.scheduler;
                     const { project, eventStore, dependencyStore, assignmentStore, resourceStore } = scheduler;
                     
-                    // 🔧 CRITICAL: Temporarily clear dependencies to prevent conflicts during ALAP
+                    // 🔧 CRITICAL: Disable ALL auto-scheduling features to prevent interference
                     const originalAutoSync = project.autoSync;
                     const originalValidateConstraintInterval = project.validateConstraintInterval;
+                    const originalSuspendEvents = eventStore.suspendEvents;
+                    const originalAutoRescheduleTasks = scheduler.autoRescheduleTasks;
                     
+                    // Completely disable Bryntum's automatic scheduling
                     project.autoSync = false; // Prevent automatic syncing during changes
                     project.validateConstraintInterval = false; // Disable constraint validation during scheduling
+                    eventStore.suspendEvents = true; // Suspend event store notifications
+                    scheduler.autoRescheduleTasks = false; // CRITICAL: Disable auto-rescheduling
+                    
+                    // Disable the scheduling engine completely
+                    if (project.schedulingEngine) {
+                        project.schedulingEngine.disabled = true;
+                    }
                     
                     // No need to clear dependencies - they're only in the feature store for visual display
                     console.log('🎨 Dependencies are visual-only, no clearing needed for ALAP scheduling');
@@ -4360,6 +4370,9 @@
                         console.log(`  ${index + 1}. Priority ${priority}: ${jobKey} (Due: ${due.toLocaleDateString()}) - schedules ${index === 0 ? 'FIRST (placed later/finishes last)' : index === sortedJobs.length - 1 ? 'LAST (placed earlier/finishes first)' : 'in middle'}`);
                     });
                     
+                    // Track all scheduled intervals manually to prevent conflicts
+                    const manualBusyIntervals = new Map(); // resourceId -> Array of {start, end, operationId}
+                    
                     // Process each job completely
                     for (const [jobKey, operations] of sortedJobs) {
                         console.log(`\n🏭 Processing Job: ${jobKey}`);
@@ -4425,12 +4438,24 @@
                                 }
                             }
                             
-                            // Set the dates on the operation
-                            operation.set({
-                                startDate: startDate,
-                                endDate: actualEndDate,
-                                manuallyScheduled: false
-                            });
+                            // CRITICAL: Use direct property setting to avoid triggering auto-reschedule
+                            operation.startDate = startDate;
+                            operation.endDate = actualEndDate;
+                            operation.manuallyScheduled = false;
+                            
+                            // Immediately track this interval as busy to prevent overlap
+                            if (resource) {
+                                const resourceId = String(resource.id);
+                                if (!manualBusyIntervals.has(resourceId)) {
+                                    manualBusyIntervals.set(resourceId, []);
+                                }
+                                manualBusyIntervals.get(resourceId).push({
+                                    start: startDate,
+                                    end: actualEndDate,
+                                    operationId: operation.id
+                                });
+                                console.log(`  📌 Marked interval busy on ${resource.name}: ${startDate.toLocaleString()} - ${actualEndDate.toLocaleString()}`);
+                            }
                             
                             console.log(`  ⬅️ Scheduled: ${operation.name} @ ${resource?.name || 'no-resource'}`);
                             console.log(`     ${startDate.toLocaleString()} to ${actualEndDate.toLocaleString()}`);
@@ -4441,10 +4466,8 @@
                         
                         console.log(`  ✅ Job ${jobKey} complete - scheduled ${operations.length} operations by sequence`);
                         
-                        // 🔧 CRITICAL: Commit changes after each job to ensure resource conflicts are visible
-                        // This ensures findLatestFreeSlotOnResource sees the updated schedules
-                        await project.commitAsync();
-                        console.log(`  📝 Committed job ${jobKey} to stores`);
+                        // 🔧 IMPORTANT: Do NOT commit mid-process to avoid triggering reschedules
+                        // We'll commit everything at once after all jobs are placed
                     }
                     
                     // Handle any orphan operations (no job ID) - FILTER THEM OUT
@@ -4469,17 +4492,25 @@
                         });
                     }
                     
-                    // Commit and propagate with backward direction
+                    // 🔧 CRITICAL: Commit all changes at once BEFORE restoring settings
+                    console.log('📝 Committing all ALAP scheduled operations...');
                     await project.commitAsync();
-                    await project.propagate();
+                    console.log('✅ All operations committed');
                     
                     // Restore to Forward for normal operation
                     project.direction = 'Forward';
                     project.schedulingDirection = 'forward';
                     
-                    // 🔧 CRITICAL: Restore validation settings and dependencies
+                    // 🔧 CRITICAL: Restore all auto-scheduling settings
                     project.autoSync = originalAutoSync;
                     project.validateConstraintInterval = originalValidateConstraintInterval;
+                    eventStore.suspendEvents = originalSuspendEvents;
+                    scheduler.autoRescheduleTasks = originalAutoRescheduleTasks;
+                    
+                    // Re-enable the scheduling engine
+                    if (project.schedulingEngine) {
+                        project.schedulingEngine.disabled = false;
+                    }
                     
                     // Restore visual-only dependencies to feature store (not project store)
                     console.log('🔍 Restoring visual dependencies...');
