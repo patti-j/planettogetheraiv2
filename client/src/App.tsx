@@ -55,15 +55,7 @@ function useAuthStatus() {
       // Development mode auto-authentication - bypass login requirement
       const isDev = import.meta.env.MODE === 'development';
       
-      // Clear the explicit logout flag when navigating to /home to allow re-authentication
-      if (isDev && currentPath === '/home') {
-        const hasLogoutFlag = localStorage.getItem('dev_explicit_logout') === 'true';
-        if (hasLogoutFlag) {
-          console.log('🔧 [App.tsx] Clearing explicit logout flag to allow re-authentication');
-          localStorage.removeItem('dev_explicit_logout');
-        }
-      }
-      
+      // Respect explicit logout in development mode - don't auto-clear the flag
       const hasExplicitlyLoggedOut = localStorage.getItem('dev_explicit_logout') === 'true';
       
       if (isDev && !hasExplicitlyLoggedOut) {
