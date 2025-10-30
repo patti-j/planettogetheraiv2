@@ -1572,8 +1572,14 @@ Return only the JSON object, no other text.`;
     }
     
     // Check for navigation intent - be more inclusive
-    const navigationKeywords = ['show me', 'show', 'take me to', 'go to', 'open', 'view', 'display', 'navigate to', 'see the', 'see', 'access'];
+    const navigationKeywords = ['show me', 'show', 'take me to', 'go to', 'open', 'view', 'display', 'navigate to', 'see the', 'see', 'access', 'load', 'pull up'];
     const hasNavigationIntent = navigationKeywords.some(keyword => query.toLowerCase().includes(keyword));
+    
+    // Check for report listing intent
+    const listingKeywords = ['list', 'what', 'which', 'available', 'all'];
+    const reportKeywords = ['report', 'reports', 'dashboard', 'dashboards'];
+    const hasListingIntent = listingKeywords.some(lk => query.toLowerCase().includes(lk)) && 
+                             reportKeywords.some(rk => query.toLowerCase().includes(rk));
     
     // Also check for direct page mentions (like "master production schedule")
     const directPageMentions = query.toLowerCase().includes('production schedule') || 
@@ -2879,6 +2885,52 @@ Please answer their question using this data.`
     const navigationMapping = await this.getNavigationMapping();
     
     try {
+      // Check if this is a report-specific request
+      const reportKeywords = ['report', 'dashboard', 'analytics', 'metrics', 'kpi', 'visualization'];
+      const isReportRequest = reportKeywords.some(kw => query.toLowerCase().includes(kw));
+      
+      // Check for specific report names in the query
+      const reportNameMatch = query.match(/(?:show|open|load|view|display)\s+(?:the\s+)?([^,.\s]+(?:\s+[^,.\s]+)*)\s*(?:report|dashboard)?/i);
+      
+      if (isReportRequest || reportNameMatch) {
+        console.log('🎯 Detected report request, searching for reports...');
+        
+        try {
+          // Search for the report using our discovery API
+          const reportName = reportNameMatch ? reportNameMatch[1] : query;
+          const searchResponse = await fetch(`http://localhost:5000/api/reports/find?name=${encodeURIComponent(reportName)}`, {
+            headers: {
+              'Authorization': `Bearer ${context.userId}` // Use proper auth token
+            }
+          });
+          
+          if (searchResponse.ok) {
+            const result = await searchResponse.json();
+            if (result.found) {
+              console.log('📊 Found report:', result.report.name);
+              return {
+                content: `Loading ${result.report.name} report...`,
+                action: {
+                  type: 'navigate',
+                  target: result.report.directUrl // Use the direct URL with report parameters
+                }
+              };
+            }
+          }
+        } catch (error) {
+          console.error('Error searching for report:', error);
+        }
+        
+        // If no specific report found, navigate to reports page
+        return {
+          content: `Taking you to the reports section...`,
+          action: {
+            type: 'navigate',
+            target: '/reports'
+          }
+        };
+      }
+      
       // Create list of available pages for AI
       const availablePages = Object.entries(navigationMapping).map(([key, page]) => 
         `${page.path} - ${page.description}`
@@ -2896,6 +2948,7 @@ ${availablePages}
 
 IMPORTANT RULES:
 - For "production schedule", "production scheduling", "scheduler" requests → use "/production-scheduler"
+- For "reports", "dashboards", "analytics" → use "/reports"
 - For other requests, match to the most relevant available page
 - Respond with just the route path (e.g., "/production-scheduler") or "NONE" if no navigation is needed
 - Focus on the most relevant page that matches the user's intent`
