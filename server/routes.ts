@@ -858,7 +858,6 @@ router.post("/api/recent-pages", async (req, res) => {
       
       try {
         // Verify JWT token properly
-        const jwt = require('jsonwebtoken');
         const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
         const decoded = jwt.verify(token, JWT_SECRET) as any;
         userId = decoded.userId;
@@ -903,9 +902,8 @@ router.get("/api/recent-pages", async (req, res) => {
       const token = authHeader.substring(7);
       
       try {
-        // Verify JWT token properly
-        const jwt = require('jsonwebtoken');
-        const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
+        // Verify JWT token properly - use same secret as enhanced-auth-middleware
+        const JWT_SECRET = process.env.SESSION_SECRET || 'dev-secret-key-change-in-production';
         const decoded = jwt.verify(token, JWT_SECRET) as any;
         userId = decoded.userId;
         
