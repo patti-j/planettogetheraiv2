@@ -354,17 +354,16 @@ router.get("/api/auth/dev-token", async (req, res) => {
     return res.status(403).json({ message: "Forbidden in production" });
   }
   
-  // In development, automatically set up session if not present
-  // This mimics the /api/auth/me development bypass but creates a proper session
-  if (!req.session.userId) {
-    req.session.userId = 1; // Auto-assign admin user in development
-    req.session.isDemo = false;
-    console.log("🔧 Development mode: Auto-creating session for user 1");
-  }
+  // DISABLED AUTO-LOGIN - Manual authentication required
+  // if (!req.session.userId) {
+  //   req.session.userId = 1; // Auto-assign admin user in development
+  //   req.session.isDemo = false;
+  //   console.log("🔧 Development mode: Auto-creating session for user 1");
+  // }
   
-  // Now that session exists, verify we have a user
+  // Require manual authentication - no auto-session creation
   if (!req.session.userId) {
-    return res.status(401).json({ message: "Not authenticated" });
+    return res.status(401).json({ message: "Not authenticated - manual login required" });
   }
   
   console.log("🔧 Development JWT token requested for session user:", req.session.userId);
