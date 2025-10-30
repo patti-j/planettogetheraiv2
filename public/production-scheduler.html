@@ -1506,14 +1506,15 @@
                     const authToken = window.parent?.localStorage?.getItem('auth_token') || localStorage.getItem('auth_token');
                     const authHeaders = authToken ? { 'Authorization': `Bearer ${authToken}` } : {};
                     
-                    // Fetch resources, PT operations, and dependencies from the backend APIs
+                    // Fetch resources, PT operations, jobs, and dependencies from the backend APIs
                     // NOTE: Dependencies are for visual display only - ALAP uses sequence numbers for scheduling
                     const timestamp = Date.now(); // Cache-busting timestamp
-                    const [resourcesResponse, operationsResponse, dependenciesResponse, capabilitiesResponse] = await Promise.all([
+                    const [resourcesResponse, operationsResponse, dependenciesResponse, capabilitiesResponse, jobsResponse] = await Promise.all([
                         fetch('/api/resources?_=' + timestamp, { headers: authHeaders }),
-                        fetch('/api/pt-operations?_=' + timestamp, { headers: authHeaders }), // CRITICAL: Cache-busting to get fresh jobPriority data
+                        fetch('/api/pt-operations?_=' + timestamp, { headers: authHeaders }), 
                         fetch('/api/pt-dependencies?_=' + timestamp, { headers: authHeaders }), // Keep for visual dependency lines
-                        fetch('/api/resources-with-capabilities?_=' + timestamp, { headers: authHeaders })
+                        fetch('/api/resources-with-capabilities?_=' + timestamp, { headers: authHeaders }),
+                        fetch('/api/jobs?_=' + timestamp, { headers: authHeaders }) // CRITICAL: Fetch jobs directly to get real priorities
                     ]);
                     
                     if (resourcesResponse.ok) {
@@ -1633,6 +1634,33 @@
                     } else {
                         console.warn('Failed to fetch dependencies, using empty array');
                     }
+                    
+                    // Process jobs to get real priorities
+                    let jobPriorityMap = new Map();
+                    if (jobsResponse && jobsResponse.ok) {
+                        const jobs = await jobsResponse.json();
+                        console.log('✅ Jobs fetched successfully:', jobs.length);
+                        
+                        // Build simple job priority map from real jobs data
+                        jobs.forEach(job => {
+                            const priority = job.priority || 999;
+                            // Map by various possible job ID fields
+                            if (job.id) jobPriorityMap.set(String(job.id), priority);
+                            if (job.external_id) jobPriorityMap.set(String(job.external_id), priority);
+                            if (job.batch_id) jobPriorityMap.set(String(job.batch_id), priority);
+                            if (job.name) jobPriorityMap.set(job.name, priority);
+                            
+                            console.log(`📊 Job ${job.name || job.id}: Priority ${priority}`);
+                        });
+                        
+                        console.log('✅ Job priority map built with', jobPriorityMap.size, 'entries');
+                        console.log('Job priorities:', Array.from(jobPriorityMap.entries()));
+                    } else {
+                        console.warn('Failed to fetch jobs, will use fallback priorities');
+                    }
+                    
+                    // Store job priority map globally for ASAP algorithm
+                    window.jobPriorityMap = jobPriorityMap;
                     
                     // Process resource capabilities
                     if (capabilitiesResponse && capabilitiesResponse.ok) {
@@ -3615,15 +3643,17 @@
                     // ============================================================================
                     // Note: Using shared getJobKey, getJobNumber, and getSequence functions defined above
                     
-                    // Get the job priority (1=highest priority, 5=lowest priority)
-                    const getPriority = (event) => {
-                        // Direct access to jobPriority - no fallbacks
-                        const priority = event.jobPriority;
+                    // Get job priority from the job priority map
+                    const getJobPriorityForOperation = (event) => {
+                        // Get job key from operation
+                        const jobKey = getJobKey(event);
+                        if (!jobKey) return 999; // Orphan operations get lowest priority
                         
-                        // Log if priority is undefined or NaN
-                        if (!priority || isNaN(priority)) {
-                            console.log('⚠️ No priority for', event.name, '- jobPriority:', event.jobPriority);
-                            return 999; // Default low priority only if truly missing
+                        // Look up priority in the job priority map we built from ptjobs table
+                        const priority = window.jobPriorityMap?.get(String(jobKey)) || 999;
+                        
+                        if (priority === 999) {
+                            console.log('⚠️ No priority found for job', jobKey, 'in job priority map');
                         }
                         
                         return priority;
@@ -3660,14 +3690,14 @@
                     
                     for (const ev of events) {
                         const key = getJobKey(ev);
-                        const priority = getPriority(ev);
+                        const priority = getJobPriorityForOperation(ev);
                         
                         // Debug logging for first few operations
                         if (events.indexOf(ev) < 3) {
                             console.log(`  Operation: ${ev.name}`);
                             console.log(`    jobKey: ${key}`);
                             console.log(`    jobPriority: ${ev.jobPriority}`);
-                            console.log(`    priority from getPriority: ${priority}`);
+                            console.log(`    priority from job map: ${priority}`);
                         }
                         
                         if (!key) {
@@ -3695,7 +3725,7 @@
                     console.log('📊 Before sorting - Job priorities:');
                     for (const [jobKey, operations] of jobOperations.entries()) {
                         if (jobKey !== '_orphans_') {
-                            const priority = getPriority(operations[0]);
+                            const priority = getJobPriorityForOperation(operations[0]);
                             console.log(`  ${jobKey}: Priority ${priority}`);
                         }
                     }
@@ -3708,8 +3738,8 @@
                         // Sort by job PRIORITY ascending
                         // Priority 1 (highest) should schedule first and finish first
                         // Priority 5 (lowest) should schedule last and finish last
-                        const priorityA = getPriority(opsA[0]);
-                        const priorityB = getPriority(opsB[0]);
+                        const priorityA = getJobPriorityForOperation(opsA[0]);
+                        const priorityB = getJobPriorityForOperation(opsB[0]);
                         
                         // Debug log for sorting
                         console.log(`  Comparing ${keyA} (pri ${priorityA}) vs ${keyB} (pri ${priorityB})`);
@@ -3736,7 +3766,7 @@
                         if (jobKey === '_orphans_') {
                             console.log(`  ${index + 1}. Orphan operations: ${operations.length} operations`);
                         } else {
-                            const priority = parseInt(getPriority(operations[0]));
+                            const priority = parseInt(getJobPriorityForOperation(operations[0]));
                             const jobName = operations[0].jobName || jobKey;
                             console.log(`  ${index + 1}. Priority ${priority}: Batch ${jobKey} (${jobName}) - ${operations.length} operations`);
                         }
