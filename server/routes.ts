@@ -850,50 +850,34 @@ router.post("/api/recent-pages", async (req, res) => {
   try {
     let userId: number | null = null;
     
-    // Development bypass - automatically provide admin access
-    if (process.env.NODE_ENV === 'development') {
-      userId = 1; // Use admin user ID in development
-    } else {
-      // Check for token authentication
-      const authHeader = req.headers.authorization;
+    // Check for JWT token authentication
+    const authHeader = req.headers.authorization;
+    
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      const token = authHeader.substring(7);
       
-      if (authHeader && authHeader.startsWith('Bearer ')) {
-        const token = authHeader.substring(7);
+      try {
+        // Verify JWT token properly
+        const jwt = require('jsonwebtoken');
+        const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
+        const decoded = jwt.verify(token, JWT_SECRET) as any;
+        userId = decoded.userId;
         
-        // Check token store
-        global.tokenStore = global.tokenStore || new Map();
-        let tokenData = global.tokenStore.get(token);
-        
-        // If not in memory store, try to reconstruct from token (for server restart resilience)
-        if (!tokenData) {
-          try {
-            const decoded = Buffer.from(token, 'base64').toString();
-            const [tokenUserId, timestamp] = decoded.split(':');
-            
-            if (!isNaN(Number(tokenUserId)) && !isNaN(Number(timestamp))) {
-              const tokenAge = Date.now() - Number(timestamp);
-              const maxAge = 7 * 24 * 60 * 60 * 1000; // 7 days
-              
-              if (tokenAge < maxAge) {
-                // Verify user exists in database
-                const user = await storage.getUser(Number(tokenUserId));
-                if (user && user.isActive) {
-                  userId = Number(tokenUserId);
-                }
-              }
-            }
-          } catch (err) {
-            // Invalid token format
+        // Verify user exists and is active
+        if (userId) {
+          const user = await storage.getUser(userId);
+          if (!user || !user.isActive) {
+            userId = null;
           }
-        } else if (tokenData.expiresAt > Date.now()) {
-          userId = tokenData.userId;
         }
+      } catch (err) {
+        // Invalid token - try session fallback
       }
-      
-      // Fallback to session
-      if (!userId) {
-        userId = (req.session as any)?.userId;
-      }
+    }
+    
+    // Fallback to session
+    if (!userId) {
+      userId = (req.session as any)?.userId;
     }
     
     if (!userId) {
@@ -912,50 +896,34 @@ router.get("/api/recent-pages", async (req, res) => {
   try {
     let userId: number | null = null;
     
-    // Development bypass - automatically provide admin access
-    if (process.env.NODE_ENV === 'development') {
-      userId = 1; // Use admin user ID in development
-    } else {
-      // Check for token authentication
-      const authHeader = req.headers.authorization;
+    // Check for JWT token authentication
+    const authHeader = req.headers.authorization;
+    
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      const token = authHeader.substring(7);
       
-      if (authHeader && authHeader.startsWith('Bearer ')) {
-        const token = authHeader.substring(7);
+      try {
+        // Verify JWT token properly
+        const jwt = require('jsonwebtoken');
+        const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
+        const decoded = jwt.verify(token, JWT_SECRET) as any;
+        userId = decoded.userId;
         
-        // Check token store
-        global.tokenStore = global.tokenStore || new Map();
-        let tokenData = global.tokenStore.get(token);
-        
-        // If not in memory store, try to reconstruct from token (for server restart resilience)
-        if (!tokenData) {
-          try {
-            const decoded = Buffer.from(token, 'base64').toString();
-            const [tokenUserId, timestamp] = decoded.split(':');
-            
-            if (!isNaN(Number(tokenUserId)) && !isNaN(Number(timestamp))) {
-              const tokenAge = Date.now() - Number(timestamp);
-              const maxAge = 7 * 24 * 60 * 60 * 1000; // 7 days
-              
-              if (tokenAge < maxAge) {
-                // Verify user exists in database
-                const user = await storage.getUser(Number(tokenUserId));
-                if (user && user.isActive) {
-                  userId = Number(tokenUserId);
-                }
-              }
-            }
-          } catch (err) {
-            // Invalid token format
+        // Verify user exists and is active
+        if (userId) {
+          const user = await storage.getUser(userId);
+          if (!user || !user.isActive) {
+            userId = null;
           }
-        } else if (tokenData.expiresAt > Date.now()) {
-          userId = tokenData.userId;
         }
+      } catch (err) {
+        // Invalid token - try session fallback
       }
-      
-      // Fallback to session
-      if (!userId) {
-        userId = (req.session as any)?.userId;
-      }
+    }
+    
+    // Fallback to session
+    if (!userId) {
+      userId = (req.session as any)?.userId;
     }
     
     if (!userId) {
