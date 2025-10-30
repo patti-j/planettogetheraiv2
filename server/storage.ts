@@ -57,7 +57,15 @@ import {
   type WorkflowStep, type InsertWorkflowStep,
   type WorkflowExecution, type InsertWorkflowExecution,
   type WorkflowTemplate, type InsertWorkflowTemplate,
-  type WorkflowLog, type InsertWorkflowLog
+  type WorkflowLog, type InsertWorkflowLog,
+  // ATP/CTP Reservation types
+  atpCtpReservations, atpCtpMaterialReservations, atpCtpResourceReservations,
+  atpCtpReservationHistory, atpCtpAvailabilitySnapshots,
+  type AtpCtpReservation, type InsertAtpCtpReservation,
+  type AtpCtpMaterialReservation, type InsertAtpCtpMaterialReservation,
+  type AtpCtpResourceReservation, type InsertAtpCtpResourceReservation,
+  type AtpCtpReservationHistory, type InsertAtpCtpReservationHistory,
+  type AtpCtpAvailabilitySnapshot, type InsertAtpCtpAvailabilitySnapshot
 } from "@shared/schema";
 import { eq, and, desc, sql, ilike } from "drizzle-orm";
 import { db } from "./db";
@@ -309,6 +317,36 @@ export interface IStorage {
   getAlgorithmRequirementValidations(filters?: { algorithmId?: number; requirementId?: number; testRunId?: number; validationStatus?: string }): Promise<AlgorithmRequirementValidation[]>;
   createAlgorithmRequirementValidation(data: InsertAlgorithmRequirementValidation): Promise<AlgorithmRequirementValidation>;
   getLatestValidations(algorithmId: number): Promise<AlgorithmRequirementValidation[]>;
+
+  // ATP/CTP Reservation System
+  // Main Reservations
+  getAtpCtpReservations(filters?: { status?: string; type?: string; startDate?: Date; endDate?: Date }): Promise<AtpCtpReservation[]>;
+  getAtpCtpReservation(id: number): Promise<AtpCtpReservation | undefined>;
+  createAtpCtpReservation(data: InsertAtpCtpReservation): Promise<AtpCtpReservation>;
+  updateAtpCtpReservation(id: number, data: Partial<InsertAtpCtpReservation>): Promise<AtpCtpReservation | undefined>;
+  cancelAtpCtpReservation(id: number, userId: number, reason?: string): Promise<boolean>;
+  
+  // Material Reservations
+  getMaterialReservations(reservationId: number): Promise<AtpCtpMaterialReservation[]>;
+  createMaterialReservation(data: InsertAtpCtpMaterialReservation): Promise<AtpCtpMaterialReservation>;
+  updateMaterialReservation(id: number, data: Partial<InsertAtpCtpMaterialReservation>): Promise<AtpCtpMaterialReservation | undefined>;
+  checkMaterialAvailability(itemId: number, quantity: number, startDate: Date, endDate: Date): Promise<boolean>;
+  
+  // Resource Reservations
+  getResourceReservations(reservationId: number): Promise<AtpCtpResourceReservation[]>;
+  createResourceReservation(data: InsertAtpCtpResourceReservation): Promise<AtpCtpResourceReservation>;
+  updateResourceReservation(id: number, data: Partial<InsertAtpCtpResourceReservation>): Promise<AtpCtpResourceReservation | undefined>;
+  checkResourceAvailability(resourceId: number, startTime: Date, endTime: Date): Promise<boolean>;
+  detectResourceConflicts(resourceId: number, startTime: Date, endTime: Date, excludeReservationId?: number): Promise<number[]>;
+  
+  // Reservation History
+  getReservationHistory(reservationId: number): Promise<AtpCtpReservationHistory[]>;
+  createReservationHistory(data: InsertAtpCtpReservationHistory): Promise<AtpCtpReservationHistory>;
+  
+  // Availability Snapshots
+  getAvailabilitySnapshots(entityType: string, entityId: number, startDate?: Date, endDate?: Date): Promise<AtpCtpAvailabilitySnapshot[]>;
+  createAvailabilitySnapshot(data: InsertAtpCtpAvailabilitySnapshot): Promise<AtpCtpAvailabilitySnapshot>;
+  updateAvailabilitySnapshots(entityType: string, entityId: number): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -2885,6 +2923,500 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error('Error deleting saved forecast:', error);
       return false;
+    }
+  }
+
+  // ============================================
+  // ATP/CTP Reservation System Implementation
+  // ============================================
+
+  // Main Reservations
+  async getAtpCtpReservations(filters?: { 
+    status?: string; 
+    type?: string; 
+    startDate?: Date; 
+    endDate?: Date 
+  }): Promise<AtpCtpReservation[]> {
+    try {
+      let query = db.select().from(atpCtpReservations);
+      
+      const conditions = [];
+      if (filters?.status) {
+        conditions.push(eq(atpCtpReservations.status, filters.status as any));
+      }
+      if (filters?.type) {
+        conditions.push(eq(atpCtpReservations.type, filters.type as any));
+      }
+      if (filters?.startDate) {
+        conditions.push(sql`${atpCtpReservations.startDate} >= ${filters.startDate}`);
+      }
+      if (filters?.endDate) {
+        conditions.push(sql`${atpCtpReservations.endDate} <= ${filters.endDate}`);
+      }
+      
+      if (conditions.length > 0) {
+        const result = await db.select()
+          .from(atpCtpReservations)
+          .where(and(...conditions))
+          .orderBy(desc(atpCtpReservations.createdAt));
+        return result;
+      }
+      
+      return await query.orderBy(desc(atpCtpReservations.createdAt));
+    } catch (error) {
+      console.error('Error fetching ATP/CTP reservations:', error);
+      return [];
+    }
+  }
+
+  async getAtpCtpReservation(id: number): Promise<AtpCtpReservation | undefined> {
+    try {
+      const [result] = await db.select()
+        .from(atpCtpReservations)
+        .where(eq(atpCtpReservations.id, id));
+      return result;
+    } catch (error) {
+      console.error('Error fetching ATP/CTP reservation:', error);
+      return undefined;
+    }
+  }
+
+  async createAtpCtpReservation(data: InsertAtpCtpReservation): Promise<AtpCtpReservation> {
+    try {
+      // Generate unique reservation number
+      const reservationNumber = `RES-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      
+      const [result] = await db.insert(atpCtpReservations)
+        .values({
+          ...data,
+          reservationNumber
+        })
+        .returning();
+      
+      // Create history entry
+      await this.createReservationHistory({
+        reservationId: result.id,
+        action: 'created',
+        newStatus: result.status,
+        changedBy: data.requestedBy,
+        snapshotData: result
+      });
+      
+      return result;
+    } catch (error) {
+      console.error('Error creating ATP/CTP reservation:', error);
+      throw error;
+    }
+  }
+
+  async updateAtpCtpReservation(id: number, data: Partial<InsertAtpCtpReservation>): Promise<AtpCtpReservation | undefined> {
+    try {
+      const previous = await this.getAtpCtpReservation(id);
+      if (!previous) return undefined;
+      
+      const [result] = await db.update(atpCtpReservations)
+        .set({
+          ...data,
+          updatedAt: new Date()
+        })
+        .where(eq(atpCtpReservations.id, id))
+        .returning();
+      
+      // Create history entry if status changed
+      if (data.status && data.status !== previous.status) {
+        await this.createReservationHistory({
+          reservationId: id,
+          action: 'modified',
+          previousStatus: previous.status,
+          newStatus: data.status,
+          changedBy: data.confirmedBy || data.requestedBy,
+          snapshotData: result
+        });
+      }
+      
+      return result;
+    } catch (error) {
+      console.error('Error updating ATP/CTP reservation:', error);
+      return undefined;
+    }
+  }
+
+  async cancelAtpCtpReservation(id: number, userId: number, reason?: string): Promise<boolean> {
+    try {
+      const previous = await this.getAtpCtpReservation(id);
+      if (!previous) return false;
+      
+      const [result] = await db.update(atpCtpReservations)
+        .set({
+          status: 'cancelled',
+          cancelledBy: userId,
+          cancelledAt: new Date(),
+          updatedAt: new Date()
+        })
+        .where(eq(atpCtpReservations.id, id))
+        .returning();
+      
+      if (result) {
+        await this.createReservationHistory({
+          reservationId: id,
+          action: 'cancelled',
+          previousStatus: previous.status,
+          newStatus: 'cancelled',
+          changedBy: userId,
+          changeReason: reason,
+          snapshotData: result
+        });
+        return true;
+      }
+      
+      return false;
+    } catch (error) {
+      console.error('Error cancelling ATP/CTP reservation:', error);
+      return false;
+    }
+  }
+
+  // Material Reservations
+  async getMaterialReservations(reservationId: number): Promise<AtpCtpMaterialReservation[]> {
+    try {
+      return await db.select()
+        .from(atpCtpMaterialReservations)
+        .where(eq(atpCtpMaterialReservations.reservationId, reservationId))
+        .orderBy(atpCtpMaterialReservations.id);
+    } catch (error) {
+      console.error('Error fetching material reservations:', error);
+      return [];
+    }
+  }
+
+  async createMaterialReservation(data: InsertAtpCtpMaterialReservation): Promise<AtpCtpMaterialReservation> {
+    try {
+      const [result] = await db.insert(atpCtpMaterialReservations)
+        .values(data)
+        .returning();
+      
+      // Update availability snapshots
+      if (data.itemId) {
+        await this.updateAvailabilitySnapshots('material', data.itemId);
+      }
+      
+      return result;
+    } catch (error) {
+      console.error('Error creating material reservation:', error);
+      throw error;
+    }
+  }
+
+  async updateMaterialReservation(id: number, data: Partial<InsertAtpCtpMaterialReservation>): Promise<AtpCtpMaterialReservation | undefined> {
+    try {
+      const [result] = await db.update(atpCtpMaterialReservations)
+        .set({
+          ...data,
+          updatedAt: new Date()
+        })
+        .where(eq(atpCtpMaterialReservations.id, id))
+        .returning();
+      
+      // Update availability snapshots
+      if (result && result.itemId) {
+        await this.updateAvailabilitySnapshots('material', result.itemId);
+      }
+      
+      return result;
+    } catch (error) {
+      console.error('Error updating material reservation:', error);
+      return undefined;
+    }
+  }
+
+  async checkMaterialAvailability(itemId: number, quantity: number, startDate: Date, endDate: Date): Promise<boolean> {
+    try {
+      // Check existing reservations for the item in the date range
+      const existingReservations = await db.select()
+        .from(atpCtpMaterialReservations)
+        .innerJoin(atpCtpReservations, eq(atpCtpMaterialReservations.reservationId, atpCtpReservations.id))
+        .where(and(
+          eq(atpCtpMaterialReservations.itemId, itemId),
+          sql`${atpCtpReservations.status} IN ('confirmed', 'active')`,
+          sql`${atpCtpReservations.startDate} <= ${endDate}`,
+          sql`${atpCtpReservations.endDate} >= ${startDate}`
+        ));
+      
+      // Calculate total reserved quantity
+      const totalReserved = existingReservations.reduce((sum, res) => {
+        return sum + parseFloat(res.atp_ctp_material_reservations.reservedQuantity?.toString() || '0');
+      }, 0);
+      
+      // For now, we'll return true if there are no conflicting reservations
+      // In a real system, you'd check against actual inventory levels
+      return totalReserved === 0 || totalReserved + quantity <= 1000; // Placeholder limit
+    } catch (error) {
+      console.error('Error checking material availability:', error);
+      return false;
+    }
+  }
+
+  // Resource Reservations  
+  async getResourceReservations(reservationId: number): Promise<AtpCtpResourceReservation[]> {
+    try {
+      return await db.select()
+        .from(atpCtpResourceReservations)
+        .where(eq(atpCtpResourceReservations.reservationId, reservationId))
+        .orderBy(atpCtpResourceReservations.id);
+    } catch (error) {
+      console.error('Error fetching resource reservations:', error);
+      return [];
+    }
+  }
+
+  async createResourceReservation(data: InsertAtpCtpResourceReservation): Promise<AtpCtpResourceReservation> {
+    try {
+      // Check for conflicts before creating
+      const conflicts = await this.detectResourceConflicts(
+        data.resourceId || 0,
+        data.startTime,
+        data.endTime
+      );
+      
+      const [result] = await db.insert(atpCtpResourceReservations)
+        .values({
+          ...data,
+          hasConflict: conflicts.length > 0,
+          conflictingReservations: conflicts
+        })
+        .returning();
+      
+      // Update availability snapshots
+      if (data.resourceId) {
+        await this.updateAvailabilitySnapshots('resource', data.resourceId);
+      }
+      
+      return result;
+    } catch (error) {
+      console.error('Error creating resource reservation:', error);
+      throw error;
+    }
+  }
+
+  async updateResourceReservation(id: number, data: Partial<InsertAtpCtpResourceReservation>): Promise<AtpCtpResourceReservation | undefined> {
+    try {
+      const [existing] = await db.select()
+        .from(atpCtpResourceReservations)
+        .where(eq(atpCtpResourceReservations.id, id));
+      
+      if (!existing) return undefined;
+      
+      // Check for conflicts if time changed
+      let conflicts: number[] = [];
+      if (data.startTime || data.endTime) {
+        conflicts = await this.detectResourceConflicts(
+          data.resourceId || existing.resourceId || 0,
+          data.startTime || existing.startTime,
+          data.endTime || existing.endTime,
+          existing.reservationId
+        );
+      }
+      
+      const [result] = await db.update(atpCtpResourceReservations)
+        .set({
+          ...data,
+          hasConflict: conflicts.length > 0,
+          conflictingReservations: conflicts,
+          updatedAt: new Date()
+        })
+        .where(eq(atpCtpResourceReservations.id, id))
+        .returning();
+      
+      // Update availability snapshots
+      if (result && result.resourceId) {
+        await this.updateAvailabilitySnapshots('resource', result.resourceId);
+      }
+      
+      return result;
+    } catch (error) {
+      console.error('Error updating resource reservation:', error);
+      return undefined;
+    }
+  }
+
+  async checkResourceAvailability(resourceId: number, startTime: Date, endTime: Date): Promise<boolean> {
+    try {
+      const conflicts = await this.detectResourceConflicts(resourceId, startTime, endTime);
+      return conflicts.length === 0;
+    } catch (error) {
+      console.error('Error checking resource availability:', error);
+      return false;
+    }
+  }
+
+  async detectResourceConflicts(
+    resourceId: number, 
+    startTime: Date, 
+    endTime: Date, 
+    excludeReservationId?: number
+  ): Promise<number[]> {
+    try {
+      const conditions = [
+        eq(atpCtpResourceReservations.resourceId, resourceId),
+        sql`${atpCtpResourceReservations.startTime} < ${endTime}`,
+        sql`${atpCtpResourceReservations.endTime} > ${startTime}`
+      ];
+      
+      if (excludeReservationId) {
+        conditions.push(sql`${atpCtpResourceReservations.reservationId} != ${excludeReservationId}`);
+      }
+      
+      const conflicts = await db.select()
+        .from(atpCtpResourceReservations)
+        .innerJoin(atpCtpReservations, eq(atpCtpResourceReservations.reservationId, atpCtpReservations.id))
+        .where(and(
+          ...conditions,
+          sql`${atpCtpReservations.status} IN ('confirmed', 'active')`
+        ));
+      
+      return conflicts.map(c => c.atp_ctp_reservations.id);
+    } catch (error) {
+      console.error('Error detecting resource conflicts:', error);
+      return [];
+    }
+  }
+
+  // Reservation History
+  async getReservationHistory(reservationId: number): Promise<AtpCtpReservationHistory[]> {
+    try {
+      return await db.select()
+        .from(atpCtpReservationHistory)
+        .where(eq(atpCtpReservationHistory.reservationId, reservationId))
+        .orderBy(desc(atpCtpReservationHistory.timestamp));
+    } catch (error) {
+      console.error('Error fetching reservation history:', error);
+      return [];
+    }
+  }
+
+  async createReservationHistory(data: InsertAtpCtpReservationHistory): Promise<AtpCtpReservationHistory> {
+    try {
+      const [result] = await db.insert(atpCtpReservationHistory)
+        .values(data)
+        .returning();
+      return result;
+    } catch (error) {
+      console.error('Error creating reservation history:', error);
+      throw error;
+    }
+  }
+
+  // Availability Snapshots
+  async getAvailabilitySnapshots(
+    entityType: string, 
+    entityId: number, 
+    startDate?: Date, 
+    endDate?: Date
+  ): Promise<AtpCtpAvailabilitySnapshot[]> {
+    try {
+      const conditions = [
+        eq(atpCtpAvailabilitySnapshots.entityType, entityType),
+        eq(atpCtpAvailabilitySnapshots.entityId, entityId)
+      ];
+      
+      if (startDate) {
+        conditions.push(sql`${atpCtpAvailabilitySnapshots.snapshotDate} >= ${startDate}`);
+      }
+      if (endDate) {
+        conditions.push(sql`${atpCtpAvailabilitySnapshots.snapshotDate} <= ${endDate}`);
+      }
+      
+      return await db.select()
+        .from(atpCtpAvailabilitySnapshots)
+        .where(and(...conditions))
+        .orderBy(desc(atpCtpAvailabilitySnapshots.snapshotDate));
+    } catch (error) {
+      console.error('Error fetching availability snapshots:', error);
+      return [];
+    }
+  }
+
+  async createAvailabilitySnapshot(data: InsertAtpCtpAvailabilitySnapshot): Promise<AtpCtpAvailabilitySnapshot> {
+    try {
+      const [result] = await db.insert(atpCtpAvailabilitySnapshots)
+        .values(data)
+        .returning();
+      return result;
+    } catch (error) {
+      console.error('Error creating availability snapshot:', error);
+      throw error;
+    }
+  }
+
+  async updateAvailabilitySnapshots(entityType: string, entityId: number): Promise<void> {
+    try {
+      // Calculate current availability based on reservations
+      const now = new Date();
+      
+      if (entityType === 'material') {
+        // Get all active material reservations for this item
+        const reservations = await db.select()
+          .from(atpCtpMaterialReservations)
+          .innerJoin(atpCtpReservations, eq(atpCtpMaterialReservations.reservationId, atpCtpReservations.id))
+          .where(and(
+            eq(atpCtpMaterialReservations.itemId, entityId),
+            sql`${atpCtpReservations.status} IN ('confirmed', 'active')`,
+            sql`${atpCtpReservations.endDate} >= ${now}`
+          ));
+        
+        // Calculate total reserved quantity
+        const totalReserved = reservations.reduce((sum, res) => {
+          return sum + parseFloat(res.atp_ctp_material_reservations.reservedQuantity?.toString() || '0');
+        }, 0);
+        
+        // Create snapshot
+        await this.createAvailabilitySnapshot({
+          entityType: 'material',
+          entityId,
+          snapshotDate: now,
+          reservedQuantity: totalReserved.toString(),
+          futureReservations: reservations.map(r => ({
+            reservationId: r.atp_ctp_reservations.id,
+            quantity: r.atp_ctp_material_reservations.reservedQuantity,
+            startDate: r.atp_ctp_reservations.startDate,
+            endDate: r.atp_ctp_reservations.endDate
+          }))
+        });
+      } else if (entityType === 'resource') {
+        // Get all active resource reservations
+        const reservations = await db.select()
+          .from(atpCtpResourceReservations)
+          .innerJoin(atpCtpReservations, eq(atpCtpResourceReservations.reservationId, atpCtpReservations.id))
+          .where(and(
+            eq(atpCtpResourceReservations.resourceId, entityId),
+            sql`${atpCtpReservations.status} IN ('confirmed', 'active')`,
+            sql`${atpCtpResourceReservations.endTime} >= ${now}`
+          ));
+        
+        // Calculate utilization
+        const totalMinutes = reservations.reduce((sum, res) => {
+          return sum + (res.atp_ctp_resource_reservations.durationMinutes || 0);
+        }, 0);
+        
+        const utilization = Math.min((totalMinutes / (8 * 60)) * 100, 100); // Assuming 8 hour day
+        
+        // Create snapshot
+        await this.createAvailabilitySnapshot({
+          entityType: 'resource',
+          entityId,
+          snapshotDate: now,
+          reservedCapacity: totalMinutes.toString(),
+          utilization: utilization.toString(),
+          futureReservations: reservations.map(r => ({
+            reservationId: r.atp_ctp_reservations.id,
+            startTime: r.atp_ctp_resource_reservations.startTime,
+            endTime: r.atp_ctp_resource_reservations.endTime,
+            duration: r.atp_ctp_resource_reservations.durationMinutes
+          }))
+        });
+      }
+    } catch (error) {
+      console.error('Error updating availability snapshots:', error);
     }
   }
 }

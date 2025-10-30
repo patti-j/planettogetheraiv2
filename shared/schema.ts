@@ -2722,3 +2722,230 @@ export const insertGoalKpiSchema = createInsertSchema(goalKpis).omit({
 });
 export type InsertGoalKpi = z.infer<typeof insertGoalKpiSchema>;
 export type GoalKpi = typeof goalKpis.$inferSelect;
+
+// ============================================
+// ATP/CTP Reservation System
+// ============================================
+
+// Enum for reservation types
+export const reservationTypeEnum = pgEnum("reservation_type", [
+  "material",
+  "resource",
+  "both"
+]);
+
+// Enum for reservation status
+export const reservationStatusEnum = pgEnum("reservation_status", [
+  "pending",
+  "confirmed",
+  "active",
+  "completed",
+  "cancelled",
+  "expired"
+]);
+
+// Enum for reservation priority
+export const reservationPriorityEnum = pgEnum("reservation_priority", [
+  "critical",
+  "high", 
+  "medium",
+  "low"
+]);
+
+// Main ATP/CTP Reservations table
+export const atpCtpReservations = pgTable("atp_ctp_reservations", {
+  id: serial("id").primaryKey(),
+  reservationNumber: varchar("reservation_number", { length: 50 }).unique().notNull(),
+  type: reservationTypeEnum("type").notNull(),
+  status: reservationStatusEnum("status").default("pending").notNull(),
+  priority: reservationPriorityEnum("priority").default("medium"),
+  
+  // Linked entities
+  jobId: integer("job_id").references(() => ptJobs.id),
+  customerId: integer("customer_id"),
+  orderNumber: varchar("order_number", { length: 100 }),
+  
+  // Time period
+  startDate: timestamp("start_date").notNull(),
+  endDate: timestamp("end_date").notNull(),
+  
+  // Reservation details
+  description: text("description"),
+  notes: text("notes"),
+  
+  // Tracking
+  requestedBy: integer("requested_by").references(() => users.id),
+  confirmedBy: integer("confirmed_by").references(() => users.id),
+  cancelledBy: integer("cancelled_by").references(() => users.id),
+  
+  // Timestamps
+  requestedAt: timestamp("requested_at").defaultNow(),
+  confirmedAt: timestamp("confirmed_at"),
+  cancelledAt: timestamp("cancelled_at"),
+  completedAt: timestamp("completed_at"),
+  expiresAt: timestamp("expires_at"),
+  
+  // Additional metadata
+  metadata: jsonb("metadata").default(sql`'{}'::jsonb`),
+  
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow()
+});
+
+// Material reservations
+export const atpCtpMaterialReservations = pgTable("atp_ctp_material_reservations", {
+  id: serial("id").primaryKey(),
+  reservationId: integer("reservation_id").references(() => atpCtpReservations.id).notNull(),
+  
+  // Material details
+  itemId: integer("item_id").references(() => items.id),
+  itemNumber: varchar("item_number", { length: 100 }),
+  itemName: varchar("item_name", { length: 255 }),
+  
+  // Quantities
+  requiredQuantity: decimal("required_quantity", { precision: 18, scale: 4 }).notNull(),
+  reservedQuantity: decimal("reserved_quantity", { precision: 18, scale: 4 }),
+  consumedQuantity: decimal("consumed_quantity", { precision: 18, scale: 4 }).default(sql`'0'`),
+  unitOfMeasure: varchar("unit_of_measure", { length: 20 }),
+  
+  // Availability tracking
+  availableQuantity: decimal("available_quantity", { precision: 18, scale: 4 }),
+  onHandQuantity: decimal("on_hand_quantity", { precision: 18, scale: 4 }),
+  allocatedQuantity: decimal("allocated_quantity", { precision: 18, scale: 4 }),
+  
+  // Location and warehouse
+  warehouseId: integer("warehouse_id"),
+  locationId: varchar("location_id", { length: 50 }),
+  
+  // Status tracking
+  isAvailable: boolean("is_available").default(false),
+  availabilityCheckedAt: timestamp("availability_checked_at"),
+  
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow()
+});
+
+// Resource reservations  
+export const atpCtpResourceReservations = pgTable("atp_ctp_resource_reservations", {
+  id: serial("id").primaryKey(),
+  reservationId: integer("reservation_id").references(() => atpCtpReservations.id).notNull(),
+  
+  // Resource details
+  resourceId: integer("resource_id").references(() => ptResources.id),
+  resourceName: varchar("resource_name", { length: 255 }),
+  resourceType: varchar("resource_type", { length: 50 }),
+  
+  // Time allocation
+  startTime: timestamp("start_time").notNull(),
+  endTime: timestamp("end_time").notNull(),
+  durationMinutes: integer("duration_minutes"),
+  
+  // Capacity
+  requiredCapacity: decimal("required_capacity", { precision: 10, scale: 2 }),
+  reservedCapacity: decimal("reserved_capacity", { precision: 10, scale: 2 }),
+  capacityUnit: varchar("capacity_unit", { length: 20 }),
+  
+  // Availability tracking
+  isAvailable: boolean("is_available").default(false),
+  availableCapacity: decimal("available_capacity", { precision: 10, scale: 2 }),
+  utilization: decimal("utilization", { precision: 5, scale: 2 }),
+  
+  // Conflict detection
+  hasConflict: boolean("has_conflict").default(false),
+  conflictingReservations: jsonb("conflicting_reservations").default(sql`'[]'::jsonb`),
+  
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow()
+});
+
+// Reservation history for audit trail
+export const atpCtpReservationHistory = pgTable("atp_ctp_reservation_history", {
+  id: serial("id").primaryKey(),
+  reservationId: integer("reservation_id").references(() => atpCtpReservations.id).notNull(),
+  
+  action: varchar("action", { length: 50 }).notNull(), // created, confirmed, modified, cancelled, expired
+  previousStatus: reservationStatusEnum("previous_status"),
+  newStatus: reservationStatusEnum("new_status"),
+  
+  changedBy: integer("changed_by").references(() => users.id),
+  changeReason: text("change_reason"),
+  
+  // Store snapshot of reservation data at time of change
+  snapshotData: jsonb("snapshot_data"),
+  
+  timestamp: timestamp("timestamp").defaultNow()
+});
+
+// ATP/CTP availability snapshots for tracking available-to-promise over time
+export const atpCtpAvailabilitySnapshots = pgTable("atp_ctp_availability_snapshots", {
+  id: serial("id").primaryKey(),
+  
+  // What is being tracked
+  entityType: varchar("entity_type", { length: 20 }).notNull(), // 'material' or 'resource'
+  entityId: integer("entity_id").notNull(), // itemId or resourceId
+  entityName: varchar("entity_name", { length: 255 }),
+  
+  // Time period
+  snapshotDate: timestamp("snapshot_date").notNull(),
+  
+  // Material availability
+  onHandQuantity: decimal("on_hand_quantity", { precision: 18, scale: 4 }),
+  availableQuantity: decimal("available_quantity", { precision: 18, scale: 4 }),
+  reservedQuantity: decimal("reserved_quantity", { precision: 18, scale: 4 }),
+  incomingQuantity: decimal("incoming_quantity", { precision: 18, scale: 4 }),
+  outgoingQuantity: decimal("outgoing_quantity", { precision: 18, scale: 4 }),
+  
+  // Resource availability
+  totalCapacity: decimal("total_capacity", { precision: 10, scale: 2 }),
+  availableCapacity: decimal("available_capacity", { precision: 10, scale: 2 }),
+  reservedCapacity: decimal("reserved_capacity", { precision: 10, scale: 2 }),
+  utilization: decimal("utilization", { precision: 5, scale: 2 }),
+  
+  // Future commitments
+  futureReservations: jsonb("future_reservations").default(sql`'[]'::jsonb`),
+  
+  createdAt: timestamp("created_at").defaultNow()
+}, (table) => {
+  return {
+    entityDateIdx: index("atp_ctp_availability_entity_date_idx").on(table.entityType, table.entityId, table.snapshotDate)
+  };
+});
+
+// Create insert schemas and types for ATP/CTP tables
+export const insertAtpCtpReservationSchema = createInsertSchema(atpCtpReservations).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true
+});
+export type InsertAtpCtpReservation = z.infer<typeof insertAtpCtpReservationSchema>;
+export type AtpCtpReservation = typeof atpCtpReservations.$inferSelect;
+
+export const insertAtpCtpMaterialReservationSchema = createInsertSchema(atpCtpMaterialReservations).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true
+});
+export type InsertAtpCtpMaterialReservation = z.infer<typeof insertAtpCtpMaterialReservationSchema>;
+export type AtpCtpMaterialReservation = typeof atpCtpMaterialReservations.$inferSelect;
+
+export const insertAtpCtpResourceReservationSchema = createInsertSchema(atpCtpResourceReservations).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true
+});
+export type InsertAtpCtpResourceReservation = z.infer<typeof insertAtpCtpResourceReservationSchema>;
+export type AtpCtpResourceReservation = typeof atpCtpResourceReservations.$inferSelect;
+
+export const insertAtpCtpReservationHistorySchema = createInsertSchema(atpCtpReservationHistory).omit({
+  id: true,
+  timestamp: true
+});
+export type InsertAtpCtpReservationHistory = z.infer<typeof insertAtpCtpReservationHistorySchema>;
+export type AtpCtpReservationHistory = typeof atpCtpReservationHistory.$inferSelect;
+
+export const insertAtpCtpAvailabilitySnapshotSchema = createInsertSchema(atpCtpAvailabilitySnapshots).omit({
+  id: true,
+  createdAt: true
+});
+export type InsertAtpCtpAvailabilitySnapshot = z.infer<typeof insertAtpCtpAvailabilitySnapshotSchema>;
+export type AtpCtpAvailabilitySnapshot = typeof atpCtpAvailabilitySnapshots.$inferSelect;
