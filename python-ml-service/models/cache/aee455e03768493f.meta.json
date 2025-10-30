@@ -8,7 +8,7 @@
   "forecast_days": 30,
   "item": "FG2",
   "cache_key": "aee455e03768493f",
-  "cached_at": "2025-10-30T05:27:04.673803",
+  "cached_at": "2025-10-30T05:33:42.202708",
   "planning_areas": [
     "BI01",
     "BI02"
@@ -20,9 +20,9 @@
   ],
   "hyperparameter_tuning": false,
   "metrics": {
-    "mape": 37.027340085014764,
+    "mape": 37.02734008501476,
     "rmse": 29.47219878629632,
-    "accuracy": 62.972659914985236
+    "accuracy": 62.97265991498524
   },
   "training_points": 1536
 }
