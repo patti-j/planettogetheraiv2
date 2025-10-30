@@ -4204,6 +4204,17 @@
                     const scheduler = window.scheduler;
                     const { project, eventStore, dependencyStore, assignmentStore, resourceStore } = scheduler;
                     
+                    // Helper function to get job priority from operation (uses job's priority)
+                    const getJobPriorityForOperation = (event) => {
+                        if (!event || !event.data) return 5; // Default to lowest priority
+                        
+                        // The data object contains our job priority from the server
+                        const priority = event.data.job_priority;
+                        
+                        // Return the priority as-is (already a number from 1-5)
+                        return priority !== undefined && priority !== null ? priority : 5;
+                    };
+                    
                     // 🔧 CRITICAL: Disable ALL auto-scheduling features to prevent interference
                     const originalAutoSync = project.autoSync;
                     const originalValidateConstraintInterval = project.validateConstraintInterval;
