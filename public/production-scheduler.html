@@ -5102,6 +5102,14 @@
                         }
                     }));
                     console.log('🎨 Paint event fired: Scheduler operations loaded and ready!');
+                    
+                    // Auto-zoom to fit whenever operations are loaded
+                    setTimeout(() => {
+                        if (scheduler.zoomToFit) {
+                            scheduler.zoomToFit({ leftMargin: 50, rightMargin: 50 });
+                            console.log('✅ Auto-zoomed to fit after operations loaded');
+                        }
+                    }, 200);
                 }
                 
                 if (eventCount === 0) {
@@ -5115,29 +5123,8 @@
                 // Users should manually click Apply button to run scheduling
                 console.log('ℹ️ Scheduler loaded. Click "Apply" button to run ASAP scheduling.');
                 
-                // Just fit to view without running ASAP automatically
-                setTimeout(() => {
-                    if (scheduler.zoomToFit) {
-                        scheduler.zoomToFit({
-                            leftMargin: 50,
-                            rightMargin: 50
-                        });
-                        console.log('✅ Zoomed to fit initial view');
-                    }
-                }, 500);
-                
                 // Periodic status refresh
                 setInterval(updateStatus, 30000); // Update every 30 seconds
-                
-                // Initial zoom to fit using Bryntum official documentation
-                // https://bryntum.com/products/schedulerpro/docs/api/Scheduler/view/mixin/TimelineZoomable#function-zoomToFit
-                setTimeout(() => {
-                    scheduler.zoomToFit({
-                        leftMargin: 50,   // Margin in pixels between first event start and first visible date
-                        rightMargin: 50   // Margin in pixels between last event end and last visible date
-                    });
-                    console.log('Initial zoom to fit applied - scheduler always loads in fit-to-view mode');
-                }, 750);
                 
                 // Hide loading overlay
                 document.getElementById('loadingOverlay').style.display = 'none';
