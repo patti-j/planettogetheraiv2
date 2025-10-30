@@ -294,6 +294,68 @@ export default function Dashboard() {
     }
   };
   
+  // Auto-load report when selected - with race condition protection
+  const handleReportSelect = useCallback(async (reportId: string) => {
+    // Clear any existing timeouts to prevent race conditions
+    if (embedTimeoutRef.current) {
+      clearTimeout(embedTimeoutRef.current);
+      embedTimeoutRef.current = null;
+    }
+    if (loadTimeoutRef.current) {
+      clearTimeout(loadTimeoutRef.current);
+      loadTimeoutRef.current = null;
+    }
+    
+    // Close mobile sidebar when report is selected
+    if (showMobileSidebar) {
+      setShowMobileSidebar(false);
+    }
+    
+    // Reset states to ensure clean loading
+    setSelectedReportId(reportId);
+    setEmbedConfig(null); // Clear old config
+    setShowEmbed(false); // Hide old embed
+    
+    // Check if we have required data
+    if (!isAuthenticated || !selectedWorkspaceId || !reportId) {
+      return;
+    }
+    
+    // Small delay to ensure React state updates are processed
+    embedTimeoutRef.current = setTimeout(async () => {
+      try {
+        // Get the report type to pass to embedReport
+        const selectedReport = allReports?.find(r => r.id === reportId);
+        const reportType = selectedReport?.reportType;
+        
+        const config = await embedReport({ 
+          workspaceId: selectedWorkspaceId, 
+          reportId,
+          reportType
+        } as any);
+        
+        if (config) {
+          setEmbedConfig(config);
+          setShowEmbed(true);
+        } else {
+          console.error("Failed to get embed configuration");
+          toast({
+            title: "Configuration Error",
+            description: "Failed to get report embed configuration",
+            variant: "destructive",
+          });
+        }
+      } catch (error) {
+        console.error("Error getting embed config:", error);
+        toast({
+          title: "Error",
+          description: error instanceof Error ? error.message : "Failed to load report",
+          variant: "destructive",
+        });
+      }
+    }, 100); // Reduced delay to 100ms for faster loading
+  }, [isAuthenticated, selectedWorkspaceId, embedReport, showMobileSidebar, toast, allReports]);
+  
   // Process URL parameters for auto-loading reports
   useEffect(() => {
     if (!urlParamsProcessed && location) {
@@ -420,123 +482,6 @@ export default function Dashboard() {
       }
     };
   }, []);
-  
-  // Auto-load report when selected - with race condition protection
-  const handleReportSelect = useCallback(async (reportId: string) => {
-    // Clear any existing timeouts to prevent race conditions
-    if (embedTimeoutRef.current) {
-      clearTimeout(embedTimeoutRef.current);
-      embedTimeoutRef.current = null;
-    }
-    if (loadTimeoutRef.current) {
-      clearTimeout(loadTimeoutRef.current);
-      loadTimeoutRef.current = null;
-    }
-
-    // Set current operation ID to prevent race conditions
-    const operationId = `${reportId}-${Date.now()}`;
-    currentOperationRef.current = operationId;
-
-    setSelectedReportId(reportId);
-    
-    // Close mobile sidebar when report is selected
-    if (showMobileSidebar) {
-      setShowMobileSidebar(false);
-    }
-    
-    if (!isAuthenticated || !selectedWorkspaceId || !reportId) {
-      // Reset embed state when no report is selected
-      setShowEmbed(false);
-      setEmbedConfig(null);
-      currentOperationRef.current = null;
-      return;
-    }
-
-    try {
-      // Reset embed state first to clean up any existing report
-      setShowEmbed(false);
-      setEmbedConfig(null);
-      
-      // Small delay to ensure cleanup, then show loading state
-      embedTimeoutRef.current = setTimeout(() => {
-        // Check if this operation is still current
-        if (currentOperationRef.current !== operationId) {
-          return; // Operation was superseded, abort
-        }
-        
-        setShowEmbed(true);
-        setEmbedConfig({ reportId, workspaceId: selectedWorkspaceId } as any);
-        
-        // Additional delay to ensure DOM is ready, then embed
-        loadTimeoutRef.current = setTimeout(async () => {
-          // Double-check operation is still current
-          if (currentOperationRef.current !== operationId) {
-            return; // Operation was superseded, abort
-          }
-
-          try {
-            // Get the report type to pass to embedReport
-            const selectedReport = allReports?.find(r => r.id === reportId);
-            const reportType = selectedReport?.reportType;
-            console.log(`🔍 [Reports.tsx] Embedding report:`, {
-              reportId,
-              selectedReport: selectedReport ? { id: selectedReport.id, name: selectedReport.name, reportType: selectedReport.reportType } : null,
-              reportType,
-              allReportsCount: allReports?.length
-            });
-            
-            // Clear pages immediately for paginated reports (don't wait for loaded event)
-            if (reportType === "PaginatedReport") {
-              console.log(`🧹 [Reports.tsx] Clearing pages immediately for paginated report`);
-              // Note: We can't call setPages here directly as it's from the hook
-              // The hook will handle clearing pages in the loaded event
-            }
-            
-            const config = await embedReport({ 
-              workspaceId: selectedWorkspaceId, 
-              reportId,
-              reportType
-            } as any);
-            
-            // Final check before setting config
-            if (currentOperationRef.current === operationId) {
-              setEmbedConfig(config);
-            }
-          } catch (embedError) {
-            // Only handle error if operation is still current
-            if (currentOperationRef.current === operationId) {
-              console.error("Embed error:", embedError);
-              setShowEmbed(false);
-              setEmbedConfig(null);
-              toast({
-                title: "Embed Failed",
-                description: embedError instanceof Error ? embedError.message : "Failed to embed report",
-                variant: "destructive",
-              });
-            }
-          } finally {
-            // Clear operation if it's still current
-            if (currentOperationRef.current === operationId) {
-              currentOperationRef.current = null;
-            }
-          }
-        }, 150);
-      }, 50);
-      
-    } catch (error) {
-      // Only handle error if operation is still current
-      if (currentOperationRef.current === operationId) {
-        setShowEmbed(false);
-        setEmbedConfig(null);
-        toast({
-          title: "Failed to Load Report",
-          description: error instanceof Error ? error.message : "Unknown error occurred",
-          variant: "destructive",
-        });
-        currentOperationRef.current = null;
-      }
-    }
-  }, [isAuthenticated, selectedWorkspaceId, embedReport, showMobileSidebar, toast, allReports]);
 
   // Handle orientation changes to switch between mobile/desktop layouts with proper debouncing
   useEffect(() => {
