@@ -3578,10 +3578,22 @@
                     
                     // Get the job priority (1=highest priority, 5=lowest priority)
                     const getPriority = (event) => {
-                        return event.jobPriority || event.job_priority || 
+                        const priority = event.jobPriority || event.job_priority || 
                                event.ptData?.jobPriority || event.ptData?.job_priority ||
                                event.data?.jobPriority || event.data?.job_priority ||
                                999; // Default low priority if not found
+                        
+                        // DIAGNOSTIC: Log what we're seeing
+                        if (priority === 999) {
+                            console.log('🔍 Priority 999 for', event.name, ':', { 
+                                jobPriority: event.jobPriority, 
+                                job_priority: event.job_priority,
+                                ptData: event.ptData,
+                                data: event.data,
+                                allKeys: Object.keys(event)
+                            });
+                        }
+                        return priority;
                     };
                     
                     // Get the manufacturing release date for a job (if specified)
