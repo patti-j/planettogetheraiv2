@@ -457,7 +457,7 @@ export default function SystemIntegrationsPage() {
                   placeholder="Search integrations..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
+                  className="pl-12"
                 />
               </div>
             </div>

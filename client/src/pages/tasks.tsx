@@ -252,7 +252,7 @@ export default function TasksPage() {
               placeholder="Search tasks..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10"
+              className="pl-12"
             />
           </div>
           <div className="flex gap-2">

@@ -159,7 +159,7 @@ export default function ErrorLogsPage() {
             placeholder="Search errors by message, URL, or ID..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10"
+            className="pl-12"
           />
         </div>
         <Select value={resolvedFilter} onValueChange={setResolvedFilter}>

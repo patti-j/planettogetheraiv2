@@ -238,7 +238,7 @@ export default function PortalDeliveries() {
               placeholder="Search by delivery number, order number, tracking number, or carrier..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
+              className="pl-12"
             />
           </div>
         </div>

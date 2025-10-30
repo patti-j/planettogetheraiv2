@@ -480,7 +480,7 @@ export default function DashboardsPage() {
             placeholder="Search dashboards..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10"
+            className="pl-12"
           />
         </div>
         

@@ -92,7 +92,7 @@ export function MrpRequirementsGrid({ requirements, isLoading }: MrpRequirements
               placeholder="Search by item..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
+              className="pl-12"
             />
           </div>
           

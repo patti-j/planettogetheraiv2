@@ -661,7 +661,7 @@ export default function IntegrationsPage() {
                 placeholder="Search integrations..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10"
+                className="pl-12"
               />
             </div>
             <Select value={selectedCategory} onValueChange={setSelectedCategory}>

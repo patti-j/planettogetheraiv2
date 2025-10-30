@@ -111,7 +111,7 @@ export default function Workflows() {
             placeholder="Search workflows..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10"
+            className="pl-12"
           />
         </div>
         <Select value={selectedCategory} onValueChange={setSelectedCategory}>

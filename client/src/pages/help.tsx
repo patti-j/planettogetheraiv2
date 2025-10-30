@@ -184,7 +184,7 @@ export default function Help() {
               placeholder="Search help articles..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10"
+              className="pl-12"
             />
           </div>
         </CardContent>

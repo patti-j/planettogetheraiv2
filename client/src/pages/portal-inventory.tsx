@@ -251,7 +251,7 @@ export default function PortalInventory() {
                   placeholder="Search by item code, description, or supplier..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
+                  className="pl-12"
                 />
               </div>
             </div>

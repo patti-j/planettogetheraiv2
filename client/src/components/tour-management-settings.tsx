@@ -316,7 +316,7 @@ export function TourManagementSettings({ open, onOpenChange }: TourManagementSet
                     placeholder="Search templates..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-10"
+                    className="pl-12"
                   />
                 </div>
                 <div className="flex gap-2">

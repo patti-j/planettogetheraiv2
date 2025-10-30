@@ -644,7 +644,7 @@ export default function Feedback() {
             <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
             <Input
               placeholder="Search algorithm feedback..."
-              className="pl-10"
+              className="pl-12"
               value={algorithmSearchTerm}
               onChange={(e) => setAlgorithmSearchTerm(e.target.value)}
             />

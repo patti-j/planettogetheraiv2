@@ -311,7 +311,7 @@ export default function ApiIntegrationsPage() {
               placeholder="Search integrations, systems, or providers..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
+              className="pl-12"
             />
           </div>
           <Select value={filterStatus} onValueChange={setFilterStatus}>
