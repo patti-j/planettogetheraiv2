@@ -4655,7 +4655,34 @@
                                 const cur = evs[i];
                                 const next = evs[i + 1];
                                 const dur = cur.endDate - cur.startDate;
-                                const latestEnd = next.startDate;
+                                
+                                // --- FIX: Compute the job-sequence successor bound ---
+                                const curJob = getJobKey(cur);
+                                const curSeq = getSequence(cur);
+
+                                // Find earliest successor in the same job with a higher sequence
+                                const successor = eventStore.records
+                                    .filter(e =>
+                                        getJobKey(e) === curJob &&
+                                        getSequence(e) > curSeq &&
+                                        e.startDate && e.endDate)
+                                    .sort((a, b) => getSequence(a) - getSequence(b))[0];
+
+                                // The rightmost end we allow is the min of:
+                                //  - next event on this resource
+                                //  - the successor's start in the same job (if any)
+                                const boundFromResource = next.startDate;
+                                const boundFromJob = successor ? successor.startDate : null;
+                                const latestEnd = boundFromJob
+                                    ? new Date(Math.min(boundFromResource.getTime(), boundFromJob.getTime()))
+                                    : boundFromResource;
+                                
+                                // Debug logging for sequence constraint enforcement
+                                if (boundFromJob && boundFromJob.getTime() < boundFromResource.getTime()) {
+                                    console.log(`  🔒 Constraining "${cur.name}" end by job successor "${successor.name}" at ${boundFromJob.toLocaleString()}`);
+                                }
+                                // --- End of FIX ---
+                                
                                 const slot = findLatestFreeSlotOnResource(res, latestEnd, dur, cur);
                                 cur.set({ startDate: slot.start, endDate: slot.end, manuallyScheduled: false });
                             }
