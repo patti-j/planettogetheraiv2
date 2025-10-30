@@ -4145,6 +4145,7 @@
                 }
                 
                 // Backward packer helper - finds the latest free slot on resource working backwards
+                // CRITICAL: latestEnd is the absolute latest the operation can END (due to sequence constraints)
                 function findLatestFreeSlotOnResource(resource, latestEnd, durationMs, excludeEvent) {
                     const { eventStore, assignmentStore } = scheduler;
 
@@ -4193,6 +4194,8 @@
                     }
 
                     // 4) Walk from the right to find the latest gap that fits
+                    // CRITICAL: We start from latestEnd which is the absolute latest this operation can end
+                    // due to sequence constraints (must finish before successor starts)
                     const cal = resource.calendar || resource.project?.calendar;
                     let right = new Date(latestEnd);
 
@@ -4200,7 +4203,13 @@
                     if (cal?.isNonWorkingTime?.(right)) right = cal.skipNonWorkingTime(right, false);
 
                     // Helper to return a working-time adjusted slot
+                    // IMPORTANT: The returned slot MUST respect the latestEnd constraint
                     function finish(start, end) {
+                        // CRITICAL SEQUENCE FIX: Never allow end to exceed latestEnd
+                        if (end.getTime() > latestEnd.getTime()) {
+                            end = new Date(latestEnd);
+                        }
+                        
                         // Snap again if needed
                         if (cal?.isNonWorkingTime?.(end)) end = cal.skipNonWorkingTime(end, false);
                         let s = new Date(end.getTime() - durationMs);
@@ -4501,24 +4510,29 @@
                             // Calculate start date based on duration
                             let startDate, actualEndDate;
                             
-                            // For non-last operations, we MUST end exactly when the next operation starts
-                            // to maintain sequence order. Only the last operation can use resource availability.
-                            if (i === operations.length - 1 && resource) {
-                                // Last operation - find latest free slot on the resource
+                            // CRITICAL FIX: ALL operations must check resource availability, not just the last one
+                            // BUT they must also respect sequence constraints (can't end after successor starts)
+                            if (resource) {
+                                // Find the latest free slot on the resource that respects sequence constraints
+                                // endDate is the absolute latest this operation can end (due to sequence)
                                 const slot = findLatestFreeSlotOnResource(resource, endDate, durationMs, operation);
                                 startDate = slot.start;
                                 actualEndDate = slot.end;
+                                
+                                // VALIDATION: Ensure we're not violating sequence constraints
+                                if (actualEndDate.getTime() > endDate.getTime()) {
+                                    console.error(`❌ ERROR: Operation "${operation.name}" end time ${actualEndDate.toLocaleString()} exceeds sequence constraint ${endDate.toLocaleString()}`);
+                                    // Force it to respect the constraint
+                                    actualEndDate = endDate;
+                                    startDate = new Date(actualEndDate.getTime() - durationMs);
+                                }
+                                
+                                console.log(`  📦 Found slot for "${operation.name}" on "${resource.name}": ${startDate.toLocaleString()} to ${actualEndDate.toLocaleString()}`);
                             } else {
-                                // Non-last operations or no resource - simple backward calculation
-                                // MUST end exactly at the constraint time to maintain sequence
+                                // No resource assigned - simple backward calculation
                                 actualEndDate = endDate;
                                 startDate = new Date(endDate.getTime() - durationMs);
-                                
-                                // Check if resource is available at this time
-                                if (resource) {
-                                    // Just verify the resource is free, but don't change the timing
-                                    console.log(`  📍 Operation must end at ${actualEndDate.toLocaleString()} for sequence continuity`);
-                                }
+                                console.log(`  ⚠️ No resource for "${operation.name}" - scheduled ${startDate.toLocaleString()} to ${actualEndDate.toLocaleString()}`);
                             }
                             
                             // CRITICAL: Use direct property setting to avoid triggering auto-reschedule
