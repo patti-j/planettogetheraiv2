@@ -8840,6 +8840,158 @@ router.get("/api/powerbi/workspaces/:workspaceId/reports", async (req, res) => {
   }
 });
 
+// Report discovery endpoint for AI agents - returns all reports across all workspaces
+router.get("/api/reports/discovery", enhancedAuth, async (req, res) => {
+  try {
+    const { search, workspace, type } = req.query;
+    const accessToken = await getServerAADToken();
+    
+    // Get all workspaces
+    const workspaces = await powerBIService.getWorkspaces(accessToken);
+    
+    // Collect all reports from all workspaces
+    const allReports = [];
+    for (const workspace of workspaces) {
+      try {
+        const reports = await powerBIService.getReportsFromWorkspace(accessToken, workspace.id);
+        for (const report of reports) {
+          allReports.push({
+            id: report.id,
+            name: report.name,
+            workspaceId: workspace.id,
+            workspaceName: workspace.name,
+            reportType: report.reportType || 'Report',
+            datasetName: report.datasetName,
+            embedUrl: report.embedUrl,
+            webUrl: `/reports?workspace=${workspace.id}&report=${report.id}`,
+            directUrl: `/reports?workspace=${workspace.name}&reportName=${encodeURIComponent(report.name)}`
+          });
+        }
+      } catch (error) {
+        console.warn(`Failed to get reports from workspace ${workspace.name}:`, error);
+      }
+    }
+    
+    // Apply filters if provided
+    let filteredReports = allReports;
+    
+    if (search) {
+      const searchLower = search.toString().toLowerCase();
+      filteredReports = filteredReports.filter(r => 
+        r.name.toLowerCase().includes(searchLower) ||
+        r.workspaceName.toLowerCase().includes(searchLower)
+      );
+    }
+    
+    if (workspace) {
+      const workspaceLower = workspace.toString().toLowerCase();
+      filteredReports = filteredReports.filter(r => 
+        r.workspaceName.toLowerCase().includes(workspaceLower) ||
+        r.workspaceId === workspace
+      );
+    }
+    
+    if (type) {
+      const typeLower = type.toString().toLowerCase();
+      if (typeLower === 'paginated') {
+        filteredReports = filteredReports.filter(r => r.reportType === 'PaginatedReport');
+      } else if (typeLower === 'standard') {
+        filteredReports = filteredReports.filter(r => 
+          r.reportType !== 'PaginatedReport' && 
+          r.name.toLowerCase() === r.datasetName?.toLowerCase()
+        );
+      } else if (typeLower === 'custom') {
+        filteredReports = filteredReports.filter(r => 
+          r.reportType !== 'PaginatedReport' && 
+          r.name.toLowerCase() !== r.datasetName?.toLowerCase()
+        );
+      }
+    }
+    
+    res.json({
+      total: filteredReports.length,
+      reports: filteredReports
+    });
+  } catch (error: any) {
+    console.error("Failed to discover reports:", error);
+    res.status(error.statusCode || 500).json({ 
+      message: "Failed to discover reports",
+      error: error.message 
+    });
+  }
+});
+
+// Get specific report details by name or ID
+router.get("/api/reports/find", enhancedAuth, async (req, res) => {
+  try {
+    const { name, id } = req.query;
+    
+    if (!name && !id) {
+      return res.status(400).json({ message: "Either 'name' or 'id' query parameter is required" });
+    }
+    
+    const accessToken = await getServerAADToken();
+    const workspaces = await powerBIService.getWorkspaces(accessToken);
+    
+    for (const workspace of workspaces) {
+      try {
+        const reports = await powerBIService.getReportsFromWorkspace(accessToken, workspace.id);
+        
+        for (const report of reports) {
+          // Check if report matches by ID
+          if (id && report.id === id) {
+            return res.json({
+              found: true,
+              report: {
+                id: report.id,
+                name: report.name,
+                workspaceId: workspace.id,
+                workspaceName: workspace.name,
+                reportType: report.reportType || 'Report',
+                datasetName: report.datasetName,
+                embedUrl: report.embedUrl,
+                webUrl: `/reports?workspace=${workspace.id}&report=${report.id}`,
+                directUrl: `/reports?workspace=${workspace.name}&reportName=${encodeURIComponent(report.name)}`
+              }
+            });
+          }
+          
+          // Check if report matches by name (case-insensitive)
+          if (name && report.name.toLowerCase().includes(name.toString().toLowerCase())) {
+            return res.json({
+              found: true,
+              report: {
+                id: report.id,
+                name: report.name,
+                workspaceId: workspace.id,
+                workspaceName: workspace.name,
+                reportType: report.reportType || 'Report',
+                datasetName: report.datasetName,
+                embedUrl: report.embedUrl,
+                webUrl: `/reports?workspace=${workspace.id}&report=${report.id}`,
+                directUrl: `/reports?workspace=${workspace.name}&reportName=${encodeURIComponent(report.name)}`
+              }
+            });
+          }
+        }
+      } catch (error) {
+        console.warn(`Failed to search reports in workspace ${workspace.name}:`, error);
+      }
+    }
+    
+    res.json({
+      found: false,
+      message: `Report not found with ${id ? `id: ${id}` : `name: ${name}`}`
+    });
+  } catch (error: any) {
+    console.error("Failed to find report:", error);
+    res.status(error.statusCode || 500).json({ 
+      message: "Failed to find report",
+      error: error.message 
+    });
+  }
+});
+
 // Get dataset information including storage mode
 router.get("/api/powerbi/workspaces/:workspaceId/datasets/:datasetId", async (req, res) => {
   try {
