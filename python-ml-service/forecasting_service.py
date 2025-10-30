@@ -1071,8 +1071,17 @@ def forecast_linear_regression(model_info, df, forecast_days):
         mean_non_zero = np.mean(non_zero_values)
         std_non_zero = np.std(non_zero_values)
         min_non_zero = np.min(non_zero_values)
-        # Dynamic threshold: values below this are likely noise and should be zero
-        threshold = min(min_non_zero * 0.5, mean_non_zero * 0.1) if min_non_zero > 0 else mean_non_zero * 0.1
+        
+        # More aggressive threshold for highly intermittent items
+        if zero_ratio > 0.9:  # Very intermittent (>90% zeros)
+            threshold = min_non_zero * 0.8  # Set threshold at 80% of minimum observed value
+        elif zero_ratio > 0.7:  # Moderately intermittent
+            threshold = min_non_zero * 0.6
+        elif zero_ratio > 0.3:  # Slightly intermittent
+            threshold = min_non_zero * 0.4
+        else:
+            # Regular items - use original logic
+            threshold = min(min_non_zero * 0.5, mean_non_zero * 0.1) if min_non_zero > 0 else mean_non_zero * 0.1
     else:
         # If all historical values are zero, forecast all zeros
         predictions = []
@@ -1148,15 +1157,26 @@ def forecast_linear_regression(model_info, df, forecast_days):
         
         # Determine if this day should have demand based on historical pattern
         if zero_ratio > 0.3:  # If historically >30% of days have zero demand
-            # Use interval-based approach
-            if days_since_last_order < avg_interval * 0.7:
-                # Too soon after last order, likely zero
-                if pred_value < mean_non_zero * 0.5:
+            # For highly intermittent items, use probabilistic approach
+            if zero_ratio > 0.9:
+                # Randomly decide if this day should have demand based on historical frequency
+                # E.g., if historically 97% zeros, only 3% chance of having demand
+                np.random.seed(42 + i)  # Reproducible randomness
+                if np.random.random() < zero_ratio:
                     pred_value = 0
-            
-            # Apply threshold to filter out noise
-            if pred_value < threshold and pred_value > 0:
-                pred_value = 0
+                elif pred_value < threshold:
+                    # Even if selected for demand, must exceed threshold
+                    pred_value = 0
+            else:
+                # Use interval-based approach for moderately intermittent items
+                if days_since_last_order < avg_interval * 0.5:  # More aggressive: 50% of average interval
+                    # Too soon after last order, force zero unless very high prediction
+                    if pred_value < mean_non_zero * 0.8:  # Need 80% of mean to override interval
+                        pred_value = 0
+                
+                # Apply threshold to filter out noise
+                if pred_value < threshold and pred_value > 0:
+                    pred_value = 0
             
             # If we predict an order, reset counter
             if pred_value > 0:
@@ -1222,8 +1242,17 @@ def forecast_random_forest(model_info, df, forecast_days):
         mean_non_zero = np.mean(non_zero_values)
         std_non_zero = np.std(non_zero_values)
         min_non_zero = np.min(non_zero_values)
-        # Dynamic threshold: values below this are likely noise and should be zero
-        threshold = min(min_non_zero * 0.5, mean_non_zero * 0.1) if min_non_zero > 0 else mean_non_zero * 0.1
+        
+        # More aggressive threshold for highly intermittent items
+        if zero_ratio > 0.9:  # Very intermittent (>90% zeros)
+            threshold = min_non_zero * 0.8  # Set threshold at 80% of minimum observed value
+        elif zero_ratio > 0.7:  # Moderately intermittent
+            threshold = min_non_zero * 0.6
+        elif zero_ratio > 0.3:  # Slightly intermittent
+            threshold = min_non_zero * 0.4
+        else:
+            # Regular items - use original logic
+            threshold = min(min_non_zero * 0.5, mean_non_zero * 0.1) if min_non_zero > 0 else mean_non_zero * 0.1
     else:
         # If all historical values are zero, forecast all zeros
         predictions = []
@@ -1286,15 +1315,26 @@ def forecast_random_forest(model_info, df, forecast_days):
         
         # Determine if this day should have demand based on historical pattern
         if zero_ratio > 0.3:  # If historically >30% of days have zero demand
-            # Use interval-based approach
-            if days_since_last_order < avg_interval * 0.7:
-                # Too soon after last order, likely zero
-                if pred_value < mean_non_zero * 0.5:
+            # For highly intermittent items, use probabilistic approach
+            if zero_ratio > 0.9:
+                # Randomly decide if this day should have demand based on historical frequency
+                # E.g., if historically 97% zeros, only 3% chance of having demand
+                np.random.seed(42 + i)  # Reproducible randomness
+                if np.random.random() < zero_ratio:
                     pred_value = 0
-            
-            # Apply threshold to filter out noise
-            if pred_value < threshold and pred_value > 0:
-                pred_value = 0
+                elif pred_value < threshold:
+                    # Even if selected for demand, must exceed threshold
+                    pred_value = 0
+            else:
+                # Use interval-based approach for moderately intermittent items
+                if days_since_last_order < avg_interval * 0.5:  # More aggressive: 50% of average interval
+                    # Too soon after last order, force zero unless very high prediction
+                    if pred_value < mean_non_zero * 0.8:  # Need 80% of mean to override interval
+                        pred_value = 0
+                
+                # Apply threshold to filter out noise
+                if pred_value < threshold and pred_value > 0:
+                    pred_value = 0
             
             # If we predict an order, reset counter
             if pred_value > 0:
