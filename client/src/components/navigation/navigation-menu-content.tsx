@@ -143,7 +143,7 @@ export function NavigationMenuContent({ isPinned, onTogglePin, onClose, isOpen }
     ...group,
     items: group.features.filter(item => {
       // Skip permission check for common menu items that should always be visible
-      const alwaysVisibleItems = ['SMART KPI Tracking', 'Max AI Assistant', 'Getting Started', 'Take a Guided Tour', 'Master Production Schedule'];
+      const alwaysVisibleItems = ['SMART KPI Tracking', 'Max AI Assistant', 'Getting Started', 'Take a Guided Tour', 'Master Production Schedule', 'Production Scheduler'];
       
       // Check permissions only if not in always visible list
       if (!alwaysVisibleItems.includes(item.label)) {
