@@ -1835,11 +1835,11 @@
                         manuallyScheduled: false, // Allow automatic scheduling
                         draggable: true, // Allow dragging to schedule
                         // Additional PT operation data
-                        jobId: operation.jobExternalId || operation.jobId || operation.job_id, // Use jobExternalId for dependency generation
-                        jobExternalId: operation.jobExternalId || operation.job_external_id || operation.batch_id, // Store batch ID separately
-                        jobName: operation.jobName,
-                        jobPriority: Number(operation.jobPriority), // Direct mapping from API - no fallbacks
-                        jobDueDate: operation.dueDate, // CRITICAL: Add job Need-By date for ALAP scheduling
+                        jobId: operation.job_id || operation.jobId, // Use numeric job_id for priority lookup
+                        jobExternalId: operation.job_external_id || operation.jobExternalId || operation.batch_id, // Store batch ID separately
+                        jobName: operation.job_name || operation.jobName,
+                        jobPriority: Number(operation.job_priority || operation.jobPriority), // Map from API field job_priority
+                        jobDueDate: operation.job_due_date || operation.dueDate, // CRITICAL: Add job Need-By date for ALAP scheduling
                         operationName: operation.name,
                         resourceName: operation.resourceName,
                         isUnscheduled: isUnscheduled,
@@ -3445,13 +3445,11 @@
 
                 // Shared helper functions for job extraction and sorting
                 function getJobKey(ev) {
-                    // Use jobExternalId (batch ID) first, then fall back to jobName
-                    // Don't use numeric jobId which creates confusion
-                    return ev.jobExternalId ?? ev.job_external_id ??
-                           ev.ptData?.jobExternalId ?? ev.ptData?.job_external_id ??
-                           ev.jobName ?? ev.job_name ??
-                           ev.ptData?.jobName ?? ev.ptData?.job_name ??
-                           ev.data?.jobExternalId ?? ev.data?.jobName ?? null;
+                    // Use numeric jobId for priority mapping since that's what the priority map uses
+                    // The priority map is keyed by job.id from the ptjobs table
+                    return ev.jobId ?? ev.job_id ??
+                           ev.ptData?.jobId ?? ev.ptData?.job_id ??
+                           ev.data?.jobId ?? ev.data?.job_id ?? null;
                 }
 
                 function getJobPriority(ev) {
