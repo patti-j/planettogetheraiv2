@@ -2934,8 +2934,19 @@ Please answer their question using this data.`
                 const reports = await this.powerBIService.getReportsFromWorkspace(accessToken, workspace.id);
                 
                 for (const report of reports) {
+                  // Clean up search term - remove common suffixes like "report", "dashboard", etc.
+                  const cleanedSearchTerm = reportName.toLowerCase()
+                    .replace(/\s*(report|dashboard|view|analysis|summary)$/i, '')
+                    .trim();
+                  
+                  const reportNameLower = report.name.toLowerCase();
+                  
                   // Check if report name matches (partial match, case-insensitive)
-                  if (report.name.toLowerCase().includes(reportName.toLowerCase())) {
+                  // Also check if the search term matches the report name without suffix
+                  if (reportNameLower.includes(cleanedSearchTerm) || 
+                      reportNameLower === cleanedSearchTerm ||
+                      (cleanedSearchTerm.includes(' ') && 
+                       reportNameLower.includes(cleanedSearchTerm.split(' ')[0]))) {
                     console.log('📊 Found report:', report.name, 'in workspace:', workspace.name);
                     
                     // Construct direct URL with workspace and report parameters
