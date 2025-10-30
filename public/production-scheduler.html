@@ -3498,6 +3498,52 @@
                 window.processRank = processRank;
                 window.sequenceSortKey = sequenceSortKey;
                 
+                // Validation function to check for Boil-before-Fermentation violations
+                window.checkBoilBeforeFerment = function () {
+                    const bad = [];
+                    const byJob = new Map();
+                    
+                    // Group events by job
+                    scheduler.eventStore.records.forEach(e => {
+                        const k = getJobKey(e);
+                        if (!k || !e.startDate || !e.endDate) return;
+                        (byJob.get(k) || byJob.set(k, []).get(k)).push(e);
+                    });
+                    
+                    // Check each job for boil/fermentation ordering violations
+                    byJob.forEach((ops, job) => {
+                        // Find the last boil operation (highest end date)
+                        const boil = ops.filter(o => /boil|kettle/i.test(o.name))
+                            .sort((a, b) => a.startDate - b.startDate).pop();
+                        
+                        // Find the first fermentation operation (lowest start date)
+                        const ferm = ops.filter(o => /ferment/i.test(o.name))
+                            .sort((a, b) => a.startDate - b.startDate)[0];
+                        
+                        // Check if boil ends after fermentation starts (violation)
+                        if (boil && ferm && boil.endDate > ferm.startDate) {
+                            bad.push({ 
+                                job: job, 
+                                boil: boil.name, 
+                                boilEnd: boil.endDate, 
+                                ferm: ferm.name, 
+                                fermStart: ferm.startDate,
+                                overlap: new Date(boil.endDate - ferm.startDate).getTime() / (1000 * 60 * 60) // hours
+                            });
+                        }
+                    });
+                    
+                    // Report results
+                    if (bad.length > 0) {
+                        console.error('❌ Boil-before-Fermentation violations found:');
+                        console.table(bad);
+                    } else {
+                        console.log('✅ No Boil-before-Fermentation violations found');
+                    }
+                    
+                    return bad.length === 0;
+                };
+                
                 // Test A: Verify no engine dependencies (only visual dependencies)
                 window.testNoDependencies = function() {
                     // Use visual dependency store since engine store is intentionally null
