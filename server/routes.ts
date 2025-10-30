@@ -2574,6 +2574,24 @@ router.get("/api/pt-operations", async (req, res) => {
     
     // Transform the data for the frontend (handle Neon/Drizzle result format)
     const operationsData = Array.isArray(rawOperations) ? rawOperations : rawOperations.rows || [];
+    
+    // DEBUG: Check what we're getting from the database
+    if (operationsData.length > 0) {
+      console.log('🔴 PRIORITY DEBUG - First 3 operations from DB:');
+      operationsData.slice(0, 3).forEach((op: any) => {
+        console.log(`  Operation: ${op.operation_name}`);
+        console.log(`    job_priority field value: ${op.job_priority} (type: ${typeof op.job_priority})`);
+        console.log(`    job_name: ${op.job_name}`);
+        console.log(`    All fields in this record:`, Object.keys(op));
+      });
+      // Also check for first IPA operation specifically
+      const ipaOp = operationsData.find((op: any) => op.operation_name?.includes('IPA'));
+      if (ipaOp) {
+        console.log('  🔴 IPA Operation found - Priority check:');
+        console.log('    Full record:', ipaOp);
+      }
+    }
+    
     const operations = operationsData.map((op: any) => ({
       id: op.operation_id,
       name: op.operation_name || `Operation ${op.operation_id}`,
