@@ -415,20 +415,10 @@ export default function DemandForecasting() {
   // Analyze data mutation for intelligent recommendations
   const analyzeMutation = useMutation({
     mutationFn: async (data: any) => {
-      const response = await fetch("http://localhost:8000/analyze", {
+      return await apiRequest("/api/forecasting/analyze", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify(data)
+        body: data
       });
-      
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || "Failed to analyze data");
-      }
-      
-      return await response.json();
     },
     onSuccess: (data) => {
       if (data.success && data.analysis) {
@@ -1357,7 +1347,8 @@ export default function DemandForecasting() {
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {/* Main configuration row - 3 columns for dropdowns */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {/* Forecast Days */}
             <div className="space-y-2">
               <Label>Forecast Days</Label>
@@ -1409,18 +1400,18 @@ export default function DemandForecasting() {
                 placeholder="Select mode..."
               />
             </div>
-            
-            {/* Hyperparameter Tuning */}
-            <div className="flex items-center space-x-2">
-              <Switch
-                id="hyperparameter-tuning"
-                checked={hyperparameterTuning}
-                onCheckedChange={setHyperparameterTuning}
-              />
-              <Label htmlFor="hyperparameter-tuning">
-                Hyperparameter Tuning (Slower but more accurate)
-              </Label>
-            </div>
+          </div>
+          
+          {/* Hyperparameter Tuning - separate row */}
+          <div className="flex items-center space-x-2">
+            <Switch
+              id="hyperparameter-tuning"
+              checked={hyperparameterTuning}
+              onCheckedChange={setHyperparameterTuning}
+            />
+            <Label htmlFor="hyperparameter-tuning">
+              Hyperparameter Tuning (Slower but more accurate)
+            </Label>
           </div>
 
           {/* AI Model Recommendations */}
@@ -1927,31 +1918,20 @@ export default function DemandForecasting() {
                   <div className="flex items-center gap-2">
                     {/* Item selection - Show only for individual mode when we have forecasted items */}
                     {forecastMode === "individual" && forecastMutation.data.forecastedItemNames && forecastMutation.data.forecastedItemNames.length > 0 && (
-                      <>
-                        <Input
-                          placeholder="Search items..."
-                          value={forecastSearchQuery}
-                          onChange={(e) => setForecastSearchQuery(e.target.value)}
-                          className="w-48 h-8"
-                        />
-                        <Combobox
-                          options={
-                            // Don't include "Overall" option in individual mode
-                            (forecastMutation.data.forecastedItemNames || [])
-                              .filter((item: string) => 
-                                item.toLowerCase().includes(forecastSearchQuery.toLowerCase())
-                              )
-                              .map((item: string) => ({
-                                value: item,
-                                label: item
-                              }))
-                          }
-                          value={selectedForecastItem}
-                          onValueChange={setSelectedForecastItem}
-                          placeholder="Select item..."
-                          className="w-64"
-                        />
-                      </>
+                      <Combobox
+                        options={
+                          // Don't include "Overall" option in individual mode
+                          (forecastMutation.data.forecastedItemNames || [])
+                            .map((item: string) => ({
+                              value: item,
+                              label: item
+                            }))
+                        }
+                        value={selectedForecastItem}
+                        onValueChange={setSelectedForecastItem}
+                        placeholder="Select item..."
+                        className="w-64"
+                      />
                     )}
                     {/* Save and Export buttons */}
                     <Button

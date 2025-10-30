@@ -498,4 +498,31 @@ router.post('/forecast', async (req, res) => {
   }
 });
 
+// Analyze data for model recommendations
+router.post('/analyze', async (req, res) => {
+  try {
+    const ML_SERVICE_URL = process.env.ML_SERVICE_URL || 'http://localhost:8000';
+    
+    // Forward the request to ML service
+    const response = await fetch(`${ML_SERVICE_URL}/analyze`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(req.body)
+    });
+    
+    const result = await response.json();
+    
+    if (!response.ok) {
+      throw new Error(result.error || 'Analysis failed');
+    }
+    
+    res.json(result);
+  } catch (error: any) {
+    console.error('Analysis error:', error);
+    res.status(500).json({ error: error.message || 'Analysis failed' });
+  }
+});
+
 export default router;
