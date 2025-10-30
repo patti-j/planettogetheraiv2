@@ -6170,13 +6170,61 @@
                             // Optional: Also save a version/snapshot for history
                             // This happens automatically with the existing saved-schedules system
                             try {
+                                // Safely extract schedule data with fallbacks
+                                let eventsData = [];
+                                let resourcesData = [];
+                                let dependenciesData = [];
+                                
+                                try {
+                                    // Try to get events data - fallback to manual extraction if toJSON fails
+                                    if (window.scheduler.eventStore.toJSON) {
+                                        eventsData = window.scheduler.eventStore.toJSON();
+                                    }
+                                } catch (e) {
+                                    console.warn('Could not serialize events with toJSON, using fallback:', e);
+                                    // Fallback: manually extract essential event data
+                                    eventsData = window.scheduler.eventStore.records.map(event => ({
+                                        id: event.id,
+                                        name: event.name,
+                                        startDate: event.startDate ? event.startDate.toISOString() : null,
+                                        endDate: event.endDate ? event.endDate.toISOString() : null,
+                                        resourceId: event.resourceId,
+                                        duration: event.duration,
+                                        durationUnit: event.durationUnit
+                                    }));
+                                }
+                                
+                                try {
+                                    // Try to get resources data - fallback to manual extraction if toJSON fails
+                                    if (window.scheduler.resourceStore.toJSON) {
+                                        resourcesData = window.scheduler.resourceStore.toJSON();
+                                    }
+                                } catch (e) {
+                                    console.warn('Could not serialize resources with toJSON, using fallback:', e);
+                                    // Fallback: manually extract essential resource data
+                                    resourcesData = window.scheduler.resourceStore.records.map(resource => ({
+                                        id: resource.id,
+                                        name: resource.name
+                                    }));
+                                }
+                                
+                                try {
+                                    // Try to get dependencies data if visual store exists
+                                    if (window.visualDependencyStore && window.visualDependencyStore.toJSON) {
+                                        dependenciesData = window.visualDependencyStore.toJSON();
+                                    }
+                                } catch (e) {
+                                    console.warn('Could not serialize dependencies:', e);
+                                    // Dependencies are optional, so just leave as empty array
+                                }
+                                
                                 const scheduleData = {
                                     name: `Auto-save - ${new Date().toLocaleString()}`,
                                     description: `Algorithm: ${document.getElementById('schedulingAlgorithm').options[document.getElementById('schedulingAlgorithm').selectedIndex].text}`,
                                     scheduleData: {
-                                        events: window.scheduler.eventStore.toJSON(),
-                                        resources: window.scheduler.resourceStore.toJSON(),
-                                        dependencies: window.visualDependencyStore ? window.visualDependencyStore.toJSON() : []
+                                        events: eventsData,
+                                        resources: resourcesData,
+                                        dependencies: dependenciesData
                                     },
                                     metadata: {
                                         algorithm: document.getElementById('schedulingAlgorithm').value,
