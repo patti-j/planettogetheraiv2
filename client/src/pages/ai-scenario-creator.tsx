@@ -591,14 +591,14 @@ export default function AIScenarioCreator() {
                             <TrendingUp className="h-5 w-5 mx-auto mb-1 text-blue-500" />
                             <div className="text-sm font-medium">Efficiency</div>
                             <div className="text-lg font-bold text-blue-600">
-                              {scenario.predicted_metrics.efficiency_score}%
+                              {scenario.predicted_metrics.production_efficiency || scenario.predicted_metrics.efficiency_score || 0}%
                             </div>
                           </div>
                           <div className="text-center p-3 bg-green-50 rounded-lg">
                             <Target className="h-5 w-5 mx-auto mb-1 text-green-500" />
                             <div className="text-sm font-medium">On-Time</div>
                             <div className="text-lg font-bold text-green-600">
-                              {scenario.predicted_metrics.on_time_delivery_percent}%
+                              {scenario.predicted_metrics.on_time_delivery || scenario.predicted_metrics.on_time_delivery_percent || 0}%
                             </div>
                           </div>
                         </div>
