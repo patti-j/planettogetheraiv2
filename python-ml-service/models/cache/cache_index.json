@@ -415,7 +415,7 @@
     "forecast_days": 30,
     "item": "FG1",
     "cache_key": "0aa57c323baaedbb",
-    "cached_at": "2025-10-29T18:58:49.592233",
+    "cached_at": "2025-10-30T04:19:27.548974",
     "planning_areas": [
       "BI01",
       "BI02"
@@ -443,7 +443,7 @@
     "forecast_days": 30,
     "item": "FG2",
     "cache_key": "8893b02cb15e8d2d",
-    "cached_at": "2025-10-29T18:58:50.330972",
+    "cached_at": "2025-10-30T04:19:28.007138",
     "planning_areas": [
       "BI01",
       "BI02"
@@ -471,7 +471,7 @@
     "forecast_days": 30,
     "item": "SUB1",
     "cache_key": "e878cfcfa8cca607",
-    "cached_at": "2025-10-29T18:58:50.741427",
+    "cached_at": "2025-10-30T04:19:28.243258",
     "planning_areas": [
       "BI01",
       "BI02"
@@ -499,7 +499,7 @@
     "forecast_days": 30,
     "item": "SUB2",
     "cache_key": "2294acf43bffe0a0",
-    "cached_at": "2025-10-29T18:58:51.965140",
+    "cached_at": "2025-10-30T04:19:28.549266",
     "planning_areas": [
       "BI01",
       "BI02"
@@ -527,7 +527,7 @@
     "forecast_days": 30,
     "item": "SUB3",
     "cache_key": "88dfad8e2571fcc1",
-    "cached_at": "2025-10-29T18:58:52.466632",
+    "cached_at": "2025-10-30T04:19:28.640719",
     "planning_areas": [
       "BI01",
       "BI02"
@@ -583,7 +583,7 @@
     "forecast_days": 30,
     "item": "FG1",
     "cache_key": "b85d7baccdb5578c",
-    "cached_at": "2025-10-29T18:59:49.778606",
+    "cached_at": "2025-10-30T04:19:56.498550",
     "planning_areas": [
       "BI01",
       "BI02"
@@ -611,7 +611,7 @@
     "forecast_days": 30,
     "item": "FG2",
     "cache_key": "2e9d2c90a11a4b3e",
-    "cached_at": "2025-10-29T18:59:50.239801",
+    "cached_at": "2025-10-30T04:19:57.051954",
     "planning_areas": [
       "BI01",
       "BI02"
@@ -639,7 +639,7 @@
     "forecast_days": 30,
     "item": "SUB1",
     "cache_key": "3b127060edf325fb",
-    "cached_at": "2025-10-29T18:59:50.388638",
+    "cached_at": "2025-10-30T04:19:57.263892",
     "planning_areas": [
       "BI01",
       "BI02"
@@ -667,7 +667,7 @@
     "forecast_days": 30,
     "item": "SUB2",
     "cache_key": "eead0059772fe175",
-    "cached_at": "2025-10-29T18:59:50.503321",
+    "cached_at": "2025-10-30T04:19:57.398635",
     "planning_areas": [
       "BI01",
       "BI02"
@@ -695,7 +695,7 @@
     "forecast_days": 30,
     "item": "SUB3",
     "cache_key": "efd970f5af7efaec",
-    "cached_at": "2025-10-29T18:59:50.620608",
+    "cached_at": "2025-10-30T04:19:57.523346",
     "planning_areas": [
       "BI01",
       "BI02"
@@ -751,7 +751,7 @@
     "forecast_days": 30,
     "item": "FG1",
     "cache_key": "7a2fc9b6b6a65db5",
-    "cached_at": "2025-10-30T04:00:09.317648",
+    "cached_at": "2025-10-30T04:19:06.811560",
     "planning_areas": [
       "BI01",
       "BI02"
@@ -779,7 +779,7 @@
     "forecast_days": 30,
     "item": "FG2",
     "cache_key": "19391c88f5066190",
-    "cached_at": "2025-10-30T04:00:09.332414",
+    "cached_at": "2025-10-30T04:19:06.833470",
     "planning_areas": [
       "BI01",
       "BI02"
@@ -807,7 +807,7 @@
     "forecast_days": 30,
     "item": "SUB1",
     "cache_key": "1ecba7e11de3d8c2",
-    "cached_at": "2025-10-30T04:00:09.347460",
+    "cached_at": "2025-10-30T04:19:06.866277",
     "planning_areas": [
       "BI01",
       "BI02"
@@ -835,7 +835,7 @@
     "forecast_days": 30,
     "item": "SUB2",
     "cache_key": "de66e5b58135010f",
-    "cached_at": "2025-10-30T04:00:09.357876",
+    "cached_at": "2025-10-30T04:19:06.884149",
     "planning_areas": [
       "BI01",
       "BI02"
@@ -863,7 +863,7 @@
     "forecast_days": 30,
     "item": "SUB3",
     "cache_key": "915b615de41d93ac",
-    "cached_at": "2025-10-30T04:00:09.368238",
+    "cached_at": "2025-10-30T04:19:06.902830",
     "planning_areas": [
       "BI01",
       "BI02"
@@ -906,6 +906,174 @@
       "mape": 8.456550152677067,
       "rmse": 25.238020357272653,
       "accuracy": 91.54344984732293
+    },
+    "training_points": 1672
+  },
+  "aeba9aa035f37e4a": {
+    "schema": "publish",
+    "table": "DASHt_SalesOrders",
+    "date_col": "RequiredAvailableDate",
+    "item_col": "ItemName",
+    "qty_col": "QtyOrdered",
+    "model_type": "Random Forest",
+    "forecast_days": 30,
+    "item": "FG1",
+    "cache_key": "aeba9aa035f37e4a",
+    "cached_at": "2025-10-30T04:18:32.179250",
+    "planning_areas": [
+      "BI01",
+      "BI02"
+    ],
+    "scenario_names": [
+      "Scenario 1",
+      "Scenario 2",
+      "Scenario Copy 1"
+    ],
+    "hyperparameter_tuning": true,
+    "metrics": {
+      "mape": 36.330404239843205,
+      "rmse": 33.293624206598345,
+      "accuracy": 63.669595760156795
+    },
+    "training_points": 1609
+  },
+  "60a95d594c721569": {
+    "schema": "publish",
+    "table": "DASHt_SalesOrders",
+    "date_col": "RequiredAvailableDate",
+    "item_col": "ItemName",
+    "qty_col": "QtyOrdered",
+    "model_type": "Random Forest",
+    "forecast_days": 30,
+    "item": "FG2",
+    "cache_key": "60a95d594c721569",
+    "cached_at": "2025-10-30T04:18:32.355499",
+    "planning_areas": [
+      "BI01",
+      "BI02"
+    ],
+    "scenario_names": [
+      "Scenario 1",
+      "Scenario 2",
+      "Scenario Copy 1"
+    ],
+    "hyperparameter_tuning": true,
+    "metrics": {
+      "mape": 37.02734008501476,
+      "rmse": 29.472198786296318,
+      "accuracy": 62.97265991498524
+    },
+    "training_points": 1536
+  },
+  "5df1ce976b37515e": {
+    "schema": "publish",
+    "table": "DASHt_SalesOrders",
+    "date_col": "RequiredAvailableDate",
+    "item_col": "ItemName",
+    "qty_col": "QtyOrdered",
+    "model_type": "Random Forest",
+    "forecast_days": 30,
+    "item": "SUB1",
+    "cache_key": "5df1ce976b37515e",
+    "cached_at": "2025-10-30T04:18:32.559636",
+    "planning_areas": [
+      "BI01",
+      "BI02"
+    ],
+    "scenario_names": [
+      "Scenario 1",
+      "Scenario 2",
+      "Scenario Copy 1"
+    ],
+    "hyperparameter_tuning": true,
+    "metrics": {
+      "mape": 44.80450187196459,
+      "rmse": 43.45412834015759,
+      "accuracy": 55.19549812803541
+    },
+    "training_points": 373
+  },
+  "a9eaaf0aba183d2d": {
+    "schema": "publish",
+    "table": "DASHt_SalesOrders",
+    "date_col": "RequiredAvailableDate",
+    "item_col": "ItemName",
+    "qty_col": "QtyOrdered",
+    "model_type": "Random Forest",
+    "forecast_days": 30,
+    "item": "SUB2",
+    "cache_key": "a9eaaf0aba183d2d",
+    "cached_at": "2025-10-30T04:18:32.755765",
+    "planning_areas": [
+      "BI01",
+      "BI02"
+    ],
+    "scenario_names": [
+      "Scenario 1",
+      "Scenario 2",
+      "Scenario Copy 1"
+    ],
+    "hyperparameter_tuning": true,
+    "metrics": {
+      "mape": 42.053907242499065,
+      "rmse": 70.99575492930623,
+      "accuracy": 57.946092757500935
+    },
+    "training_points": 209
+  },
+  "97b6311d2b44a6c2": {
+    "schema": "publish",
+    "table": "DASHt_SalesOrders",
+    "date_col": "RequiredAvailableDate",
+    "item_col": "ItemName",
+    "qty_col": "QtyOrdered",
+    "model_type": "Random Forest",
+    "forecast_days": 30,
+    "item": "SUB3",
+    "cache_key": "97b6311d2b44a6c2",
+    "cached_at": "2025-10-30T04:18:32.969579",
+    "planning_areas": [
+      "BI01",
+      "BI02"
+    ],
+    "scenario_names": [
+      "Scenario 1",
+      "Scenario 2",
+      "Scenario Copy 1"
+    ],
+    "hyperparameter_tuning": true,
+    "metrics": {
+      "mape": 49.19876005210339,
+      "rmse": 113.92574513859797,
+      "accuracy": 50.80123994789661
+    },
+    "training_points": 108
+  },
+  "e633dcd3608b5d6f": {
+    "schema": "publish",
+    "table": "DASHt_SalesOrders",
+    "date_col": "RequiredAvailableDate",
+    "item_col": "ItemName",
+    "qty_col": "QtyOrdered",
+    "model_type": "Random Forest",
+    "forecast_days": 30,
+    "item": "OVERALL",
+    "cache_key": "e633dcd3608b5d6f",
+    "cached_at": "2025-10-30T04:18:33.327570",
+    "planning_areas": [
+      "BI01",
+      "BI02"
+    ],
+    "scenario_names": [
+      "Scenario 1",
+      "Scenario 2",
+      "Scenario Copy 1"
+    ],
+    "hyperparameter_tuning": true,
+    "metrics": {
+      "mape": 13.853916857552734,
+      "rmse": 36.11658369120186,
+      "accuracy": 86.14608314244727
     },
     "training_points": 1672
   }

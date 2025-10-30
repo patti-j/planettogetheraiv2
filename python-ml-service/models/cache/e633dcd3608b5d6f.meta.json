@@ -4,11 +4,11 @@
   "date_col": "RequiredAvailableDate",
   "item_col": "ItemName",
   "qty_col": "QtyOrdered",
-  "model_type": "ARIMA",
+  "model_type": "Random Forest",
   "forecast_days": 30,
-  "item": "SUB1",
-  "cache_key": "e878cfcfa8cca607",
-  "cached_at": "2025-10-30T04:19:28.243258",
+  "item": "OVERALL",
+  "cache_key": "e633dcd3608b5d6f",
+  "cached_at": "2025-10-30T04:18:33.327570",
   "planning_areas": [
     "BI01",
     "BI02"
@@ -18,11 +18,11 @@
     "Scenario 2",
     "Scenario Copy 1"
   ],
-  "hyperparameter_tuning": false,
+  "hyperparameter_tuning": true,
   "metrics": {
-    "mape": 99.38871250335949,
-    "rmse": 88.24364219865427,
-    "accuracy": 0.6112874966405144
+    "mape": 13.853916857552734,
+    "rmse": 36.11658369120186,
+    "accuracy": 86.14608314244727
   },
-  "training_points": 373
+  "training_points": 1672
 }
