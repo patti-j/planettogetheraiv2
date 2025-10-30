@@ -201,7 +201,7 @@ export default function DemandForecasting() {
   });
   
   // Process tables data for Combobox
-  const tables = tablesData || [];
+  const tables: Table[] = tablesData || [];
 
   // Set default table to 'publish.DASHt_SalesOrders' when tables are loaded
   useEffect(() => {
@@ -219,29 +219,32 @@ export default function DemandForecasting() {
   }, [tables]);
 
   // Fetch columns when table is selected
-  const { data: columns, isLoading: isLoadingColumns } = useQuery({
+  const { data: columnsData, isLoading: isLoadingColumns } = useQuery({
     queryKey: selectedTable 
       ? [`/api/forecasting/columns/${selectedTable.schema}/${selectedTable.name}`]
       : [],
     enabled: !!selectedTable,
   });
+  const columns: Column[] = columnsData || [];
 
   // Fetch unique values for filters
-  const { data: planningAreas } = useQuery({
+  const { data: planningAreasData } = useQuery({
     queryKey: selectedTable && planningAreaColumn
       ? [`/api/forecasting/items/${selectedTable.schema}/${selectedTable.name}/${planningAreaColumn}`]
       : [],
     enabled: !!selectedTable && !!planningAreaColumn,
   });
+  const planningAreas: string[] = planningAreasData || [];
 
-  const { data: scenarios } = useQuery({
+  const { data: scenariosData } = useQuery({
     queryKey: selectedTable && scenarioColumn
       ? [`/api/forecasting/items/${selectedTable.schema}/${selectedTable.name}/${scenarioColumn}`]
       : [],
     enabled: !!selectedTable && !!scenarioColumn,
   });
+  const scenarios: string[] = scenariosData || [];
 
-  const { data: items } = useQuery({
+  const { data: itemsData } = useQuery({
     queryKey: selectedTable && itemColumn
       ? [`/api/forecasting/items/${selectedTable.schema}/${selectedTable.name}/${itemColumn}?${new URLSearchParams({
           ...(selectedPlanningAreas.length > 0 && { planningAreas: selectedPlanningAreas.join(',') }),
@@ -250,6 +253,7 @@ export default function DemandForecasting() {
       : [],
     enabled: !!selectedTable && !!itemColumn,
   });
+  const items: string[] = itemsData || [];
   
   // Fetch cache statistics
   const { data: cacheStatsData } = useQuery({
@@ -1584,19 +1588,28 @@ export default function DemandForecasting() {
             <Button
               variant="outline"
               onClick={async () => {
-                // Prepare data for analysis
-                if (!tableData || tableData.length === 0) {
+                // Validate that we have all required fields
+                if (!selectedTable || !dateColumn || !itemColumn || !quantityColumn) {
                   toast({
                     variant: "destructive",
-                    title: "No Data",
-                    description: "Please ensure data is loaded first"
+                    title: "Missing Configuration",
+                    description: "Please select table and all required columns first"
                   });
                   return;
                 }
                 
-                // Call analyze mutation
+                // For now, we'll need to fetch the data first
+                // The analyze endpoint will need to fetch from SQL Server
+                toast({
+                  title: "Analyzing Data",
+                  description: "Fetching and analyzing your data patterns..."
+                });
+                
+                // Since we don't have tableData loaded, we'll pass the configuration
+                // and let the backend fetch the data
                 analyzeMutation.mutate({
-                  data: tableData,
+                  schema: selectedTable.schema,
+                  table: selectedTable.name,
                   dateCol: dateColumn,
                   itemCol: itemColumn,
                   qtyCol: quantityColumn,
@@ -1604,7 +1617,7 @@ export default function DemandForecasting() {
                   items: forecastMode === 'individual' ? selectedItems : items
                 });
               }}
-              disabled={!tableData || analyzeMutation.isPending}
+              disabled={!selectedTable || !dateColumn || !itemColumn || !quantityColumn || analyzeMutation.isPending}
             >
               {analyzeMutation.isPending ? (
                 <>

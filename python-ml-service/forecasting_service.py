@@ -1608,19 +1608,51 @@ def analyze():
     try:
         data = request.json
         
-        # Get data preparation info
-        df_raw = data.get('data', [])
+        # Get configuration
+        schema = data.get('schema', 'dbo')
+        table = data.get('table', '')
         date_col = data.get('dateCol', 'date')
         item_col = data.get('itemCol', None)
         qty_col = data.get('qtyCol', 'quantity')
         forecast_mode = data.get('forecastMode', 'overall')
         items_to_analyze = data.get('items', None)
         
-        if not df_raw:
-            return jsonify({"error": "No data provided for analysis"}), 400
+        # If data is provided directly (legacy support)
+        df_raw = data.get('data', None)
         
-        # Convert to DataFrame
-        df = pd.DataFrame(df_raw)
+        if df_raw:
+            # Convert to DataFrame if data was provided
+            df = pd.DataFrame(df_raw)
+        else:
+            # Fetch from SQL Server
+            if not table:
+                return jsonify({"error": "No table specified"}), 400
+            
+            # Use existing SQL Server connection logic
+            import pyodbc
+            import os
+            
+            # Build connection string
+            server = os.getenv('SQL_SERVER', '20.199.104.62')
+            database = os.getenv('SQL_DATABASE', 'Planning')
+            username = os.getenv('SQL_USERNAME', 'sa')
+            password = os.getenv('SQL_PASSWORD', 'PlanetTogether123!')
+            
+            conn_str = f'DRIVER={{ODBC Driver 17 for SQL Server}};SERVER={server};DATABASE={database};UID={username};PWD={password}'
+            
+            try:
+                conn = pyodbc.connect(conn_str)
+                
+                # Build and execute query
+                query = f"SELECT [{date_col}], [{item_col}], [{qty_col}] FROM [{schema}].[{table}]"
+                df = pd.read_sql(query, conn)
+                conn.close()
+                
+                print(f"Fetched {len(df)} rows from {schema}.{table}", flush=True)
+                
+            except Exception as e:
+                print(f"SQL Server connection error: {str(e)}", flush=True)
+                return jsonify({"error": f"Database connection failed: {str(e)}"}), 500
         
         # Prepare data for analysis
         if date_col in df.columns:
