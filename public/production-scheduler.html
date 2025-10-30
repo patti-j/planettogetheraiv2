@@ -1752,6 +1752,7 @@
                         // Additional PT operation data
                         jobId: operation.jobExternalId || operation.jobId || operation.job_id, // Use jobExternalId for dependency generation
                         jobName: operation.jobName,
+                        jobPriority: operation.jobPriority || operation.job_priority || 999, // CRITICAL: Add priority for sorting
                         jobDueDate: operation.dueDate, // CRITICAL: Add job Need-By date for ALAP scheduling
                         operationName: operation.name,
                         resourceName: operation.resourceName,
@@ -3904,6 +3905,15 @@
                     // await compactLeftPerResource();
                     // console.log('✅ Left compaction complete - gaps removed');
                     console.log('✅ Bin packing algorithm already created optimal schedule without gaps');
+                    
+                    // Auto-fit view to show all scheduled operations
+                    console.log('🔍 Auto-fitting view to show all operations...');
+                    setTimeout(() => {
+                        if (scheduler.zoomToFit) {
+                            scheduler.zoomToFit({ leftMargin: 50, rightMargin: 50 });
+                            console.log('✅ View auto-fitted to content');
+                        }
+                    }, 100);
                     
                     // Verify no overlaps using the assertion function
                     if (assertNoOverlaps(scheduler)) {
