@@ -64,31 +64,6 @@ interface ForecastResult {
   forecastedItemNames?: string[];
 }
 
-interface DataAnalysis {
-  data_points: number;
-  intermittency_ratio: number;
-  cv_demand: number;
-  trend_strength: number;
-  seasonality_detected: boolean;
-  has_outliers: boolean;
-  mean_interval_between_orders: number;
-  recommended_models: string[];
-  reasoning: string[];
-  item_count?: number;
-  avg_intermittency?: number;
-  items_with_high_intermittency?: number;
-  item_analyses?: {
-    [itemName: string]: {
-      data_points: number;
-      intermittency_ratio: number;
-      cv_demand: number;
-      trend_strength: number;
-      seasonality_detected: boolean;
-      has_outliers: boolean;
-      mean_interval_between_orders: number;
-    };
-  };
-}
 
 export default function DemandForecasting() {
   const { toast } = useToast();
