@@ -1624,6 +1624,30 @@
                         if (ptOperations.length > 0) {
                             console.log('✅ First PT operation sample:', ptOperations[0]);
                         }
+                        
+                        // 🔴 CRITICAL DEBUG: Check job priorities from API
+                        console.log('🔴 API JOB PRIORITY DEBUG - First 5 operations:', 
+                            ptOperations.slice(0, 5).map(op => ({
+                                name: op.name,
+                                jobName: op.jobName,
+                                jobPriority: op.jobPriority,
+                                jobPriorityType: typeof op.jobPriority,
+                                priority: op.priority,
+                                allFields: Object.keys(op)
+                            }))
+                        );
+                        
+                        // Check specifically for IPA operations
+                        const ipaOps = ptOperations.filter(op => op.jobName?.includes('IPA'));
+                        if (ipaOps.length > 0) {
+                            console.log('🔴 IPA operations found:', 
+                                ipaOps.map(op => ({
+                                    name: op.name,
+                                    jobName: op.jobName,
+                                    jobPriority: op.jobPriority
+                                }))
+                            );
+                        }
                     } else {
                         console.error('❌ Failed to fetch PT operations:', operationsResponse.status);
                     }
@@ -4360,6 +4384,56 @@
 
                         return null;
                     };
+                    
+                    // Helper function to get job priority for an operation
+                    function getJobPriorityForOperation(op) {
+                        // Check in multiple places where priority might be stored
+                        // 1. Direct properties
+                        if (typeof op.jobPriority === 'number' && !isNaN(op.jobPriority)) {
+                            return op.jobPriority;
+                        }
+                        
+                        // 2. From ptData (original operation data)
+                        if (op.ptData) {
+                            if (typeof op.ptData.jobPriority === 'number' && !isNaN(op.ptData.jobPriority)) {
+                                return op.ptData.jobPriority;
+                            }
+                            // Check text priority field and convert to numeric
+                            const textPriority = op.ptData.priority;
+                            if (typeof textPriority === 'number') {
+                                return textPriority;
+                            } else if (textPriority) {
+                                // Handle string priority values - but these are already numeric from the API
+                                if (!isNaN(parseInt(textPriority))) {
+                                    return parseInt(textPriority);
+                                }
+                                const priorityMap = { 'High': 1, 'Medium': 3, 'Low': 5 };
+                                return priorityMap[textPriority] || 3;
+                            }
+                        }
+                        
+                        // 3. From data object (might be nested)
+                        if (op.data) {
+                            if (typeof op.data.jobPriority === 'number' && !isNaN(op.data.jobPriority)) {
+                                return op.data.jobPriority;
+                            }
+                            if (op.data.ptData && typeof op.data.ptData.jobPriority === 'number') {
+                                return op.data.ptData.jobPriority;
+                            }
+                        }
+                        
+                        // 4. Default to lowest priority (5)
+                        console.warn(`⚠️ Could not find valid job priority for operation ${op.name || op.id}, defaulting to 5`);
+                        console.warn('  Operation structure:', {
+                            hasJobPriority: 'jobPriority' in op,
+                            jobPriorityValue: op.jobPriority,
+                            jobPriorityType: typeof op.jobPriority,
+                            hasPtData: !!op.ptData,
+                            ptDataJobPriority: op.ptData?.jobPriority,
+                            ptDataPriority: op.ptData?.priority
+                        });
+                        return 5;
+                    }
                     
                     // Process each job independently
                     console.log('\n📍 Processing jobs with sequence-based backward scheduling...');
