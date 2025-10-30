@@ -3917,12 +3917,15 @@
                             // Calculate Earliest Start Time
                             // For first operation in job: use job start date (today or release date)
                             // For subsequent operations: must start after previous operation ends
+                            // CRITICAL: Operations within a job MUST be scheduled in strict sequence order
                             // ========================================================================
                             let earliestStart = previousOperationEnd || jobStartDate;
                             
                             console.log(`  📋 Operation "${event.name}" (seq ${sequence})`);
                             if (previousOperationEnd) {
                                 console.log(`     Must start after previous operation ends: ${previousOperationEnd.toLocaleString()}`);
+                                // ENFORCE: This operation cannot start before the previous one ends
+                                // This ensures operations within a job maintain their sequence order
                             } else {
                                 console.log(`     First operation, can start at: ${earliestStart.toLocaleString()}`);
                             }
@@ -3940,6 +3943,8 @@
                                 const resourceId = resource.id;
                                 
                                 // Find the earliest slot using bin packing algorithm
+                                // IMPORTANT: The slot MUST respect the earliestStart constraint
+                                // to maintain operation sequence within the job
                                 const slotStart = findEarliestSlot(resourceId, durationMs, earliestStart);
                                 const slotEnd = new Date(slotStart.getTime() + durationMs);
                                 
@@ -3947,26 +3952,50 @@
                                 console.log(`     Sequence requires after: ${earliestStart.toLocaleString()}`);
                                 console.log(`     Found optimal slot: ${slotStart.toLocaleString()} to ${slotEnd.toLocaleString()}`);
                                 
-                                // Update the event with the packed times
-                                event.setStartDate(slotStart, true); // true = keep duration
-                                event.set({
-                                    endDate: slotEnd,
-                                    manuallyScheduled: false
-                                });
-                                
-                                // Add this time slot to the resource timeline
-                                if (!resourceTimelines.has(resourceId)) {
-                                    resourceTimelines.set(resourceId, []);
+                                // VALIDATION: Ensure the slot respects sequence constraints
+                                if (slotStart.getTime() < earliestStart.getTime()) {
+                                    console.error(`❌ ERROR: Slot start (${slotStart.toLocaleString()}) is before earliest allowed (${earliestStart.toLocaleString()})`);
+                                    console.error(`   This violates sequence order for job ${jobKey}`);
+                                    // Force the slot to respect the sequence constraint
+                                    const correctedStart = new Date(earliestStart);
+                                    const correctedEnd = new Date(correctedStart.getTime() + durationMs);
+                                    console.log(`   🔧 Correcting to: ${correctedStart.toLocaleString()} to ${correctedEnd.toLocaleString()}`);
+                                    event.setStartDate(correctedStart, true);
+                                    event.set({
+                                        endDate: correctedEnd,
+                                        manuallyScheduled: false
+                                    });
+                                    // Update timeline with corrected slot
+                                    if (!resourceTimelines.has(resourceId)) {
+                                        resourceTimelines.set(resourceId, []);
+                                    }
+                                    resourceTimelines.get(resourceId).push({
+                                        start: correctedStart,
+                                        end: correctedEnd,
+                                        eventId: event.id,
+                                        eventName: event.name
+                                    });
+                                    previousOperationEnd = correctedEnd;
+                                } else {
+                                    // Update the event with the packed times
+                                    event.setStartDate(slotStart, true); // true = keep duration
+                                    event.set({
+                                        endDate: slotEnd,
+                                        manuallyScheduled: false
+                                    });
+                                    // Add this time slot to the resource timeline
+                                    if (!resourceTimelines.has(resourceId)) {
+                                        resourceTimelines.set(resourceId, []);
+                                    }
+                                    resourceTimelines.get(resourceId).push({
+                                        start: slotStart,
+                                        end: slotEnd,
+                                        eventId: event.id,
+                                        eventName: event.name
+                                    });
+                                    // Update previous operation end for next operation in sequence
+                                    previousOperationEnd = slotEnd;
                                 }
-                                resourceTimelines.get(resourceId).push({
-                                    start: slotStart,
-                                    end: slotEnd,
-                                    eventId: event.id,
-                                    eventName: event.name
-                                });
-                                
-                                // Update previous operation end for next operation in sequence
-                                previousOperationEnd = slotEnd;
                                 
                                 console.log(`  ✅ Packed "${event.name}" on ${resource.name}: ${slotStart.toLocaleString()} to ${slotEnd.toLocaleString()}`);
                             } else {
