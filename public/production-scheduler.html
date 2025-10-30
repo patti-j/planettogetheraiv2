@@ -3628,8 +3628,21 @@
                     // Group operations by job and sort by sequence number
                     const jobOperations = new Map(); // jobKey -> array of events sorted by sequence
                     
+                    // Debug: Log what we're grouping by
+                    console.log('🔍 Grouping operations by job...');
+                    
                     for (const ev of events) {
                         const key = getJobKey(ev);
+                        const priority = getPriority(ev);
+                        
+                        // Debug logging for first few operations
+                        if (events.indexOf(ev) < 3) {
+                            console.log(`  Operation: ${ev.name}`);
+                            console.log(`    jobKey: ${key}`);
+                            console.log(`    jobPriority: ${ev.jobPriority}`);
+                            console.log(`    priority from getPriority: ${priority}`);
+                        }
+                        
                         if (!key) {
                             // Handle orphan operations (no job ID)
                             if (!jobOperations.has('_orphans_')) {
@@ -3652,6 +3665,14 @@
                     }
                     
                     // ASAP: Sort jobs by PRIORITY ASC (1 before 5) so Priority 1 finishes first
+                    console.log('📊 Before sorting - Job priorities:');
+                    for (const [jobKey, operations] of jobOperations.entries()) {
+                        if (jobKey !== '_orphans_') {
+                            const priority = getPriority(operations[0]);
+                            console.log(`  ${jobKey}: Priority ${priority}`);
+                        }
+                    }
+                    
                     const sortedJobs = Array.from(jobOperations.entries()).sort(([keyA, opsA], [keyB, opsB]) => {
                         // Skip orphans - they go last
                         if (keyA === '_orphans_') return 1;
@@ -3662,6 +3683,9 @@
                         // Priority 5 (lowest) should schedule last and finish last
                         const priorityA = getPriority(opsA[0]);
                         const priorityB = getPriority(opsB[0]);
+                        
+                        // Debug log for sorting
+                        console.log(`  Comparing ${keyA} (pri ${priorityA}) vs ${keyB} (pri ${priorityB})`);
                         
                         if (priorityA !== priorityB) {
                             return priorityA - priorityB; // Ascending: 1, 2, 3, 4, 5
