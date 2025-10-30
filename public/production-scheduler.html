@@ -1455,7 +1455,11 @@
                 // Load all planning areas for the dropdown (once on startup)
                 async function loadPlanningAreas() {
                     try {
-                        const response = await fetch('/api/resources');
+                        // Get auth token from parent window or localStorage
+                        const authToken = window.parent?.localStorage?.getItem('auth_token') || localStorage.getItem('auth_token');
+                        const authHeaders = authToken ? { 'Authorization': `Bearer ${authToken}` } : {};
+                        
+                        const response = await fetch('/api/resources', { headers: authHeaders });
                         if (response.ok) {
                             const allResources = await response.json();
                             const areas = new Set();
@@ -1498,14 +1502,18 @@
                 let fetchedDependencies = []; // Store dependencies at a higher scope
                 
                 try {
+                    // Get auth token from parent window or localStorage
+                    const authToken = window.parent?.localStorage?.getItem('auth_token') || localStorage.getItem('auth_token');
+                    const authHeaders = authToken ? { 'Authorization': `Bearer ${authToken}` } : {};
+                    
                     // Fetch resources, PT operations, and dependencies from the backend APIs
                     // NOTE: Dependencies are for visual display only - ALAP uses sequence numbers for scheduling
                     const timestamp = Date.now(); // Cache-busting timestamp
                     const [resourcesResponse, operationsResponse, dependenciesResponse, capabilitiesResponse] = await Promise.all([
-                        fetch('/api/resources?_=' + timestamp),
-                        fetch('/api/pt-operations?_=' + timestamp), // CRITICAL: Cache-busting to get fresh jobPriority data
-                        fetch('/api/pt-dependencies?_=' + timestamp), // Keep for visual dependency lines
-                        fetch('/api/resources-with-capabilities?_=' + timestamp)
+                        fetch('/api/resources?_=' + timestamp, { headers: authHeaders }),
+                        fetch('/api/pt-operations?_=' + timestamp, { headers: authHeaders }), // CRITICAL: Cache-busting to get fresh jobPriority data
+                        fetch('/api/pt-dependencies?_=' + timestamp, { headers: authHeaders }), // Keep for visual dependency lines
+                        fetch('/api/resources-with-capabilities?_=' + timestamp, { headers: authHeaders })
                     ]);
                     
                     if (resourcesResponse.ok) {
@@ -3329,10 +3337,14 @@
                         
                         console.log(`💾 Saving schedule to database (${operations.length} operations)...`);
                         
+                        // Get auth token from parent window or localStorage
+                        const authToken = window.parent?.localStorage?.getItem('auth_token') || localStorage.getItem('auth_token');
+                        
                         const response = await fetch('/api/pt-operations/schedule', {
                             method: 'PATCH',
                             headers: {
-                                'Content-Type': 'application/json'
+                                'Content-Type': 'application/json',
+                                'Authorization': authToken ? `Bearer ${authToken}` : ''
                             },
                             body: JSON.stringify({ operations })
                         });
