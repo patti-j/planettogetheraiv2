@@ -4206,13 +4206,21 @@
                     
                     // Helper function to get job priority from operation (uses job's priority)
                     const getJobPriorityForOperation = (event) => {
-                        if (!event || !event.data) return 5; // Default to lowest priority
+                        if (!event) return 5; // Default to lowest priority
                         
-                        // The data object contains our job priority from the server
-                        const priority = event.data.job_priority;
+                        // Check multiple possible locations for job priority
+                        // Priority 1 = highest, Priority 5 = lowest
+                        const priority = event.jobPriority ?? 
+                                       event.job_priority ?? 
+                                       event.ptData?.jobPriority ?? 
+                                       event.ptData?.job_priority ??
+                                       event.data?.jobPriority ?? 
+                                       event.data?.job_priority ?? 
+                                       5;
                         
-                        // Return the priority as-is (already a number from 1-5)
-                        return priority !== undefined && priority !== null ? priority : 5;
+                        // Ensure it's a number between 1 and 5
+                        const numPriority = parseInt(priority);
+                        return (!isNaN(numPriority) && numPriority >= 1 && numPriority <= 5) ? numPriority : 5;
                     };
                     
                     // 🔧 CRITICAL: Disable ALL auto-scheduling features to prevent interference
