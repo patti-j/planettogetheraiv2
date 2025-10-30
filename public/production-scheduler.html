@@ -4365,6 +4365,15 @@
                         console.log(`\n🏭 Processing Job: ${jobKey}`);
                         const jobDue = jobDueMap.get(jobKey) || globalFallback;
                         console.log(`  Due: ${jobDue.toLocaleString()}`);
+                        
+                        // CRITICAL: Sort operations by sequence ASCENDING first
+                        // Then we'll process them in reverse order for backward scheduling
+                        operations.sort((a, b) => {
+                            const seqA = getSequence(a);
+                            const seqB = getSequence(b);
+                            return seqA - seqB; // Sort ascending: 10, 20, 30, 40, 50
+                        });
+                        
                         console.log(`  Operations: ${operations.length} (sequences ${operations.map(op => getSequence(op)).join(', ')})`);
                         
                         // Schedule backward from last operation (highest sequence)
