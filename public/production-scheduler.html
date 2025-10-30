@@ -1686,9 +1686,11 @@
                 // Transform PT operations into Bryntum events format
                 // CRITICAL: Load operations but DON'T use overlapping scheduled times
                 let events = ptOperations.map((operation, index) => {
-                    // Log job names for debugging
-                    if (index < 5 || operation.jobName) {
-                        console.log(`Operation ${operation.name}: Job = ${operation.jobName || 'NO JOB NAME'}`);
+                    // Log job names and priorities for debugging
+                    if (index < 5) {
+                        console.log(`Operation ${index}: ${operation.name}`);
+                        console.log(`  jobPriority: ${operation.jobPriority}, job_priority: ${operation.job_priority}, priority: ${operation.priority}`);
+                        console.log(`  Full operation object keys:`, Object.keys(operation));
                     }
                     
                     // First try to find a matching resource based on capability
