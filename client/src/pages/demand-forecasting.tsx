@@ -77,7 +77,7 @@ export default function DemandForecasting() {
   const [forecastDays, setForecastDays] = useState<number>(30);
   
   // New: Model and filter selections
-  const [modelType, setModelType] = useState<string>("Random Forest");
+  const [modelType, setModelType] = useState<string>("Prophet");
   const [hyperparameterTuning, setHyperparameterTuning] = useState<boolean>(false);
   const planningAreaColumn = "PlanningAreaName";
   const [selectedPlanningAreas, setSelectedPlanningAreas] = useState<string[]>([]);
@@ -1337,43 +1337,23 @@ export default function DemandForecasting() {
             </Label>
           </div>
 
-          {/* Model Information */}
+          {/* Model Information - Simplified */}
           {modelType && (
             <Alert className="bg-blue-50 border-blue-200">
               <Info className="h-4 w-4 text-blue-600" />
               <AlertTitle className="text-blue-900">About {modelType}</AlertTitle>
-              <AlertDescription className="space-y-2 text-blue-800 text-sm">
+              <AlertDescription className="text-blue-800 text-sm">
                 {modelType === "Random Forest" && (
-                  <>
-                    <p><strong>Best for:</strong> Complex non-linear patterns, multiple product categories with varying demand patterns</p>
-                    <p><strong>Handles:</strong> Irregular demand, outliers, multiple influencing factors, intermittent demand</p>
-                    <p><strong>Characteristics:</strong> High accuracy, robust to outliers, no data distribution assumptions, handles missing values well</p>
-                    <p className="text-xs italic">💡 Recommended for items with sporadic or unpredictable ordering patterns</p>
-                  </>
+                  <p>💡 <strong>Use when:</strong> You have irregular, sporadic demand or items with unpredictable ordering patterns. Great for handling outliers and missing data.</p>
                 )}
                 {modelType === "ARIMA" && (
-                  <>
-                    <p><strong>Best for:</strong> Time series with clear trends and regular seasonality patterns</p>
-                    <p><strong>Handles:</strong> Regular ordering patterns, predictable business cycles, steady demand</p>
-                    <p><strong>Characteristics:</strong> Excellent for short-term forecasts, captures trends and seasonality, requires consistent historical data</p>
-                    <p className="text-xs italic">💡 Ideal for products with regular, predictable demand patterns</p>
-                  </>
+                  <p>💡 <strong>Use when:</strong> You have regular, predictable patterns with clear seasonality (weekly, monthly cycles). Best for short-term forecasts.</p>
                 )}
                 {modelType === "Prophet" && (
-                  <>
-                    <p><strong>Best for:</strong> Business forecasting with holidays, events, and special promotions</p>
-                    <p><strong>Handles:</strong> Missing data, outliers, multiple seasonalities, special events impact</p>
-                    <p><strong>Characteristics:</strong> Robust to missing data, handles holidays/events well, good for medium to long-term forecasts</p>
-                    <p className="text-xs italic">💡 Perfect for seasonal products affected by holidays and promotions</p>
-                  </>
+                  <p>💡 <strong>Use when:</strong> Your sales are affected by holidays, promotions, or special events. Good default choice for most business data.</p>
                 )}
                 {modelType === "Linear Regression" && (
-                  <>
-                    <p><strong>Best for:</strong> Simple linear trends, steady growth or decline patterns</p>
-                    <p><strong>Handles:</strong> Stable demand with clear linear relationships, baseline forecasting</p>
-                    <p><strong>Characteristics:</strong> Fast computation, highly interpretable, good baseline model, works with limited data</p>
-                    <p className="text-xs italic">💡 Great starting point for products with steady, predictable growth</p>
-                  </>
+                  <p>💡 <strong>Use when:</strong> You see a simple upward or downward trend. Quick baseline for comparison with more complex models.</p>
                 )}
               </AlertDescription>
             </Alert>
