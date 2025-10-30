@@ -1755,6 +1755,7 @@
                         draggable: true, // Allow dragging to schedule
                         // Additional PT operation data
                         jobId: operation.jobExternalId || operation.jobId || operation.job_id, // Use jobExternalId for dependency generation
+                        jobExternalId: operation.jobExternalId || operation.job_external_id || operation.batch_id, // Store batch ID separately
                         jobName: operation.jobName,
                         jobPriority: operation.jobPriority || operation.priority || 999, // CRITICAL: Map priority field from API
                         jobDueDate: operation.dueDate, // CRITICAL: Add job Need-By date for ALAP scheduling
@@ -3338,10 +3339,13 @@
 
                 // Shared helper functions for job extraction and sorting
                 function getJobKey(ev) {
-                    return ev.jobId ?? ev.jobID ?? ev.job_id ??
+                    // Use jobExternalId (batch ID) first, then fall back to jobName
+                    // Don't use numeric jobId which creates confusion
+                    return ev.jobExternalId ?? ev.job_external_id ??
+                           ev.ptData?.jobExternalId ?? ev.ptData?.job_external_id ??
                            ev.jobName ?? ev.job_name ??
-                           ev.ptData?.jobId ?? ev.ptData?.jobName ??
-                           ev.data?.jobId ?? ev.data?.jobName ?? null;
+                           ev.ptData?.jobName ?? ev.ptData?.job_name ??
+                           ev.data?.jobExternalId ?? ev.data?.jobName ?? null;
                 }
 
                 function getJobPriority(ev) {
@@ -3682,7 +3686,8 @@
                             console.log(`  ${index + 1}. Orphan operations: ${operations.length} operations`);
                         } else {
                             const priority = parseInt(getPriority(operations[0]));
-                            console.log(`  ${index + 1}. Priority ${priority}: Job ${jobKey} - ${operations.length} operations`);
+                            const jobName = operations[0].jobName || jobKey;
+                            console.log(`  ${index + 1}. Priority ${priority}: Batch ${jobKey} (${jobName}) - ${operations.length} operations`);
                         }
                     });
                     
@@ -3760,7 +3765,8 @@
                             continue; // Skip to next job
                         }
                         
-                        console.log(`\n🏭 Processing Job: ${jobKey} with ${operations.length} operations`);
+                        const jobName = operations[0].jobName || '';
+                        console.log(`\n🏭 Processing Batch ${jobKey} (${jobName}) with ${operations.length} operations`);
                         
                         // Determine the start date for this job
                         let jobStartDate = today; // Default to today
