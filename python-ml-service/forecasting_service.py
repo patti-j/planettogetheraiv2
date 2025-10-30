@@ -11,6 +11,7 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import mean_squared_error, mean_absolute_percentage_error
 from statsmodels.tsa.arima.model import ARIMA
 from prophet import Prophet
+from scipy import stats
 import time
 import warnings
 warnings.filterwarnings('ignore')
@@ -33,6 +34,139 @@ print("Flask app created", flush=True)
 
 # Store trained models in memory (in production, use Redis or similar)
 trained_models = {}
+
+def analyze_data_characteristics(df, item_column=None, items=None):
+    """
+    Analyze data characteristics to recommend the best forecasting model.
+    Returns analysis results and model recommendations.
+    """
+    print(f"Analyzing data characteristics...", flush=True)
+    
+    # Initialize results
+    analysis = {
+        'data_points': len(df),
+        'date_range_days': 0,
+        'intermittency_ratio': 0,
+        'cv_demand': 0,  # Coefficient of variation
+        'trend_strength': 0,
+        'seasonality_detected': False,
+        'has_outliers': False,
+        'mean_interval_between_orders': 0,
+        'recommended_models': [],
+        'reasoning': []
+    }
+    
+    # If we have item-specific data
+    if item_column and items:
+        item_analyses = {}
+        for item in items:
+            item_df = df[df[item_column] == item].copy()
+            item_analyses[item] = analyze_single_series(item_df['value'] if 'value' in item_df.columns else item_df.iloc[:, -1])
+        
+        # Aggregate results
+        analysis['item_count'] = len(items)
+        analysis['avg_intermittency'] = np.mean([a['intermittency_ratio'] for a in item_analyses.values()])
+        analysis['items_with_high_intermittency'] = sum(1 for a in item_analyses.values() if a['intermittency_ratio'] > 0.7)
+        
+        # Overall recommendation based on majority characteristics
+        if analysis['items_with_high_intermittency'] > len(items) * 0.5:
+            analysis['recommended_models'] = ['prophet', 'arima']
+            analysis['reasoning'].append(f"Over 50% of items have intermittent demand (>70% zeros)")
+        else:
+            analysis['recommended_models'] = ['random_forest', 'linear_regression']
+            analysis['reasoning'].append(f"Majority of items have regular demand patterns")
+            
+        analysis['item_analyses'] = item_analyses
+    else:
+        # Single series analysis
+        series = df['value'] if 'value' in df.columns else df.iloc[:, -1]
+        single_analysis = analyze_single_series(series)
+        analysis.update(single_analysis)
+        
+        # Model recommendation logic
+        if analysis['intermittency_ratio'] > 0.7:
+            analysis['recommended_models'] = ['prophet', 'arima']
+            analysis['reasoning'].append(f"High intermittency ({analysis['intermittency_ratio']*100:.1f}% zeros) - Prophet/ARIMA handle sparse data better")
+        elif analysis['intermittency_ratio'] > 0.3:
+            analysis['recommended_models'] = ['arima', 'prophet']
+            analysis['reasoning'].append(f"Moderate intermittency ({analysis['intermittency_ratio']*100:.1f}% zeros) - ARIMA recommended")
+        else:
+            if analysis['data_points'] < 30:
+                analysis['recommended_models'] = ['linear_regression', 'arima']
+                analysis['reasoning'].append(f"Limited data ({analysis['data_points']} points) - Simple models preferred")
+            else:
+                analysis['recommended_models'] = ['random_forest', 'linear_regression']
+                analysis['reasoning'].append(f"Regular demand pattern with sufficient data - ML models recommended")
+        
+        # Additional factors
+        if analysis['seasonality_detected']:
+            if 'prophet' not in analysis['recommended_models']:
+                analysis['recommended_models'].insert(0, 'prophet')
+            analysis['reasoning'].append("Seasonality detected - Prophet excels at seasonal patterns")
+        
+        if analysis['has_outliers']:
+            if 'random_forest' in analysis['recommended_models']:
+                # Random Forest is robust to outliers, prioritize it
+                analysis['recommended_models'].remove('random_forest')
+                analysis['recommended_models'].insert(0, 'random_forest')
+                analysis['reasoning'].append("Outliers detected - Random Forest is robust to outliers")
+    
+    return analysis
+
+def analyze_single_series(series):
+    """Analyze a single time series for characteristics"""
+    result = {
+        'data_points': len(series),
+        'intermittency_ratio': 0,
+        'cv_demand': 0,
+        'trend_strength': 0,
+        'seasonality_detected': False,
+        'has_outliers': False,
+        'mean_interval_between_orders': 0
+    }
+    
+    # Clean series
+    series_clean = pd.Series(series).fillna(0)
+    
+    # Intermittency analysis
+    zeros = (series_clean == 0).sum()
+    result['intermittency_ratio'] = zeros / len(series_clean) if len(series_clean) > 0 else 0
+    
+    # For non-zero values
+    non_zero_values = series_clean[series_clean > 0]
+    if len(non_zero_values) > 0:
+        # Coefficient of variation (demand variability)
+        mean_val = non_zero_values.mean()
+        std_val = non_zero_values.std()
+        result['cv_demand'] = std_val / mean_val if mean_val > 0 else 0
+        
+        # Check for outliers using IQR
+        Q1 = non_zero_values.quantile(0.25)
+        Q3 = non_zero_values.quantile(0.75)
+        IQR = Q3 - Q1
+        result['has_outliers'] = ((non_zero_values < (Q1 - 1.5 * IQR)) | (non_zero_values > (Q3 + 1.5 * IQR))).any()
+        
+        # Mean interval between orders
+        non_zero_indices = np.where(series_clean > 0)[0]
+        if len(non_zero_indices) > 1:
+            intervals = np.diff(non_zero_indices)
+            result['mean_interval_between_orders'] = np.mean(intervals)
+    
+    # Trend detection (if enough data)
+    if len(series_clean) >= 7:
+        x = np.arange(len(series_clean))
+        if series_clean.std() > 0:  # Only if there's variation
+            correlation = np.corrcoef(x, series_clean)[0, 1]
+            result['trend_strength'] = abs(correlation)
+    
+    # Basic seasonality detection (if enough data)
+    if len(series_clean) >= 14:  # At least 2 weeks of data
+        # Simple autocorrelation check for weekly pattern
+        if len(series_clean) >= 7:
+            weekly_corr = series_clean.autocorr(lag=7) if series_clean.std() > 0 else 0
+            result['seasonality_detected'] = abs(weekly_corr) > 0.3 if not pd.isna(weekly_corr) else False
+    
+    return result
 
 def create_features(df, n_lags=3):
     """Create features for Random Forest model with minimal data loss"""
@@ -1467,6 +1601,73 @@ def forecast_prophet(model_info, df, forecast_days):
         "predictions": predictions,
         "metrics": training_metrics
     }
+
+@app.route('/analyze', methods=['POST'])
+def analyze():
+    """Analyze data characteristics and recommend models"""
+    try:
+        data = request.json
+        
+        # Get data preparation info
+        df_raw = data.get('data', [])
+        date_col = data.get('dateCol', 'date')
+        item_col = data.get('itemCol', None)
+        qty_col = data.get('qtyCol', 'quantity')
+        forecast_mode = data.get('forecastMode', 'overall')
+        items_to_analyze = data.get('items', None)
+        
+        if not df_raw:
+            return jsonify({"error": "No data provided for analysis"}), 400
+        
+        # Convert to DataFrame
+        df = pd.DataFrame(df_raw)
+        
+        # Prepare data for analysis
+        if date_col in df.columns:
+            df['date'] = pd.to_datetime(df[date_col])
+            df = df.sort_values('date')
+        
+        if qty_col in df.columns:
+            df['value'] = df[qty_col]
+        
+        # Run analysis
+        if forecast_mode == 'individual' and item_col and items_to_analyze:
+            analysis = analyze_data_characteristics(df, item_col=item_col, items=items_to_analyze)
+        else:
+            # For overall mode, aggregate all data
+            if item_col and item_col in df.columns:
+                agg_df = df.groupby('date')['value'].sum().reset_index()
+                analysis = analyze_data_characteristics(agg_df)
+            else:
+                analysis = analyze_data_characteristics(df)
+        
+        # Convert numpy types to Python types for JSON serialization
+        def convert_numpy_types(obj):
+            if isinstance(obj, np.integer):
+                return int(obj)
+            elif isinstance(obj, np.floating):
+                return float(obj)
+            elif isinstance(obj, np.ndarray):
+                return obj.tolist()
+            elif isinstance(obj, dict):
+                return {k: convert_numpy_types(v) for k, v in obj.items()}
+            elif isinstance(obj, list):
+                return [convert_numpy_types(item) for item in obj]
+            else:
+                return obj
+        
+        analysis_cleaned = convert_numpy_types(analysis)
+        
+        return jsonify({
+            "success": True,
+            "analysis": analysis_cleaned
+        })
+        
+    except Exception as e:
+        print(f"Analysis error: {str(e)}", flush=True)
+        import traceback
+        traceback.print_exc()
+        return jsonify({"error": str(e)}), 500
 
 @app.route('/cache/clear', methods=['POST'])
 def clear_cache():
