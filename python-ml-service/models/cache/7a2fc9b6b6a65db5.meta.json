@@ -1,0 +1,28 @@
+{
+  "schema": "publish",
+  "table": "DASHt_SalesOrders",
+  "date_col": "RequiredAvailableDate",
+  "item_col": "ItemName",
+  "qty_col": "QtyOrdered",
+  "model_type": "Linear Regression",
+  "forecast_days": 30,
+  "item": "FG1",
+  "cache_key": "7a2fc9b6b6a65db5",
+  "cached_at": "2025-10-30T04:00:09.317648",
+  "planning_areas": [
+    "BI01",
+    "BI02"
+  ],
+  "scenario_names": [
+    "Scenario 1",
+    "Scenario 2",
+    "Scenario Copy 1"
+  ],
+  "hyperparameter_tuning": false,
+  "metrics": {
+    "mape": 12.648307709639866,
+    "rmse": 15.312207884001754,
+    "accuracy": 87.35169229036013
+  },
+  "training_points": 1609
+}

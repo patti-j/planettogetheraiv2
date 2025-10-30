@@ -740,5 +740,173 @@
       "accuracy": 5.548986938788289
     },
     "training_points": 1672
+  },
+  "7a2fc9b6b6a65db5": {
+    "schema": "publish",
+    "table": "DASHt_SalesOrders",
+    "date_col": "RequiredAvailableDate",
+    "item_col": "ItemName",
+    "qty_col": "QtyOrdered",
+    "model_type": "Linear Regression",
+    "forecast_days": 30,
+    "item": "FG1",
+    "cache_key": "7a2fc9b6b6a65db5",
+    "cached_at": "2025-10-30T04:00:09.317648",
+    "planning_areas": [
+      "BI01",
+      "BI02"
+    ],
+    "scenario_names": [
+      "Scenario 1",
+      "Scenario 2",
+      "Scenario Copy 1"
+    ],
+    "hyperparameter_tuning": false,
+    "metrics": {
+      "mape": 12.648307709639866,
+      "rmse": 15.312207884001754,
+      "accuracy": 87.35169229036013
+    },
+    "training_points": 1609
+  },
+  "19391c88f5066190": {
+    "schema": "publish",
+    "table": "DASHt_SalesOrders",
+    "date_col": "RequiredAvailableDate",
+    "item_col": "ItemName",
+    "qty_col": "QtyOrdered",
+    "model_type": "Linear Regression",
+    "forecast_days": 30,
+    "item": "FG2",
+    "cache_key": "19391c88f5066190",
+    "cached_at": "2025-10-30T04:00:09.332414",
+    "planning_areas": [
+      "BI01",
+      "BI02"
+    ],
+    "scenario_names": [
+      "Scenario 1",
+      "Scenario 2",
+      "Scenario Copy 1"
+    ],
+    "hyperparameter_tuning": false,
+    "metrics": {
+      "mape": 6.957156216767283,
+      "rmse": 12.582858337489641,
+      "accuracy": 93.04284378323271
+    },
+    "training_points": 1536
+  },
+  "1ecba7e11de3d8c2": {
+    "schema": "publish",
+    "table": "DASHt_SalesOrders",
+    "date_col": "RequiredAvailableDate",
+    "item_col": "ItemName",
+    "qty_col": "QtyOrdered",
+    "model_type": "Linear Regression",
+    "forecast_days": 30,
+    "item": "SUB1",
+    "cache_key": "1ecba7e11de3d8c2",
+    "cached_at": "2025-10-30T04:00:09.347460",
+    "planning_areas": [
+      "BI01",
+      "BI02"
+    ],
+    "scenario_names": [
+      "Scenario 1",
+      "Scenario 2",
+      "Scenario Copy 1"
+    ],
+    "hyperparameter_tuning": false,
+    "metrics": {
+      "mape": 4.172890632525771,
+      "rmse": 13.36164524438828,
+      "accuracy": 95.82710936747424
+    },
+    "training_points": 373
+  },
+  "de66e5b58135010f": {
+    "schema": "publish",
+    "table": "DASHt_SalesOrders",
+    "date_col": "RequiredAvailableDate",
+    "item_col": "ItemName",
+    "qty_col": "QtyOrdered",
+    "model_type": "Linear Regression",
+    "forecast_days": 30,
+    "item": "SUB2",
+    "cache_key": "de66e5b58135010f",
+    "cached_at": "2025-10-30T04:00:09.357876",
+    "planning_areas": [
+      "BI01",
+      "BI02"
+    ],
+    "scenario_names": [
+      "Scenario 1",
+      "Scenario 2",
+      "Scenario Copy 1"
+    ],
+    "hyperparameter_tuning": false,
+    "metrics": {
+      "mape": 5.265420180818691,
+      "rmse": 25.68672064961423,
+      "accuracy": 94.7345798191813
+    },
+    "training_points": 209
+  },
+  "915b615de41d93ac": {
+    "schema": "publish",
+    "table": "DASHt_SalesOrders",
+    "date_col": "RequiredAvailableDate",
+    "item_col": "ItemName",
+    "qty_col": "QtyOrdered",
+    "model_type": "Linear Regression",
+    "forecast_days": 30,
+    "item": "SUB3",
+    "cache_key": "915b615de41d93ac",
+    "cached_at": "2025-10-30T04:00:09.368238",
+    "planning_areas": [
+      "BI01",
+      "BI02"
+    ],
+    "scenario_names": [
+      "Scenario 1",
+      "Scenario 2",
+      "Scenario Copy 1"
+    ],
+    "hyperparameter_tuning": false,
+    "metrics": {
+      "mape": 7.616741329250589,
+      "rmse": 41.80397269844507,
+      "accuracy": 92.38325867074941
+    },
+    "training_points": 108
+  },
+  "9a12b773c4de694e": {
+    "schema": "publish",
+    "table": "DASHt_SalesOrders",
+    "date_col": "RequiredAvailableDate",
+    "item_col": "ItemName",
+    "qty_col": "QtyOrdered",
+    "model_type": "Linear Regression",
+    "forecast_days": 30,
+    "item": "OVERALL",
+    "cache_key": "9a12b773c4de694e",
+    "cached_at": "2025-10-30T04:00:09.543267",
+    "planning_areas": [
+      "BI01",
+      "BI02"
+    ],
+    "scenario_names": [
+      "Scenario 1",
+      "Scenario 2",
+      "Scenario Copy 1"
+    ],
+    "hyperparameter_tuning": false,
+    "metrics": {
+      "mape": 8.456550152677067,
+      "rmse": 25.238020357272653,
+      "accuracy": 91.54344984732293
+    },
+    "training_points": 1672
   }
 }
