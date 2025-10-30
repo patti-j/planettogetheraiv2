@@ -428,84 +428,79 @@ router.get("/api/auth/me", async (req, res) => {
     global.tokenStore = global.tokenStore || new Map();
     tokenData = global.tokenStore.get(token);
   
-  // If not in memory store, try to reconstruct from token (for server restart resilience)
+  // If not in memory store, verify JWT token
   if (!tokenData) {
     try {
-      const decoded = Buffer.from(token, 'base64').toString();
-      const [userId, timestamp, secret] = decoded.split(':');
-      const expectedSecret = process.env.SESSION_SECRET || 'dev-secret-key';
+      // Verify JWT token using the same method as login
+      const decoded = jwt.verify(token, JWT_SECRET) as JWTPayload;
+      const userId = decoded.userId;
       
-      if (secret === expectedSecret && !isNaN(Number(userId)) && !isNaN(Number(timestamp))) {
-        const tokenAge = Date.now() - Number(timestamp);
-        const maxAge = 7 * 24 * 60 * 60 * 1000; // 7 days
+      if (userId) {
+        // Token is valid - fetch user from database
+        console.log(`JWT token valid - fetching user ${userId} from database`);
         
-        if (tokenAge < maxAge) {
-          // Token is valid but not in memory store - need to fetch user from database
-          console.log(`Token valid but not in memory store - fetching user ${userId} from database`);
-          
-          try {
-            const user = await storage.getUser(Number(userId));
-            if (user && user.isActive) {
-              // Get user roles and permissions from database
-              const userRoles = await storage.getUserRoles(user.id);
-              const roles = [];
-              const allPermissions = [];
-              
-              for (const userRole of userRoles) {
-                const role = await storage.getRole(userRole.roleId);
-                if (role) {
-                  // Get role permissions
-                  const rolePermissions = await storage.getRolePermissions(role.id);
-                  const permissions = [];
-                  
-                  for (const rp of rolePermissions) {
-                    const permission = await storage.getPermission(rp.permissionId);
-                    if (permission) {
-                      allPermissions.push(permission.name);
-                      permissions.push({
-                        id: permission.id,
-                        name: permission.name,
-                        feature: permission.feature,
-                        action: permission.action,
-                        description: permission.description || `${permission.action} access to ${permission.feature}`
-                      });
-                    }
+        try {
+          const user = await storage.getUser(userId);
+          if (user && user.isActive) {
+            // Get user roles and permissions from database
+            const userRoles = await storage.getUserRoles(user.id);
+            const roles = [];
+            const allPermissions = [];
+            
+            for (const userRole of userRoles) {
+              const role = await storage.getRole(userRole.roleId);
+              if (role) {
+                // Get role permissions
+                const rolePermissions = await storage.getRolePermissions(role.id);
+                const permissions = [];
+                
+                for (const rp of rolePermissions) {
+                  const permission = await storage.getPermission(rp.permissionId);
+                  if (permission) {
+                    allPermissions.push(permission.name);
+                    permissions.push({
+                      id: permission.id,
+                      name: permission.name,
+                      feature: permission.feature,
+                      action: permission.action,
+                      description: permission.description || `${permission.action} access to ${permission.feature}`
+                    });
                   }
-                  
-                  roles.push({
-                    id: role.id,
-                    name: role.name,
-                    description: role.description || `${role.name} role with assigned permissions`,
-                    permissions: permissions
-                  });
                 }
+                
+                roles.push({
+                  id: role.id,
+                  name: role.name,
+                  description: role.description || `${role.name} role with assigned permissions`,
+                  permissions: permissions
+                });
               }
-              
-              tokenData = {
-                userId: user.id,
-                userData: {
-                  id: user.id,
-                  username: user.username,
-                  email: user.email,
-                  firstName: user.firstName,
-                  lastName: user.lastName,
-                  roles: roles,
-                  permissions: allPermissions
-                },
-                createdAt: Number(timestamp),
-                expiresAt: Number(timestamp) + maxAge
-              };
-              
-              // Re-add to memory store
-              global.tokenStore.set(token, tokenData);
             }
-          } catch (dbError) {
-            console.log("Failed to fetch user from database:", dbError);
+            
+            tokenData = {
+              userId: user.id,
+              userData: {
+                id: user.id,
+                username: user.username,
+                email: user.email,
+                firstName: user.firstName,
+                lastName: user.lastName,
+                roles: roles,
+                permissions: allPermissions
+              },
+              createdAt: Date.now(),
+              expiresAt: Date.now() + (7 * 24 * 60 * 60 * 1000) // 7 days
+            };
+            
+            // Add to memory store for faster subsequent checks
+            global.tokenStore.set(token, tokenData);
           }
+        } catch (dbError) {
+          console.log("Failed to fetch user from database:", dbError);
         }
       }
     } catch (error) {
-      console.log("Could not reconstruct token:", error);
+      console.log("JWT verification failed:", error);
     }
   }
   
