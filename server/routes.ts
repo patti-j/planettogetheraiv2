@@ -59,7 +59,13 @@ import {
 // Import PT Tables from minimal schema matching actual database structure
 import {
   ptJobs,
-  ptJobOperations
+  ptJobOperations,
+  businessGoals,
+  goalProgress,
+  goalRisks,
+  goalIssues,
+  goalActions,
+  goalKpis
 } from "@shared/schema";
 import { insertUserSchema, insertCompanyOnboardingSchema, insertUserPreferencesSchema, insertSchedulingMessageSchema, widgets } from "@shared/schema";
 import { systemMonitoringAgent } from "./monitoring-agent";
@@ -12104,6 +12110,238 @@ router.post("/api/schedule-scenarios", requireAuth, async (req, res) => {
       error: "Failed to create scenario",
       message: error.message 
     });
+  }
+});
+
+// ============================================================================
+// BUSINESS GOALS & STRATEGIC PLANNING ENDPOINTS
+// ============================================================================
+
+// Get all business goals
+router.get("/api/business-goals", requireAuth, async (req, res) => {
+  try {
+    const goals = await db.select().from(businessGoals).orderBy(businessGoals.priority);
+    res.json(goals);
+  } catch (error: any) {
+    console.error("Error fetching business goals:", error);
+    res.status(500).json({ error: "Failed to fetch business goals" });
+  }
+});
+
+// Create a new business goal
+router.post("/api/business-goals", requireAuth, async (req, res) => {
+  try {
+    const goalData = {
+      ...req.body,
+      createdBy: req.user?.id,
+      updatedBy: req.user?.id
+    };
+    
+    const [newGoal] = await db.insert(businessGoals).values(goalData).returning();
+    res.json(newGoal);
+  } catch (error: any) {
+    console.error("Error creating business goal:", error);
+    res.status(500).json({ error: "Failed to create business goal" });
+  }
+});
+
+// Update a business goal
+router.put("/api/business-goals/:id", requireAuth, async (req, res) => {
+  try {
+    const goalId = parseInt(req.params.id);
+    const goalData = {
+      ...req.body,
+      updatedBy: req.user?.id,
+      updatedAt: new Date()
+    };
+    
+    const [updatedGoal] = await db.update(businessGoals)
+      .set(goalData)
+      .where(eq(businessGoals.id, goalId))
+      .returning();
+      
+    res.json(updatedGoal);
+  } catch (error: any) {
+    console.error("Error updating business goal:", error);
+    res.status(500).json({ error: "Failed to update business goal" });
+  }
+});
+
+// Delete a business goal
+router.delete("/api/business-goals/:id", requireAuth, async (req, res) => {
+  try {
+    const goalId = parseInt(req.params.id);
+    await db.delete(businessGoals).where(eq(businessGoals.id, goalId));
+    res.status(204).send();
+  } catch (error: any) {
+    console.error("Error deleting business goal:", error);
+    res.status(500).json({ error: "Failed to delete business goal" });
+  }
+});
+
+// Get goal progress
+router.get("/api/goal-progress", requireAuth, async (req, res) => {
+  try {
+    const progress = await db.select().from(goalProgress).orderBy(goalProgress.progressDate);
+    res.json(progress);
+  } catch (error: any) {
+    console.error("Error fetching goal progress:", error);
+    res.status(500).json({ error: "Failed to fetch goal progress" });
+  }
+});
+
+// Create goal progress entry
+router.post("/api/goal-progress", requireAuth, async (req, res) => {
+  try {
+    const progressData = {
+      ...req.body,
+      reportedBy: req.user?.id
+    };
+    
+    const [newProgress] = await db.insert(goalProgress).values(progressData).returning();
+    res.json(newProgress);
+  } catch (error: any) {
+    console.error("Error creating goal progress:", error);
+    res.status(500).json({ error: "Failed to create goal progress" });
+  }
+});
+
+// Get goal risks
+router.get("/api/goal-risks", requireAuth, async (req, res) => {
+  try {
+    const risks = await db.select().from(goalRisks).orderBy(goalRisks.riskScore);
+    res.json(risks);
+  } catch (error: any) {
+    console.error("Error fetching goal risks:", error);
+    res.status(500).json({ error: "Failed to fetch goal risks" });
+  }
+});
+
+// Create goal risk
+router.post("/api/goal-risks", requireAuth, async (req, res) => {
+  try {
+    const riskData = {
+      ...req.body,
+      createdBy: req.user?.id
+    };
+    
+    const [newRisk] = await db.insert(goalRisks).values(riskData).returning();
+    res.json(newRisk);
+  } catch (error: any) {
+    console.error("Error creating goal risk:", error);
+    res.status(500).json({ error: "Failed to create goal risk" });
+  }
+});
+
+// Get goal issues
+router.get("/api/goal-issues", requireAuth, async (req, res) => {
+  try {
+    const issues = await db.select().from(goalIssues).orderBy(goalIssues.severity);
+    res.json(issues);
+  } catch (error: any) {
+    console.error("Error fetching goal issues:", error);
+    res.status(500).json({ error: "Failed to fetch goal issues" });
+  }
+});
+
+// Create goal issue
+router.post("/api/goal-issues", requireAuth, async (req, res) => {
+  try {
+    const issueData = {
+      ...req.body,
+      createdBy: req.user?.id
+    };
+    
+    const [newIssue] = await db.insert(goalIssues).values(issueData).returning();
+    res.json(newIssue);
+  } catch (error: any) {
+    console.error("Error creating goal issue:", error);
+    res.status(500).json({ error: "Failed to create goal issue" });
+  }
+});
+
+// Get goal actions
+router.get("/api/goal-actions", requireAuth, async (req, res) => {
+  try {
+    const actions = await db.select().from(goalActions).orderBy(goalActions.priority);
+    res.json(actions);
+  } catch (error: any) {
+    console.error("Error fetching goal actions:", error);
+    res.status(500).json({ error: "Failed to fetch goal actions" });
+  }
+});
+
+// Create goal action
+router.post("/api/goal-actions", requireAuth, async (req, res) => {
+  try {
+    const actionData = {
+      ...req.body,
+      createdBy: req.user?.id
+    };
+    
+    const [newAction] = await db.insert(goalActions).values(actionData).returning();
+    res.json(newAction);
+  } catch (error: any) {
+    console.error("Error creating goal action:", error);
+    res.status(500).json({ error: "Failed to create goal action" });
+  }
+});
+
+// Get goal KPIs
+router.get("/api/goal-kpis", requireAuth, async (req, res) => {
+  try {
+    const kpis = await db.select().from(goalKpis).orderBy(goalKpis.kpiName);
+    res.json(kpis);
+  } catch (error: any) {
+    console.error("Error fetching goal KPIs:", error);
+    res.status(500).json({ error: "Failed to fetch goal KPIs" });
+  }
+});
+
+// Create goal KPI
+router.post("/api/goal-kpis", requireAuth, async (req, res) => {
+  try {
+    const kpiData = {
+      ...req.body,
+      createdBy: req.user?.id
+    };
+    
+    const [newKpi] = await db.insert(goalKpis).values(kpiData).returning();
+    res.json(newKpi);
+  } catch (error: any) {
+    console.error("Error creating goal KPI:", error);
+    res.status(500).json({ error: "Failed to create goal KPI" });
+  }
+});
+
+// Placeholder endpoints for KPI definitions (if not already implemented)
+router.get("/api/smart-kpi-definitions", requireAuth, async (req, res) => {
+  try {
+    // Return empty array for now if table doesn't exist
+    res.json([]);
+  } catch (error: any) {
+    console.error("Error fetching KPI definitions:", error);
+    res.status(500).json({ error: "Failed to fetch KPI definitions" });
+  }
+});
+
+router.get("/api/smart-kpi-targets/:id", requireAuth, async (req, res) => {
+  try {
+    // Return empty array for now if table doesn't exist
+    res.json([]);
+  } catch (error: any) {
+    console.error("Error fetching KPI targets:", error);
+    res.status(500).json({ error: "Failed to fetch KPI targets" });
+  }
+});
+
+router.get("/api/smart-kpi-actuals/:id", requireAuth, async (req, res) => {
+  try {
+    // Return empty array for now if table doesn't exist
+    res.json([]);
+  } catch (error: any) {
+    console.error("Error fetching KPI actuals:", error);
+    res.status(500).json({ error: "Failed to fetch KPI actuals" });
   }
 });
 
