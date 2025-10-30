@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Combobox } from "@/components/ui/combobox";
 import { Input } from "@/components/ui/input";
@@ -61,6 +62,32 @@ interface ForecastResult {
   };
   success?: boolean;
   forecastedItemNames?: string[];
+}
+
+interface DataAnalysis {
+  data_points: number;
+  intermittency_ratio: number;
+  cv_demand: number;
+  trend_strength: number;
+  seasonality_detected: boolean;
+  has_outliers: boolean;
+  mean_interval_between_orders: number;
+  recommended_models: string[];
+  reasoning: string[];
+  item_count?: number;
+  avg_intermittency?: number;
+  items_with_high_intermittency?: number;
+  item_analyses?: {
+    [itemName: string]: {
+      data_points: number;
+      intermittency_ratio: number;
+      cv_demand: number;
+      trend_strength: number;
+      seasonality_detected: boolean;
+      has_outliers: boolean;
+      mean_interval_between_orders: number;
+    };
+  };
 }
 
 export default function DemandForecasting() {
@@ -162,6 +189,10 @@ export default function DemandForecasting() {
   const [showSaveDialog, setShowSaveDialog] = useState<boolean>(false);
   const [forecastName, setForecastName] = useState<string>("");
   const [forecastDescription, setForecastDescription] = useState<string>("");
+  
+  // Data analysis state
+  const [dataAnalysis, setDataAnalysis] = useState<DataAnalysis | null>(null);
+  const [showRecommendations, setShowRecommendations] = useState<boolean>(false);
   
   // Fetch SQL Server tables
   const { data: tablesData, isLoading: isLoadingTables } = useQuery({
@@ -373,6 +404,57 @@ export default function DemandForecasting() {
         variant: "destructive",
         title: "Save Failed",
         description: error.message || "Failed to save forecast"
+      });
+    }
+  });
+  
+  // Analyze data mutation for intelligent recommendations
+  const analyzeMutation = useMutation({
+    mutationFn: async (data: any) => {
+      const response = await fetch("http://localhost:8000/analyze", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(data)
+      });
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || "Failed to analyze data");
+      }
+      
+      return await response.json();
+    },
+    onSuccess: (data) => {
+      if (data.success && data.analysis) {
+        setDataAnalysis(data.analysis);
+        setShowRecommendations(true);
+        
+        // Auto-select first recommended model
+        if (data.analysis.recommended_models && data.analysis.recommended_models.length > 0) {
+          const modelMap: { [key: string]: string } = {
+            'random_forest': 'Random Forest',
+            'linear_regression': 'Linear Regression',
+            'arima': 'ARIMA',
+            'prophet': 'Prophet'
+          };
+          const recommendedModel = modelMap[data.analysis.recommended_models[0]] || 'Random Forest';
+          setModelType(recommendedModel);
+          
+          toast({
+            title: "Data Analysis Complete",
+            description: `Recommended model: ${recommendedModel}`,
+          });
+        }
+      }
+    },
+    onError: (error: any) => {
+      console.error("Analysis error:", error);
+      toast({
+        variant: "destructive",
+        title: "Analysis Failed",
+        description: error.message || "Failed to analyze data"
       });
     }
   });
@@ -1287,7 +1369,16 @@ export default function DemandForecasting() {
             
             {/* Model Type */}
             <div className="space-y-2">
-              <Label>Model Type</Label>
+              <Label className="flex items-center gap-2">
+                Model Type
+                {dataAnalysis && dataAnalysis.recommended_models && dataAnalysis.recommended_models.includes(
+                  modelType.toLowerCase().replace(' ', '_')
+                ) && (
+                  <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded">
+                    Recommended
+                  </span>
+                )}
+              </Label>
               <Combobox
                 options={[
                   { value: "Random Forest", label: "Random Forest" },
@@ -1327,6 +1418,50 @@ export default function DemandForecasting() {
               </Label>
             </div>
           </div>
+
+          {/* AI Model Recommendations */}
+          {showRecommendations && dataAnalysis && (
+            <Alert className="bg-blue-50 border-blue-200">
+              <Sparkles className="h-4 w-4 text-blue-600" />
+              <AlertTitle className="text-blue-900">AI Model Recommendations</AlertTitle>
+              <AlertDescription className="space-y-3 text-blue-800">
+                <div>
+                  <strong>Recommended Models:</strong>{" "}
+                  {dataAnalysis.recommended_models.map((model, idx) => (
+                    <span key={model} className="inline-block">
+                      {model.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                      {idx < dataAnalysis.recommended_models.length - 1 && ", "}
+                    </span>
+                  ))}
+                </div>
+                <div>
+                  <strong>Analysis Results:</strong>
+                  <ul className="list-disc list-inside mt-1 space-y-1 text-sm">
+                    {dataAnalysis.reasoning.map((reason, idx) => (
+                      <li key={idx}>{reason}</li>
+                    ))}
+                  </ul>
+                </div>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mt-2 text-sm">
+                  <div>
+                    <span className="font-medium">Data Points:</span> {dataAnalysis.data_points}
+                  </div>
+                  <div>
+                    <span className="font-medium">Intermittency:</span>{" "}
+                    {(dataAnalysis.intermittency_ratio * 100).toFixed(1)}%
+                  </div>
+                  <div>
+                    <span className="font-medium">Trend:</span>{" "}
+                    {dataAnalysis.trend_strength > 0.3 ? "Strong" : "Weak"}
+                  </div>
+                  <div>
+                    <span className="font-medium">Seasonality:</span>{" "}
+                    {dataAnalysis.seasonality_detected ? "Yes" : "No"}
+                  </div>
+                </div>
+              </AlertDescription>
+            </Alert>
+          )}
 
           {/* Training Mode Section - Only show for individual mode */}
           {forecastMode === "individual" && (
@@ -1446,6 +1581,43 @@ export default function DemandForecasting() {
 
           {/* Action Buttons */}
           <div className="flex gap-2">
+            <Button
+              variant="outline"
+              onClick={async () => {
+                // Prepare data for analysis
+                if (!tableData || tableData.length === 0) {
+                  toast({
+                    variant: "destructive",
+                    title: "No Data",
+                    description: "Please ensure data is loaded first"
+                  });
+                  return;
+                }
+                
+                // Call analyze mutation
+                analyzeMutation.mutate({
+                  data: tableData,
+                  dateCol: dateColumn,
+                  itemCol: itemColumn,
+                  qtyCol: quantityColumn,
+                  forecastMode: forecastMode,
+                  items: forecastMode === 'individual' ? selectedItems : items
+                });
+              }}
+              disabled={!tableData || analyzeMutation.isPending}
+            >
+              {analyzeMutation.isPending ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Analyzing...
+                </>
+              ) : (
+                <>
+                  <Sparkles className="mr-2 h-4 w-4" />
+                  Analyze Data
+                </>
+              )}
+            </Button>
             <Button
               onClick={handleTrain}
               disabled={trainMutation.isPending || !!trainingProgress}
