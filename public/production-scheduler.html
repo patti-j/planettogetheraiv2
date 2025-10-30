@@ -4255,23 +4255,28 @@
                     const scheduler = window.scheduler;
                     const { project, eventStore, dependencyStore, assignmentStore, resourceStore } = scheduler;
                     
-                    // Helper function to get job priority from operation (uses job's priority)
+                    // Helper function to get job priority from the PTJOBS table via jobPriorityMap
                     const getJobPriorityForOperation = (event) => {
-                        if (!event) return 5; // Default to lowest priority
+                        if (!event) return 999; // Default to lowest priority
                         
-                        // Check multiple possible locations for job priority
-                        // Priority 1 = highest, Priority 5 = lowest
-                        const priority = event.jobPriority ?? 
-                                       event.job_priority ?? 
-                                       event.ptData?.jobPriority ?? 
-                                       event.ptData?.job_priority ??
-                                       event.data?.jobPriority ?? 
-                                       event.data?.job_priority ?? 
-                                       5;
+                        // Get job key from operation (job_id)
+                        const jobKey = getJobKey(event);
+                        if (!jobKey) {
+                            console.log('⚠️ No job key found for operation:', event.name);
+                            return 999; // Orphan operations get lowest priority
+                        }
                         
-                        // Ensure it's a number between 1 and 5
-                        const numPriority = parseInt(priority);
-                        return (!isNaN(numPriority) && numPriority >= 1 && numPriority <= 5) ? numPriority : 5;
+                        // Look up priority in the job priority map we built from ptjobs table
+                        const priority = window.jobPriorityMap?.get(String(jobKey)) || 999;
+                        
+                        if (priority === 999) {
+                            console.log(`⚠️ No priority found for job ${jobKey} in job priority map`);
+                            console.log('   Available keys in map:', Array.from(window.jobPriorityMap?.keys() || []));
+                        } else {
+                            console.log(`✅ Found priority ${priority} for job ${jobKey}`);
+                        }
+                        
+                        return priority;
                     };
                     
                     // 🔧 CRITICAL: Disable ALL auto-scheduling features to prevent interference
@@ -4437,7 +4442,9 @@
                     sortedJobs.forEach(([jobKey, ops], index) => {
                         const priority = getJobPriorityForOperation(ops[0]);
                         const due = jobDueMap.get(jobKey) || globalFallback;
-                        console.log(`  ${index + 1}. Priority ${priority}: ${jobKey} (Due: ${due.toLocaleDateString()}) - schedules ${index === 0 ? 'FIRST (placed later/finishes last)' : index === sortedJobs.length - 1 ? 'LAST (placed earlier/finishes first)' : 'in middle'}`);
+                        const dueStr = due ? due.toLocaleDateString() : 'No due date';
+                        const jobName = ops[0]?.jobName || jobKey;
+                        console.log(`  ${index + 1}. Priority ${priority}: ${jobName} (Job ID: ${jobKey}, Due: ${dueStr}) - schedules ${index === 0 ? 'FIRST (placed later/finishes last)' : index === sortedJobs.length - 1 ? 'LAST (placed earlier/finishes first)' : 'in middle'}`);
                     });
                     
                     // Track all scheduled intervals manually to prevent conflicts
