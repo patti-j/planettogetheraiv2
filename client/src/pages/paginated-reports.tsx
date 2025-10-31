@@ -34,7 +34,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { FileText, Search, Download, Calendar, Database, Columns3, X } from "lucide-react";
+import { FileText, Search, Download, Calendar, Database, Columns3, X, RefreshCw, AlertCircle, Eye, EyeOff, ChevronLeft, ChevronRight, Filter } from "lucide-react";
 import { format } from "date-fns";
 
 interface SQLTable {
