@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, timestamp, jsonb, varchar, numeric, decimal, primaryKey, index, unique, uniqueIndex, pgEnum, smallint } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, jsonb, varchar, numeric, decimal, primaryKey, index, unique, uniqueIndex, pgEnum, smallint, date } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
@@ -906,6 +906,135 @@ export const autonomousOptimization = pgTable("autonomous_optimization", {
 });
 
 // ============================================
+// DDMRP (Demand-Driven MRP) System
+// ============================================
+
+// DDMRP Buffer configurations
+export const ddmrpBuffers = pgTable("ddmrp_buffers", {
+  id: serial("id").primaryKey(),
+  itemId: integer("item_id").references(() => items.id).notNull(),
+  
+  // Buffer positioning
+  bufferType: varchar("buffer_type", { length: 50 }).notNull(), // 'stock', 'manufacturing', 'purchased'
+  decouplingPoint: boolean("decoupling_point").default(false),
+  
+  // Lead time components
+  leadTime: integer("lead_time").notNull(), // in days
+  leadTimeVariability: numeric("lead_time_variability").default("0.2"), // coefficient of variation
+  
+  // Demand data
+  averageDailyUsage: numeric("average_daily_usage").notNull(),
+  demandVariability: varchar("demand_variability", { length: 20 }).default("medium"), // low, medium, high
+  
+  // Buffer zone calculations
+  redZoneBase: numeric("red_zone_base"),
+  redZoneSafety: numeric("red_zone_safety"),
+  yellowZone: numeric("yellow_zone"),
+  greenZone: numeric("green_zone"),
+  
+  // Current status
+  currentStock: numeric("current_stock").default("0"),
+  netFlowPosition: numeric("net_flow_position"),
+  bufferStatus: varchar("buffer_status", { length: 20 }), // 'red', 'yellow', 'green'
+  bufferPercentage: numeric("buffer_percentage"),
+  
+  // Planning parameters
+  minimumOrderQuantity: numeric("minimum_order_quantity"),
+  orderMultiple: numeric("order_multiple"),
+  
+  // Dynamic adjustment factors
+  demandAdjustmentFactor: numeric("demand_adjustment_factor").default("1.0"),
+  leadTimeAdjustmentFactor: numeric("lead_time_adjustment_factor").default("1.0"),
+  variabilityAdjustmentFactor: numeric("variability_adjustment_factor").default("1.0"),
+  
+  // Metadata
+  lastCalculated: timestamp("last_calculated"),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// DDMRP Buffer history for tracking changes over time
+export const ddmrpBufferHistory = pgTable("ddmrp_buffer_history", {
+  id: serial("id").primaryKey(),
+  bufferId: integer("buffer_id").references(() => ddmrpBuffers.id).notNull(),
+  
+  // Snapshot data
+  stockLevel: numeric("stock_level").notNull(),
+  netFlowPosition: numeric("net_flow_position"),
+  bufferStatus: varchar("buffer_status", { length: 20 }),
+  bufferPercentage: numeric("buffer_percentage"),
+  
+  // Zone values at time of snapshot
+  redZone: numeric("red_zone"),
+  yellowZone: numeric("yellow_zone"),
+  greenZone: numeric("green_zone"),
+  
+  // Events
+  demandSpike: boolean("demand_spike").default(false),
+  supplyDelay: boolean("supply_delay").default(false),
+  stockout: boolean("stockout").default(false),
+  
+  recordedAt: timestamp("recorded_at").defaultNow(),
+});
+
+// DDMRP Demand history
+export const ddmrpDemandHistory = pgTable("ddmrp_demand_history", {
+  id: serial("id").primaryKey(),
+  itemId: integer("item_id").references(() => items.id).notNull(),
+  
+  demandDate: date("demand_date").notNull(),
+  actualDemand: numeric("actual_demand").notNull(),
+  qualifiedDemand: numeric("qualified_demand"), // Filtered for spikes
+  
+  demandSource: varchar("demand_source", { length: 100 }), // order number, forecast, etc
+  demandType: varchar("demand_type", { length: 50 }), // 'customer_order', 'forecast', 'dependent'
+  
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// DDMRP Supply orders
+export const ddmrpSupplyOrders = pgTable("ddmrp_supply_orders", {
+  id: serial("id").primaryKey(),
+  bufferId: integer("buffer_id").references(() => ddmrpBuffers.id).notNull(),
+  
+  orderNumber: varchar("order_number", { length: 100 }).unique(),
+  orderType: varchar("order_type", { length: 50 }), // 'purchase_order', 'work_order', 'transfer_order'
+  
+  orderQuantity: numeric("order_quantity").notNull(),
+  orderDate: timestamp("order_date").notNull(),
+  dueDate: timestamp("due_date"),
+  receivedDate: timestamp("received_date"),
+  
+  status: varchar("status", { length: 50 }).default("open"), // 'planned', 'open', 'in_transit', 'received', 'cancelled'
+  
+  // Planning data
+  bufferStatusAtOrder: varchar("buffer_status_at_order", { length: 20 }),
+  netFlowAtOrder: numeric("net_flow_at_order"),
+  
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// DDMRP Alerts and execution signals
+export const ddmrpAlerts = pgTable("ddmrp_alerts", {
+  id: serial("id").primaryKey(),
+  bufferId: integer("buffer_id").references(() => ddmrpBuffers.id).notNull(),
+  
+  alertType: varchar("alert_type", { length: 50 }).notNull(), // 'red_zone', 'stockout_risk', 'demand_spike', 'supply_delay'
+  severity: varchar("severity", { length: 20 }).notNull(), // 'critical', 'high', 'medium', 'low'
+  
+  message: text("message").notNull(),
+  details: jsonb("details"),
+  
+  isActive: boolean("is_active").default(true),
+  acknowledgedBy: integer("acknowledged_by").references(() => users.id),
+  acknowledgedAt: timestamp("acknowledged_at"),
+  
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// ============================================
 // AI Agent Team System
 // ============================================
 
@@ -1207,6 +1336,32 @@ export const insertPtProductWheelSegmentSchema = createInsertSchema(ptProductWhe
 export const insertPtProductWheelScheduleSchema = createInsertSchema(ptProductWheelSchedule).omit({ id: true, createdAt: true, updatedAt: true });
 export const insertPtProductWheelPerformanceSchema = createInsertSchema(ptProductWheelPerformance).omit({ id: true, createdAt: true });
 
+// DDMRP schemas
+export const insertDdmrpBufferSchema = createInsertSchema(ddmrpBuffers).omit({ 
+  id: true, 
+  createdAt: true, 
+  updatedAt: true, 
+  lastCalculated: true 
+});
+export const insertDdmrpBufferHistorySchema = createInsertSchema(ddmrpBufferHistory).omit({ 
+  id: true, 
+  recordedAt: true 
+});
+export const insertDdmrpDemandHistorySchema = createInsertSchema(ddmrpDemandHistory).omit({ 
+  id: true, 
+  createdAt: true,
+  demandDate: true 
+});
+export const insertDdmrpSupplyOrderSchema = createInsertSchema(ddmrpSupplyOrders).omit({ 
+  id: true, 
+  createdAt: true, 
+  updatedAt: true 
+});
+export const insertDdmrpAlertSchema = createInsertSchema(ddmrpAlerts).omit({ 
+  id: true, 
+  createdAt: true 
+});
+
 // Legacy schema aliases for backward compatibility  
 export const insertResourceSchema = insertPtResourceSchema;
 export const insertPlantSchema = insertPtPlantSchema;
@@ -1369,6 +1524,18 @@ export type VoiceRecordingsCache = typeof voiceRecordingsCache.$inferSelect;
 export type InsertVoiceRecordingsCache = z.infer<typeof insertVoiceRecordingsCacheSchema>;
 export type MicrophoneRecording = typeof microphoneRecordings.$inferSelect;
 export type InsertMicrophoneRecording = z.infer<typeof insertMicrophoneRecordingSchema>;
+
+// DDMRP types
+export type DdmrpBuffer = typeof ddmrpBuffers.$inferSelect;
+export type InsertDdmrpBuffer = z.infer<typeof insertDdmrpBufferSchema>;
+export type DdmrpBufferHistory = typeof ddmrpBufferHistory.$inferSelect;
+export type InsertDdmrpBufferHistory = z.infer<typeof insertDdmrpBufferHistorySchema>;
+export type DdmrpDemandHistory = typeof ddmrpDemandHistory.$inferSelect;
+export type InsertDdmrpDemandHistory = z.infer<typeof insertDdmrpDemandHistorySchema>;
+export type DdmrpSupplyOrder = typeof ddmrpSupplyOrders.$inferSelect;
+export type InsertDdmrpSupplyOrder = z.infer<typeof insertDdmrpSupplyOrderSchema>;
+export type DdmrpAlert = typeof ddmrpAlerts.$inferSelect;
+export type InsertDdmrpAlert = z.infer<typeof insertDdmrpAlertSchema>;
 
 // Product development types (placeholders)
 export type StrategyDocument = PtPlant; // Placeholder
