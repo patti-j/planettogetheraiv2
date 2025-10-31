@@ -55,7 +55,10 @@ interface PaginatedReportData {
   totalPages: number;
 }
 
+type SourceType = "sql" | "powerbi";
+
 export default function PaginatedReports() {
+  const [sourceType, setSourceType] = useState<SourceType | null>(null);
   const [selectedTable, setSelectedTable] = useState<SQLTable | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
@@ -65,9 +68,10 @@ export default function PaginatedReports() {
   const [selectedColumns, setSelectedColumns] = useState<string[]>([]);
   const [columnFilters, setColumnFilters] = useState<Record<string, string>>({});
 
-  // Fetch list of SQL Server tables
+  // Fetch list of SQL Server tables (only when SQL source is selected)
   const { data: tables, isLoading: loadingTables } = useQuery<SQLTable[]>({
     queryKey: ['/api/sql-tables'],
+    enabled: sourceType === 'sql',
   });
 
   // Fetch table schema when table is selected
@@ -103,6 +107,15 @@ export default function PaginatedReports() {
       setSelectedColumns(tableSchema.map(col => col.columnName));
     }
   }, [tableSchema]);
+
+  const handleSourceTypeChange = (type: SourceType) => {
+    setSourceType(type);
+    setSelectedTable(null);
+    setCurrentPage(1);
+    setSortBy("");
+    setSearchTerm("");
+    setColumnFilters({});
+  };
 
   const handleTableSelect = (value: string) => {
     const [schemaName, tableName] = value.split('.');
@@ -331,40 +344,124 @@ export default function PaginatedReports() {
           </Button>
         </div>
 
-        {/* Table Selector */}
+        {/* Source Type Selector */}
         <Card>
           <CardHeader>
             <CardTitle className="text-lg flex items-center gap-2">
               <Database className="w-5 h-5" />
-              Select Table
+              Select Data Source
             </CardTitle>
-            <CardDescription>Choose a table from your SQL Server database</CardDescription>
+            <CardDescription>Choose between Analytics SQL Database or Power BI Datasets</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="max-w-md">
-              <Label htmlFor="table-select">Table</Label>
-              <Select
-                value={selectedTable ? `${selectedTable.schemaName}.${selectedTable.tableName}` : ""}
-                onValueChange={handleTableSelect}
-                disabled={loadingTables}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-2xl">
+              <button
+                onClick={() => handleSourceTypeChange('sql')}
+                className={`p-6 rounded-lg border-2 transition-all ${
+                  sourceType === 'sql'
+                    ? 'border-blue-600 bg-blue-50 dark:bg-blue-950'
+                    : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
+                }`}
+                data-testid="button-source-sql"
               >
-                <SelectTrigger id="table-select" data-testid="select-table">
-                  <SelectValue placeholder={loadingTables ? "Loading tables..." : "Select a table..."} />
-                </SelectTrigger>
-                <SelectContent>
-                  {tables?.map((table) => (
-                    <SelectItem
-                      key={`${table.schemaName}.${table.tableName}`}
-                      value={`${table.schemaName}.${table.tableName}`}
-                    >
-                      {table.schemaName}.{table.tableName}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                <div className="flex flex-col items-center gap-3">
+                  <Database className={`w-8 h-8 ${sourceType === 'sql' ? 'text-blue-600' : 'text-gray-400'}`} />
+                  <div className="text-center">
+                    <h3 className={`font-semibold ${sourceType === 'sql' ? 'text-blue-600' : 'text-foreground'}`}>
+                      Analytics SQL Database
+                    </h3>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Access tables from SQL Server
+                    </p>
+                  </div>
+                </div>
+              </button>
+              <button
+                onClick={() => handleSourceTypeChange('powerbi')}
+                className={`p-6 rounded-lg border-2 transition-all ${
+                  sourceType === 'powerbi'
+                    ? 'border-blue-600 bg-blue-50 dark:bg-blue-950'
+                    : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
+                }`}
+                data-testid="button-source-powerbi"
+              >
+                <div className="flex flex-col items-center gap-3">
+                  <FileText className={`w-8 h-8 ${sourceType === 'powerbi' ? 'text-blue-600' : 'text-gray-400'}`} />
+                  <div className="text-center">
+                    <h3 className={`font-semibold ${sourceType === 'powerbi' ? 'text-blue-600' : 'text-foreground'}`}>
+                      Power BI Datasets
+                    </h3>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Access semantic models from Power BI
+                    </p>
+                  </div>
+                </div>
+              </button>
             </div>
           </CardContent>
         </Card>
+
+        {/* Table Selector - Only show when source is selected */}
+        {sourceType && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg flex items-center gap-2">
+                <Database className="w-5 h-5" />
+                {sourceType === 'sql' ? 'Select Table' : 'Select Dataset'}
+              </CardTitle>
+              <CardDescription>
+                {sourceType === 'sql' 
+                  ? 'Choose a table from your SQL Server database'
+                  : 'Choose a dataset (semantic model) from Power BI'}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {sourceType === 'sql' ? (
+                <div className="max-w-md">
+                  <Label htmlFor="table-select">Table</Label>
+                  <Select
+                    value={selectedTable ? `${selectedTable.schemaName}.${selectedTable.tableName}` : ""}
+                    onValueChange={handleTableSelect}
+                    disabled={loadingTables}
+                  >
+                    <SelectTrigger id="table-select" data-testid="select-table">
+                      <SelectValue placeholder={loadingTables ? "Loading tables..." : "Select a table..."} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {tables?.map((table) => (
+                        <SelectItem
+                          key={`${table.schemaName}.${table.tableName}`}
+                          value={`${table.schemaName}.${table.tableName}`}
+                        >
+                          {table.schemaName}.{table.tableName}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              ) : (
+                <div className="max-w-md">
+                  <Label htmlFor="dataset-select">Dataset (Semantic Model)</Label>
+                  <Select
+                    value=""
+                    onValueChange={() => {}}
+                    disabled={true}
+                  >
+                    <SelectTrigger id="dataset-select" data-testid="select-dataset">
+                      <SelectValue placeholder="Power BI Datasets coming soon..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="placeholder">No datasets available</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <p className="text-sm text-muted-foreground mt-2">
+                    Power BI dataset integration is coming soon. You'll be able to query semantic models directly from the platform.
+                  </p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
 
         {selectedTable && (
           <>
