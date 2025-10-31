@@ -3068,8 +3068,10 @@ router.get("/schedulerpro.stockholm.css", (req, res) => {
   }
 });
 
-// Serve Bryntum Production Scheduler HTML  
-router.get("/api/production-scheduler", requireAuth, (req, res) => {
+// Serve Bryntum Production Scheduler HTML
+// Note: No requireAuth here because iframes can't send auth headers via src attribute
+// The HTML file is public, but the data APIs it calls are still protected
+router.get("/api/production-scheduler", (req, res) => {
   try {
     console.log('Serving production scheduler HTML...');
     const htmlPath = path.join(process.cwd(), 'public', 'production-scheduler.html');
