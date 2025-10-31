@@ -1424,6 +1424,7 @@ Return only the JSON object, no other text.`;
       { route: '/capacity-planning', label: 'Capacity Planning', description: 'Capacity and resource planning' },
       { route: '/inventory-optimization', label: 'Inventory Optimization', description: 'Inventory and materials management' },
       { route: '/reports', label: 'Reports', description: 'Reports and documentation' },
+      { route: '/paginated-reports', label: 'Paginated Reports', description: 'SQL Server paginated reports with filtering and export' },
       { route: '/smart-kpi-tracking', label: 'SMART KPI Tracking', description: 'KPI tracking and performance monitoring' },
       { route: '/visual-factory', label: 'Visual Factory', description: 'Visual factory displays and management' },
       { route: '/mrp', label: 'Material Requirements Planning', description: 'Material Requirements Planning' },
@@ -1475,6 +1476,30 @@ Return only the JSON object, no other text.`;
           return { type: 'switch_agent', agentId, confidence: 0.95 };
         }
       }
+    }
+    
+    // CHECK FOR REPORT REQUESTS EARLY - BEFORE DATA REQUESTS
+    // Check for paginated reports specifically
+    if (queryLower.includes('paginated report') || 
+        (queryLower.includes('paginated') && queryLower.includes('report'))) {
+      console.log(`[Max AI Intent] 📑 PAGINATED REPORTS DETECTED! Query: "${query}"`);
+      return { type: 'navigate', target: '/paginated-reports', confidence: 0.95 };
+    }
+    
+    // Check for report/dashboard navigation requests
+    const reportKeywords = ['report', 'reports', 'dashboard', 'dashboards'];
+    const listingKeywords = ['list', 'show', 'display', 'view', 'what', 'which', 'available', 'all'];
+    const workspaceKeywords = ['workspace', 'from', 'in'];
+    
+    const hasReportKeyword = reportKeywords.some(keyword => queryLower.includes(keyword));
+    const hasListingKeyword = listingKeywords.some(keyword => queryLower.includes(keyword));
+    const hasWorkspaceKeyword = workspaceKeywords.some(keyword => queryLower.includes(keyword));
+    
+    // If query mentions reports/dashboards with listing/navigation intent
+    if (hasReportKeyword && (hasListingKeyword || hasWorkspaceKeyword)) {
+      console.log(`[Max AI Intent] 📊 REPORT NAVIGATION DETECTED! Query: "${query}"`);
+      // Default to /reports page for Power BI reports
+      return { type: 'navigate', target: '/reports', confidence: 0.9 };
     }
     
     // Check for table/grid requests for ANY entity - check FIRST before other data requests
