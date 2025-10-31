@@ -376,6 +376,51 @@ export class PowerBIService {
     }
   }
 
+  // Get dataset details
+  async getDatasetDetails(accessToken: string, workspaceId: string, datasetId: string): Promise<any> {
+    const datasetUrl = `https://api.powerbi.com/v1.0/myorg/groups/${workspaceId}/datasets/${datasetId}`;
+
+    try {
+      const response = await fetch(datasetUrl, {
+        headers: {
+          "Authorization": `Bearer ${accessToken}`,
+        },
+      });
+
+      if (!response.ok) {
+        const error = await response.text();
+        throw new Error(`Failed to get dataset details: ${error}`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      throw new Error(`Failed to fetch dataset details: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }
+
+  // Get dataset tables (schema information)
+  async getDatasetTables(accessToken: string, workspaceId: string, datasetId: string): Promise<any> {
+    const tablesUrl = `https://api.powerbi.com/v1.0/myorg/groups/${workspaceId}/datasets/${datasetId}/tables`;
+
+    try {
+      const response = await fetch(tablesUrl, {
+        headers: {
+          "Authorization": `Bearer ${accessToken}`,
+        },
+      });
+
+      if (!response.ok) {
+        const error = await response.text();
+        throw new Error(`Failed to get dataset tables: ${error}`);
+      }
+
+      const data = await response.json();
+      return data.value || [];
+    } catch (error) {
+      throw new Error(`Failed to fetch dataset tables: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }
+
   // Get dataset information
   async getDataset(accessToken: string, workspaceId: string, datasetId: string): Promise<PowerBIDataset> {
     const datasetUrl = `https://api.powerbi.com/v1.0/myorg/groups/${workspaceId}/datasets/${datasetId}`;

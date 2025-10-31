@@ -1,10 +1,11 @@
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { usePowerBIAuth, usePowerBIWorkspaces, usePowerBIDatasets } from "@/hooks/use-powerbi-api";
+import { usePowerBIAuth, usePowerBIWorkspaces, usePowerBIDatasets, usePowerBIDataset, usePowerBIDatasetTables } from "@/hooks/use-powerbi-api";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
   Select,
   SelectContent,
@@ -97,6 +98,20 @@ export default function PaginatedReports() {
   const { data: powerbiDatasets, isLoading: loadingDatasets } = usePowerBIDatasets(
     isAuthenticated && sourceType === 'powerbi',
     workspaceId
+  );
+
+  // Fetch Power BI dataset details (only when dataset is selected)
+  const { data: datasetDetails, isLoading: loadingDatasetDetails } = usePowerBIDataset(
+    isAuthenticated && sourceType === 'powerbi',
+    workspaceId,
+    selectedDatasetId
+  );
+
+  // Fetch Power BI dataset tables (only when dataset is selected)
+  const { data: datasetTables, isLoading: loadingDatasetTables } = usePowerBIDatasetTables(
+    isAuthenticated && sourceType === 'powerbi',
+    workspaceId,
+    selectedDatasetId
   );
 
   // Fetch table schema when table is selected
@@ -519,6 +534,95 @@ export default function PaginatedReports() {
                       )}
                     </SelectContent>
                   </Select>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Display Power BI Dataset Details */}
+        {sourceType === 'powerbi' && selectedDatasetId && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Database className="w-5 h-5" />
+                Dataset Information
+              </CardTitle>
+              <CardDescription>
+                Details about the selected Power BI dataset
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {loadingDatasetDetails || loadingDatasetTables ? (
+                <div className="flex items-center gap-2">
+                  <RefreshCw className="w-4 h-4 animate-spin" />
+                  <span className="text-sm text-muted-foreground">Loading dataset information...</span>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {/* Dataset Details */}
+                  {datasetDetails && (
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                      <div>
+                        <Label className="text-xs text-muted-foreground">Name</Label>
+                        <p className="text-sm font-medium">{datasetDetails.name}</p>
+                      </div>
+                      <div>
+                        <Label className="text-xs text-muted-foreground">ID</Label>
+                        <p className="text-sm font-mono text-xs">{datasetDetails.id}</p>
+                      </div>
+                      <div>
+                        <Label className="text-xs text-muted-foreground">Refreshable</Label>
+                        <p className="text-sm font-medium">{datasetDetails.isRefreshable ? 'Yes' : 'No'}</p>
+                      </div>
+                      <div>
+                        <Label className="text-xs text-muted-foreground">Storage Mode</Label>
+                        <p className="text-sm font-medium">{datasetDetails.storageMode || 'Unknown'}</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Dataset Tables */}
+                  {datasetTables && datasetTables.length > 0 && (
+                    <div>
+                      <Label className="text-sm font-semibold mb-2 block">Tables in Dataset</Label>
+                      <div className="border rounded-lg overflow-hidden">
+                        <table className="w-full">
+                          <thead className="bg-muted/50">
+                            <tr>
+                              <th className="text-left px-4 py-2 text-sm font-medium">Table Name</th>
+                              <th className="text-left px-4 py-2 text-sm font-medium">Columns</th>
+                              <th className="text-left px-4 py-2 text-sm font-medium">Rows</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {datasetTables.map((table: any, index: number) => (
+                              <tr key={table.name || index} className="border-t">
+                                <td className="px-4 py-2 text-sm font-medium">{table.name}</td>
+                                <td className="px-4 py-2 text-sm text-muted-foreground">
+                                  {table.columns ? table.columns.length : 0} columns
+                                </td>
+                                <td className="px-4 py-2 text-sm text-muted-foreground">
+                                  {table.rows !== undefined ? table.rows.toLocaleString() : 'N/A'}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Show message if no tables */}
+                  {datasetTables && datasetTables.length === 0 && (
+                    <Alert>
+                      <AlertCircle className="h-4 w-4" />
+                      <AlertTitle>No Tables Found</AlertTitle>
+                      <AlertDescription>
+                        This dataset doesn't have any accessible tables or the tables couldn't be retrieved.
+                      </AlertDescription>
+                    </Alert>
+                  )}
                 </div>
               )}
             </CardContent>

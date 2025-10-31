@@ -9030,6 +9030,25 @@ router.get("/api/powerbi/workspaces/:workspaceId/datasets/:datasetId", async (re
   }
 });
 
+// Get dataset tables (schema information)
+router.get("/api/powerbi/workspaces/:workspaceId/datasets/:datasetId/tables", async (req, res) => {
+  try {
+    const { workspaceId, datasetId } = req.params;
+    
+    // Use server-cached AAD token - client never sees it
+    const accessToken = await getServerAADToken();
+    const tables = await powerBIService.getDatasetTables(accessToken, workspaceId, datasetId);
+
+    res.json(tables);
+  } catch (error) {
+    console.error("Failed to get dataset tables:", error);
+    res.status(500).json({ 
+      message: "Failed to fetch dataset tables",
+      error: error instanceof Error ? error.message : "Unknown error"
+    });
+  }
+});
+
 // Get dataset refresh history
 router.get("/api/powerbi/workspaces/:workspaceId/datasets/:datasetId/refreshes", async (req, res) => {
   try {

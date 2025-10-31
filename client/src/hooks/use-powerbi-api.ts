@@ -154,3 +154,23 @@ export function usePowerBIDataset(isAuthenticated: boolean, workspaceId: string,
     enabled: isAuthenticated && !!workspaceId && !!datasetId,
   });
 }
+
+export function usePowerBIDatasetTables(isAuthenticated: boolean, workspaceId: string, datasetId: string) {
+  return useQuery<any[]>({
+    queryKey: ["/api/powerbi/workspaces", workspaceId, "datasets", datasetId, "tables"],
+    queryFn: async () => {
+      if (!isAuthenticated || !workspaceId || !datasetId) {
+        return [];
+      }
+      
+      const response = await fetch(`/api/powerbi/workspaces/${workspaceId}/datasets/${datasetId}/tables`);
+      
+      if (!response.ok) {
+        throw new Error("Failed to fetch dataset tables");
+      }
+      
+      return response.json();
+    },
+    enabled: isAuthenticated && !!workspaceId && !!datasetId,
+  });
+}
