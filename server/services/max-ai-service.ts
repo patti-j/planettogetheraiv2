@@ -1479,11 +1479,20 @@ Return only the JSON object, no other text.`;
     }
     
     // CHECK FOR REPORT REQUESTS EARLY - BEFORE DATA REQUESTS
-    // Check for paginated reports specifically
+    // Check for paginated reports specifically - be very inclusive
     if (queryLower.includes('paginated report') || 
         (queryLower.includes('paginated') && queryLower.includes('report')) ||
         (queryLower.includes('list') && queryLower.includes('paginated') && queryLower.includes('report'))) {
       console.log(`[Max AI Intent] 📑 PAGINATED REPORTS DETECTED! Query: "${query}"`);
+      
+      // Extract workspace name if mentioned
+      const workspaceMatch = query.match(/(?:from|in|workspace|under)\s+(?:the\s+)?([^,.\s]+(?:\s+[^,.\s]+)*?)(?:\s+workspace)?(?:\s|$)/i);
+      const workspaceName = workspaceMatch ? workspaceMatch[1] : null;
+      
+      if (workspaceName) {
+        console.log(`[Max AI Intent] 📑 Workspace context: ${workspaceName}`);
+      }
+      
       return { type: 'navigate', target: '/paginated-reports', confidence: 0.95 };
     }
     
@@ -1498,15 +1507,28 @@ Return only the JSON object, no other text.`;
     const hasWorkspaceKeyword = workspaceKeywords.some(keyword => queryLower.includes(keyword));
     const hasSectionKeyword = sectionKeywords.some(keyword => queryLower.includes(keyword));
     
-    // If query mentions reports/dashboards with listing/navigation intent OR workspace context
-    // This should capture queries like "show the list of reports from workspace"
-    if (hasReportKeyword && (hasListingKeyword || hasWorkspaceKeyword || hasSectionKeyword)) {
+    // CRITICAL FIX: If query mentions reports AND workspace, treat it as navigation regardless of listing keywords
+    // This ensures queries like "reports from acme_company workspace" get handled correctly
+    if (hasReportKeyword && hasWorkspaceKeyword) {
+      console.log(`[Max AI Intent] 📊 REPORT + WORKSPACE NAVIGATION DETECTED! Query: "${query}"`);
+      
+      // Check if it mentions paginated specifically
+      if ((queryLower.includes('paginated') || queryLower.includes('pagination'))) {
+        console.log(`[Max AI Intent] 📑 PAGINATED REPORTS WITH WORKSPACE DETECTED! Query: "${query}"`);
+        return { type: 'navigate', target: '/paginated-reports', confidence: 0.95 };
+      }
+      
+      // Default to /reports page for Power BI reports
+      return { type: 'navigate', target: '/reports', confidence: 0.9 };
+    }
+    
+    // Also check for reports with listing intent or section keywords
+    if (hasReportKeyword && (hasListingKeyword || hasSectionKeyword)) {
       console.log(`[Max AI Intent] 📊 REPORT NAVIGATION DETECTED! Query: "${query}"`);
       
-      // Check if it mentions paginated specifically (even without the word directly together)
-      if ((queryLower.includes('paginated') || queryLower.includes('pagination')) && 
-          hasReportKeyword) {
-        console.log(`[Max AI Intent] 📑 PAGINATED REPORTS CONTEXT DETECTED! Query: "${query}"`);
+      // Check if it mentions paginated specifically
+      if ((queryLower.includes('paginated') || queryLower.includes('pagination'))) {
+        console.log(`[Max AI Intent] 📑 PAGINATED REPORTS DETECTED! Query: "${query}"`);
         return { type: 'navigate', target: '/paginated-reports', confidence: 0.95 };
       }
       
