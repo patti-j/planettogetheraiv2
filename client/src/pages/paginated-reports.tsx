@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { usePowerBIAuth, usePowerBIWorkspaces } from "@/hooks/use-powerbi-api";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -69,11 +70,26 @@ export default function PaginatedReports() {
   const [selectedColumns, setSelectedColumns] = useState<string[]>([]);
   const [columnFilters, setColumnFilters] = useState<Record<string, string>>({});
 
+  // Power BI authentication
+  const { isAuthenticated, authenticateAuto } = usePowerBIAuth();
+
+  // Auto-authenticate when Power BI is selected
+  useEffect(() => {
+    if (sourceType === 'powerbi' && !isAuthenticated) {
+      authenticateAuto().catch(console.error);
+    }
+  }, [sourceType, isAuthenticated, authenticateAuto]);
+
   // Fetch list of SQL Server tables (only when SQL source is selected)
   const { data: tables, isLoading: loadingTables } = useQuery<SQLTable[]>({
     queryKey: ['/api/sql-tables'],
     enabled: sourceType === 'sql',
   });
+
+  // Fetch Power BI workspaces (only when Power BI source is selected)
+  const { data: powerbiWorkspaces, isLoading: loadingWorkspaces } = usePowerBIWorkspaces(
+    sourceType === 'powerbi' && isAuthenticated
+  );
 
   // Fetch table schema when table is selected
   const { data: tableSchema, isLoading: loadingSchema, error: schemaError } = useQuery<TableColumn[]>({
@@ -398,15 +414,28 @@ export default function PaginatedReports() {
                 <Select
                   value={workspaceName}
                   onValueChange={handleWorkspaceChange}
+                  disabled={loadingWorkspaces || !isAuthenticated}
                 >
                   <SelectTrigger id="workspace-select" data-testid="select-workspace">
-                    <SelectValue placeholder="Select a workspace..." />
+                    <SelectValue placeholder={
+                      !isAuthenticated 
+                        ? "Authenticating..." 
+                        : loadingWorkspaces 
+                          ? "Loading workspaces..." 
+                          : "Select a workspace..."
+                    } />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="acme_company">acme_company</SelectItem>
-                    <SelectItem value="contoso_manufacturing">contoso_manufacturing</SelectItem>
-                    <SelectItem value="fabrikam_ops">fabrikam_ops</SelectItem>
-                    <SelectItem value="northwind_analytics">northwind_analytics</SelectItem>
+                    {powerbiWorkspaces?.map((workspace) => (
+                      <SelectItem key={workspace.id} value={workspace.name}>
+                        {workspace.name}
+                      </SelectItem>
+                    ))}
+                    {!powerbiWorkspaces?.length && !loadingWorkspaces && (
+                      <SelectItem value="no-workspaces" disabled>
+                        No workspaces available
+                      </SelectItem>
+                    )}
                   </SelectContent>
                 </Select>
               </div>
