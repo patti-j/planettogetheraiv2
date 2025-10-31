@@ -3116,3 +3116,101 @@ export const insertAtpCtpAvailabilitySnapshotSchema = createInsertSchema(atpCtpA
 });
 export type InsertAtpCtpAvailabilitySnapshot = z.infer<typeof insertAtpCtpAvailabilitySnapshotSchema>;
 export type AtpCtpAvailabilitySnapshot = typeof atpCtpAvailabilitySnapshots.$inferSelect;
+
+// ============================================
+// LLM Provider Configuration
+// ============================================
+
+// Enum for LLM provider types
+export const llmProviderTypeEnum = pgEnum("llm_provider_type", ["openai", "ollama", "custom"]);
+
+// System configuration for LLM providers
+export const llmProviderConfig = pgTable("llm_provider_config", {
+  id: serial("id").primaryKey(),
+  
+  // Provider information
+  providerType: llmProviderTypeEnum("provider_type").notNull(),
+  providerName: varchar("provider_name", { length: 100 }).notNull(), // Display name
+  
+  // Configuration
+  isActive: boolean("is_active").default(false), // Only one can be active at a time
+  isDefault: boolean("is_default").default(false),
+  
+  // Provider-specific settings (stored as JSON)
+  configuration: jsonb("configuration").notNull(), // API key, base URL, model name, etc.
+  
+  // Model settings
+  defaultModel: varchar("default_model", { length: 100 }),
+  availableModels: jsonb("available_models").default(sql`'[]'::jsonb`), // List of available models
+  
+  // Performance settings
+  temperature: decimal("temperature", { precision: 3, scale: 2 }).default("0.7"),
+  maxTokens: integer("max_tokens").default(4000),
+  timeout: integer("timeout_seconds").default(30),
+  
+  // Privacy & security
+  dataRetention: varchar("data_retention", { length: 50 }).default("none"), // none, session, permanent
+  allowDataSharing: boolean("allow_data_sharing").default(false), // Share data with external provider
+  
+  // Usage tracking
+  lastUsedAt: timestamp("last_used_at"),
+  totalRequests: integer("total_requests").default(0),
+  totalTokens: integer("total_tokens").default(0),
+  
+  // Audit
+  createdBy: integer("created_by").references(() => users.id),
+  updatedBy: integer("updated_by").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// LLM usage logs for auditing and analytics
+export const llmUsageLogs = pgTable("llm_usage_logs", {
+  id: serial("id").primaryKey(),
+  
+  providerId: integer("provider_id").references(() => llmProviderConfig.id).notNull(),
+  
+  // Request details
+  feature: varchar("feature", { length: 100 }).notNull(), // Which feature used the LLM
+  userId: integer("user_id").references(() => users.id),
+  
+  // Model & prompt
+  model: varchar("model", { length: 100 }),
+  promptTokens: integer("prompt_tokens"),
+  completionTokens: integer("completion_tokens"),
+  totalTokens: integer("total_tokens"),
+  
+  // Performance
+  responseTime: integer("response_time_ms"),
+  status: varchar("status", { length: 20 }).notNull(), // success, error, timeout
+  errorMessage: text("error_message"),
+  
+  // Privacy - don't store actual prompts/responses by default
+  promptSummary: text("prompt_summary"), // Brief description only
+  
+  timestamp: timestamp("timestamp").defaultNow(),
+}, (table) => {
+  return {
+    providerFeatureIdx: index("llm_usage_provider_feature_idx").on(table.providerId, table.feature),
+    timestampIdx: index("llm_usage_timestamp_idx").on(table.timestamp)
+  };
+});
+
+// Create insert schemas and types for LLM tables
+export const insertLlmProviderConfigSchema = createInsertSchema(llmProviderConfig).omit({
+  id: true,
+  totalRequests: true,
+  totalTokens: true,
+  lastUsedAt: true,
+  createdAt: true,
+  updatedAt: true
+});
+export type InsertLlmProviderConfig = z.infer<typeof insertLlmProviderConfigSchema>;
+export type LlmProviderConfig = typeof llmProviderConfig.$inferSelect;
+
+export const insertLlmUsageLogSchema = createInsertSchema(llmUsageLogs).omit({
+  id: true,
+  timestamp: true
+});
+export type InsertLlmUsageLog = z.infer<typeof insertLlmUsageLogSchema>;
+export type LlmUsageLog = typeof llmUsageLogs.$inferSelect;
