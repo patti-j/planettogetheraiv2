@@ -1481,23 +1481,35 @@ Return only the JSON object, no other text.`;
     // CHECK FOR REPORT REQUESTS EARLY - BEFORE DATA REQUESTS
     // Check for paginated reports specifically
     if (queryLower.includes('paginated report') || 
-        (queryLower.includes('paginated') && queryLower.includes('report'))) {
+        (queryLower.includes('paginated') && queryLower.includes('report')) ||
+        (queryLower.includes('list') && queryLower.includes('paginated') && queryLower.includes('report'))) {
       console.log(`[Max AI Intent] 📑 PAGINATED REPORTS DETECTED! Query: "${query}"`);
       return { type: 'navigate', target: '/paginated-reports', confidence: 0.95 };
     }
     
     // Check for report/dashboard navigation requests
     const reportKeywords = ['report', 'reports', 'dashboard', 'dashboards'];
-    const listingKeywords = ['list', 'show', 'display', 'view', 'what', 'which', 'available', 'all'];
-    const workspaceKeywords = ['workspace', 'from', 'in'];
+    const listingKeywords = ['list', 'show', 'display', 'view', 'what', 'which', 'available', 'all', 'get'];
+    const workspaceKeywords = ['workspace', 'from', 'in', 'under'];
+    const sectionKeywords = ['section', 'reports section'];
     
     const hasReportKeyword = reportKeywords.some(keyword => queryLower.includes(keyword));
     const hasListingKeyword = listingKeywords.some(keyword => queryLower.includes(keyword));
     const hasWorkspaceKeyword = workspaceKeywords.some(keyword => queryLower.includes(keyword));
+    const hasSectionKeyword = sectionKeywords.some(keyword => queryLower.includes(keyword));
     
-    // If query mentions reports/dashboards with listing/navigation intent
-    if (hasReportKeyword && (hasListingKeyword || hasWorkspaceKeyword)) {
+    // If query mentions reports/dashboards with listing/navigation intent OR workspace context
+    // This should capture queries like "show the list of reports from workspace"
+    if (hasReportKeyword && (hasListingKeyword || hasWorkspaceKeyword || hasSectionKeyword)) {
       console.log(`[Max AI Intent] 📊 REPORT NAVIGATION DETECTED! Query: "${query}"`);
+      
+      // Check if it mentions paginated specifically (even without the word directly together)
+      if ((queryLower.includes('paginated') || queryLower.includes('pagination')) && 
+          hasReportKeyword) {
+        console.log(`[Max AI Intent] 📑 PAGINATED REPORTS CONTEXT DETECTED! Query: "${query}"`);
+        return { type: 'navigate', target: '/paginated-reports', confidence: 0.95 };
+      }
+      
       // Default to /reports page for Power BI reports
       return { type: 'navigate', target: '/reports', confidence: 0.9 };
     }
@@ -1604,11 +1616,11 @@ Return only the JSON object, no other text.`;
     const navigationKeywords = ['show me', 'show', 'take me to', 'go to', 'open', 'view', 'display', 'navigate to', 'see the', 'see', 'access', 'load', 'pull up'];
     const hasNavigationIntent = navigationKeywords.some(keyword => query.toLowerCase().includes(keyword));
     
-    // Check for report listing intent
-    const listingKeywords = ['list', 'what', 'which', 'available', 'all'];
-    const reportKeywords = ['report', 'reports', 'dashboard', 'dashboards'];
-    const hasListingIntent = listingKeywords.some(lk => query.toLowerCase().includes(lk)) && 
-                             reportKeywords.some(rk => query.toLowerCase().includes(rk));
+    // Check for report listing intent (reuse reportKeywords and listingKeywords from earlier)
+    const reportListingKeywords = ['list', 'what', 'which', 'available', 'all'];
+    const reportTypeKeywords = ['report', 'reports', 'dashboard', 'dashboards'];
+    const hasListingIntent = reportListingKeywords.some(lk => query.toLowerCase().includes(lk)) && 
+                             reportTypeKeywords.some(rk => query.toLowerCase().includes(rk));
     
     // Also check for direct page mentions (like "master production schedule")
     const directPageMentions = query.toLowerCase().includes('production schedule') || 
