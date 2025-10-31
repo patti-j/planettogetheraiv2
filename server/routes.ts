@@ -12913,5 +12913,318 @@ router.get("/api/resources", requireAuth, async (req, res) => {
   }
 });
 
+// ============================================
+// DDMRP (Demand-Driven MRP) System API Endpoints
+// ============================================
+
+// Get all DDMRP buffers
+router.get("/api/ddmrp/buffers", requireAuth, async (req, res) => {
+  try {
+    const buffers = await storage.getDdmrpBuffers();
+    
+    // Enrich buffers with item information
+    const enrichedBuffers = await Promise.all(
+      buffers.map(async (buffer) => {
+        const item = await storage.getItem(buffer.itemId);
+        return {
+          ...buffer,
+          item: item || { itemName: 'Unknown Item', itemNumber: 'N/A' }
+        };
+      })
+    );
+    
+    res.json(enrichedBuffers);
+  } catch (error: any) {
+    console.error("Error fetching DDMRP buffers:", error);
+    res.status(500).json({ error: "Failed to fetch DDMRP buffers" });
+  }
+});
+
+// Get single DDMRP buffer
+router.get("/api/ddmrp/buffers/:id", requireAuth, async (req, res) => {
+  try {
+    const buffer = await storage.getDdmrpBuffer(parseInt(req.params.id));
+    if (!buffer) {
+      return res.status(404).json({ error: "Buffer not found" });
+    }
+    
+    const item = await storage.getItem(buffer.itemId);
+    res.json({
+      ...buffer,
+      item: item || { itemName: 'Unknown Item', itemNumber: 'N/A' }
+    });
+  } catch (error: any) {
+    console.error("Error fetching DDMRP buffer:", error);
+    res.status(500).json({ error: "Failed to fetch DDMRP buffer" });
+  }
+});
+
+// Create DDMRP buffer
+router.post("/api/ddmrp/buffers", requireAuth, async (req, res) => {
+  try {
+    const buffer = await storage.createDdmrpBuffer(req.body);
+    
+    // Calculate initial zones
+    await storage.calculateBufferZones(buffer.id);
+    
+    res.status(201).json(buffer);
+  } catch (error: any) {
+    console.error("Error creating DDMRP buffer:", error);
+    res.status(500).json({ error: "Failed to create DDMRP buffer" });
+  }
+});
+
+// Update DDMRP buffer
+router.put("/api/ddmrp/buffers/:id", requireAuth, async (req, res) => {
+  try {
+    const buffer = await storage.updateDdmrpBuffer(parseInt(req.params.id), req.body);
+    if (!buffer) {
+      return res.status(404).json({ error: "Buffer not found" });
+    }
+    res.json(buffer);
+  } catch (error: any) {
+    console.error("Error updating DDMRP buffer:", error);
+    res.status(500).json({ error: "Failed to update DDMRP buffer" });
+  }
+});
+
+// Recalculate buffer zones
+router.post("/api/ddmrp/buffers/:id/recalculate", requireAuth, async (req, res) => {
+  try {
+    const buffer = await storage.calculateBufferZones(parseInt(req.params.id));
+    if (!buffer) {
+      return res.status(404).json({ error: "Buffer not found" });
+    }
+    
+    // Create alert if buffer is in red zone
+    if (buffer.bufferStatus === 'red') {
+      await storage.createDdmrpAlert({
+        bufferId: buffer.id,
+        alertType: 'red_zone',
+        severity: 'critical',
+        message: `Buffer for item is in red zone (${buffer.bufferPercentage}%)`,
+        details: {
+          currentStock: buffer.currentStock,
+          netFlowPosition: buffer.netFlowPosition
+        }
+      });
+    }
+    
+    res.json(buffer);
+  } catch (error: any) {
+    console.error("Error recalculating buffer zones:", error);
+    res.status(500).json({ error: "Failed to recalculate buffer zones" });
+  }
+});
+
+// Recalculate all buffers
+router.post("/api/ddmrp/buffers/recalculate-all", requireAuth, async (req, res) => {
+  try {
+    const buffers = await storage.getDdmrpBuffers();
+    const results = await Promise.all(
+      buffers.map(buffer => storage.calculateBufferZones(buffer.id))
+    );
+    
+    res.json({
+      message: `Recalculated ${results.length} buffers`,
+      buffers: results
+    });
+  } catch (error: any) {
+    console.error("Error recalculating all buffers:", error);
+    res.status(500).json({ error: "Failed to recalculate buffers" });
+  }
+});
+
+// Delete DDMRP buffer
+router.delete("/api/ddmrp/buffers/:id", requireAuth, async (req, res) => {
+  try {
+    const success = await storage.deleteDdmrpBuffer(parseInt(req.params.id));
+    if (!success) {
+      return res.status(404).json({ error: "Buffer not found" });
+    }
+    res.status(204).send();
+  } catch (error: any) {
+    console.error("Error deleting DDMRP buffer:", error);
+    res.status(500).json({ error: "Failed to delete DDMRP buffer" });
+  }
+});
+
+// Get buffer history
+router.get("/api/ddmrp/buffers/:id/history", requireAuth, async (req, res) => {
+  try {
+    const history = await storage.getDdmrpBufferHistory(parseInt(req.params.id));
+    res.json(history);
+  } catch (error: any) {
+    console.error("Error fetching buffer history:", error);
+    res.status(500).json({ error: "Failed to fetch buffer history" });
+  }
+});
+
+// Get demand history
+router.get("/api/ddmrp/demand-history/:itemId", requireAuth, async (req, res) => {
+  try {
+    const history = await storage.getDdmrpDemandHistory(parseInt(req.params.itemId));
+    res.json(history);
+  } catch (error: any) {
+    console.error("Error fetching demand history:", error);
+    res.status(500).json({ error: "Failed to fetch demand history" });
+  }
+});
+
+// Record demand
+router.post("/api/ddmrp/demand-history", requireAuth, async (req, res) => {
+  try {
+    const demand = await storage.createDdmrpDemandHistory(req.body);
+    
+    // Update buffer if it exists
+    const buffer = await storage.getDdmrpBufferByItemId(req.body.itemId);
+    if (buffer) {
+      // Update average daily usage
+      const avgUsage = await storage.getAverageDailyUsage(req.body.itemId);
+      await storage.updateDdmrpBuffer(buffer.id, {
+        averageDailyUsage: avgUsage.toString()
+      });
+      
+      // Recalculate zones
+      await storage.calculateBufferZones(buffer.id);
+    }
+    
+    res.status(201).json(demand);
+  } catch (error: any) {
+    console.error("Error recording demand:", error);
+    res.status(500).json({ error: "Failed to record demand" });
+  }
+});
+
+// Get supply orders
+router.get("/api/ddmrp/supply-orders", requireAuth, async (req, res) => {
+  try {
+    const { bufferId } = req.query;
+    const orders = await storage.getDdmrpSupplyOrders(
+      bufferId ? parseInt(bufferId as string) : undefined
+    );
+    res.json(orders);
+  } catch (error: any) {
+    console.error("Error fetching supply orders:", error);
+    res.status(500).json({ error: "Failed to fetch supply orders" });
+  }
+});
+
+// Create supply order
+router.post("/api/ddmrp/supply-orders", requireAuth, async (req, res) => {
+  try {
+    const order = await storage.createDdmrpSupplyOrder(req.body);
+    res.status(201).json(order);
+  } catch (error: any) {
+    console.error("Error creating supply order:", error);
+    res.status(500).json({ error: "Failed to create supply order" });
+  }
+});
+
+// Update supply order
+router.put("/api/ddmrp/supply-orders/:id", requireAuth, async (req, res) => {
+  try {
+    const order = await storage.updateDdmrpSupplyOrder(
+      parseInt(req.params.id),
+      req.body
+    );
+    if (!order) {
+      return res.status(404).json({ error: "Supply order not found" });
+    }
+    
+    // If order is received, update buffer stock
+    if (req.body.status === 'received' && order.receivedDate) {
+      const buffer = await storage.getDdmrpBuffer(order.bufferId);
+      if (buffer) {
+        const currentStock = parseFloat(buffer.currentStock?.toString() || '0');
+        const orderQty = parseFloat(order.orderQuantity?.toString() || '0');
+        await storage.updateDdmrpBuffer(buffer.id, {
+          currentStock: (currentStock + orderQty).toString()
+        });
+        
+        // Recalculate zones
+        await storage.calculateBufferZones(buffer.id);
+      }
+    }
+    
+    res.json(order);
+  } catch (error: any) {
+    console.error("Error updating supply order:", error);
+    res.status(500).json({ error: "Failed to update supply order" });
+  }
+});
+
+// Get DDMRP alerts
+router.get("/api/ddmrp/alerts", requireAuth, async (req, res) => {
+  try {
+    const { activeOnly } = req.query;
+    const alerts = await storage.getDdmrpAlerts(
+      activeOnly !== 'false'
+    );
+    res.json(alerts);
+  } catch (error: any) {
+    console.error("Error fetching DDMRP alerts:", error);
+    res.status(500).json({ error: "Failed to fetch DDMRP alerts" });
+  }
+});
+
+// Acknowledge alert
+router.post("/api/ddmrp/alerts/:id/acknowledge", requireAuth, async (req, res) => {
+  try {
+    const userId = req.session?.user?.id || 1;
+    const alert = await storage.acknowledgeDdmrpAlert(
+      parseInt(req.params.id),
+      userId
+    );
+    if (!alert) {
+      return res.status(404).json({ error: "Alert not found" });
+    }
+    res.json(alert);
+  } catch (error: any) {
+    console.error("Error acknowledging alert:", error);
+    res.status(500).json({ error: "Failed to acknowledge alert" });
+  }
+});
+
+// Get DDMRP metrics
+router.get("/api/ddmrp/metrics", requireAuth, async (req, res) => {
+  try {
+    const buffers = await storage.getDdmrpBuffers();
+    const activeAlerts = await storage.getDdmrpAlerts(true);
+    
+    // Calculate metrics
+    const totalBuffers = buffers.length;
+    const redBuffers = buffers.filter(b => b.bufferStatus === 'red').length;
+    const yellowBuffers = buffers.filter(b => b.bufferStatus === 'yellow').length;
+    const greenBuffers = buffers.filter(b => b.bufferStatus === 'green').length;
+    
+    const bufferPerformance = totalBuffers > 0 
+      ? Math.round((greenBuffers / totalBuffers) * 100)
+      : 0;
+    
+    const avgLeadTime = buffers.length > 0
+      ? buffers.reduce((sum, b) => sum + parseInt(b.leadTime?.toString() || '0'), 0) / buffers.length
+      : 0;
+    
+    res.json({
+      bufferPerformance,
+      criticalItems: redBuffers,
+      flowIndex: 1.23, // Placeholder - would calculate from actual flow data
+      avgLeadTime: Math.round(avgLeadTime * 10) / 10,
+      totalBuffers,
+      redBuffers,
+      yellowBuffers,
+      greenBuffers,
+      activeAlerts: activeAlerts.length,
+      stockoutPrevention: 98, // Placeholder
+      inventoryReduction: 35, // Placeholder
+      leadTimeCompression: 28 // Placeholder
+    });
+  } catch (error: any) {
+    console.error("Error fetching DDMRP metrics:", error);
+    res.status(500).json({ error: "Failed to fetch DDMRP metrics" });
+  }
+});
+
 // Forced rebuild - all duplicate keys fixed
 export default router;
