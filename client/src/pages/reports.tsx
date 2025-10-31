@@ -370,9 +370,10 @@ export default function Dashboard() {
     }, 200); // Give time for PowerBIEmbed component to render
   }, [isAuthenticated, selectedWorkspaceId, embedReport, showMobileSidebar, toast, allReports]);
   
-  // Capture URL parameters on mount
+  // Capture and monitor URL parameters
   useEffect(() => {
-    if (!initialParamsRef.current) {
+    // Function to process URL parameters
+    const processUrlParams = () => {
       const searchParams = new URLSearchParams(window.location.search);
       const workspaceParam = searchParams.get('workspace');
       const reportParam = searchParams.get('report');
@@ -380,22 +381,53 @@ export default function Dashboard() {
       const autoLoadParam = searchParams.get('autoLoad');
       
       if (workspaceParam || reportParam || reportNameParam) {
-        console.log('📍 URL parameters captured:', { 
+        console.log('📍 URL parameters detected:', { 
           workspace: workspaceParam, 
           report: reportParam, 
           reportName: reportNameParam, 
           autoLoad: autoLoadParam 
         });
         
-        initialParamsRef.current = {
-          workspace: workspaceParam || undefined,
-          report: reportParam || undefined,
-          reportName: reportNameParam || undefined,
-          autoLoad: autoLoadParam === 'true'
-        };
+        // Check if this is a different report than currently selected
+        const isDifferentReport = reportParam && reportParam !== selectedReportId;
+        const isDifferentWorkspace = workspaceParam && workspaceParam !== selectedWorkspaceId;
+        
+        if (isDifferentReport || isDifferentWorkspace) {
+          console.log('🔄 Different report/workspace detected, updating selection');
+          initialParamsRef.current = {
+            workspace: workspaceParam || undefined,
+            report: reportParam || undefined,
+            reportName: reportNameParam || undefined,
+            autoLoad: autoLoadParam === 'true'
+          };
+        }
       }
-    }
-  }, []); // Only run on mount
+    };
+    
+    // Process initial parameters
+    processUrlParams();
+    
+    // Listen for popstate events (browser navigation)
+    const handlePopState = () => {
+      console.log('🔄 Browser navigation detected');
+      processUrlParams();
+    };
+    
+    window.addEventListener('popstate', handlePopState);
+    
+    // Also listen for custom navigation events from Max AI
+    const handleCustomNavigation = () => {
+      console.log('🔄 Custom navigation detected'); 
+      processUrlParams();
+    };
+    
+    window.addEventListener('maxai-navigation', handleCustomNavigation);
+    
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+      window.removeEventListener('maxai-navigation', handleCustomNavigation);
+    };
+  }, [selectedReportId, selectedWorkspaceId]); // Re-run when selections change
   
   // Process workspace selection from URL parameters
   useEffect(() => {

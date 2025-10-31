@@ -712,8 +712,23 @@ export function MaxSidebar({ onClose }: MaxSidebarProps = {}) {
         console.log('Max AI navigation action detected:', response.action);
         // Decode HTML entities in the URL (e.g., &amp; to &)
         const targetUrl = response.action.target.replace(/&amp;/g, '&');
-        // Directly navigate using the target URL
-        setLocation(targetUrl);
+        
+        // Parse the target URL to check if we're on the same page
+        const currentPath = window.location.pathname;
+        const targetUrlObj = new URL(targetUrl, window.location.origin);
+        
+        if (currentPath === targetUrlObj.pathname && currentPath === '/reports') {
+          // Same page navigation (reports to reports) - update URL and dispatch event
+          console.log('📍 Same page navigation - updating URL and dispatching event');
+          window.history.pushState({}, '', targetUrlObj.toString());
+          
+          // Dispatch custom event to notify reports page of URL change
+          window.dispatchEvent(new CustomEvent('maxai-navigation'));
+        } else {
+          // Different page navigation - use wouter setLocation
+          setLocation(targetUrl);
+        }
+        
         // Show toast notification
         toast({
           title: "Navigation",
