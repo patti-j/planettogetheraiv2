@@ -362,49 +362,20 @@ export default function PaginatedReports() {
             <CardDescription>Choose between Analytics SQL Database or Power BI Datasets</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-2xl">
-              <button
-                onClick={() => handleSourceTypeChange('sql')}
-                className={`p-6 rounded-lg border-2 transition-all ${
-                  sourceType === 'sql'
-                    ? 'border-blue-600 bg-blue-50 dark:bg-blue-950'
-                    : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
-                }`}
-                data-testid="button-source-sql"
+            <div className="max-w-md">
+              <Label htmlFor="source-select">Data Source</Label>
+              <Select
+                value={sourceType || ""}
+                onValueChange={(value) => handleSourceTypeChange(value as SourceType)}
               >
-                <div className="flex flex-col items-center gap-3">
-                  <Database className={`w-8 h-8 ${sourceType === 'sql' ? 'text-blue-600' : 'text-gray-400'}`} />
-                  <div className="text-center">
-                    <h3 className={`font-semibold ${sourceType === 'sql' ? 'text-blue-600' : 'text-foreground'}`}>
-                      Analytics SQL Database
-                    </h3>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      Access tables from SQL Server
-                    </p>
-                  </div>
-                </div>
-              </button>
-              <button
-                onClick={() => handleSourceTypeChange('powerbi')}
-                className={`p-6 rounded-lg border-2 transition-all ${
-                  sourceType === 'powerbi'
-                    ? 'border-blue-600 bg-blue-50 dark:bg-blue-950'
-                    : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
-                }`}
-                data-testid="button-source-powerbi"
-              >
-                <div className="flex flex-col items-center gap-3">
-                  <FileText className={`w-8 h-8 ${sourceType === 'powerbi' ? 'text-blue-600' : 'text-gray-400'}`} />
-                  <div className="text-center">
-                    <h3 className={`font-semibold ${sourceType === 'powerbi' ? 'text-blue-600' : 'text-foreground'}`}>
-                      Power BI Datasets
-                    </h3>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      Access semantic models from Power BI
-                    </p>
-                  </div>
-                </div>
-              </button>
+                <SelectTrigger id="source-select" data-testid="select-source-type">
+                  <SelectValue placeholder="Select a data source..." />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="sql">Analytics SQL Database</SelectItem>
+                  <SelectItem value="powerbi">Power BI Datasets</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </CardContent>
         </Card>
@@ -418,22 +389,26 @@ export default function PaginatedReports() {
                 Select Workspace
               </CardTitle>
               <CardDescription>
-                Enter the name of your Power BI workspace
+                Choose your Power BI workspace
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="max-w-md space-y-2">
-                <Label htmlFor="workspace-name">Workspace Name</Label>
-                <Input
-                  id="workspace-name"
-                  placeholder="e.g., acme_company"
+              <div className="max-w-md">
+                <Label htmlFor="workspace-select">Workspace</Label>
+                <Select
                   value={workspaceName}
-                  onChange={(e) => handleWorkspaceChange(e.target.value)}
-                  data-testid="input-workspace-name"
-                />
-                <p className="text-sm text-muted-foreground">
-                  Enter the exact name of your Power BI workspace to view available datasets
-                </p>
+                  onValueChange={handleWorkspaceChange}
+                >
+                  <SelectTrigger id="workspace-select" data-testid="select-workspace">
+                    <SelectValue placeholder="Select a workspace..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="acme_company">acme_company</SelectItem>
+                    <SelectItem value="contoso_manufacturing">contoso_manufacturing</SelectItem>
+                    <SelectItem value="fabrikam_ops">fabrikam_ops</SelectItem>
+                    <SelectItem value="northwind_analytics">northwind_analytics</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </CardContent>
           </Card>
