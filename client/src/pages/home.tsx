@@ -13,6 +13,7 @@ import { Separator } from '@/components/ui/separator';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { WorkWithAgentModal } from '@/components/WorkWithAgentModal';
 import { ReferUserModal } from '@/components/ReferUserModal';
+import { AutomationToggle } from '@/components/automation-toggle';
 import { useToast } from '@/hooks/use-toast';
 import { queryClient, apiRequest } from '@/lib/queryClient';
 import { 
@@ -1371,6 +1372,32 @@ export default function HomePage() {
               )}
             </div>
           </ScrollArea>
+          
+          {/* Automation Toggle - Enable auto-resolution */}
+          {planPreviewModal.recommendation && !planPreviewModal.isLoading && (
+            <div className="mb-4">
+              <AutomationToggle
+                issueType={planPreviewModal.recommendation.category?.toLowerCase().replace(/\s+/g, '_') as any || 'at_risk_job'}
+                defaultRuleName={`Auto-resolve: ${planPreviewModal.recommendation.title}`}
+                matchConditions={{
+                  priority: planPreviewModal.recommendation.priority,
+                  category: planPreviewModal.recommendation.category,
+                  confidence: planPreviewModal.recommendation.confidence
+                }}
+                actionPayload={{
+                  recommendationId: planPreviewModal.recommendation.id,
+                  suggestedActions: planPreviewModal.recommendation.suggestedActions,
+                  affectedEntities: planPreviewModal.recommendation.affectedEntities
+                }}
+                onAutomationEnabled={(ruleId) => {
+                  toast({
+                    title: "Automation Enabled",
+                    description: "Similar issues will be resolved automatically. Manage rules in Settings → Automation Rules.",
+                  });
+                }}
+              />
+            </div>
+          )}
           
           <DialogFooter>
             <Button variant="outline" onClick={closePlanPreview}>
