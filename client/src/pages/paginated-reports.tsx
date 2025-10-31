@@ -707,7 +707,9 @@ export default function PaginatedReports() {
                       {isLoading ? (
                         "Loading..."
                       ) : data ? (
-                        `Showing ${((currentPage - 1) * pageSize) + 1}-${Math.min(currentPage * pageSize, data.total)} of ${data.total} records from ${selectedTable.schemaName}.${selectedTable.tableName}`
+                        sourceType === 'sql' && selectedTable ? 
+                          `Showing ${((currentPage - 1) * pageSize) + 1}-${Math.min(currentPage * pageSize, data.total)} of ${data.total} records from ${selectedTable.schemaName}.${selectedTable.tableName}` :
+                          `Showing ${((currentPage - 1) * pageSize) + 1}-${Math.min(currentPage * pageSize, data.total)} of ${data.total} records from ${selectedPowerBITable}`
                       ) : (
                         "No data available"
                       )}

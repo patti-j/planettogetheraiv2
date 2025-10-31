@@ -9078,12 +9078,12 @@ router.get("/api/powerbi/dataset-data", async (req, res) => {
 
     // Transform the result to match the format expected by the frontend
     res.json({
-      columns: result.columns,
-      rows: result.rows,
-      totalRows: result.totalCount,
+      items: result.rows,  // Changed from rows to items to match frontend expectation
+      total: result.totalCount,  // Changed from totalRows to total
       page: result.page,
       pageSize: result.pageSize,
-      totalPages: Math.ceil(result.totalCount / result.pageSize)
+      totalPages: Math.ceil(result.totalCount / result.pageSize),
+      columns: result.columns  // Keep columns for reference
     });
   } catch (error) {
     console.error("Failed to query Power BI dataset table:", error);
