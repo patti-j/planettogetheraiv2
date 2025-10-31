@@ -140,7 +140,7 @@ export function AutomationToggle({
         </div>
 
         <CollapsibleTrigger asButton className="w-full mt-3">
-          <Button variant="ghost" size="sm" className="w-full">
+          <Button variant="ghost" size="sm" className="w-full" data-testid="button-advanced-options">
             <ChevronDown className="h-4 w-4 mr-2" />
             Advanced Options
           </Button>

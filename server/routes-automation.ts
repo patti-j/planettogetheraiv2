@@ -5,7 +5,7 @@
  */
 
 import express from 'express';
-import { eq, desc, and } from 'drizzle-orm';
+import { eq, desc, and, inArray } from 'drizzle-orm';
 import { db } from './db';
 import { 
   automationRules, 
@@ -103,10 +103,14 @@ automationRoutes.patch('/api/automation-rules/:id', requireAuth, async (req, res
       return res.status(404).json({ error: 'Automation rule not found' });
     }
     
+    // FIX: Validate and whitelist allowed fields
+    const updateSchema = insertAutomationRuleSchema.partial().omit({ createdBy: true });
+    const validated = updateSchema.parse(req.body);
+    
     const [rule] = await db
       .update(automationRules)
       .set({
-        ...req.body,
+        ...validated,
         updatedAt: new Date()
       })
       .where(eq(automationRules.id, id))
@@ -203,16 +207,16 @@ automationRoutes.get('/api/automation-executions', requireAuth, async (req, res)
       return res.json([]);
     }
     
+    // FIX: Filter in SQL, not in memory
+    const { inArray } = await import('drizzle-orm');
     const executions = await db
       .select()
       .from(automationExecutions)
+      .where(inArray(automationExecutions.ruleId, ruleIds))
       .orderBy(desc(automationExecutions.executedAt))
       .limit(parseInt(limit as string));
     
-    // Filter to only executions for user's rules
-    const filtered = executions.filter(e => ruleIds.includes(e.ruleId));
-    
-    res.json(filtered);
+    res.json(executions);
   } catch (error: any) {
     console.error('Error fetching executions:', error);
     res.status(500).json({ error: 'Failed to fetch execution history' });

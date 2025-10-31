@@ -61,6 +61,15 @@ The system prioritizes user experience, data integrity, performance, accessibili
 -   **AI Alert System**: Configurable AI analysis triggers with OpenAI GPT-4o integration.
 -   **AI Workflow Automation**: Natural language-powered workflow creation system that enables users to describe automation tasks in plain text. AI generates complete workflows with steps, conditions, and triggers. Features include template library, visual workflow builder, execution history tracking, and support for scheduled, event-driven, and manual workflows. Integrated at `/workflows` with full CRUD operations and execution engine.
 -   **AI Agents Control Panel**: Centralized management interface for all AI agents.
+-   **AI Automation Rules System (NEW 10/31/2025)**: Comprehensive automation system allowing users to enable automatic resolution of recurring issues directly from AI recommendations. Features include:
+    - **Inline Enablement**: Reusable `AutomationToggle` component embedded in AI recommendation modals with toggle switch for instant automation
+    - **Advanced Options**: Custom rule names, manual approval requirements, collapsible configuration
+    - **Rule Management**: Dedicated management page at `/automation-rules` for viewing, enabling/disabling, and deleting rules
+    - **Safety Features**: Rules can be paused without deletion, approval workflows for sensitive actions, comprehensive audit logging
+    - **Execution History**: Full audit trail with outcomes, errors, and timestamps for all automated actions
+    - **Issue Types**: Supports at-risk jobs, buffer shortages, resource conflicts, quality holds, deadline risks, capacity overloads, and material shortages
+    - **Database Schema**: Two tables (automation_rules, automation_executions) with proper indexing and constraints
+    - **Security**: Field-level validation on updates, SQL-based filtering for execution history, ownership verification
 -   **AI Recommendations Resolution**: Interactive resolution workflows with "Resolve Now" (immediate execution) and "Show Plan First" (preview implementation steps before applying) features. Plan preview shows detailed steps, affected entities, estimated impact, potential risks, and rollback strategy.
 -   **Global Control Tower**: Enhanced with KPI target management, weighted performance tracking, autonomous optimization, and real-time plant monitoring.
 -   **Production Scheduler Architecture**: Uses a hybrid iframe/React architecture where a React wrapper component loads a standalone HTML file containing the Bryntum Scheduler Pro via a backend API route. **Important Fix (10/24/2025)**: Removed duplicate event listener for Apply Scheduling button that was causing infinite ASAP scheduling loops. Only one event listener at line 3198 should exist.
