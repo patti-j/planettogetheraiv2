@@ -65,6 +65,7 @@ export default function PaginatedReports() {
   const [workspaceId, setWorkspaceId] = useState("");
   const [selectedTable, setSelectedTable] = useState<SQLTable | null>(null);
   const [selectedDatasetId, setSelectedDatasetId] = useState("");
+  const [selectedPowerBITable, setSelectedPowerBITable] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [searchTerm, setSearchTerm] = useState("");
@@ -114,31 +115,73 @@ export default function PaginatedReports() {
     selectedDatasetId
   );
 
-  // Fetch table schema when table is selected
+  // Fetch table schema based on source type
   const { data: tableSchema, isLoading: loadingSchema, error: schemaError } = useQuery<TableColumn[]>({
-    queryKey: selectedTable 
-      ? [`/api/sql-tables/${selectedTable.schemaName}/${selectedTable.tableName}/schema`]
-      : [],
-    enabled: !!selectedTable,
+    queryKey: (() => {
+      if (sourceType === 'sql' && selectedTable) {
+        return [`/api/sql-tables/${selectedTable.schemaName}/${selectedTable.tableName}/schema`];
+      } else if (sourceType === 'powerbi' && selectedPowerBITable && datasetTables) {
+        // For Power BI, we'll extract columns from the tables data
+        const table = datasetTables.find((t: any) => t.name === selectedPowerBITable);
+        return table?.columns ? [`powerbi-columns`, workspaceId, selectedDatasetId, selectedPowerBITable] : [];
+      }
+      return [];
+    })(),
+    queryFn: async () => {
+      if (sourceType === 'sql' && selectedTable) {
+        // Default query for SQL
+        const response = await fetch(`/api/sql-tables/${selectedTable.schemaName}/${selectedTable.tableName}/schema`);
+        if (!response.ok) throw new Error('Failed to fetch schema');
+        return response.json();
+      } else if (sourceType === 'powerbi' && selectedPowerBITable && datasetTables) {
+        // For Power BI, transform columns to match SQL schema format
+        const table = datasetTables.find((t: any) => t.name === selectedPowerBITable);
+        if (table?.columns) {
+          return table.columns.map((col: any) => ({
+            columnName: col.name,
+            dataType: col.dataType || 'Unknown',
+            isNullable: 'YES',
+            maxLength: null
+          }));
+        }
+      }
+      return [];
+    },
+    enabled: (!!selectedTable || !!selectedPowerBITable),
   });
 
   // Fetch paginated data
-  const paginatedDataUrl = selectedTable ? (() => {
-    const params = new URLSearchParams({
-      schema: selectedTable.schemaName,
-      table: selectedTable.tableName,
-      page: currentPage.toString(),
-      pageSize: pageSize.toString(),
-      searchTerm,
-      sortBy,
-      sortOrder,
-    });
-    return `/api/paginated-reports?${params}`;
-  })() : null;
+  const paginatedDataUrl = (() => {
+    if (sourceType === 'sql' && selectedTable) {
+      const params = new URLSearchParams({
+        schema: selectedTable.schemaName,
+        table: selectedTable.tableName,
+        page: currentPage.toString(),
+        pageSize: pageSize.toString(),
+        searchTerm,
+        sortBy,
+        sortOrder,
+      });
+      return `/api/paginated-reports?${params}`;
+    } else if (sourceType === 'powerbi' && selectedPowerBITable && workspaceId && selectedDatasetId) {
+      const params = new URLSearchParams({
+        workspaceId,
+        datasetId: selectedDatasetId,
+        table: selectedPowerBITable,
+        page: currentPage.toString(),
+        pageSize: pageSize.toString(),
+        searchTerm,
+        sortBy,
+        sortOrder,
+      });
+      return `/api/powerbi/dataset-data?${params}`;
+    }
+    return null;
+  })();
 
   const { data, isLoading, error } = useQuery<PaginatedReportData>({
     queryKey: paginatedDataUrl ? [paginatedDataUrl] : [],
-    enabled: !!selectedTable && !!paginatedDataUrl,
+    enabled: (!!selectedTable || !!selectedPowerBITable) && !!paginatedDataUrl,
   });
 
   // Update selected columns when table schema loads
@@ -151,7 +194,10 @@ export default function PaginatedReports() {
   const handleSourceTypeChange = (type: SourceType) => {
     setSourceType(type);
     setWorkspaceName("");
+    setWorkspaceId("");
     setSelectedTable(null);
+    setSelectedDatasetId("");
+    setSelectedPowerBITable("");
     setCurrentPage(1);
     setSortBy("");
     setSearchTerm("");
@@ -166,6 +212,7 @@ export default function PaginatedReports() {
       setWorkspaceName(workspace.name);
     }
     setSelectedDatasetId("");
+    setSelectedPowerBITable("");
     setSelectedTable(null);
     setCurrentPage(1);
   };
@@ -540,96 +587,53 @@ export default function PaginatedReports() {
           </Card>
         )}
 
-        {/* Display Power BI Dataset Details */}
+        {/* Power BI Table Selection */}
         {sourceType === 'powerbi' && selectedDatasetId && (
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Database className="w-5 h-5" />
-                Dataset Information
+                Select Table
               </CardTitle>
               <CardDescription>
-                Details about the selected Power BI dataset
+                Choose a table from the {datasetDetails?.name || 'selected'} dataset
               </CardDescription>
             </CardHeader>
             <CardContent>
-              {loadingDatasetDetails || loadingDatasetTables ? (
-                <div className="flex items-center gap-2">
-                  <RefreshCw className="w-4 h-4 animate-spin" />
-                  <span className="text-sm text-muted-foreground">Loading dataset information...</span>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {/* Dataset Details */}
-                  {datasetDetails && (
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                      <div>
-                        <Label className="text-xs text-muted-foreground">Name</Label>
-                        <p className="text-sm font-medium">{datasetDetails.name}</p>
-                      </div>
-                      <div>
-                        <Label className="text-xs text-muted-foreground">ID</Label>
-                        <p className="text-sm font-mono text-xs">{datasetDetails.id}</p>
-                      </div>
-                      <div>
-                        <Label className="text-xs text-muted-foreground">Refreshable</Label>
-                        <p className="text-sm font-medium">{datasetDetails.isRefreshable ? 'Yes' : 'No'}</p>
-                      </div>
-                      <div>
-                        <Label className="text-xs text-muted-foreground">Storage Mode</Label>
-                        <p className="text-sm font-medium">{datasetDetails.storageMode || 'Unknown'}</p>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Dataset Tables */}
-                  {datasetTables && datasetTables.length > 0 && (
-                    <div>
-                      <Label className="text-sm font-semibold mb-2 block">Tables in Dataset</Label>
-                      <div className="border rounded-lg overflow-hidden">
-                        <table className="w-full">
-                          <thead className="bg-muted/50">
-                            <tr>
-                              <th className="text-left px-4 py-2 text-sm font-medium">Table Name</th>
-                              <th className="text-left px-4 py-2 text-sm font-medium">Columns</th>
-                              <th className="text-left px-4 py-2 text-sm font-medium">Rows</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {datasetTables.map((table: any, index: number) => (
-                              <tr key={table.name || index} className="border-t">
-                                <td className="px-4 py-2 text-sm font-medium">{table.name}</td>
-                                <td className="px-4 py-2 text-sm text-muted-foreground">
-                                  {table.columns ? table.columns.length : 0} columns
-                                </td>
-                                <td className="px-4 py-2 text-sm text-muted-foreground">
-                                  {table.rows !== undefined ? table.rows.toLocaleString() : 'N/A'}
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Show message if no tables */}
-                  {datasetTables && datasetTables.length === 0 && (
-                    <Alert>
-                      <AlertCircle className="h-4 w-4" />
-                      <AlertTitle>No Tables Found</AlertTitle>
-                      <AlertDescription>
-                        This dataset doesn't have any accessible tables or the tables couldn't be retrieved.
-                      </AlertDescription>
-                    </Alert>
-                  )}
-                </div>
-              )}
+              <div className="max-w-md">
+                <Label htmlFor="powerbi-table-select">Table</Label>
+                <Select
+                  value={selectedPowerBITable}
+                  onValueChange={(value) => {
+                    setSelectedPowerBITable(value);
+                    setCurrentPage(1);
+                    setSearchTerm("");
+                    setColumnFilters({});
+                  }}
+                  disabled={loadingDatasetTables}
+                >
+                  <SelectTrigger id="powerbi-table-select" data-testid="select-powerbi-table">
+                    <SelectValue placeholder={loadingDatasetTables ? "Loading tables..." : "Select a table..."} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {datasetTables?.map((table: any) => (
+                      <SelectItem key={table.name} value={table.name}>
+                        {table.name} ({table.columns?.length || 0} columns)
+                      </SelectItem>
+                    ))}
+                    {!datasetTables?.length && !loadingDatasetTables && (
+                      <SelectItem value="no-tables" disabled>
+                        No tables available in this dataset
+                      </SelectItem>
+                    )}
+                  </SelectContent>
+                </Select>
+              </div>
             </CardContent>
           </Card>
         )}
 
-        {selectedTable && (
+        {(selectedTable || (sourceType === 'powerbi' && selectedPowerBITable)) && (
           <>
             {/* Filters */}
             <Card>
