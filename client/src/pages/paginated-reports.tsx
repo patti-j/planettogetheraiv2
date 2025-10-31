@@ -68,61 +68,33 @@ export default function PaginatedReports() {
   // Fetch list of SQL Server tables
   const { data: tables, isLoading: loadingTables } = useQuery<SQLTable[]>({
     queryKey: ['/api/sql-tables'],
-    queryFn: async () => {
-      const response = await fetch('/api/sql-tables');
-      if (!response.ok) {
-        throw new Error('Failed to fetch tables');
-      }
-      return response.json();
-    },
   });
 
   // Fetch table schema when table is selected
   const { data: tableSchema, isLoading: loadingSchema, error: schemaError } = useQuery<TableColumn[]>({
-    queryKey: ['/api/sql-tables', selectedTable?.schemaName, selectedTable?.tableName, 'schema'],
-    queryFn: async () => {
-      if (!selectedTable) return [];
-      const response = await fetch(`/api/sql-tables/${selectedTable.schemaName}/${selectedTable.tableName}/schema`);
-      if (!response.ok) {
-        throw new Error('Failed to fetch table schema');
-      }
-      return response.json();
-    },
+    queryKey: selectedTable 
+      ? [`/api/sql-tables/${selectedTable.schemaName}/${selectedTable.tableName}/schema`]
+      : [],
     enabled: !!selectedTable,
   });
 
   // Fetch paginated data
-  const { data, isLoading, error } = useQuery<PaginatedReportData>({
-    queryKey: [
-      '/api/paginated-reports',
-      selectedTable?.schemaName,
-      selectedTable?.tableName,
-      currentPage,
-      pageSize,
+  const paginatedDataUrl = selectedTable ? (() => {
+    const params = new URLSearchParams({
+      schema: selectedTable.schemaName,
+      table: selectedTable.tableName,
+      page: currentPage.toString(),
+      pageSize: pageSize.toString(),
       searchTerm,
       sortBy,
       sortOrder,
-    ],
-    queryFn: async () => {
-      if (!selectedTable) {
-        return { items: [], total: 0, page: 1, pageSize: 10, totalPages: 0 };
-      }
-      const params = new URLSearchParams({
-        schema: selectedTable.schemaName,
-        table: selectedTable.tableName,
-        page: currentPage.toString(),
-        pageSize: pageSize.toString(),
-        searchTerm,
-        sortBy,
-        sortOrder,
-      });
-      const response = await fetch(`/api/paginated-reports?${params}`);
-      if (!response.ok) {
-        throw new Error(`Failed to fetch reports: ${response.statusText}`);
-      }
-      return response.json();
-    },
-    enabled: !!selectedTable,
+    });
+    return `/api/paginated-reports?${params}`;
+  })() : null;
+
+  const { data, isLoading, error } = useQuery<PaginatedReportData>({
+    queryKey: paginatedDataUrl ? [paginatedDataUrl] : [],
+    enabled: !!selectedTable && !!paginatedDataUrl,
   });
 
   // Update selected columns when table schema loads
