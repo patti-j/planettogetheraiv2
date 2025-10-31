@@ -707,10 +707,21 @@ export function MaxSidebar({ onClose }: MaxSidebarProps = {}) {
         handleFrontendAction(response.frontendAction);
       }
 
-      // Handle navigation actions
-      console.log('Checking for navigation actions in response:', response.data);
-      if (response.data?.path && response.data?.action) {
-        console.log('Navigation action detected:', response.data);
+      // Handle navigation actions from Max AI
+      if (response.action && response.action.type === 'navigate' && response.action.target) {
+        console.log('Max AI navigation action detected:', response.action);
+        // Decode HTML entities in the URL (e.g., &amp; to &)
+        const targetUrl = response.action.target.replace(/&amp;/g, '&');
+        // Directly navigate using the target URL
+        setLocation(targetUrl);
+        // Show toast notification
+        toast({
+          title: "Navigation",
+          description: response.content || `Navigating to requested page`,
+        });
+      } else if (response.data?.path && response.data?.action) {
+        // Legacy navigation action handling
+        console.log('Legacy navigation action detected:', response.data);
         handleNavigationAction(response.data);
       } else if (response.actions?.includes('NAVIGATE_TO_PAGE') || response.actions?.includes('OPEN_GANTT_CHART')) {
         console.log('Navigation action in actions array:', response.actions, 'data:', response.data);
@@ -718,7 +729,7 @@ export function MaxSidebar({ onClose }: MaxSidebarProps = {}) {
           handleNavigationAction(response.data);
         }
       } else {
-        console.log('No navigation action found - data:', response.data, 'actions:', response.actions);
+        console.log('No navigation action found - action:', response.action, 'data:', response.data, 'actions:', response.actions);
       }
 
       // Play AI response if voice is enabled
