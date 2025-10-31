@@ -8992,6 +8992,25 @@ router.get("/api/reports/find", enhancedAuth, async (req, res) => {
   }
 });
 
+// Get all datasets from a specific workspace
+router.get("/api/powerbi/workspaces/:workspaceId/datasets", async (req, res) => {
+  try {
+    const { workspaceId } = req.params;
+    
+    // Use server-cached AAD token - client never sees it
+    const accessToken = await getServerAADToken();
+    const datasets = await powerBIService.getDatasetsFromWorkspace(accessToken, workspaceId);
+
+    res.json(datasets);
+  } catch (error) {
+    console.error("Failed to get datasets from workspace:", error);
+    res.status(500).json({ 
+      message: "Failed to fetch datasets from workspace",
+      error: error instanceof Error ? error.message : "Unknown error"
+    });
+  }
+});
+
 // Get dataset information including storage mode
 router.get("/api/powerbi/workspaces/:workspaceId/datasets/:datasetId", async (req, res) => {
   try {

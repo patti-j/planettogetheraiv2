@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { usePowerBIAuth, usePowerBIWorkspaces } from "@/hooks/use-powerbi-api";
+import { usePowerBIAuth, usePowerBIWorkspaces, usePowerBIDatasets } from "@/hooks/use-powerbi-api";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -61,7 +61,9 @@ type SourceType = "sql" | "powerbi";
 export default function PaginatedReports() {
   const [sourceType, setSourceType] = useState<SourceType | null>(null);
   const [workspaceName, setWorkspaceName] = useState("");
+  const [workspaceId, setWorkspaceId] = useState("");
   const [selectedTable, setSelectedTable] = useState<SQLTable | null>(null);
+  const [selectedDatasetId, setSelectedDatasetId] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [searchTerm, setSearchTerm] = useState("");
@@ -89,6 +91,12 @@ export default function PaginatedReports() {
   // Fetch Power BI workspaces (only when Power BI source is selected)
   const { data: powerbiWorkspaces, isLoading: loadingWorkspaces } = usePowerBIWorkspaces(
     sourceType === 'powerbi' && isAuthenticated
+  );
+
+  // Fetch Power BI datasets (only when workspace is selected)
+  const { data: powerbiDatasets, isLoading: loadingDatasets } = usePowerBIDatasets(
+    isAuthenticated && sourceType === 'powerbi',
+    workspaceId
   );
 
   // Fetch table schema when table is selected
@@ -136,7 +144,13 @@ export default function PaginatedReports() {
   };
 
   const handleWorkspaceChange = (value: string) => {
-    setWorkspaceName(value);
+    // Value is the workspace name, find the corresponding ID
+    const workspace = powerbiWorkspaces?.find(w => w.name === value);
+    if (workspace) {
+      setWorkspaceId(workspace.id);
+      setWorkspaceName(workspace.name);
+    }
+    setSelectedDatasetId("");
     setSelectedTable(null);
     setCurrentPage(1);
   };
@@ -485,20 +499,26 @@ export default function PaginatedReports() {
                 <div className="max-w-md">
                   <Label htmlFor="dataset-select">Dataset (Semantic Model)</Label>
                   <Select
-                    value=""
-                    onValueChange={() => {}}
-                    disabled={true}
+                    value={selectedDatasetId}
+                    onValueChange={setSelectedDatasetId}
+                    disabled={loadingDatasets}
                   >
                     <SelectTrigger id="dataset-select" data-testid="select-dataset">
-                      <SelectValue placeholder="Loading datasets..." />
+                      <SelectValue placeholder={loadingDatasets ? "Loading datasets..." : "Select a dataset..."} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="placeholder">No datasets available</SelectItem>
+                      {powerbiDatasets?.map((dataset) => (
+                        <SelectItem key={dataset.id} value={dataset.id}>
+                          {dataset.name}
+                        </SelectItem>
+                      ))}
+                      {!powerbiDatasets?.length && !loadingDatasets && (
+                        <SelectItem value="no-datasets" disabled>
+                          No datasets available in this workspace
+                        </SelectItem>
+                      )}
                     </SelectContent>
                   </Select>
-                  <p className="text-sm text-muted-foreground mt-2">
-                    Power BI dataset integration is coming soon. Datasets from workspace "{workspaceName}" will appear here.
-                  </p>
                 </div>
               )}
             </CardContent>

@@ -343,6 +343,39 @@ export class PowerBIService {
     }
   }
 
+  // Get all datasets from a specific workspace
+  async getDatasetsFromWorkspace(accessToken: string, workspaceId: string): Promise<PowerBIDataset[]> {
+    const datasetsUrl = `https://api.powerbi.com/v1.0/myorg/groups/${workspaceId}/datasets`;
+
+    try {
+      const response = await fetch(datasetsUrl, {
+        headers: {
+          "Authorization": `Bearer ${accessToken}`,
+        },
+      });
+
+      if (!response.ok) {
+        const error = await response.text();
+        throw new Error(`Failed to get datasets: ${error}`);
+      }
+
+      const data = await response.json();
+      const datasets = data.value || [];
+
+      // Map datasets to our format
+      return datasets.map((dataset: any) => ({
+        id: dataset.id,
+        name: dataset.name,
+        isRefreshable: dataset.isRefreshable || false,
+        isEffectiveIdentityRequired: dataset.isEffectiveIdentityRequired || false,
+        isOnPremGatewayRequired: dataset.isOnPremGatewayRequired || false,
+        storageMode: "Unknown" as const, // Storage mode requires additional API call per dataset
+      }));
+    } catch (error) {
+      throw new Error(`Failed to fetch datasets from workspace: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }
+
   // Get dataset information
   async getDataset(accessToken: string, workspaceId: string, datasetId: string): Promise<PowerBIDataset> {
     const datasetUrl = `https://api.powerbi.com/v1.0/myorg/groups/${workspaceId}/datasets/${datasetId}`;

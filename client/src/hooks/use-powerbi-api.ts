@@ -117,6 +117,24 @@ export function usePowerBIReports(isAuthenticated: boolean, workspaceId: string)
   });
 }
 
+export function usePowerBIDatasets(isAuthenticated: boolean, workspaceId: string) {
+  return useQuery<PowerBIDataset[]>({
+    queryKey: ["/api/powerbi/workspaces", workspaceId, "datasets"],
+    queryFn: async () => {
+      if (!isAuthenticated || !workspaceId) return [];
+      
+      const response = await fetch(`/api/powerbi/workspaces/${workspaceId}/datasets`);
+      
+      if (!response.ok) {
+        throw new Error("Failed to fetch datasets");
+      }
+      
+      return response.json();
+    },
+    enabled: isAuthenticated && !!workspaceId,
+  });
+}
+
 export function usePowerBIDataset(isAuthenticated: boolean, workspaceId: string, datasetId: string) {
   return useQuery<PowerBIDataset>({
     queryKey: ["/api/powerbi/workspaces", workspaceId, "datasets", datasetId],
