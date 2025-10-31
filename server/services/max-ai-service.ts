@@ -1768,6 +1768,55 @@ Rules:
 
         // Handle navigation intent
         if (intent.type === 'navigate' && intent.target && intent.confidence > 0.7) {
+          // Special handling for paginated reports
+          if (intent.target === '/paginated-reports') {
+            // Check if workspace or specific table is mentioned for context
+            const workspaceMatch = query.match(/(?:from|in|workspace)\s+(?:the\s+)?([^,.\s]+(?:\s+[^,.\s]+)*?)(?:\s+workspace)?(?:\s|$)/i);
+            const workspaceName = workspaceMatch ? workspaceMatch[1] : null;
+            
+            if (workspaceName) {
+              return {
+                content: `Opening paginated reports for the ${workspaceName} workspace. You can select SQL Server tables and view data with filtering and export options.`,
+                action: {
+                  type: 'navigate',
+                  target: '/paginated-reports'
+                }
+              };
+            }
+            return {
+              content: `Taking you to the paginated reports section where you can view SQL Server data with advanced filtering and export options.`,
+              action: {
+                type: 'navigate',
+                target: '/paginated-reports'
+              }
+            };
+          }
+          
+          // For regular Power BI reports, use the standard message
+          if (intent.target === '/reports') {
+            // Check if workspace is mentioned
+            const workspaceMatch = query.match(/(?:from|in|workspace)\s+(?:the\s+)?([^,.\s]+(?:\s+[^,.\s]+)*?)(?:\s+workspace)?(?:\s|$)/i);
+            const workspaceName = workspaceMatch ? workspaceMatch[1] : null;
+            
+            if (workspaceName) {
+              return {
+                content: `Opening reports from the ${workspaceName} workspace. I'll search for available reports there.`,
+                action: {
+                  type: 'navigate',
+                  target: '/reports'
+                }
+              };
+            }
+            return {
+              content: `Taking you to the reports section to browse available Power BI reports and dashboards.`,
+              action: {
+                type: 'navigate',
+                target: '/reports'
+              }
+            };
+          }
+          
+          // Default navigation message for other pages
           return {
             content: `Taking you to ${intent.target.replace('/', '').replace('-', ' ')}...`,
             action: {
