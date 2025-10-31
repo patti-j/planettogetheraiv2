@@ -3471,78 +3471,11 @@
                            ev.ptData?.sequence_number ?? ev.ptData?.sequenceNumber ?? 0;
                 }
 
-                // Process rank tiebreaker for when sequences are missing or tied
-                function processRank(name = '') {
-                    const n = name.toLowerCase();
-                    if (n.includes('mill')) return 10;
-                    if (n.includes('mash') || n.includes('decoction')) return 20;
-                    if (n.includes('lauter')) return 30;
-                    if (n.includes('boil') || n.includes('kettle')) return 40;
-                    if (n.includes('ferment')) return 50;
-                    if (n.includes('bright') || n.includes('condition')) return 60;
-                    if (n.includes('packag') || n.includes('bottl') || n.includes('cann')) return 70;
-                    return 999;
-                }
-
-                // Enhanced sequence sorting key that includes process rank as tiebreaker
-                function sequenceSortKey(ev) {
-                    const seq = Number(getSequence(ev) || 0);
-                    return seq * 100 + processRank(ev.name || ev.operationName || '');
-                }
-
                 // Runtime test functions - can be run in DevTools console
                 // Make these globally accessible for testing
                 window.getJobKey = getJobKey;
                 window.getJobPriority = getJobPriority;
                 window.getSequence = getSequence;
-                window.processRank = processRank;
-                window.sequenceSortKey = sequenceSortKey;
-                
-                // Validation function to check for Boil-before-Fermentation violations
-                window.checkBoilBeforeFerment = function () {
-                    const bad = [];
-                    const byJob = new Map();
-                    
-                    // Group events by job
-                    scheduler.eventStore.records.forEach(e => {
-                        const k = getJobKey(e);
-                        if (!k || !e.startDate || !e.endDate) return;
-                        (byJob.get(k) || byJob.set(k, []).get(k)).push(e);
-                    });
-                    
-                    // Check each job for boil/fermentation ordering violations
-                    byJob.forEach((ops, job) => {
-                        // Find the last boil operation (highest end date)
-                        const boil = ops.filter(o => /boil|kettle/i.test(o.name))
-                            .sort((a, b) => a.startDate - b.startDate).pop();
-                        
-                        // Find the first fermentation operation (lowest start date)
-                        const ferm = ops.filter(o => /ferment/i.test(o.name))
-                            .sort((a, b) => a.startDate - b.startDate)[0];
-                        
-                        // Check if boil ends after fermentation starts (violation)
-                        if (boil && ferm && boil.endDate > ferm.startDate) {
-                            bad.push({ 
-                                job: job, 
-                                boil: boil.name, 
-                                boilEnd: boil.endDate, 
-                                ferm: ferm.name, 
-                                fermStart: ferm.startDate,
-                                overlap: new Date(boil.endDate - ferm.startDate).getTime() / (1000 * 60 * 60) // hours
-                            });
-                        }
-                    });
-                    
-                    // Report results
-                    if (bad.length > 0) {
-                        console.error('❌ Boil-before-Fermentation violations found:');
-                        console.table(bad);
-                    } else {
-                        console.log('✅ No Boil-before-Fermentation violations found');
-                    }
-                    
-                    return bad.length === 0;
-                };
                 
                 // Test A: Verify no engine dependencies (only visual dependencies)
                 window.testNoDependencies = function() {
@@ -3825,9 +3758,9 @@
                         jobOperations.get(key).push(ev);
                     }
                     
-                    // Sort each job's operations by sequence number (with process rank as tiebreaker)
+                    // Sort each job's operations by sequence number
                     for (const [jobKey, operations] of jobOperations.entries()) {
-                        operations.sort((a, b) => sequenceSortKey(a) - sequenceSortKey(b));
+                        operations.sort((a, b) => getSequence(a) - getSequence(b));
                         console.log(`  Job "${jobKey}": ${operations.length} operations (sequences ${operations.map(op => getSequence(op)).join(', ')})`);
                     }
                     
@@ -4475,9 +4408,9 @@
                         jobOperations.get(key).push(ev);
                     }
                     
-                    // Sort each job's operations by sequence number (with process rank as tiebreaker)
+                    // Sort each job's operations by sequence number
                     for (const [jobKey, operations] of jobOperations.entries()) {
-                        operations.sort((a, b) => sequenceSortKey(a) - sequenceSortKey(b));
+                        operations.sort((a, b) => getSequence(a) - getSequence(b));
                         console.log(`  Job "${jobKey}": ${operations.length} operations (seq ${getSequence(operations[0])} to ${getSequence(operations[operations.length - 1])})`);
                     }
                     
@@ -4538,10 +4471,12 @@
                         const jobDue = jobDueMap.get(jobKey) || globalFallback;
                         console.log(`  Due: ${jobDue.toLocaleString()}`);
                         
-                        // CRITICAL: Sort operations by sequence ASCENDING first (with process rank as tiebreaker)
+                        // CRITICAL: Sort operations by sequence ASCENDING first
                         // Then we'll process them in reverse order for backward scheduling
                         operations.sort((a, b) => {
-                            return sequenceSortKey(a) - sequenceSortKey(b); // Sort ascending with process rank tiebreaker
+                            const seqA = getSequence(a);
+                            const seqB = getSequence(b);
+                            return seqA - seqB; // Sort ascending: 10, 20, 30, 40, 50
                         });
                         
                         console.log(`  Operations: ${operations.length} (sequences ${operations.map(op => getSequence(op)).join(', ')})`);
@@ -4720,34 +4655,7 @@
                                 const cur = evs[i];
                                 const next = evs[i + 1];
                                 const dur = cur.endDate - cur.startDate;
-                                
-                                // --- FIX: Compute the job-sequence successor bound ---
-                                const curJob = getJobKey(cur);
-                                const curSeq = getSequence(cur);
-
-                                // Find earliest successor in the same job with a higher sequence
-                                const successor = eventStore.records
-                                    .filter(e =>
-                                        getJobKey(e) === curJob &&
-                                        getSequence(e) > curSeq &&
-                                        e.startDate && e.endDate)
-                                    .sort((a, b) => getSequence(a) - getSequence(b))[0];
-
-                                // The rightmost end we allow is the min of:
-                                //  - next event on this resource
-                                //  - the successor's start in the same job (if any)
-                                const boundFromResource = next.startDate;
-                                const boundFromJob = successor ? successor.startDate : null;
-                                const latestEnd = boundFromJob
-                                    ? new Date(Math.min(boundFromResource.getTime(), boundFromJob.getTime()))
-                                    : boundFromResource;
-                                
-                                // Debug logging for sequence constraint enforcement
-                                if (boundFromJob && boundFromJob.getTime() < boundFromResource.getTime()) {
-                                    console.log(`  🔒 Constraining "${cur.name}" end by job successor "${successor.name}" at ${boundFromJob.toLocaleString()}`);
-                                }
-                                // --- End of FIX ---
-                                
+                                const latestEnd = next.startDate;
                                 const slot = findLatestFreeSlotOnResource(res, latestEnd, dur, cur);
                                 cur.set({ startDate: slot.start, endDate: slot.end, manuallyScheduled: false });
                             }
@@ -6170,61 +6078,13 @@
                             // Optional: Also save a version/snapshot for history
                             // This happens automatically with the existing saved-schedules system
                             try {
-                                // Safely extract schedule data with fallbacks
-                                let eventsData = [];
-                                let resourcesData = [];
-                                let dependenciesData = [];
-                                
-                                try {
-                                    // Try to get events data - fallback to manual extraction if toJSON fails
-                                    if (window.scheduler.eventStore.toJSON) {
-                                        eventsData = window.scheduler.eventStore.toJSON();
-                                    }
-                                } catch (e) {
-                                    console.warn('Could not serialize events with toJSON, using fallback:', e);
-                                    // Fallback: manually extract essential event data
-                                    eventsData = window.scheduler.eventStore.records.map(event => ({
-                                        id: event.id,
-                                        name: event.name,
-                                        startDate: event.startDate ? event.startDate.toISOString() : null,
-                                        endDate: event.endDate ? event.endDate.toISOString() : null,
-                                        resourceId: event.resourceId,
-                                        duration: event.duration,
-                                        durationUnit: event.durationUnit
-                                    }));
-                                }
-                                
-                                try {
-                                    // Try to get resources data - fallback to manual extraction if toJSON fails
-                                    if (window.scheduler.resourceStore.toJSON) {
-                                        resourcesData = window.scheduler.resourceStore.toJSON();
-                                    }
-                                } catch (e) {
-                                    console.warn('Could not serialize resources with toJSON, using fallback:', e);
-                                    // Fallback: manually extract essential resource data
-                                    resourcesData = window.scheduler.resourceStore.records.map(resource => ({
-                                        id: resource.id,
-                                        name: resource.name
-                                    }));
-                                }
-                                
-                                try {
-                                    // Try to get dependencies data if visual store exists
-                                    if (window.visualDependencyStore && window.visualDependencyStore.toJSON) {
-                                        dependenciesData = window.visualDependencyStore.toJSON();
-                                    }
-                                } catch (e) {
-                                    console.warn('Could not serialize dependencies:', e);
-                                    // Dependencies are optional, so just leave as empty array
-                                }
-                                
                                 const scheduleData = {
                                     name: `Auto-save - ${new Date().toLocaleString()}`,
                                     description: `Algorithm: ${document.getElementById('schedulingAlgorithm').options[document.getElementById('schedulingAlgorithm').selectedIndex].text}`,
                                     scheduleData: {
-                                        events: eventsData,
-                                        resources: resourcesData,
-                                        dependencies: dependenciesData
+                                        events: window.scheduler.eventStore.toJSON(),
+                                        resources: window.scheduler.resourceStore.toJSON(),
+                                        dependencies: window.visualDependencyStore ? window.visualDependencyStore.toJSON() : []
                                     },
                                     metadata: {
                                         algorithm: document.getElementById('schedulingAlgorithm').value,
@@ -6398,75 +6258,26 @@
             
             // Helper function to load a selected schedule
             async function loadSelectedSchedule(selectedSchedule) {
-                try {
-                    // Load the schedule using Bryntum's loadInlineData method
-                    if (window.scheduler && window.scheduler.project) {
-                        // Try to load using Bryntum's built-in method first
-                        let loadSuccess = false;
-                        
-                        try {
-                            // Clean up the schedule data before loading
-                            const cleanedData = {
-                                events: selectedSchedule.scheduleData.events || [],
-                                resources: selectedSchedule.scheduleData.resources || [],
-                                // Skip dependencies as they cause issues with Bryntum's internal methods
-                                // Dependencies are visual-only anyway
-                                dependencies: []
-                            };
-                            
-                            await window.scheduler.project.loadInlineData(cleanedData);
-                            loadSuccess = true;
-                        } catch (loadError) {
-                            console.warn('Could not use loadInlineData, trying manual load:', loadError);
-                            
-                            // Fallback: manually load the data into stores
-                            try {
-                                // Clear existing data first
-                                window.scheduler.eventStore.removeAll();
-                                
-                                // Load events manually
-                                if (selectedSchedule.scheduleData.events && Array.isArray(selectedSchedule.scheduleData.events)) {
-                                    const events = selectedSchedule.scheduleData.events.map(event => {
-                                        // Ensure dates are properly parsed
-                                        return {
-                                            ...event,
-                                            startDate: event.startDate ? new Date(event.startDate) : null,
-                                            endDate: event.endDate ? new Date(event.endDate) : null
-                                        };
-                                    });
-                                    window.scheduler.eventStore.add(events);
-                                    loadSuccess = true;
-                                }
-                                
-                                // Resources should already be loaded from the API, so skip loading them
-                                // This prevents overwriting the current resource structure
-                                
-                                // Dependencies are visual-only and optional, skip them to avoid errors
-                            } catch (manualLoadError) {
-                                console.error('Manual load also failed:', manualLoadError);
-                                throw new Error('Could not load schedule data');
-                            }
+                // Load the schedule using Bryntum's loadInlineData method
+                if (window.scheduler && window.scheduler.project) {
+                    // Load the project data
+                    await window.scheduler.project.loadInlineData(selectedSchedule.scheduleData);
+                    
+                    // Restore metadata if available
+                    if (selectedSchedule.metadata) {
+                        if (selectedSchedule.metadata.algorithm) {
+                            document.getElementById('schedulingAlgorithm').value = selectedSchedule.metadata.algorithm;
                         }
-                        
-                        if (!loadSuccess) {
-                            throw new Error('Failed to load schedule data');
+                        if (selectedSchedule.metadata.constraints) {
+                            window.activeConstraints = selectedSchedule.metadata.constraints;
                         }
-                        
-                        // Restore metadata if available
-                        if (selectedSchedule.metadata) {
-                            if (selectedSchedule.metadata.algorithm) {
-                                document.getElementById('schedulingAlgorithm').value = selectedSchedule.metadata.algorithm;
-                            }
-                            if (selectedSchedule.metadata.constraints) {
-                                window.activeConstraints = selectedSchedule.metadata.constraints;
-                            }
-                        }
-                        
-                        // Store the schedule ID for future updates
-                        window.currentScheduleId = selectedSchedule.id;
-                        
-                        // Zoom to fit the entire schedule in view
-                        const events = window.scheduler.eventStore.records;
+                    }
+                    
+                    // Store the schedule ID for future updates
+                    window.currentScheduleId = selectedSchedule.id;
+                    
+                    // Zoom to fit the entire schedule in view
+                    const events = window.scheduler.eventStore.records;
                     if (events && events.length > 0) {
                         // Find the earliest and latest dates in the schedule
                         let minDate = null;
@@ -6506,15 +6317,11 @@
                         }
                     }
                     
-                        // Update status
-                        document.getElementById('lastUpdate').textContent = `Loaded: ${selectedSchedule.name}`;
-                        updateStatus();
-                        
-                        console.log('✅ Schedule loaded successfully:', selectedSchedule.name);
-                    }
-                } catch (error) {
-                    console.error('❌ Error loading schedule:', error);
-                    alert(`Failed to load schedule: ${error.message || 'Unknown error'}. Please try again or select a different schedule.`);
+                    // Update status
+                    document.getElementById('lastUpdate').textContent = `Loaded: ${selectedSchedule.name}`;
+                    updateStatus();
+                    
+                    console.log('✅ Schedule loaded successfully:', selectedSchedule.name);
                 }
             }
             

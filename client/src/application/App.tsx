@@ -45,7 +45,7 @@ import MasterProductionSchedule from "@/pages/master-production-schedule";
 import IntegrationsPage from "@/pages/integrations";
 import SystemIntegrationsPage from "@/pages/system-integrations";
 import DemandManagement from "@/pages/demand-management";
-import AtpCtp from "@/pages/atp-ctp";
+import AtpCtpReservations from "@/pages/atp-ctp-reservations";
 import PlanningOverview from "@/pages/planning-overview";
 import PlantsManagement from "@/pages/plants-management";
 import DemandSupplyAlignment from "@/pages/demand-supply-alignment";
@@ -345,7 +345,7 @@ export default function ApplicationApp() {
               </Route>
               <Route path="/atp-ctp">
                 <ProtectedRoute feature="production-scheduling" action="view">
-                  <AtpCtp />
+                  <AtpCtpReservations />
                 </ProtectedRoute>
               </Route>
               <Route path="/schedule-sequences">

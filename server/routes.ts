@@ -12598,5 +12598,320 @@ router.get("/api/smart-kpi-actuals/:id", requireAuth, async (req, res) => {
   }
 });
 
+// ============================================
+// ATP/CTP Reservation System API Endpoints
+// ============================================
+
+// Get all reservations with optional filters
+router.get("/api/atp-ctp/reservations", requireAuth, async (req, res) => {
+  try {
+    const { status, type, startDate, endDate } = req.query;
+    
+    const filters: any = {};
+    if (status) filters.status = status as string;
+    if (type) filters.type = type as string;
+    if (startDate) filters.startDate = new Date(startDate as string);
+    if (endDate) filters.endDate = new Date(endDate as string);
+    
+    const reservations = await storage.getAtpCtpReservations(filters);
+    res.json(reservations);
+  } catch (error: any) {
+    console.error("Error fetching reservations:", error);
+    res.status(500).json({ error: "Failed to fetch reservations" });
+  }
+});
+
+// Get single reservation
+router.get("/api/atp-ctp/reservations/:id", requireAuth, async (req, res) => {
+  try {
+    const reservation = await storage.getAtpCtpReservation(parseInt(req.params.id));
+    if (!reservation) {
+      return res.status(404).json({ error: "Reservation not found" });
+    }
+    
+    // Get related material and resource reservations
+    const materials = await storage.getMaterialReservations(reservation.id);
+    const resources = await storage.getResourceReservations(reservation.id);
+    
+    res.json({
+      ...reservation,
+      materials,
+      resources
+    });
+  } catch (error: any) {
+    console.error("Error fetching reservation:", error);
+    res.status(500).json({ error: "Failed to fetch reservation" });
+  }
+});
+
+// Create new reservation
+router.post("/api/atp-ctp/reservations", requireAuth, async (req, res) => {
+  try {
+    const { materials = [], resources = [], ...reservationData } = req.body;
+    
+    // Create main reservation
+    const reservation = await storage.createAtpCtpReservation({
+      ...reservationData,
+      requestedBy: req.user?.id
+    });
+    
+    // Create material reservations
+    const materialReservations = await Promise.all(
+      materials.map((material: any) => 
+        storage.createMaterialReservation({
+          ...material,
+          reservationId: reservation.id
+        })
+      )
+    );
+    
+    // Create resource reservations
+    const resourceReservations = await Promise.all(
+      resources.map((resource: any) =>
+        storage.createResourceReservation({
+          ...resource,
+          reservationId: reservation.id
+        })
+      )
+    );
+    
+    res.status(201).json({
+      ...reservation,
+      materials: materialReservations,
+      resources: resourceReservations
+    });
+  } catch (error: any) {
+    console.error("Error creating reservation:", error);
+    res.status(500).json({ error: "Failed to create reservation" });
+  }
+});
+
+// Update reservation
+router.patch("/api/atp-ctp/reservations/:id", requireAuth, async (req, res) => {
+  try {
+    const reservationId = parseInt(req.params.id);
+    const { materials, resources, ...reservationData } = req.body;
+    
+    // Update main reservation
+    const reservation = await storage.updateAtpCtpReservation(reservationId, reservationData);
+    if (!reservation) {
+      return res.status(404).json({ error: "Reservation not found" });
+    }
+    
+    // Update material/resource reservations if provided
+    let materialReservations = [];
+    let resourceReservations = [];
+    
+    if (materials) {
+      materialReservations = await Promise.all(
+        materials.map((material: any) => {
+          if (material.id) {
+            return storage.updateMaterialReservation(material.id, material);
+          } else {
+            return storage.createMaterialReservation({
+              ...material,
+              reservationId
+            });
+          }
+        })
+      );
+    } else {
+      materialReservations = await storage.getMaterialReservations(reservationId);
+    }
+    
+    if (resources) {
+      resourceReservations = await Promise.all(
+        resources.map((resource: any) => {
+          if (resource.id) {
+            return storage.updateResourceReservation(resource.id, resource);
+          } else {
+            return storage.createResourceReservation({
+              ...resource,
+              reservationId
+            });
+          }
+        })
+      );
+    } else {
+      resourceReservations = await storage.getResourceReservations(reservationId);
+    }
+    
+    res.json({
+      ...reservation,
+      materials: materialReservations,
+      resources: resourceReservations
+    });
+  } catch (error: any) {
+    console.error("Error updating reservation:", error);
+    res.status(500).json({ error: "Failed to update reservation" });
+  }
+});
+
+// Cancel reservation
+router.post("/api/atp-ctp/reservations/:id/cancel", requireAuth, async (req, res) => {
+  try {
+    const { reason } = req.body;
+    const success = await storage.cancelAtpCtpReservation(
+      parseInt(req.params.id),
+      req.user?.id!,
+      reason
+    );
+    
+    if (!success) {
+      return res.status(404).json({ error: "Reservation not found" });
+    }
+    
+    res.json({ message: "Reservation cancelled successfully" });
+  } catch (error: any) {
+    console.error("Error cancelling reservation:", error);
+    res.status(500).json({ error: "Failed to cancel reservation" });
+  }
+});
+
+// Confirm reservation
+router.post("/api/atp-ctp/reservations/:id/confirm", requireAuth, async (req, res) => {
+  try {
+    const reservationId = parseInt(req.params.id);
+    const reservation = await storage.updateAtpCtpReservation(reservationId, {
+      status: 'confirmed',
+      confirmedBy: req.user?.id,
+      confirmedAt: new Date()
+    });
+    
+    if (!reservation) {
+      return res.status(404).json({ error: "Reservation not found" });
+    }
+    
+    res.json(reservation);
+  } catch (error: any) {
+    console.error("Error confirming reservation:", error);
+    res.status(500).json({ error: "Failed to confirm reservation" });
+  }
+});
+
+// Get reservation history
+router.get("/api/atp-ctp/reservations/:id/history", requireAuth, async (req, res) => {
+  try {
+    const history = await storage.getReservationHistory(parseInt(req.params.id));
+    res.json(history);
+  } catch (error: any) {
+    console.error("Error fetching reservation history:", error);
+    res.status(500).json({ error: "Failed to fetch reservation history" });
+  }
+});
+
+// Check material availability
+router.post("/api/atp-ctp/check-material-availability", requireAuth, async (req, res) => {
+  try {
+    const { itemId, quantity, startDate, endDate } = req.body;
+    
+    if (!itemId || !quantity || !startDate || !endDate) {
+      return res.status(400).json({ error: "Missing required fields" });
+    }
+    
+    const available = await storage.checkMaterialAvailability(
+      itemId,
+      quantity,
+      new Date(startDate),
+      new Date(endDate)
+    );
+    
+    res.json({ available });
+  } catch (error: any) {
+    console.error("Error checking material availability:", error);
+    res.status(500).json({ error: "Failed to check material availability" });
+  }
+});
+
+// Check resource availability
+router.post("/api/atp-ctp/check-resource-availability", requireAuth, async (req, res) => {
+  try {
+    const { resourceId, startTime, endTime } = req.body;
+    
+    if (!resourceId || !startTime || !endTime) {
+      return res.status(400).json({ error: "Missing required fields" });
+    }
+    
+    const available = await storage.checkResourceAvailability(
+      resourceId,
+      new Date(startTime),
+      new Date(endTime)
+    );
+    
+    res.json({ available });
+  } catch (error: any) {
+    console.error("Error checking resource availability:", error);
+    res.status(500).json({ error: "Failed to check resource availability" });
+  }
+});
+
+// Detect resource conflicts
+router.post("/api/atp-ctp/detect-resource-conflicts", requireAuth, async (req, res) => {
+  try {
+    const { resourceId, startTime, endTime, excludeReservationId } = req.body;
+    
+    if (!resourceId || !startTime || !endTime) {
+      return res.status(400).json({ error: "Missing required fields" });
+    }
+    
+    const conflicts = await storage.detectResourceConflicts(
+      resourceId,
+      new Date(startTime),
+      new Date(endTime),
+      excludeReservationId
+    );
+    
+    res.json({ conflicts });
+  } catch (error: any) {
+    console.error("Error detecting resource conflicts:", error);
+    res.status(500).json({ error: "Failed to detect resource conflicts" });
+  }
+});
+
+// Get availability snapshots
+router.get("/api/atp-ctp/availability-snapshots", requireAuth, async (req, res) => {
+  try {
+    const { entityType, entityId, startDate, endDate } = req.query;
+    
+    if (!entityType || !entityId) {
+      return res.status(400).json({ error: "Entity type and ID required" });
+    }
+    
+    const snapshots = await storage.getAvailabilitySnapshots(
+      entityType as string,
+      parseInt(entityId as string),
+      startDate ? new Date(startDate as string) : undefined,
+      endDate ? new Date(endDate as string) : undefined
+    );
+    
+    res.json(snapshots);
+  } catch (error: any) {
+    console.error("Error fetching availability snapshots:", error);
+    res.status(500).json({ error: "Failed to fetch availability snapshots" });
+  }
+});
+
+// Get items for material selection
+router.get("/api/items", requireAuth, async (req, res) => {
+  try {
+    const items = await storage.getItems();
+    res.json(items);
+  } catch (error: any) {
+    console.error("Error fetching items:", error);
+    res.status(500).json({ error: "Failed to fetch items" });
+  }
+});
+
+// Get resources for resource selection
+router.get("/api/resources", requireAuth, async (req, res) => {
+  try {
+    const resources = await storage.getPtResourcesWithDetails();
+    res.json(resources);
+  } catch (error: any) {
+    console.error("Error fetching resources:", error);
+    res.status(500).json({ error: "Failed to fetch resources" });
+  }
+});
+
 // Forced rebuild - all duplicate keys fixed
 export default router;

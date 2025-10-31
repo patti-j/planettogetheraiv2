@@ -61,6 +61,16 @@ export default function ProductionScheduler() {
     const handleLoad = () => {
       console.log('📄 Production scheduler iframe loaded');
       
+      // Send authentication token to iframe
+      const token = localStorage.getItem('auth_token');
+      if (token && iframeRef.current?.contentWindow) {
+        console.log('📤 Sending auth token to scheduler iframe');
+        iframeRef.current.contentWindow.postMessage({
+          type: 'SET_AUTH_TOKEN',
+          token: token
+        }, '*');
+      }
+      
       // Check if iframe content is accessible and hide loading immediately for same-origin
       try {
         const iframeDoc = iframeRef.current?.contentDocument || iframeRef.current?.contentWindow?.document;
