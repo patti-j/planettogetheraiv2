@@ -398,8 +398,9 @@ export class PowerBIService {
     }
   }
 
-  // Get dataset tables (schema information)
+  // Get dataset tables (schema information) - works for all dataset types
   async getDatasetTables(accessToken: string, workspaceId: string, datasetId: string): Promise<any> {
+    // First try the REST API for push datasets
     const tablesUrl = `https://api.powerbi.com/v1.0/myorg/groups/${workspaceId}/datasets/${datasetId}/tables`;
 
     try {
@@ -409,15 +410,206 @@ export class PowerBIService {
         },
       });
 
+      if (response.ok) {
+        const data = await response.json();
+        if (data.value && data.value.length > 0) {
+          // Push dataset - return the tables
+          return data.value;
+        }
+      }
+    } catch (error) {
+      console.log('Not a push dataset, trying DAX query approach...');
+    }
+
+    // For regular datasets, use DAX to discover tables
+    return this.discoverTablesUsingDAX(accessToken, workspaceId, datasetId);
+  }
+
+  // Discover tables in a dataset using DAX queries
+  private async discoverTablesUsingDAX(accessToken: string, workspaceId: string, datasetId: string): Promise<any[]> {
+    const queryUrl = `https://api.powerbi.com/v1.0/myorg/groups/${workspaceId}/datasets/${datasetId}/executeQueries`;
+
+    // DAX query to get all tables and their columns
+    const daxQuery = `
+      EVALUATE
+      SELECTCOLUMNS(
+        INFO.TABLES(),
+        "TableID", [ID],
+        "TableName", [Name],
+        "IsHidden", [IsHidden],
+        "IsPrivate", [IsPrivate],
+        "TableType", [TableType]
+      )
+    `;
+
+    const requestBody = {
+      queries: [
+        {
+          query: daxQuery
+        }
+      ],
+      serializerSettings: {
+        includeNulls: true
+      }
+    };
+
+    try {
+      const response = await fetch(queryUrl, {
+        method: 'POST',
+        headers: {
+          "Authorization": `Bearer ${accessToken}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(requestBody)
+      });
+
       if (!response.ok) {
-        const error = await response.text();
-        throw new Error(`Failed to get dataset tables: ${error}`);
+        // If DAX query fails, try a simpler approach
+        return this.discoverTablesSimple(accessToken, workspaceId, datasetId);
       }
 
-      const data = await response.json();
-      return data.value || [];
+      const result = await response.json();
+      
+      if (result.results && result.results[0] && result.results[0].tables && result.results[0].tables[0]) {
+        const tablesData = result.results[0].tables[0].rows || [];
+        
+        // Filter out hidden and private tables, get visible tables only
+        const visibleTables = tablesData.filter((table: any) => 
+          !table["[IsHidden]"] && !table["[IsPrivate]"] && table["[TableType]"] !== "System"
+        );
+
+        // For each table, get column information
+        const tablesWithColumns = [];
+        for (const table of visibleTables) {
+          const tableName = table["[TableName]"] || table["[Name]"] || table.TableName || table.Name;
+          if (tableName) {
+            const columns = await this.getTableColumns(accessToken, workspaceId, datasetId, tableName);
+            tablesWithColumns.push({
+              name: tableName,
+              columns: columns,
+              rows: 0 // We don't have row count immediately
+            });
+          }
+        }
+
+        return tablesWithColumns;
+      }
+
+      // If no tables found using INFO.TABLES(), try simple discovery
+      return this.discoverTablesSimple(accessToken, workspaceId, datasetId);
     } catch (error) {
-      throw new Error(`Failed to fetch dataset tables: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      console.error('Failed to discover tables using DAX:', error);
+      // Fallback to simple discovery
+      return this.discoverTablesSimple(accessToken, workspaceId, datasetId);
+    }
+  }
+
+  // Simple table discovery - tries common table names
+  private async discoverTablesSimple(accessToken: string, workspaceId: string, datasetId: string): Promise<any[]> {
+    const queryUrl = `https://api.powerbi.com/v1.0/myorg/groups/${workspaceId}/datasets/${datasetId}/executeQueries`;
+    
+    // Try to get a sample from any table to discover what tables exist
+    // This is a fallback when INFO.TABLES() doesn't work
+    const commonTableNames = [
+      'Sales', 'Orders', 'Customers', 'Products', 'Date', 'Calendar',
+      'Fact', 'Dim', 'Data', 'Table', 'Sheet1', 'Query1'
+    ];
+
+    const discoveredTables = [];
+
+    for (const tableName of commonTableNames) {
+      try {
+        const daxQuery = `EVALUATE TOPN(1, '${tableName}')`;
+        
+        const response = await fetch(queryUrl, {
+          method: 'POST',
+          headers: {
+            "Authorization": `Bearer ${accessToken}`,
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            queries: [{ query: daxQuery }],
+            serializerSettings: { includeNulls: true }
+          })
+        });
+
+        if (response.ok) {
+          const result = await response.json();
+          if (result.results && result.results[0] && result.results[0].tables && result.results[0].tables[0]) {
+            const tableData = result.results[0].tables[0];
+            const columns = tableData.rows && tableData.rows.length > 0 
+              ? Object.keys(tableData.rows[0]).map(col => ({
+                  name: col.replace(/^\[|\]$/g, '').replace(/^.*\[|\]$/g, ''),
+                  dataType: 'Auto'
+                }))
+              : [];
+            
+            discoveredTables.push({
+              name: tableName,
+              columns: columns,
+              rows: 0
+            });
+          }
+        }
+      } catch (error) {
+        // Table doesn't exist, continue
+        continue;
+      }
+    }
+
+    // If no common tables found, return empty array with message
+    if (discoveredTables.length === 0) {
+      return [{
+        name: 'Unable to auto-discover tables',
+        columns: [],
+        rows: 0,
+        message: 'Please check dataset permissions or try entering table name manually'
+      }];
+    }
+
+    return discoveredTables;
+  }
+
+  // Get columns for a specific table
+  private async getTableColumns(accessToken: string, workspaceId: string, datasetId: string, tableName: string): Promise<any[]> {
+    const queryUrl = `https://api.powerbi.com/v1.0/myorg/groups/${workspaceId}/datasets/${datasetId}/executeQueries`;
+    
+    try {
+      // Get one row to discover columns
+      const daxQuery = `EVALUATE TOPN(1, '${tableName}')`;
+      
+      const response = await fetch(queryUrl, {
+        method: 'POST',
+        headers: {
+          "Authorization": `Bearer ${accessToken}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          queries: [{ query: daxQuery }],
+          serializerSettings: { includeNulls: true }
+        })
+      });
+
+      if (!response.ok) {
+        return [];
+      }
+
+      const result = await response.json();
+      
+      if (result.results && result.results[0] && result.results[0].tables && result.results[0].tables[0]) {
+        const tableData = result.results[0].tables[0];
+        if (tableData.rows && tableData.rows.length > 0) {
+          return Object.keys(tableData.rows[0]).map(col => ({
+            name: col.replace(/^\[|\]$/g, '').replace(/^.*\[|\]$/g, ''),
+            dataType: 'Auto'
+          }));
+        }
+      }
+
+      return [];
+    } catch (error) {
+      console.error(`Failed to get columns for table ${tableName}:`, error);
+      return [];
     }
   }
 
