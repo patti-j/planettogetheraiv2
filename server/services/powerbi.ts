@@ -598,16 +598,7 @@ export class PowerBIService {
       }
     }
 
-    // If no common tables found, return empty array with message
-    if (discoveredTables.length === 0) {
-      return [{
-        name: 'Unable to auto-discover tables',
-        columns: [],
-        rows: 0,
-        message: 'Please check dataset permissions or try entering table name manually'
-      }];
-    }
-
+    // Return discovered tables (empty array if none found)
     return discoveredTables;
   }
 

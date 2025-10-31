@@ -621,7 +621,10 @@ export default function PaginatedReports() {
                     <SelectContent>
                       {datasetTables && datasetTables.length > 0 ? (
                         <>
-                          {datasetTables.map((table: any) => (
+                          {datasetTables.filter((table: any) => 
+                            // Filter out any error/placeholder tables
+                            table.name && !table.name.includes('Unable to auto-discover')
+                          ).map((table: any) => (
                             <SelectItem key={table.name} value={table.name}>
                               {table.name} {table.columns?.length ? `(${table.columns.length} columns)` : ''}
                             </SelectItem>
@@ -647,7 +650,9 @@ export default function PaginatedReports() {
                 </div>
                 
                 {/* Manual table name entry */}
-                {(selectedPowerBITable === 'manual-entry' || (!datasetTables?.length && !loadingDatasetTables)) && (
+                {(selectedPowerBITable === 'manual-entry' || 
+                  (!loadingDatasetTables && (!datasetTables || datasetTables.length === 0 || 
+                    datasetTables.filter((t: any) => t.name && !t.name.includes('Unable to auto-discover')).length === 0))) && (
                   <div className="max-w-md">
                     <Label htmlFor="manual-table-name">Enter Table Name</Label>
                     <div className="flex gap-2">
