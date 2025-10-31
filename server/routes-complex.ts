@@ -111,6 +111,7 @@ import { agentActionService } from "./agent-action-service";
 import { registerTimeTrackingRoutes } from "./routes/time-tracking-routes";
 import aiAgentsRouter from "./routes/ai-agents-routes";
 import smsService from "./services/sms-service";
+import { AISampleDataJSONSchema, retryWithBackoff, validateAISampleDataResponse } from "./services/ai-sample-data-schema";
 
 // Session interface is declared in index.ts
 
@@ -1148,49 +1149,65 @@ ${companyInfo.description ? `Context: ${companyInfo.description}` : ''}
 
 Create authentic pharmaceutical manufacturing data for ${companyInfo.name} with proper equipment names, production processes, and operational workflows.`;
 
-      let response;
-      try {
-        response = await openai.chat.completions.create({
-          model: "gpt-4o", // Use available model
-          messages: [
-            { role: "system", content: systemPrompt },
-            { role: "user", content: finalUserPrompt }
-          ],
-          response_format: { type: "json_object" },
-          max_tokens: 4000
-        });
-      } catch (apiError: any) {
-        console.error(`[AI Bulk Generate] Error generating data:`, apiError.message);
-        if (apiError.message?.includes('timeout') || apiError.message?.includes('Request timeout')) {
-          throw new Error(`Request timeout - try reducing sample size or selecting fewer data types`);
-        }
-        throw new Error(`AI generation failed: ${apiError.message}`);
-      }
-
-      const rawContent = response.choices[0].message.content;
-      console.log('Raw OpenAI response length:', rawContent?.length);
-      console.log('Raw OpenAI response preview:', rawContent?.substring(0, 200) + '...');
-      
-      if (!rawContent) {
-        throw new Error('No content received from OpenAI');
-      }
-      
+      // Use structured outputs with retry logic for reliable AI generation
       let generatedData;
       try {
-        generatedData = JSON.parse(rawContent);
-        if (!generatedData.dataTypes) {
-          throw new Error('Invalid response format: missing dataTypes');
+        generatedData = await retryWithBackoff(
+          async () => {
+            console.log('[AI Bulk Generate] Making OpenAI API call with structured outputs...');
+            const response = await openai.chat.completions.create({
+              model: "gpt-4o",
+              messages: [
+                { role: "system", content: systemPrompt },
+                { role: "user", content: finalUserPrompt }
+              ],
+              response_format: { 
+                type: "json_schema",
+                json_schema: AISampleDataJSONSchema
+              },
+              max_tokens: 4000
+            });
+
+            const rawContent = response.choices[0].message.content;
+            console.log('[AI Bulk Generate] OpenAI response length:', rawContent?.length);
+            
+            if (!rawContent) {
+              throw new Error('No content received from OpenAI');
+            }
+
+            // Parse and validate response using Zod schema
+            const parsedData = JSON.parse(rawContent);
+            const validatedData = validateAISampleDataResponse(parsedData);
+            
+            console.log('[AI Bulk Generate] Response validated successfully');
+            return validatedData;
+          },
+          3, // Max 3 attempts
+          1000, // Start with 1 second delay
+          'AI Sample Data Generation'
+        );
+      } catch (error: any) {
+        console.error('[AI Bulk Generate] All retry attempts failed:', error.message);
+        
+        // Determine error type for user-friendly message
+        let userMessage = 'AI generation failed after multiple attempts.';
+        if (error.message?.includes('timeout') || error.message?.includes('Request timeout')) {
+          userMessage = 'Request timeout - try reducing sample size or selecting fewer data types';
+        } else if (error.message?.includes('Invalid AI response format')) {
+          userMessage = 'AI generated invalid data format - this is usually temporary, please try again';
+        } else if (error.message?.includes('rate_limit')) {
+          userMessage = 'Rate limit exceeded - please wait a moment and try again';
         }
-      } catch (parseError) {
-        console.error(`[AI Bulk Generate] JSON parsing error:`, parseError);
-        console.error('Raw content:', rawContent?.substring(0, 500));
-        // Fallback to minimal dataset if AI generation fails
+        
+        // Fallback to minimal dataset
+        console.log('[AI Bulk Generate] Using fallback minimal dataset');
         generatedData = {
           dataTypes: {},
           summary: "AI generation failed, using fallback minimal dataset",
           totalRecords: 0,
-          recommendations: ["Please try again with a smaller sample size"]
+          recommendations: [userMessage, "Please try again with a smaller sample size or fewer data types"]
         };
+        
         // Add basic data for each requested type
         selectedDataTypes.forEach(type => {
           if (type === 'plants') {
@@ -1204,7 +1221,6 @@ Create authentic pharmaceutical manufacturing data for ${companyInfo.name} with 
           }
         });
       }
-      
       // Validate and potentially supplement generated data to meet minimum requirements
       console.log('Generated data summary:');
       for (const [dataType, records] of Object.entries(generatedData.dataTypes)) {
