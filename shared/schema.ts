@@ -3214,3 +3214,112 @@ export const insertLlmUsageLogSchema = createInsertSchema(llmUsageLogs).omit({
 });
 export type InsertLlmUsageLog = z.infer<typeof insertLlmUsageLogSchema>;
 export type LlmUsageLog = typeof llmUsageLogs.$inferSelect;
+
+// ============================================
+// AI Automation Rules System
+// ============================================
+
+// Issue types that can be automated
+export const issueTypeEnum = pgEnum("issue_type", [
+  "at_risk_job",
+  "buffer_shortage", 
+  "resource_conflict",
+  "quality_hold",
+  "deadline_risk",
+  "capacity_overload",
+  "material_shortage"
+]);
+
+// Automation rules for auto-resolving recurring issues
+export const automationRules = pgTable("automation_rules", {
+  id: serial("id").primaryKey(),
+  
+  // Ownership
+  createdBy: integer("created_by").references(() => users.id).notNull(),
+  
+  // Rule configuration
+  ruleName: varchar("rule_name", { length: 255 }).notNull(),
+  description: text("description"),
+  issueType: issueTypeEnum("issue_type").notNull(),
+  
+  // Match conditions (JSON schema varies by issue type)
+  // Example for at_risk_job: { minPriority: 4, maxBufferHours: 12 }
+  // Example for buffer_shortage: { minSeverity: "high", materialType: "raw" }
+  matchConditions: jsonb("match_conditions").notNull(),
+  
+  // Actions to execute (same format as recommendation actions)
+  actionPayload: jsonb("action_payload").notNull(),
+  
+  // Safety & control
+  isEnabled: boolean("is_enabled").default(true),
+  requiresApproval: boolean("requires_approval").default(false), // If true, queue for approval instead of auto-execute
+  
+  // Notifications
+  notifyOnExecution: boolean("notify_on_execution").default(true),
+  notificationChannel: varchar("notification_channel", { length: 50 }).default("toast"), // toast, email, both
+  
+  // Usage tracking
+  executionCount: integer("execution_count").default(0),
+  lastExecutedAt: timestamp("last_executed_at"),
+  
+  // Audit
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => {
+  return {
+    createdByIdx: index("automation_rules_created_by_idx").on(table.createdBy),
+    issueTypeIdx: index("automation_rules_issue_type_idx").on(table.issueType),
+    enabledIdx: index("automation_rules_enabled_idx").on(table.isEnabled)
+  };
+});
+
+// Execution log for automation rules
+export const automationExecutions = pgTable("automation_executions", {
+  id: serial("id").primaryKey(),
+  
+  ruleId: integer("rule_id").references(() => automationRules.id).notNull(),
+  
+  // Context
+  recommendationId: varchar("recommendation_id", { length: 100 }), // If triggered from a recommendation
+  triggeredBy: integer("triggered_by").references(() => users.id), // User who approved, or null if auto
+  
+  // Execution details
+  executedAt: timestamp("executed_at").defaultNow(),
+  outcome: varchar("outcome", { length: 50 }).notNull(), // success, failed, skipped, approved, rejected
+  
+  // Results & errors
+  metadata: jsonb("metadata"), // Details about what was changed
+  errorMessage: text("error_message"),
+  
+  // Approval workflow
+  approvalUserId: integer("approval_user_id").references(() => users.id),
+  approvedAt: timestamp("approved_at"),
+  
+  // Notification status
+  notificationSent: boolean("notification_sent").default(false),
+  notificationError: text("notification_error"),
+}, (table) => {
+  return {
+    ruleIdIdx: index("automation_executions_rule_id_idx").on(table.ruleId),
+    executedAtIdx: index("automation_executions_executed_at_idx").on(table.executedAt),
+    outcomeIdx: index("automation_executions_outcome_idx").on(table.outcome)
+  };
+});
+
+// Create insert schemas and types for automation tables
+export const insertAutomationRuleSchema = createInsertSchema(automationRules).omit({
+  id: true,
+  executionCount: true,
+  lastExecutedAt: true,
+  createdAt: true,
+  updatedAt: true
+});
+export type InsertAutomationRule = z.infer<typeof insertAutomationRuleSchema>;
+export type AutomationRule = typeof automationRules.$inferSelect;
+
+export const insertAutomationExecutionSchema = createInsertSchema(automationExecutions).omit({
+  id: true,
+  executedAt: true
+});
+export type InsertAutomationExecution = z.infer<typeof insertAutomationExecutionSchema>;
+export type AutomationExecution = typeof automationExecutions.$inferSelect;
