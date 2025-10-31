@@ -75,7 +75,13 @@ The system prioritizes user experience, data integrity, performance, accessibili
 -   **Production Scheduler Architecture**: Uses a hybrid iframe/React architecture where a React wrapper component loads a standalone HTML file containing the Bryntum Scheduler Pro via a backend API route. **Important Fix (10/24/2025)**: Removed duplicate event listener for Apply Scheduling button that was causing infinite ASAP scheduling loops. Only one event listener at line 3198 should exist.
 -   **Voice Chat**: Integrates real-time voice chat with OpenAI's gpt-realtime-mini model, featuring WebSocket architecture, SSE for audio/transcript streaming, and automatic pause detection.
 -   **Demand Forecasting**: Native React-based forecasting application with SQL Server integration, featuring dynamic table/column selection, auto-detection of date/quantity columns, item-level filtering, and time-series forecasting with Recharts visualization. Fully embedded at `/demand-forecasting` with header and sidebar visible. Includes intermittent demand handling that detects and preserves zero-demand days in forecasts, preventing inflated predictions for items with sporadic orders. Random Forest and Linear Regression models now apply intelligent thresholding and pattern analysis to generate realistic forecasts with appropriate zeros.
--   **Dynamic Paginated Reports**: Dedicated page at `/paginated-reports` for viewing data from any SQL Server table with pagination, filtering, sorting, and search capabilities. Security ensures table/schema validation against an `INFORMATION_SCHEMA` whitelist to prevent SQL injection, and schema caching improves performance.
+-   **Dynamic Paginated Reports**: Enhanced page at `/paginated-reports` supporting both SQL Server tables and Power BI datasets (semantic models) as data sources. Features include:
+    - **Dual Data Sources**: Toggle between Analytics SQL Database and Power BI Datasets
+    - **Power BI Integration**: Workspace selection, real-time dataset fetching, and dataset details display
+    - **Dataset Information**: Shows dataset properties (name, ID, refreshable status, storage mode) and table schema
+    - **SQL Server Support**: Full table browsing with pagination, filtering, sorting, and search capabilities
+    - **Security**: Table/schema validation against `INFORMATION_SCHEMA` whitelist to prevent SQL injection
+    - **API Endpoints**: `/api/powerbi/workspaces/:workspaceId/datasets` for dataset listing, `/api/powerbi/workspaces/:workspaceId/datasets/:datasetId/tables` for schema information
 
 ## External Dependencies
 
