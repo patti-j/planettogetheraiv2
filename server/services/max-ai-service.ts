@@ -528,7 +528,7 @@ Format as: "Based on what I remember about you: [relevant info]" or return empty
         const resourcesResult = await db.execute(sql`
           SELECT COUNT(*) as count 
           FROM ptResources 
-          WHERE instance_id = 'BREW-SIM-001' AND active = true
+          WHERE (instance_id = 'BREW-SIM-001' OR instance_id IS NULL) AND active = true
         `);
         const activeResources = Number(resourcesResult.rows[0]?.count || 0);
         
