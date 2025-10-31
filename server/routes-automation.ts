@@ -208,7 +208,6 @@ automationRoutes.get('/api/automation-executions', requireAuth, async (req, res)
     }
     
     // FIX: Filter in SQL, not in memory
-    const { inArray } = await import('drizzle-orm');
     const executions = await db
       .select()
       .from(automationExecutions)
