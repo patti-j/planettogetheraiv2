@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -7,12 +9,15 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Search, Plus, Sparkles, FileText, Clock, Users, Target, Bot } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { insertPlaybookSchema } from "@shared/schema";
 import type { Playbook, InsertPlaybook } from "@shared/schema";
+import { z } from "zod";
 
 const AI_AGENTS = [
   { id: 'max', name: 'Max AI', description: 'Production intelligence and optimization' },
@@ -39,6 +44,23 @@ export default function MemoryBooksPage() {
     ? allPlaybooks 
     : allPlaybooks.filter((book: Playbook) => book.agentId === selectedAgent);
 
+  // Form validation schema
+  const formSchema = insertPlaybookSchema.extend({
+    agentId: z.string().min(1, "Please select an agent"),
+  }).omit({ createdBy: true, isActive: true, tags: true });
+
+  // Form instance
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      title: "",
+      description: "",
+      content: "",
+      agentId: "",
+      category: "",
+    },
+  });
+
   // Create playbook mutation
   const createBookMutation = useMutation({
     mutationFn: async (data: InsertPlaybook) => {
@@ -50,6 +72,7 @@ export default function MemoryBooksPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/playbooks"] });
       setCreateBookOpen(false);
+      form.reset();
       toast({
         title: "Success",
         description: "Playbook created successfully",
@@ -64,13 +87,9 @@ export default function MemoryBooksPage() {
     },
   });
 
-  const handleCreateBook = (formData: FormData) => {
+  const handleCreateBook = (values: z.infer<typeof formSchema>) => {
     const bookData: InsertPlaybook = {
-      title: formData.get("title") as string,
-      description: formData.get("description") as string || undefined,
-      content: formData.get("content") as string,
-      agentId: formData.get("agentId") as string || undefined,
-      category: formData.get("category") as string || undefined,
+      ...values,
       tags: [],
       createdBy: 1,
     };
@@ -109,7 +128,7 @@ export default function MemoryBooksPage() {
         
         <Dialog open={createBookOpen} onOpenChange={setCreateBookOpen}>
           <DialogTrigger asChild>
-            <Button>
+            <Button data-testid="button-create-playbook">
               <Plus className="h-4 w-4 mr-2" />
               Create Playbook
             </Button>
@@ -118,50 +137,94 @@ export default function MemoryBooksPage() {
             <DialogHeader>
               <DialogTitle>Create New Playbook</DialogTitle>
             </DialogHeader>
-            <form action={handleCreateBook}>
-              <div className="space-y-4">
-                <div>
-                  <Label htmlFor="title">Title</Label>
-                  <Input id="title" name="title" placeholder="e.g., Scheduling Best Practices" required />
-                </div>
-                <div>
-                  <Label htmlFor="description">Description</Label>
-                  <Textarea id="description" name="description" placeholder="Brief summary of this playbook..." />
-                </div>
-                <div>
-                  <Label htmlFor="agentId">AI Agent</Label>
-                  <Select name="agentId" required>
-                    <SelectTrigger id="agentId">
-                      <SelectValue placeholder="Select an agent" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {AI_AGENTS.map((agent) => (
-                        <SelectItem key={agent.id} value={agent.id}>
-                          {agent.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label htmlFor="content">Content</Label>
-                  <Textarea 
-                    id="content" 
-                    name="content" 
-                    placeholder="Enter the playbook instructions, rules, and guidelines..." 
-                    className="min-h-[200px]" 
-                    required 
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="category">Category</Label>
-                  <Input id="category" name="category" placeholder="e.g., Scheduling, Quality, Planning" />
-                </div>
-                <Button type="submit" disabled={createBookMutation.isPending}>
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(handleCreateBook)} className="space-y-4">
+                <FormField
+                  control={form.control}
+                  name="title"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Title</FormLabel>
+                      <FormControl>
+                        <Input placeholder="e.g., Scheduling Best Practices" {...field} data-testid="input-title" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="description"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Description</FormLabel>
+                      <FormControl>
+                        <Textarea placeholder="Brief summary of this playbook..." {...field} data-testid="input-description" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="agentId"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>AI Agent</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <FormControl>
+                          <SelectTrigger data-testid="select-agent">
+                            <SelectValue placeholder="Select an agent" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {AI_AGENTS.map((agent) => (
+                            <SelectItem key={agent.id} value={agent.id}>
+                              {agent.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="content"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Content</FormLabel>
+                      <FormControl>
+                        <Textarea 
+                          placeholder="Enter the playbook instructions, rules, and guidelines..." 
+                          className="min-h-[200px]" 
+                          {...field} 
+                          data-testid="input-content"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="category"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Category</FormLabel>
+                      <FormControl>
+                        <Input placeholder="e.g., Scheduling, Quality, Planning" {...field} data-testid="input-category" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <Button type="submit" disabled={createBookMutation.isPending} data-testid="button-submit">
                   {createBookMutation.isPending ? "Creating..." : "Create Playbook"}
                 </Button>
-              </div>
-            </form>
+              </form>
+            </Form>
           </DialogContent>
         </Dialog>
         </div>
