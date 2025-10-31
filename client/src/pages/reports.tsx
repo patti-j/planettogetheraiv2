@@ -328,14 +328,18 @@ export default function Dashboard() {
       return;
     }
     
-    // Small delay to ensure React state updates are processed
+    // Set showEmbed to true immediately to render the PowerBIEmbed component
+    // The component will show a loading state while we fetch the config
+    setShowEmbed(true);
+    
+    // Small delay to ensure PowerBIEmbed component has rendered
     embedTimeoutRef.current = setTimeout(async () => {
       try {
         // Get the report type to pass to embedReport
         const selectedReport = allReports?.find(r => r.id === reportId);
         const reportType = selectedReport?.reportType;
         
-        // Get the embed configuration first
+        // Now the container exists, we can call embedReport
         const config = await embedReport({ 
           workspaceId: selectedWorkspaceId, 
           reportId,
@@ -343,12 +347,11 @@ export default function Dashboard() {
         } as any);
         
         if (config) {
-          // Set config first so PowerBIEmbed component can render
+          // Set the config which will trigger the actual embedding
           setEmbedConfig(config);
-          // Now show the embed - this will render PowerBIEmbed with the container
-          setShowEmbed(true);
         } else {
           console.error("Failed to get embed configuration");
+          setShowEmbed(false); // Hide on error
           toast({
             title: "Configuration Error",
             description: "Failed to get report embed configuration",
@@ -357,13 +360,14 @@ export default function Dashboard() {
         }
       } catch (error) {
         console.error("Error getting embed config:", error);
+        setShowEmbed(false); // Hide on error
         toast({
           title: "Error",
           description: error instanceof Error ? error.message : "Failed to load report",
           variant: "destructive",
         });
       }
-    }, 100); // Reduced delay to 100ms for faster loading
+    }, 200); // Give time for PowerBIEmbed component to render
   }, [isAuthenticated, selectedWorkspaceId, embedReport, showMobileSidebar, toast, allReports]);
   
   // Capture URL parameters on mount
@@ -845,7 +849,7 @@ export default function Dashboard() {
         
         {/* Right Content Area */}
         <div className="flex-1 flex flex-col min-h-0">
-          {showEmbed && embedConfig ? (
+          {showEmbed ? (
             <div className="flex-1 min-h-0 pt-0 pr-0 pb-4 pl-0 sm:pt-0 sm:pr-0 sm:pb-2 sm:pl-0 md:pt-0 md:pr-1 md:pb-4 md:pl-4 overflow-hidden md:overflow-auto">
               <PowerBIEmbed
                 className="w-full h-full"
