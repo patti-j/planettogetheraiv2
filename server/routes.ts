@@ -9049,6 +9049,51 @@ router.get("/api/powerbi/workspaces/:workspaceId/datasets/:datasetId/tables", as
   }
 });
 
+// Query data from a Power BI dataset table
+router.get("/api/powerbi/dataset-data", async (req, res) => {
+  try {
+    const { workspaceId, datasetId, table, page, pageSize, searchTerm, sortBy, sortOrder } = req.query;
+    
+    if (!workspaceId || !datasetId || !table) {
+      return res.status(400).json({ 
+        message: "workspaceId, datasetId, and table are required" 
+      });
+    }
+
+    // Use server-cached AAD token
+    const accessToken = await getServerAADToken();
+    
+    // Query the dataset table using DAX
+    const result = await powerBIService.queryDatasetTable(
+      accessToken,
+      workspaceId as string,
+      datasetId as string,
+      table as string,
+      parseInt(page as string) || 1,
+      parseInt(pageSize as string) || 10,
+      searchTerm as string || '',
+      sortBy as string || '',
+      (sortOrder as 'asc' | 'desc') || 'asc'
+    );
+
+    // Transform the result to match the format expected by the frontend
+    res.json({
+      columns: result.columns,
+      rows: result.rows,
+      totalRows: result.totalCount,
+      page: result.page,
+      pageSize: result.pageSize,
+      totalPages: Math.ceil(result.totalCount / result.pageSize)
+    });
+  } catch (error) {
+    console.error("Failed to query Power BI dataset table:", error);
+    res.status(500).json({ 
+      message: "Failed to query dataset table data",
+      error: error instanceof Error ? error.message : "Unknown error"
+    });
+  }
+});
+
 // Get dataset refresh history
 router.get("/api/powerbi/workspaces/:workspaceId/datasets/:datasetId/refreshes", async (req, res) => {
   try {

@@ -421,6 +421,107 @@ export class PowerBIService {
     }
   }
 
+  // Execute DAX query against a dataset to retrieve table data
+  async queryDatasetTable(
+    accessToken: string, 
+    workspaceId: string, 
+    datasetId: string, 
+    tableName: string, 
+    page: number = 1, 
+    pageSize: number = 10,
+    searchTerm: string = '',
+    sortBy: string = '',
+    sortOrder: 'asc' | 'desc' = 'asc'
+  ): Promise<any> {
+    const queryUrl = `https://api.powerbi.com/v1.0/myorg/groups/${workspaceId}/datasets/${datasetId}/executeQueries`;
+
+    // Build a simple DAX query to get table data
+    // Note: DAX doesn't support simple pagination like SQL, so we use TOPN for limiting results
+    let daxQuery = `EVALUATE TOPN(${pageSize}, '${tableName}')`;
+    
+    // Add ordering if specified
+    if (sortBy) {
+      daxQuery = `EVALUATE TOPN(${pageSize}, '${tableName}', '${tableName}'[${sortBy}], ${sortOrder === 'asc' ? 'ASC' : 'DESC'})`;
+    }
+
+    const requestBody = {
+      queries: [
+        {
+          query: daxQuery
+        }
+      ],
+      serializerSettings: {
+        includeNulls: true
+      }
+    };
+
+    try {
+      const response = await fetch(queryUrl, {
+        method: 'POST',
+        headers: {
+          "Authorization": `Bearer ${accessToken}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(requestBody)
+      });
+
+      if (!response.ok) {
+        const error = await response.text();
+        throw new Error(`Failed to query dataset: ${error}`);
+      }
+
+      const result = await response.json();
+      
+      // Extract data from the DAX query result
+      if (result.results && result.results[0] && result.results[0].tables && result.results[0].tables[0]) {
+        const table = result.results[0].tables[0];
+        const rows = table.rows || [];
+        
+        // Get column names from the first row or from table metadata
+        const columns = rows.length > 0 ? Object.keys(rows[0]).map(key => {
+          // Clean up column names by removing table prefix if present
+          const cleanKey = key.includes('[') && key.includes(']') 
+            ? key.substring(key.indexOf('[') + 1, key.indexOf(']'))
+            : key;
+          return cleanKey;
+        }) : [];
+        
+        // Apply search filter if provided
+        let filteredRows = rows;
+        if (searchTerm) {
+          filteredRows = rows.filter((row: any) => {
+            return Object.values(row).some(value => 
+              String(value).toLowerCase().includes(searchTerm.toLowerCase())
+            );
+          });
+        }
+        
+        // Calculate pagination
+        const totalCount = filteredRows.length;
+        const startIndex = (page - 1) * pageSize;
+        const paginatedRows = filteredRows.slice(startIndex, startIndex + pageSize);
+        
+        return {
+          columns,
+          rows: paginatedRows,
+          totalCount,
+          page,
+          pageSize
+        };
+      }
+
+      return {
+        columns: [],
+        rows: [],
+        totalCount: 0,
+        page,
+        pageSize
+      };
+    } catch (error) {
+      throw new Error(`Failed to query dataset table: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }
+
   // Get dataset information
   async getDataset(accessToken: string, workspaceId: string, datasetId: string): Promise<PowerBIDataset> {
     const datasetUrl = `https://api.powerbi.com/v1.0/myorg/groups/${workspaceId}/datasets/${datasetId}`;
