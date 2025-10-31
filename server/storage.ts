@@ -65,7 +65,14 @@ import {
   type AtpCtpMaterialReservation, type InsertAtpCtpMaterialReservation,
   type AtpCtpResourceReservation, type InsertAtpCtpResourceReservation,
   type AtpCtpReservationHistory, type InsertAtpCtpReservationHistory,
-  type AtpCtpAvailabilitySnapshot, type InsertAtpCtpAvailabilitySnapshot
+  type AtpCtpAvailabilitySnapshot, type InsertAtpCtpAvailabilitySnapshot,
+  // DDMRP types
+  ddmrpBuffers, ddmrpBufferHistory, ddmrpDemandHistory, ddmrpSupplyOrders, ddmrpAlerts,
+  type DdmrpBuffer, type InsertDdmrpBuffer,
+  type DdmrpBufferHistory, type InsertDdmrpBufferHistory,
+  type DdmrpDemandHistory, type InsertDdmrpDemandHistory,
+  type DdmrpSupplyOrder, type InsertDdmrpSupplyOrder,
+  type DdmrpAlert, type InsertDdmrpAlert
 } from "@shared/schema";
 import { eq, and, desc, sql, ilike } from "drizzle-orm";
 import { db } from "./db";
@@ -347,6 +354,35 @@ export interface IStorage {
   getAvailabilitySnapshots(entityType: string, entityId: number, startDate?: Date, endDate?: Date): Promise<AtpCtpAvailabilitySnapshot[]>;
   createAvailabilitySnapshot(data: InsertAtpCtpAvailabilitySnapshot): Promise<AtpCtpAvailabilitySnapshot>;
   updateAvailabilitySnapshots(entityType: string, entityId: number): Promise<void>;
+  
+  // DDMRP Buffer Management
+  getDdmrpBuffers(): Promise<DdmrpBuffer[]>;
+  getDdmrpBuffer(id: number): Promise<DdmrpBuffer | undefined>;
+  getDdmrpBufferByItemId(itemId: number): Promise<DdmrpBuffer | undefined>;
+  createDdmrpBuffer(data: InsertDdmrpBuffer): Promise<DdmrpBuffer>;
+  updateDdmrpBuffer(id: number, data: Partial<InsertDdmrpBuffer>): Promise<DdmrpBuffer | undefined>;
+  deleteDdmrpBuffer(id: number): Promise<boolean>;
+  calculateBufferZones(bufferId: number): Promise<DdmrpBuffer | undefined>;
+  
+  // DDMRP Buffer History
+  getDdmrpBufferHistory(bufferId: number): Promise<DdmrpBufferHistory[]>;
+  createDdmrpBufferHistory(data: InsertDdmrpBufferHistory): Promise<DdmrpBufferHistory>;
+  
+  // DDMRP Demand History
+  getDdmrpDemandHistory(itemId: number): Promise<DdmrpDemandHistory[]>;
+  createDdmrpDemandHistory(data: InsertDdmrpDemandHistory): Promise<DdmrpDemandHistory>;
+  getAverageDailyUsage(itemId: number, days?: number): Promise<number>;
+  
+  // DDMRP Supply Orders
+  getDdmrpSupplyOrders(bufferId?: number): Promise<DdmrpSupplyOrder[]>;
+  getDdmrpSupplyOrder(id: number): Promise<DdmrpSupplyOrder | undefined>;
+  createDdmrpSupplyOrder(data: InsertDdmrpSupplyOrder): Promise<DdmrpSupplyOrder>;
+  updateDdmrpSupplyOrder(id: number, data: Partial<InsertDdmrpSupplyOrder>): Promise<DdmrpSupplyOrder | undefined>;
+  
+  // DDMRP Alerts
+  getDdmrpAlerts(activeOnly?: boolean): Promise<DdmrpAlert[]>;
+  createDdmrpAlert(data: InsertDdmrpAlert): Promise<DdmrpAlert>;
+  acknowledgeDdmrpAlert(id: number, userId: number): Promise<DdmrpAlert | undefined>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -3417,6 +3453,284 @@ export class DatabaseStorage implements IStorage {
       }
     } catch (error) {
       console.error('Error updating availability snapshots:', error);
+    }
+  }
+
+  // DDMRP Buffer Management
+  async getDdmrpBuffers(): Promise<DdmrpBuffer[]> {
+    try {
+      return await db.select().from(ddmrpBuffers).orderBy(ddmrpBuffers.id);
+    } catch (error) {
+      console.error('Error fetching DDMRP buffers:', error);
+      return [];
+    }
+  }
+
+  async getDdmrpBuffer(id: number): Promise<DdmrpBuffer | undefined> {
+    try {
+      const [buffer] = await db.select().from(ddmrpBuffers).where(eq(ddmrpBuffers.id, id));
+      return buffer || undefined;
+    } catch (error) {
+      console.error('Error fetching DDMRP buffer:', error);
+      return undefined;
+    }
+  }
+
+  async getDdmrpBufferByItemId(itemId: number): Promise<DdmrpBuffer | undefined> {
+    try {
+      const [buffer] = await db.select().from(ddmrpBuffers).where(eq(ddmrpBuffers.itemId, itemId));
+      return buffer || undefined;
+    } catch (error) {
+      console.error('Error fetching DDMRP buffer by item ID:', error);
+      return undefined;
+    }
+  }
+
+  async createDdmrpBuffer(data: InsertDdmrpBuffer): Promise<DdmrpBuffer> {
+    const [buffer] = await db.insert(ddmrpBuffers).values(data).returning();
+    return buffer;
+  }
+
+  async updateDdmrpBuffer(id: number, data: Partial<InsertDdmrpBuffer>): Promise<DdmrpBuffer | undefined> {
+    try {
+      const [updated] = await db.update(ddmrpBuffers)
+        .set({ ...data, updatedAt: new Date() })
+        .where(eq(ddmrpBuffers.id, id))
+        .returning();
+      return updated || undefined;
+    } catch (error) {
+      console.error('Error updating DDMRP buffer:', error);
+      return undefined;
+    }
+  }
+
+  async deleteDdmrpBuffer(id: number): Promise<boolean> {
+    try {
+      const result = await db.delete(ddmrpBuffers).where(eq(ddmrpBuffers.id, id));
+      return result.rowCount > 0;
+    } catch (error) {
+      console.error('Error deleting DDMRP buffer:', error);
+      return false;
+    }
+  }
+
+  async calculateBufferZones(bufferId: number): Promise<DdmrpBuffer | undefined> {
+    try {
+      const buffer = await this.getDdmrpBuffer(bufferId);
+      if (!buffer) return undefined;
+
+      const leadTime = parseFloat(buffer.leadTime?.toString() || '0');
+      const averageDailyUsage = parseFloat(buffer.averageDailyUsage?.toString() || '0');
+      const leadTimeVariability = parseFloat(buffer.leadTimeVariability?.toString() || '0.2');
+      const variabilityFactor = buffer.demandVariability === 'high' ? 0.61 : 
+                               buffer.demandVariability === 'low' ? 0.41 : 0.51;
+
+      // Calculate Red Zone (Safety + Base)
+      const redZoneBase = leadTime * averageDailyUsage * leadTimeVariability;
+      const redZoneSafety = leadTime * averageDailyUsage * variabilityFactor;
+      const redZoneTotal = redZoneBase + redZoneSafety;
+
+      // Calculate Yellow Zone (average consumption during average lead time)
+      const yellowZone = leadTime * averageDailyUsage;
+
+      // Calculate Green Zone (order frequency flexibility)
+      const greenZone = yellowZone * 0.5; // Simplified calculation
+
+      // Calculate Net Flow Position
+      const currentStock = parseFloat(buffer.currentStock?.toString() || '0');
+      const openSupply = 0; // Will be calculated from supply orders
+      const qualifiedDemand = averageDailyUsage * 2; // Simplified
+      const netFlowPosition = currentStock + openSupply - qualifiedDemand;
+
+      // Determine buffer status and percentage
+      let bufferStatus: string;
+      let bufferPercentage: number;
+      
+      const totalBuffer = redZoneTotal + yellowZone + greenZone;
+      bufferPercentage = (netFlowPosition / totalBuffer) * 100;
+
+      if (netFlowPosition <= redZoneTotal) {
+        bufferStatus = 'red';
+      } else if (netFlowPosition <= redZoneTotal + yellowZone) {
+        bufferStatus = 'yellow';
+      } else {
+        bufferStatus = 'green';
+      }
+
+      // Update buffer with calculated zones
+      const updated = await this.updateDdmrpBuffer(bufferId, {
+        redZoneBase: redZoneBase.toString(),
+        redZoneSafety: redZoneSafety.toString(),
+        yellowZone: yellowZone.toString(),
+        greenZone: greenZone.toString(),
+        netFlowPosition: netFlowPosition.toString(),
+        bufferStatus,
+        bufferPercentage: bufferPercentage.toString(),
+        lastCalculated: new Date()
+      });
+
+      // Record history
+      await this.createDdmrpBufferHistory({
+        bufferId,
+        stockLevel: currentStock.toString(),
+        netFlowPosition: netFlowPosition.toString(),
+        bufferStatus,
+        bufferPercentage: bufferPercentage.toString(),
+        redZone: redZoneTotal.toString(),
+        yellowZone: yellowZone.toString(),
+        greenZone: greenZone.toString()
+      });
+
+      return updated;
+    } catch (error) {
+      console.error('Error calculating buffer zones:', error);
+      return undefined;
+    }
+  }
+
+  // DDMRP Buffer History
+  async getDdmrpBufferHistory(bufferId: number): Promise<DdmrpBufferHistory[]> {
+    try {
+      return await db.select()
+        .from(ddmrpBufferHistory)
+        .where(eq(ddmrpBufferHistory.bufferId, bufferId))
+        .orderBy(desc(ddmrpBufferHistory.recordedAt));
+    } catch (error) {
+      console.error('Error fetching DDMRP buffer history:', error);
+      return [];
+    }
+  }
+
+  async createDdmrpBufferHistory(data: InsertDdmrpBufferHistory): Promise<DdmrpBufferHistory> {
+    const [history] = await db.insert(ddmrpBufferHistory).values(data).returning();
+    return history;
+  }
+
+  // DDMRP Demand History
+  async getDdmrpDemandHistory(itemId: number): Promise<DdmrpDemandHistory[]> {
+    try {
+      return await db.select()
+        .from(ddmrpDemandHistory)
+        .where(eq(ddmrpDemandHistory.itemId, itemId))
+        .orderBy(desc(ddmrpDemandHistory.demandDate));
+    } catch (error) {
+      console.error('Error fetching DDMRP demand history:', error);
+      return [];
+    }
+  }
+
+  async createDdmrpDemandHistory(data: InsertDdmrpDemandHistory): Promise<DdmrpDemandHistory> {
+    const [history] = await db.insert(ddmrpDemandHistory).values({
+      ...data,
+      demandDate: new Date().toISOString().split('T')[0] // Set current date as string
+    }).returning();
+    return history;
+  }
+
+  async getAverageDailyUsage(itemId: number, days: number = 30): Promise<number> {
+    try {
+      const startDate = new Date();
+      startDate.setDate(startDate.getDate() - days);
+      
+      const history = await db.select()
+        .from(ddmrpDemandHistory)
+        .where(and(
+          eq(ddmrpDemandHistory.itemId, itemId),
+          sql`${ddmrpDemandHistory.demandDate} >= ${startDate.toISOString().split('T')[0]}`
+        ));
+
+      if (history.length === 0) return 0;
+
+      const totalDemand = history.reduce((sum, record) => {
+        return sum + parseFloat(record.actualDemand?.toString() || '0');
+      }, 0);
+
+      return totalDemand / days;
+    } catch (error) {
+      console.error('Error calculating average daily usage:', error);
+      return 0;
+    }
+  }
+
+  // DDMRP Supply Orders
+  async getDdmrpSupplyOrders(bufferId?: number): Promise<DdmrpSupplyOrder[]> {
+    try {
+      if (bufferId) {
+        return await db.select()
+          .from(ddmrpSupplyOrders)
+          .where(eq(ddmrpSupplyOrders.bufferId, bufferId))
+          .orderBy(desc(ddmrpSupplyOrders.orderDate));
+      }
+      return await db.select().from(ddmrpSupplyOrders).orderBy(desc(ddmrpSupplyOrders.orderDate));
+    } catch (error) {
+      console.error('Error fetching DDMRP supply orders:', error);
+      return [];
+    }
+  }
+
+  async getDdmrpSupplyOrder(id: number): Promise<DdmrpSupplyOrder | undefined> {
+    try {
+      const [order] = await db.select().from(ddmrpSupplyOrders).where(eq(ddmrpSupplyOrders.id, id));
+      return order || undefined;
+    } catch (error) {
+      console.error('Error fetching DDMRP supply order:', error);
+      return undefined;
+    }
+  }
+
+  async createDdmrpSupplyOrder(data: InsertDdmrpSupplyOrder): Promise<DdmrpSupplyOrder> {
+    const [order] = await db.insert(ddmrpSupplyOrders).values(data).returning();
+    return order;
+  }
+
+  async updateDdmrpSupplyOrder(id: number, data: Partial<InsertDdmrpSupplyOrder>): Promise<DdmrpSupplyOrder | undefined> {
+    try {
+      const [updated] = await db.update(ddmrpSupplyOrders)
+        .set({ ...data, updatedAt: new Date() })
+        .where(eq(ddmrpSupplyOrders.id, id))
+        .returning();
+      return updated || undefined;
+    } catch (error) {
+      console.error('Error updating DDMRP supply order:', error);
+      return undefined;
+    }
+  }
+
+  // DDMRP Alerts
+  async getDdmrpAlerts(activeOnly: boolean = true): Promise<DdmrpAlert[]> {
+    try {
+      if (activeOnly) {
+        return await db.select()
+          .from(ddmrpAlerts)
+          .where(eq(ddmrpAlerts.isActive, true))
+          .orderBy(desc(ddmrpAlerts.createdAt));
+      }
+      return await db.select().from(ddmrpAlerts).orderBy(desc(ddmrpAlerts.createdAt));
+    } catch (error) {
+      console.error('Error fetching DDMRP alerts:', error);
+      return [];
+    }
+  }
+
+  async createDdmrpAlert(data: InsertDdmrpAlert): Promise<DdmrpAlert> {
+    const [alert] = await db.insert(ddmrpAlerts).values(data).returning();
+    return alert;
+  }
+
+  async acknowledgeDdmrpAlert(id: number, userId: number): Promise<DdmrpAlert | undefined> {
+    try {
+      const [updated] = await db.update(ddmrpAlerts)
+        .set({ 
+          isActive: false, 
+          acknowledgedBy: userId, 
+          acknowledgedAt: new Date() 
+        })
+        .where(eq(ddmrpAlerts.id, id))
+        .returning();
+      return updated || undefined;
+    } catch (error) {
+      console.error('Error acknowledging DDMRP alert:', error);
+      return undefined;
     }
   }
 }
