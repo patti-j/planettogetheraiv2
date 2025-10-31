@@ -1153,6 +1153,7 @@ export const playbooks = pgTable("playbooks", {
   title: varchar("title", { length: 200 }).notNull(),
   description: text("description"),
   content: text("content").notNull(),
+  agentId: varchar("agent_id", { length: 50 }),
   category: varchar("category", { length: 100 }),
   tags: jsonb("tags").default(sql`'[]'::jsonb`),
   isActive: boolean("is_active").default(true),
