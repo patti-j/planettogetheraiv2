@@ -232,9 +232,14 @@ export default function App() {
                       // Show application for protected routes (dev mode or authenticated users)
                       <ApplicationApp />
                     ) : (
-                      // Fallback: redirect to login
+                      // Fallback: redirect to login with return URL preserved
                       <>
                         {(() => {
+                          // Save the current URL with parameters to session storage
+                          const currentUrl = window.location.pathname + window.location.search;
+                          if (currentUrl !== '/login') {
+                            sessionStorage.setItem('returnUrl', currentUrl);
+                          }
                           window.location.href = '/login';
                           return null;
                         })()}

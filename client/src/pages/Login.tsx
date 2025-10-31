@@ -43,12 +43,19 @@ export default function Login() {
           credentials: 'include' // Include session cookie
         });
         if (response.ok) {
-          // Session is valid, redirect to home page
-          const isMobile = window.innerWidth < 768;
-          if (isMobile) {
-            setLocation('/mobile-home');
+          // Session is valid, check for return URL or redirect to home page
+          const returnUrl = sessionStorage.getItem('returnUrl');
+          
+          if (returnUrl && returnUrl !== '/login') {
+            sessionStorage.removeItem('returnUrl');
+            setLocation(returnUrl);
           } else {
-            setLocation('/home');
+            const isMobile = window.innerWidth < 768;
+            if (isMobile) {
+              setLocation('/mobile-home');
+            } else {
+              setLocation('/home');
+            }
           }
           return;
         }
@@ -89,16 +96,26 @@ export default function Login() {
       // Small delay to ensure session is properly established
       await new Promise(resolve => setTimeout(resolve, 100));
       
-      // Check if user is on mobile device and redirect appropriately
-      const isMobile = window.innerWidth < 768;
-      if (isMobile) {
-        // Redirect mobile users to mobile-home
-        console.log('Mobile login successful, redirecting to /mobile-home');
-        window.location.href = "/mobile-home";
+      // Check for stored return URL
+      const returnUrl = sessionStorage.getItem('returnUrl');
+      
+      if (returnUrl && returnUrl !== '/login') {
+        // Redirect to the original URL the user was trying to access
+        console.log('Login successful, redirecting to:', returnUrl);
+        sessionStorage.removeItem('returnUrl'); // Clean up
+        window.location.href = returnUrl;
       } else {
-        // Redirect desktop users to home page
-        console.log('Desktop login successful, redirecting to /home');
-        window.location.href = "/home";
+        // Default behavior: Check if user is on mobile device and redirect appropriately
+        const isMobile = window.innerWidth < 768;
+        if (isMobile) {
+          // Redirect mobile users to mobile-home
+          console.log('Mobile login successful, redirecting to /mobile-home');
+          window.location.href = "/mobile-home";
+        } else {
+          // Redirect desktop users to home page
+          console.log('Desktop login successful, redirecting to /home');
+          window.location.href = "/home";
+        }
       }
     } catch (error: any) {
       // Extract error message from the API response

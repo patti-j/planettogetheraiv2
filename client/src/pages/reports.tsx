@@ -363,24 +363,24 @@ export default function Dashboard() {
       const workspaceParam = params.get('workspace');
       const reportParam = params.get('report');
       const reportNameParam = params.get('reportName');
+      const autoLoadParam = params.get('autoLoad');
       
       if (workspaceParam || reportParam || reportNameParam) {
-        console.log('📍 URL parameters detected:', { workspace: workspaceParam, report: reportParam, reportName: reportNameParam });
+        console.log('📍 URL parameters detected:', { workspace: workspaceParam, report: reportParam, reportName: reportNameParam, autoLoad: autoLoadParam });
         setUrlParamsProcessed(true);
         
         // Store the params to use after data loads
         if (workspaceParam) sessionStorage.setItem('pending_workspace', workspaceParam);
         if (reportParam) sessionStorage.setItem('pending_report', reportParam);
         if (reportNameParam) sessionStorage.setItem('pending_report_name', reportNameParam);
+        if (autoLoadParam === 'true') sessionStorage.setItem('pending_auto_load', 'true');
       }
     }
   }, [location, urlParamsProcessed]);
   
-  // Auto-load workspace and report based on URL params or stored values
+  // Auto-load workspace based on URL params
   useEffect(() => {
     const pendingWorkspace = sessionStorage.getItem('pending_workspace');
-    const pendingReport = sessionStorage.getItem('pending_report');
-    const pendingReportName = sessionStorage.getItem('pending_report_name');
     
     // Handle workspace selection
     if (pendingWorkspace && workspaces && workspaces.length > 0 && !selectedWorkspaceId) {
@@ -388,9 +388,16 @@ export default function Dashboard() {
       if (workspace) {
         console.log('🏢 Auto-selecting workspace:', workspace.name);
         handleWorkspaceSelect(workspace.id);
-        sessionStorage.removeItem('pending_workspace');
+        // Don't remove pending_workspace yet - we'll do it after report is loaded
       }
     }
+  }, [workspaces, selectedWorkspaceId, handleWorkspaceSelect]);
+  
+  // Auto-load report after workspace is selected and reports are loaded
+  useEffect(() => {
+    const pendingReport = sessionStorage.getItem('pending_report');
+    const pendingReportName = sessionStorage.getItem('pending_report_name');
+    const pendingAutoLoad = sessionStorage.getItem('pending_auto_load');
     
     // Handle report selection by ID or name
     if ((pendingReport || pendingReportName) && allReports && allReports.length > 0 && selectedWorkspaceId && !selectedReportId) {
@@ -419,17 +426,25 @@ export default function Dashboard() {
       
       if (report) {
         console.log('📊 Auto-selecting report:', report.name);
-        handleReportSelect(report.id);
+        
+        // Clear all pending values after successful selection
+        sessionStorage.removeItem('pending_workspace');
         sessionStorage.removeItem('pending_report');
         sessionStorage.removeItem('pending_report_name');
+        sessionStorage.removeItem('pending_auto_load');
+        
+        // Select the report which will trigger auto-load
+        handleReportSelect(report.id);
       } else {
         console.warn('⚠️ Report not found:', pendingReportName || pendingReport);
         // Clear the pending values after attempting
+        sessionStorage.removeItem('pending_workspace');
         sessionStorage.removeItem('pending_report');
         sessionStorage.removeItem('pending_report_name');
+        sessionStorage.removeItem('pending_auto_load');
       }
     }
-  }, [workspaces, allReports, selectedWorkspaceId, selectedReportId, handleReportSelect]);
+  }, [allReports, selectedWorkspaceId, selectedReportId, handleReportSelect]);
 
   // Automatic authentication on component mount
   useEffect(() => {
