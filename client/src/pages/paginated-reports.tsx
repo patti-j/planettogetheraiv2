@@ -59,6 +59,7 @@ type SourceType = "sql" | "powerbi";
 
 export default function PaginatedReports() {
   const [sourceType, setSourceType] = useState<SourceType | null>(null);
+  const [workspaceName, setWorkspaceName] = useState("");
   const [selectedTable, setSelectedTable] = useState<SQLTable | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
@@ -110,11 +111,18 @@ export default function PaginatedReports() {
 
   const handleSourceTypeChange = (type: SourceType) => {
     setSourceType(type);
+    setWorkspaceName("");
     setSelectedTable(null);
     setCurrentPage(1);
     setSortBy("");
     setSearchTerm("");
     setColumnFilters({});
+  };
+
+  const handleWorkspaceChange = (value: string) => {
+    setWorkspaceName(value);
+    setSelectedTable(null);
+    setCurrentPage(1);
   };
 
   const handleTableSelect = (value: string) => {
@@ -401,8 +409,38 @@ export default function PaginatedReports() {
           </CardContent>
         </Card>
 
-        {/* Table Selector - Only show when source is selected */}
-        {sourceType && (
+        {/* Workspace Selector - Only show for Power BI */}
+        {sourceType === 'powerbi' && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg flex items-center gap-2">
+                <Database className="w-5 h-5" />
+                Select Workspace
+              </CardTitle>
+              <CardDescription>
+                Enter the name of your Power BI workspace
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="max-w-md space-y-2">
+                <Label htmlFor="workspace-name">Workspace Name</Label>
+                <Input
+                  id="workspace-name"
+                  placeholder="e.g., acme_company"
+                  value={workspaceName}
+                  onChange={(e) => handleWorkspaceChange(e.target.value)}
+                  data-testid="input-workspace-name"
+                />
+                <p className="text-sm text-muted-foreground">
+                  Enter the exact name of your Power BI workspace to view available datasets
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Table/Dataset Selector - Show for SQL (always) or Power BI (after workspace selected) */}
+        {(sourceType === 'sql' || (sourceType === 'powerbi' && workspaceName.trim())) && (
           <Card>
             <CardHeader>
               <CardTitle className="text-lg flex items-center gap-2">
@@ -412,7 +450,7 @@ export default function PaginatedReports() {
               <CardDescription>
                 {sourceType === 'sql' 
                   ? 'Choose a table from your SQL Server database'
-                  : 'Choose a dataset (semantic model) from Power BI'}
+                  : `Choose a dataset (semantic model) from ${workspaceName} workspace`}
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -448,14 +486,14 @@ export default function PaginatedReports() {
                     disabled={true}
                   >
                     <SelectTrigger id="dataset-select" data-testid="select-dataset">
-                      <SelectValue placeholder="Power BI Datasets coming soon..." />
+                      <SelectValue placeholder="Loading datasets..." />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="placeholder">No datasets available</SelectItem>
                     </SelectContent>
                   </Select>
                   <p className="text-sm text-muted-foreground mt-2">
-                    Power BI dataset integration is coming soon. You'll be able to query semantic models directly from the platform.
+                    Power BI dataset integration is coming soon. Datasets from workspace "{workspaceName}" will appear here.
                   </p>
                 </div>
               )}
