@@ -425,27 +425,18 @@ export class PowerBIService {
     return this.discoverTablesUsingDAX(accessToken, workspaceId, datasetId);
   }
 
-  // Discover tables in a dataset using DAX queries
+  // Discover tables in a dataset using DMV queries (works for standard semantic models)
   private async discoverTablesUsingDAX(accessToken: string, workspaceId: string, datasetId: string): Promise<any[]> {
     const queryUrl = `https://api.powerbi.com/v1.0/myorg/groups/${workspaceId}/datasets/${datasetId}/executeQueries`;
 
-    // DAX query to get all tables and their columns
-    const daxQuery = `
-      EVALUATE
-      SELECTCOLUMNS(
-        INFO.TABLES(),
-        "TableID", [ID],
-        "TableName", [Name],
-        "IsHidden", [IsHidden],
-        "IsPrivate", [IsPrivate],
-        "TableType", [TableType]
-      )
-    `;
+    // DMV query to get all tables from the dataset
+    // This works for Premium/Premium Per User/Embedded capacity datasets
+    const dmvQuery = `SELECT [Name], [IsHidden], [IsPrivate] FROM $SYSTEM.TMSCHEMA_TABLES ORDER BY [Name]`;
 
     const requestBody = {
       queries: [
         {
-          query: daxQuery
+          query: dmvQuery
         }
       ],
       serializerSettings: {
@@ -464,7 +455,8 @@ export class PowerBIService {
       });
 
       if (!response.ok) {
-        // If DAX query fails, try a simpler approach
+        console.log('DMV query failed, trying fallback approach...');
+        // If DMV query fails, try a simpler approach
         return this.discoverTablesSimple(accessToken, workspaceId, datasetId);
       }
 
@@ -474,34 +466,83 @@ export class PowerBIService {
         const tablesData = result.results[0].tables[0].rows || [];
         
         // Filter out hidden and private tables, get visible tables only
-        const visibleTables = tablesData.filter((table: any) => 
-          !table["[IsHidden]"] && !table["[IsPrivate]"] && table["[TableType]"] !== "System"
-        );
+        const visibleTables = tablesData.filter((table: any) => {
+          // DMV results come with bracket notation
+          const isHidden = table["[IsHidden]"] || table.IsHidden;
+          const isPrivate = table["[IsPrivate]"] || table.IsPrivate;
+          return !isHidden && !isPrivate;
+        });
 
-        // For each table, get column information
+        // For each table, get column information using DMV or sample query
         const tablesWithColumns = [];
         for (const table of visibleTables) {
-          const tableName = table["[TableName]"] || table["[Name]"] || table.TableName || table.Name;
+          const tableName = table["[Name]"] || table.Name;
           if (tableName) {
-            const columns = await this.getTableColumns(accessToken, workspaceId, datasetId, tableName);
+            // Try to get columns using DMV first
+            const columns = await this.getTableColumnsUsingDMV(accessToken, workspaceId, datasetId, tableName);
             tablesWithColumns.push({
               name: tableName,
               columns: columns,
-              rows: 0 // We don't have row count immediately
+              rows: 0 // Row count can be obtained through separate query if needed
             });
           }
         }
 
-        return tablesWithColumns;
+        if (tablesWithColumns.length > 0) {
+          return tablesWithColumns;
+        }
       }
 
-      // If no tables found using INFO.TABLES(), try simple discovery
+      // If no tables found using DMV, try simple discovery
       return this.discoverTablesSimple(accessToken, workspaceId, datasetId);
     } catch (error) {
-      console.error('Failed to discover tables using DAX:', error);
+      console.error('Failed to discover tables using DMV:', error);
       // Fallback to simple discovery
       return this.discoverTablesSimple(accessToken, workspaceId, datasetId);
     }
+  }
+
+  // Get columns for a table using DMV query
+  private async getTableColumnsUsingDMV(accessToken: string, workspaceId: string, datasetId: string, tableName: string): Promise<any[]> {
+    const queryUrl = `https://api.powerbi.com/v1.0/myorg/groups/${workspaceId}/datasets/${datasetId}/executeQueries`;
+    
+    try {
+      // DMV query to get columns for a specific table
+      const dmvQuery = `SELECT [Name], [DataType], [IsHidden] FROM $SYSTEM.TMSCHEMA_COLUMNS WHERE [TableID] IN (SELECT [ID] FROM $SYSTEM.TMSCHEMA_TABLES WHERE [Name] = '${tableName}') ORDER BY [Name]`;
+      
+      const response = await fetch(queryUrl, {
+        method: 'POST',
+        headers: {
+          "Authorization": `Bearer ${accessToken}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          queries: [{ query: dmvQuery }],
+          serializerSettings: { includeNulls: true }
+        })
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        
+        if (result.results && result.results[0] && result.results[0].tables && result.results[0].tables[0]) {
+          const columnsData = result.results[0].tables[0].rows || [];
+          
+          // Filter out hidden columns and format
+          return columnsData
+            .filter((col: any) => !(col["[IsHidden]"] || col.IsHidden))
+            .map((col: any) => ({
+              name: col["[Name]"] || col.Name,
+              dataType: col["[DataType]"] || col.DataType || 'Auto'
+            }));
+        }
+      }
+    } catch (error) {
+      console.error(`Failed to get columns using DMV for table ${tableName}:`, error);
+    }
+
+    // Fallback to sample query approach
+    return this.getTableColumns(accessToken, workspaceId, datasetId, tableName);
   }
 
   // Simple table discovery - tries common table names
@@ -627,13 +668,31 @@ export class PowerBIService {
   ): Promise<any> {
     const queryUrl = `https://api.powerbi.com/v1.0/myorg/groups/${workspaceId}/datasets/${datasetId}/executeQueries`;
 
-    // Build a simple DAX query to get table data
-    // Note: DAX doesn't support simple pagination like SQL, so we use TOPN for limiting results
-    let daxQuery = `EVALUATE TOPN(${pageSize}, '${tableName}')`;
+    // Clean table name (remove any brackets if user entered them)
+    const cleanTableName = tableName.replace(/[\[\]'"`]/g, '');
+    
+    // Build a DAX query to get table data
+    // We'll fetch more rows initially to handle client-side pagination and search
+    const fetchSize = Math.min(pageSize * 10, 1000); // Fetch up to 1000 rows for better search
+    
+    let daxQuery: string;
     
     // Add ordering if specified
     if (sortBy) {
-      daxQuery = `EVALUATE TOPN(${pageSize}, '${tableName}', '${tableName}'[${sortBy}], ${sortOrder === 'asc' ? 'ASC' : 'DESC'})`;
+      // Clean sort column name
+      const cleanSortBy = sortBy.replace(/[\[\]'"`]/g, '');
+      daxQuery = `
+        EVALUATE 
+        TOPN(
+          ${fetchSize}, 
+          '${cleanTableName}', 
+          '${cleanTableName}'[${cleanSortBy}], 
+          ${sortOrder === 'desc' ? 'DESC' : 'ASC'}
+        )
+      `;
+    } else {
+      // Simple query without sorting
+      daxQuery = `EVALUATE TOPN(${fetchSize}, '${cleanTableName}')`;
     }
 
     const requestBody = {
@@ -648,6 +707,8 @@ export class PowerBIService {
     };
 
     try {
+      console.log(`Executing DAX query for table: ${cleanTableName}`);
+      
       const response = await fetch(queryUrl, {
         method: 'POST',
         headers: {
@@ -658,50 +719,100 @@ export class PowerBIService {
       });
 
       if (!response.ok) {
-        const error = await response.text();
-        throw new Error(`Failed to query dataset: ${error}`);
+        const errorText = await response.text();
+        console.error(`DAX query failed: ${errorText}`);
+        
+        // Try to parse error for more details
+        try {
+          const errorJson = JSON.parse(errorText);
+          if (errorJson.error && errorJson.error.message) {
+            throw new Error(`Power BI query error: ${errorJson.error.message}`);
+          }
+        } catch (e) {
+          // Not JSON, use raw error
+        }
+        
+        throw new Error(`Failed to query table '${cleanTableName}': ${errorText}`);
       }
 
       const result = await response.json();
       
       // Extract data from the DAX query result
-      if (result.results && result.results[0] && result.results[0].tables && result.results[0].tables[0]) {
-        const table = result.results[0].tables[0];
-        const rows = table.rows || [];
-        
-        // Get column names from the first row or from table metadata
-        const columns = rows.length > 0 ? Object.keys(rows[0]).map(key => {
-          // Clean up column names by removing table prefix if present
-          const cleanKey = key.includes('[') && key.includes(']') 
-            ? key.substring(key.indexOf('[') + 1, key.indexOf(']'))
-            : key;
-          return cleanKey;
-        }) : [];
-        
-        // Apply search filter if provided
-        let filteredRows = rows;
-        if (searchTerm) {
-          filteredRows = rows.filter((row: any) => {
-            return Object.values(row).some(value => 
-              String(value).toLowerCase().includes(searchTerm.toLowerCase())
-            );
-          });
+      if (result.results && result.results[0]) {
+        if (result.results[0].error) {
+          // Query had an error
+          const errorMsg = result.results[0].error.message || 'Unknown query error';
+          console.error(`DAX query error: ${errorMsg}`);
+          throw new Error(`Query error: ${errorMsg}`);
         }
         
-        // Calculate pagination
-        const totalCount = filteredRows.length;
-        const startIndex = (page - 1) * pageSize;
-        const paginatedRows = filteredRows.slice(startIndex, startIndex + pageSize);
-        
-        return {
-          columns,
-          rows: paginatedRows,
-          totalCount,
-          page,
-          pageSize
-        };
+        if (result.results[0].tables && result.results[0].tables[0]) {
+          const table = result.results[0].tables[0];
+          const allRows = table.rows || [];
+          
+          // Get column names from the first row
+          const columns = allRows.length > 0 ? Object.keys(allRows[0]).map(key => {
+            // Clean up column names by removing table prefix and brackets
+            let cleanKey = key;
+            
+            // Remove brackets notation like [TableName[ColumnName]]
+            if (key.includes('[') && key.includes(']')) {
+              // Extract the column name from patterns like [TableName[ColumnName]]
+              const matches = key.match(/\[([^\[\]]+)\]$/);
+              if (matches && matches[1]) {
+                cleanKey = matches[1];
+              } else {
+                // Fallback: just remove all brackets
+                cleanKey = key.replace(/[\[\]]/g, '');
+                // If it has table prefix like "TableName.ColumnName", take the part after the last dot
+                if (cleanKey.includes('.')) {
+                  cleanKey = cleanKey.split('.').pop() || cleanKey;
+                }
+              }
+            }
+            
+            return cleanKey;
+          }) : [];
+          
+          // Apply search filter if provided
+          let filteredRows = allRows;
+          if (searchTerm) {
+            const searchLower = searchTerm.toLowerCase();
+            filteredRows = allRows.filter((row: any) => {
+              return Object.values(row).some(value => {
+                if (value === null || value === undefined) return false;
+                return String(value).toLowerCase().includes(searchLower);
+              });
+            });
+          }
+          
+          // Calculate pagination on filtered results
+          const totalCount = filteredRows.length;
+          const startIndex = (page - 1) * pageSize;
+          const paginatedRows = filteredRows.slice(startIndex, startIndex + pageSize);
+          
+          // Clean up row data to match column names
+          const cleanedRows = paginatedRows.map((row: any) => {
+            const cleanRow: any = {};
+            Object.keys(row).forEach((key, index) => {
+              // Use the cleaned column name
+              const cleanKey = columns[index] || key;
+              cleanRow[cleanKey] = row[key];
+            });
+            return cleanRow;
+          });
+          
+          return {
+            columns,
+            rows: cleanedRows,
+            totalCount,
+            page,
+            pageSize
+          };
+        }
       }
 
+      // No data found
       return {
         columns: [],
         rows: [],
@@ -710,7 +821,8 @@ export class PowerBIService {
         pageSize
       };
     } catch (error) {
-      throw new Error(`Failed to query dataset table: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      console.error(`Failed to query dataset table '${cleanTableName}':`, error);
+      throw new Error(`Failed to query table '${cleanTableName}': ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 
