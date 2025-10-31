@@ -1660,6 +1660,19 @@ Rules:
     }
   ): Promise<MaxResponse> {
     try {
+        // Try to analyze internal data FIRST for quick responses
+        console.log(`[Max AI] Checking internal data query for: "${query}"`);
+        const internalDataResponse = await this.analyzeInternalDataQuery(query, context);
+        if (internalDataResponse) {
+          console.log(`[Max AI] ✅ Using internal data response (fast path)`);
+          return {
+            content: internalDataResponse,
+            error: false,
+            confidence: 0.9
+          };
+        }
+        console.log(`[Max AI] No internal data match, using AI-based response`);
+        
         // Search for relevant playbooks FIRST to guide AI thinking
         const playbooks = await this.searchRelevantPlaybooks(query, context);
         
