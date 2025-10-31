@@ -78,7 +78,16 @@ llmProviderRoutes.post('/api/llm-providers', requireAuth, async (req, res) => {
       .values(validated)
       .returning();
     
-    res.status(201).json(provider);
+    // Sanitize response - never return API keys
+    const sanitized = {
+      ...provider,
+      configuration: { 
+        ...(provider.configuration as any), 
+        apiKey: (provider.configuration as any)?.apiKey ? '***' : undefined 
+      }
+    };
+    
+    res.status(201).json(sanitized);
   } catch (error: any) {
     console.error('Error creating LLM provider:', error);
     res.status(400).json({ error: error.message || 'Failed to create provider' });
@@ -116,7 +125,16 @@ llmProviderRoutes.patch('/api/llm-providers/:id', requireAuth, async (req, res) 
       return res.status(404).json({ error: 'Provider not found' });
     }
     
-    res.json(provider);
+    // Sanitize response - never return API keys
+    const sanitized = {
+      ...provider,
+      configuration: { 
+        ...(provider.configuration as any), 
+        apiKey: (provider.configuration as any)?.apiKey ? '***' : undefined 
+      }
+    };
+    
+    res.json(sanitized);
   } catch (error: any) {
     console.error('Error updating LLM provider:', error);
     res.status(400).json({ error: error.message || 'Failed to update provider' });
@@ -157,12 +175,39 @@ llmProviderRoutes.delete('/api/llm-providers/:id', requireAuth, async (req, res)
 // Test provider connection
 llmProviderRoutes.post('/api/llm-providers/:id/test', requireAuth, async (req, res) => {
   try {
-    const isAvailable = await llmService.isAvailable();
+    const id = parseInt(req.params.id);
     
-    if (isAvailable) {
-      res.json({ success: true, message: 'Provider is available and responding' });
-    } else {
-      res.status(503).json({ success: false, message: 'Provider is not available' });
+    // Fetch the specific provider configuration
+    const [provider] = await db
+      .select()
+      .from(llmProviderConfig)
+      .where(eq(llmProviderConfig.id, id))
+      .limit(1);
+    
+    if (!provider) {
+      return res.status(404).json({ success: false, message: 'Provider not found' });
+    }
+    
+    // Test this specific provider (even if not active)
+    // Create a temporary LLM service instance with this provider's config
+    const { LlmService } = await import('./services/llm-service');
+    const testService = new LlmService();
+    
+    // Temporarily override getActiveProvider to return the provider being tested
+    const originalGetProvider = testService.getActiveProvider;
+    testService.getActiveProvider = async () => provider;
+    
+    try {
+      const isAvailable = await testService.isAvailable();
+      
+      if (isAvailable) {
+        res.json({ success: true, message: `Provider "${provider.providerName}" is available and responding` });
+      } else {
+        res.status(503).json({ success: false, message: `Provider "${provider.providerName}" is not available` });
+      }
+    } finally {
+      // Restore original method
+      testService.getActiveProvider = originalGetProvider;
     }
   } catch (error: any) {
     console.error('Error testing provider:', error);
