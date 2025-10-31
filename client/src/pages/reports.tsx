@@ -335,6 +335,15 @@ export default function Dashboard() {
         const selectedReport = allReports?.find(r => r.id === reportId);
         const reportType = selectedReport?.reportType;
         
+        // First, set states to show the PowerBIEmbed component
+        // This will render the component with the reportContainer div
+        setShowEmbed(true);
+        
+        // Wait a moment for React to render the PowerBIEmbed component
+        // This ensures the reportContainer element exists in the DOM
+        await new Promise(resolve => setTimeout(resolve, 200));
+        
+        // Now call embedReport which will look for the reportContainer element
         const config = await embedReport({ 
           workspaceId: selectedWorkspaceId, 
           reportId,
@@ -343,7 +352,6 @@ export default function Dashboard() {
         
         if (config) {
           setEmbedConfig(config);
-          setShowEmbed(true);
         } else {
           console.error("Failed to get embed configuration");
           toast({
