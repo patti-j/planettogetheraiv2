@@ -9,139 +9,114 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Search, Plus, Sparkles, FileText, Clock, Users, Target } from "lucide-react";
+import { Search, Plus, Sparkles, FileText, Clock, Users, Target, Bot } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import type { MemoryBook, MemoryBookEntry, InsertMemoryBook, InsertMemoryBookEntry } from "@shared/schema";
+import type { Playbook, InsertPlaybook } from "@shared/schema";
+
+const AI_AGENTS = [
+  { id: 'max', name: 'Max AI', description: 'Production intelligence and optimization' },
+  { id: 'scheduler', name: 'Scheduler Agent', description: 'Scheduling and resource allocation' },
+  { id: 'quality', name: 'Quality Agent', description: 'Quality control and compliance' },
+  { id: 'planner', name: 'Planner Agent', description: 'Demand planning and forecasting' },
+];
 
 export default function MemoryBooksPage() {
-  const [searchTerm, setSearchTerm] = useState("");
-  const [selectedBook, setSelectedBook] = useState<MemoryBook | null>(null);
+  const [selectedBook, setSelectedBook] = useState<Playbook | null>(null);
+  const [selectedAgent, setSelectedAgent] = useState<string>("all");
   const [createBookOpen, setCreateBookOpen] = useState(false);
-  const [createEntryOpen, setCreateEntryOpen] = useState(false);
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
-  // Fetch memory books
-  const { data: memoryBooks = [], isLoading: booksLoading } = useQuery({
-    queryKey: ["/api/memory-books"],
+  // Fetch playbooks
+  const { data: allPlaybooks = [], isLoading: booksLoading } = useQuery<Playbook[]>({
+    queryKey: ["/api/playbooks"],
     retry: false,
   });
 
-  // Fetch memory book entries
-  const { data: entries = [], isLoading: entriesLoading } = useQuery({
-    queryKey: ["/api/memory-book-entries", selectedBook?.id],
-    enabled: !!selectedBook,
-    queryFn: async () => {
-      const params = new URLSearchParams();
-      if (selectedBook?.id) {
-        params.append("memoryBookId", selectedBook.id.toString());
-      }
-      if (searchTerm) {
-        params.append("search", searchTerm);
-      }
-      return await apiRequest(`/api/memory-book-entries?${params.toString()}`);
-    },
-  });
+  // Filter playbooks by agent
+  const playbooks = selectedAgent === "all" 
+    ? allPlaybooks 
+    : allPlaybooks.filter((book: Playbook) => book.agentId === selectedAgent);
 
-  // Create memory book mutation
+  // Create playbook mutation
   const createBookMutation = useMutation({
-    mutationFn: async (data: InsertMemoryBook) => {
-      return await apiRequest("/api/memory-books", {
+    mutationFn: async (data: InsertPlaybook) => {
+      return await apiRequest("/api/playbooks", {
         method: "POST",
         body: JSON.stringify(data),
       });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/memory-books"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/playbooks"] });
       setCreateBookOpen(false);
       toast({
         title: "Success",
-        description: "Memory book created successfully",
+        description: "Playbook created successfully",
       });
     },
     onError: (error) => {
       toast({
         title: "Error",
-        description: "Failed to create memory book",
-        variant: "destructive",
-      });
-    },
-  });
-
-  // Create memory book entry mutation
-  const createEntryMutation = useMutation({
-    mutationFn: async (data: InsertMemoryBookEntry) => {
-      return await apiRequest("/api/memory-book-entries", {
-        method: "POST",
-        body: JSON.stringify(data),
-      });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/memory-book-entries"] });
-      setCreateEntryOpen(false);
-      toast({
-        title: "Success",
-        description: "Memory entry created successfully",
-      });
-    },
-    onError: (error) => {
-      toast({
-        title: "Error",
-        description: "Failed to create memory entry",
+        description: "Failed to create playbook",
         variant: "destructive",
       });
     },
   });
 
   const handleCreateBook = (formData: FormData) => {
-    const bookData: InsertMemoryBook = {
+    const bookData: InsertPlaybook = {
       title: formData.get("title") as string,
-      description: formData.get("description") as string,
-      scope: formData.get("scope") as string,
-      createdBy: 1, // Using demo user for now
+      description: formData.get("description") as string || undefined,
+      content: formData.get("content") as string,
+      agentId: formData.get("agentId") as string || undefined,
+      category: formData.get("category") as string || undefined,
+      tags: [],
+      createdBy: 1,
     };
     createBookMutation.mutate(bookData);
   };
 
-  const handleCreateEntry = (formData: FormData) => {
-    if (!selectedBook) return;
-    
-    const entryData: InsertMemoryBookEntry = {
-      memoryBookId: selectedBook.id,
-      title: formData.get("title") as string,
-      content: formData.get("content") as string,
-      entryType: formData.get("entryType") as string,
-      priority: formData.get("priority") as string,
-      category: formData.get("category") as string,
-      createdBy: 1, // Using demo user for now
-    };
-    createEntryMutation.mutate(entryData);
-  };
-
   return (
     <div className="container mx-auto p-6 space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-            <Sparkles className="h-8 w-8 text-blue-600" />
-            Max AI Memory Books
+            <Bot className="h-8 w-8 text-purple-600" />
+            AI Agent Playbooks
           </h1>
           <p className="text-gray-600 dark:text-gray-300 mt-2">
-            Collaborative knowledge base for storing user instructions and AI learnings
+            Knowledge base for AI agents - store instructions, best practices, and learned insights
           </p>
         </div>
+        
+        <div className="flex items-center gap-3">
+          <div className="w-56">
+            <Select value={selectedAgent} onValueChange={setSelectedAgent}>
+              <SelectTrigger>
+                <SelectValue placeholder="Filter by agent" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Agents</SelectItem>
+                {AI_AGENTS.map((agent) => (
+                  <SelectItem key={agent.id} value={agent.id}>
+                    {agent.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         
         <Dialog open={createBookOpen} onOpenChange={setCreateBookOpen}>
           <DialogTrigger asChild>
             <Button>
               <Plus className="h-4 w-4 mr-2" />
-              Create Memory Book
+              Create Playbook
             </Button>
           </DialogTrigger>
-          <DialogContent>
+          <DialogContent className="max-w-2xl">
             <DialogHeader>
-              <DialogTitle>Create New Memory Book</DialogTitle>
+              <DialogTitle>Create New Playbook</DialogTitle>
             </DialogHeader>
             <form action={handleCreateBook}>
               <div className="space-y-4">
@@ -151,20 +126,36 @@ export default function MemoryBooksPage() {
                 </div>
                 <div>
                   <Label htmlFor="description">Description</Label>
-                  <Textarea id="description" name="description" placeholder="Describe what this memory book contains..." />
+                  <Textarea id="description" name="description" placeholder="Brief summary of this playbook..." />
                 </div>
                 <div>
-                  <Label htmlFor="scope">Scope</Label>
-                  <Select name="scope" defaultValue="global">
-                    <SelectTrigger>
-                      <SelectValue />
+                  <Label htmlFor="agentId">AI Agent</Label>
+                  <Select name="agentId" required>
+                    <SelectTrigger id="agentId">
+                      <SelectValue placeholder="Select an agent" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="global">Global</SelectItem>
-                      <SelectItem value="plant">Plant</SelectItem>
-                      <SelectItem value="department">Department</SelectItem>
+                      {AI_AGENTS.map((agent) => (
+                        <SelectItem key={agent.id} value={agent.id}>
+                          {agent.name}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
+                </div>
+                <div>
+                  <Label htmlFor="content">Content</Label>
+                  <Textarea 
+                    id="content" 
+                    name="content" 
+                    placeholder="Enter the playbook instructions, rules, and guidelines..." 
+                    className="min-h-[200px]" 
+                    required 
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="category">Category</Label>
+                  <Input id="category" name="category" placeholder="e.g., Scheduling, Quality, Planning" />
                 </div>
                 <Button type="submit" disabled={createBookMutation.isPending}>
                   {createBookMutation.isPending ? "Creating..." : "Create Playbook"}
@@ -173,6 +164,7 @@ export default function MemoryBooksPage() {
             </form>
           </DialogContent>
         </Dialog>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -187,175 +179,94 @@ export default function MemoryBooksPage() {
               <div className="space-y-2">
                 {booksLoading ? (
                   <div className="text-sm text-gray-500">Loading playbooks...</div>
-                ) : memoryBooks.length === 0 ? (
-                  <div className="text-sm text-gray-500">No playbooks found</div>
+                ) : playbooks.length === 0 ? (
+                  <div className="text-sm text-gray-500">
+                    {selectedAgent === "all" ? "No playbooks found" : `No playbooks for ${AI_AGENTS.find(a => a.id === selectedAgent)?.name}`}
+                  </div>
                 ) : (
-                  memoryBooks.map((book: MemoryBook) => (
-                    <div
-                      key={book.id}
-                      className={`p-3 border rounded-lg cursor-pointer transition-colors ${
-                        selectedBook?.id === book.id
-                          ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20"
-                          : "border-gray-200 hover:border-gray-300 dark:border-gray-700"
-                      }`}
-                      onClick={() => setSelectedBook(book)}
-                    >
-                      <div className="font-medium text-sm">{book.title}</div>
-                      <div className="text-xs text-gray-500 mt-1">{book.description}</div>
-                      <div className="flex items-center gap-2 mt-2">
-                        <Badge variant="outline" className="text-xs">
-                          {book.scope}
-                        </Badge>
+                  playbooks.map((book: Playbook) => {
+                    const agent = AI_AGENTS.find(a => a.id === book.agentId);
+                    return (
+                      <div
+                        key={book.id}
+                        className={`p-3 border rounded-lg cursor-pointer transition-colors ${
+                          selectedBook?.id === book.id
+                            ? "border-purple-500 bg-purple-50 dark:bg-purple-900/20"
+                            : "border-gray-200 hover:border-gray-300 dark:border-gray-700"
+                        }`}
+                        onClick={() => setSelectedBook(book)}
+                        data-testid={`playbook-item-${book.id}`}
+                      >
+                        <div className="font-medium text-sm">{book.title}</div>
+                        {book.description && (
+                          <div className="text-xs text-gray-500 mt-1">{book.description}</div>
+                        )}
+                        <div className="flex items-center gap-2 mt-2 flex-wrap">
+                          {agent && (
+                            <Badge variant="default" className="text-xs bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300">
+                              <Bot className="h-3 w-3 mr-1" />
+                              {agent.name}
+                            </Badge>
+                          )}
+                          {book.category && (
+                            <Badge variant="outline" className="text-xs">
+                              {book.category}
+                            </Badge>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  ))
+                    );
+                  })
                 )}
               </div>
             </CardContent>
           </Card>
         </div>
 
-        {/* Playbook Entries */}
+        {/* Playbook Content */}
         <div className="lg:col-span-2">
           {selectedBook ? (
             <Card>
               <CardHeader>
                 <div className="flex items-center justify-between">
-                  <div>
+                  <div className="flex-1">
                     <CardTitle className="text-lg">{selectedBook.title}</CardTitle>
-                    <CardDescription>{selectedBook.description}</CardDescription>
+                    {selectedBook.description && (
+                      <CardDescription>{selectedBook.description}</CardDescription>
+                    )}
                   </div>
-                  <Dialog open={createEntryOpen} onOpenChange={setCreateEntryOpen}>
-                    <DialogTrigger asChild>
-                      <Button size="sm">
-                        <Plus className="h-4 w-4 mr-2" />
-                        Add Entry
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent className="max-w-2xl">
-                      <DialogHeader>
-                        <DialogTitle>Create Playbook Entry</DialogTitle>
-                      </DialogHeader>
-                      <form action={handleCreateEntry}>
-                        <div className="space-y-4">
-                          <div>
-                            <Label htmlFor="title">Title</Label>
-                            <Input id="title" name="title" placeholder="e.g., How to handle bottlenecks" required />
-                          </div>
-                          <div>
-                            <Label htmlFor="content">Content</Label>
-                            <Textarea 
-                              id="content" 
-                              name="content" 
-                              placeholder="Detailed instructions, lessons learned, or best practices..." 
-                              rows={6}
-                              required 
-                            />
-                          </div>
-                          <div className="grid grid-cols-3 gap-4">
-                            <div>
-                              <Label htmlFor="entryType">Type</Label>
-                              <Select name="entryType" defaultValue="instruction">
-                                <SelectTrigger>
-                                  <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="instruction">Instruction</SelectItem>
-                                  <SelectItem value="procedure">Procedure</SelectItem>
-                                  <SelectItem value="lesson_learned">Lesson Learned</SelectItem>
-                                  <SelectItem value="best_practice">Best Practice</SelectItem>
-                                  <SelectItem value="troubleshooting">Troubleshooting</SelectItem>
-                                  <SelectItem value="configuration">Configuration</SelectItem>
-                                </SelectContent>
-                              </Select>
-                            </div>
-                            <div>
-                              <Label htmlFor="priority">Priority</Label>
-                              <Select name="priority" defaultValue="medium">
-                                <SelectTrigger>
-                                  <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="low">Low</SelectItem>
-                                  <SelectItem value="medium">Medium</SelectItem>
-                                  <SelectItem value="high">High</SelectItem>
-                                  <SelectItem value="critical">Critical</SelectItem>
-                                </SelectContent>
-                              </Select>
-                            </div>
-                            <div>
-                              <Label htmlFor="category">Category</Label>
-                              <Input id="category" name="category" placeholder="e.g., scheduling" />
-                            </div>
-                          </div>
-                          <Button type="submit" disabled={createEntryMutation.isPending}>
-                            {createEntryMutation.isPending ? "Creating..." : "Create Entry"}
-                          </Button>
-                        </div>
-                      </form>
-                    </DialogContent>
-                  </Dialog>
                 </div>
-                <div className="flex items-center gap-2 mt-2">
-                  <div className="relative flex-1">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                    <Input
-                      placeholder="Search entries..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      className="pl-12"
-                    />
-                  </div>
+                <div className="flex items-center gap-3 mt-3 flex-wrap">
+                  {selectedBook.agentId && (
+                    <Badge variant="default" className="bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300">
+                      <Bot className="h-3 w-3 mr-1" />
+                      {AI_AGENTS.find(a => a.id === selectedBook.agentId)?.name}
+                    </Badge>
+                  )}
+                  {selectedBook.category && (
+                    <Badge variant="outline">
+                      {selectedBook.category}
+                    </Badge>
+                  )}
+                  {selectedBook.createdAt && (
+                    <div className="flex items-center gap-1 text-xs text-gray-500">
+                      <Clock className="h-3 w-3" />
+                      Created {new Date(selectedBook.createdAt).toLocaleDateString()}
+                    </div>
+                  )}
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  {entriesLoading ? (
-                    <div className="text-sm text-gray-500">Loading entries...</div>
-                  ) : entries.length === 0 ? (
-                    <div className="text-center py-8">
-                      <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                      <div className="text-sm text-gray-500">No entries found</div>
-                      <div className="text-xs text-gray-400">Create your first memory entry to get started</div>
-                    </div>
-                  ) : (
-                    entries.map((entry: MemoryBookEntry) => (
-                      <Card key={entry.id} className="border-l-4 border-l-blue-500">
-                        <CardContent className="pt-4">
-                          <div className="flex items-start justify-between mb-2">
-                            <h3 className="font-semibold text-sm">{entry.title}</h3>
-                            <div className="flex items-center gap-2">
-                              <Badge variant="secondary" className="text-xs">
-                                {entry.entryType}
-                              </Badge>
-                              <Badge 
-                                variant={entry.priority === 'critical' ? 'destructive' : 
-                                        entry.priority === 'high' ? 'default' : 'outline'} 
-                                className="text-xs"
-                              >
-                                {entry.priority}
-                              </Badge>
-                            </div>
-                          </div>
-                          <p className="text-sm text-gray-600 dark:text-gray-300 mb-3">
-                            {entry.content}
-                          </p>
-                          <div className="flex items-center gap-4 text-xs text-gray-500">
-                            <div className="flex items-center gap-1">
-                              <Clock className="h-3 w-3" />
-                              {new Date(entry.createdAt).toLocaleDateString()}
-                            </div>
-                            {entry.category && (
-                              <div className="flex items-center gap-1">
-                                <Target className="h-3 w-3" />
-                                {entry.category}
-                              </div>
-                            )}
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))
-                  )}
+                <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
+                  <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 flex items-center gap-2">
+                    <FileText className="h-4 w-4" />
+                    Playbook Content
+                  </h3>
+                  <div className="prose prose-sm dark:prose-invert max-w-none">
+                    <pre className="whitespace-pre-wrap text-sm text-gray-700 dark:text-gray-300 font-sans">
+{selectedBook.content}
+                    </pre>
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -363,8 +274,8 @@ export default function MemoryBooksPage() {
             <Card>
               <CardContent className="flex items-center justify-center h-64">
                 <div className="text-center">
-                  <Sparkles className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                  <div className="text-gray-500">Select a memory book to view its entries</div>
+                  <Bot className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                  <div className="text-gray-500">Select a playbook to view its content</div>
                 </div>
               </CardContent>
             </Card>
