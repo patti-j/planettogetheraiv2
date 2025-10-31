@@ -2816,13 +2816,15 @@ Focus on the most relevant data type that would answer the user's question.`
         if (mapping && typeof (storage as any)[mapping.method] === 'function') {
           // Dynamically call the appropriate storage method
           try {
+            console.log(`[Max AI] 📊 Calling storage.${mapping.method}() for endpoint: ${endpoint}`);
             data = await (storage as any)[mapping.method]();
+            console.log(`[Max AI] ✅ Fetched ${data.length} records from ${mapping.method}()`);
           } catch (error) {
-            console.error(`Error calling ${mapping.method}:`, error);
+            console.error(`[Max AI] ❌ Error calling ${mapping.method}:`, error);
             data = [];
           }
         } else {
-          console.warn(`No mapping found for endpoint: ${endpoint}`);
+          console.warn(`[Max AI] ⚠️  No mapping found for endpoint: ${endpoint}, mapping:`, mapping, 'method type:', typeof (storage as any)[mapping?.method]);
           data = [];
         }
         
