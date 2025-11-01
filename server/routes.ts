@@ -3371,7 +3371,7 @@ router.get("/api/ai/recommendations", requireAuth, async (req, res) => {
 // Get last analysis timestamp
 router.get("/api/ai/recommendations/status", requireAuth, async (req, res) => {
   try {
-    const lastAnalysisTime = AISchedulingRecommendationsService.getLastAnalysisTime();
+    const lastAnalysisTime = (aiSchedulingService.constructor as any).getLastAnalysisTime();
     res.json({ 
       lastAnalysisTime: lastAnalysisTime ? lastAnalysisTime.toISOString() : null 
     });
