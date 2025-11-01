@@ -13332,5 +13332,371 @@ router.get("/api/ddmrp/metrics", requireAuth, async (req, res) => {
   }
 });
 
+// ============================================
+// Onboarding Document Management API Routes
+// ============================================
+
+// Configure multer for onboarding document uploads
+const onboardingStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const uploadDir = './uploads/onboarding';
+    const fs = require('fs');
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
+    }
+    cb(null, uploadDir);
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1E9)}`;
+    cb(null, `${uniqueSuffix}-${file.originalname}`);
+  }
+});
+
+const onboardingUpload = multer({
+  storage: onboardingStorage,
+  limits: { fileSize: 50 * 1024 * 1024 }, // 50MB limit
+  fileFilter: (req, file, cb) => {
+    // Accept documents, images, PDFs, Excel, etc.
+    const allowedMimes = [
+      'application/pdf',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'application/vnd.ms-excel',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'image/png',
+      'image/jpeg',
+      'image/jpg',
+      'image/gif',
+      'image/svg+xml',
+      'text/plain',
+      'text/csv',
+      'application/json'
+    ];
+    
+    if (allowedMimes.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error('Invalid file type. Accepted: PDF, Word, Excel, Images, Text, CSV, JSON'));
+    }
+  }
+});
+
+// Upload onboarding document
+router.post("/api/onboarding/documents", requireAuth, onboardingUpload.single('document'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'No file uploaded' });
+    }
+
+    const userId = req.session?.user?.id || 1;
+    const { category, description, tags } = req.body;
+
+    // Insert document record
+    const result = await db.execute(sql`
+      INSERT INTO onboarding_documents (
+        user_id, document_name, document_type, file_path, file_size, 
+        mime_type, category, description, tags
+      ) VALUES (
+        ${userId},
+        ${req.file.originalname},
+        ${req.file.mimetype},
+        ${req.file.path},
+        ${req.file.size},
+        ${req.file.mimetype},
+        ${category || 'general'},
+        ${description || ''},
+        ${tags ? sql`ARRAY[${tags.split(',').map((t: string) => t.trim())}]::TEXT[]` : sql`ARRAY[]::TEXT[]`}
+      )
+      RETURNING *
+    `);
+
+    const document = result.rows[0];
+
+    // Track agent activity for document analysis
+    try {
+      await db.execute(sql`
+        INSERT INTO agent_activity_tracking (agent_name, last_activity_time, status, activity_count, last_action, updated_at)
+        VALUES ('Max AI', NOW(), 'idle', 1, 'Document Uploaded for Analysis', NOW())
+        ON CONFLICT (agent_name) 
+        DO UPDATE SET 
+          last_activity_time = NOW(),
+          status = 'idle',
+          activity_count = agent_activity_tracking.activity_count + 1,
+          last_action = 'Document Uploaded for Analysis',
+          updated_at = NOW()
+      `);
+    } catch (error) {
+      console.error('Failed to track agent activity:', error);
+    }
+
+    res.json({
+      success: true,
+      document: {
+        id: document.id,
+        name: document.document_name,
+        type: document.document_type,
+        category: document.category,
+        description: document.description,
+        tags: document.tags,
+        size: document.file_size,
+        uploadDate: document.upload_date,
+        aiAnalysisStatus: document.ai_analysis_status
+      }
+    });
+  } catch (error: any) {
+    console.error('Error uploading onboarding document:', error);
+    res.status(500).json({ error: 'Failed to upload document' });
+  }
+});
+
+// Get all onboarding documents
+router.get("/api/onboarding/documents", requireAuth, async (req, res) => {
+  try {
+    const userId = req.session?.user?.id || 1;
+    const { category, includeArchived } = req.query;
+
+    let query = sql`
+      SELECT 
+        id, user_id, document_name, document_type, file_path, file_size,
+        mime_type, category, description, tags, ai_analysis_status,
+        ai_analysis_summary, ai_extracted_insights, upload_date,
+        last_analyzed_at, is_archived
+      FROM onboarding_documents
+      WHERE user_id = ${userId}
+    `;
+
+    if (category) {
+      query = sql`${query} AND category = ${category as string}`;
+    }
+
+    if (includeArchived !== 'true') {
+      query = sql`${query} AND is_archived = FALSE`;
+    }
+
+    query = sql`${query} ORDER BY upload_date DESC`;
+
+    const result = await db.execute(query);
+
+    const documents = result.rows.map((doc: any) => ({
+      id: doc.id,
+      name: doc.document_name,
+      type: doc.document_type,
+      category: doc.category,
+      description: doc.description,
+      tags: doc.tags || [],
+      size: doc.file_size,
+      uploadDate: doc.upload_date,
+      aiAnalysisStatus: doc.ai_analysis_status,
+      aiAnalysisSummary: doc.ai_analysis_summary,
+      aiExtractedInsights: doc.ai_extracted_insights,
+      lastAnalyzedAt: doc.last_analyzed_at,
+      isArchived: doc.is_archived
+    }));
+
+    res.json(documents);
+  } catch (error: any) {
+    console.error('Error fetching onboarding documents:', error);
+    res.status(500).json({ error: 'Failed to fetch documents' });
+  }
+});
+
+// Delete onboarding document
+router.delete("/api/onboarding/documents/:id", requireAuth, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userId = req.session?.user?.id || 1;
+
+    // Get document to delete file
+    const docResult = await db.execute(sql`
+      SELECT file_path FROM onboarding_documents
+      WHERE id = ${parseInt(id)} AND user_id = ${userId}
+    `);
+
+    if (!docResult.rows || docResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Document not found' });
+    }
+
+    const filePath = docResult.rows[0].file_path;
+
+    // Delete from database
+    await db.execute(sql`
+      DELETE FROM onboarding_documents
+      WHERE id = ${parseInt(id)} AND user_id = ${userId}
+    `);
+
+    // Delete physical file
+    try {
+      const fs = require('fs');
+      if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath);
+      }
+    } catch (error) {
+      console.error('Error deleting file:', error);
+    }
+
+    res.json({ success: true, message: 'Document deleted successfully' });
+  } catch (error: any) {
+    console.error('Error deleting onboarding document:', error);
+    res.status(500).json({ error: 'Failed to delete document' });
+  }
+});
+
+// Trigger AI analysis on document
+router.post("/api/onboarding/documents/:id/analyze", requireAuth, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userId = req.session?.user?.id || 1;
+
+    // Get document
+    const docResult = await db.execute(sql`
+      SELECT * FROM onboarding_documents
+      WHERE id = ${parseInt(id)} AND user_id = ${userId}
+    `);
+
+    if (!docResult.rows || docResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Document not found' });
+    }
+
+    const document = docResult.rows[0];
+
+    // Update status to analyzing
+    await db.execute(sql`
+      UPDATE onboarding_documents
+      SET ai_analysis_status = 'analyzing'
+      WHERE id = ${parseInt(id)}
+    `);
+
+    // Track agent activity
+    try {
+      await db.execute(sql`
+        INSERT INTO agent_activity_tracking (agent_name, last_activity_time, status, activity_count, last_action, updated_at)
+        VALUES ('Max AI', NOW(), 'active', 1, 'Analyzing Onboarding Document', NOW())
+        ON CONFLICT (agent_name) 
+        DO UPDATE SET 
+          last_activity_time = NOW(),
+          status = 'active',
+          activity_count = agent_activity_tracking.activity_count + 1,
+          last_action = 'Analyzing Onboarding Document',
+          updated_at = NOW()
+      `);
+    } catch (error) {
+      console.error('Failed to track agent activity:', error);
+    }
+
+    // Perform AI analysis (simplified - you'd integrate with your AI service)
+    const analysisPrompt = `
+      Analyze this ${document.category} document: ${document.document_name}
+      
+      Document Type: ${document.document_type}
+      Category: ${document.category}
+      Description: ${document.description || 'No description provided'}
+      
+      Please provide:
+      1. A brief summary of the document's purpose and content
+      2. Key insights relevant to manufacturing system implementation
+      3. Important requirements or constraints identified
+      4. Recommendations for how to use this information during onboarding
+    `;
+
+    try {
+      const analysisResponse = await openai.chat.completions.create({
+        model: "gpt-4o",
+        messages: [{
+          role: "system",
+          content: "You are an expert implementation consultant helping onboard a new manufacturing system. Analyze documents to extract key insights and requirements."
+        }, {
+          role: "user",
+          content: analysisPrompt
+        }],
+        max_tokens: 1000,
+        temperature: 0.7,
+      });
+
+      const analysis = analysisResponse.choices[0]?.message?.content || "Analysis completed";
+
+      // Extract structured insights
+      const insights = {
+        documentType: document.category,
+        fileType: document.document_type,
+        analyzedAt: new Date().toISOString(),
+        keyRequirements: [],
+        recommendedActions: [],
+        potentialChallenges: []
+      };
+
+      // Update document with analysis results
+      await db.execute(sql`
+        UPDATE onboarding_documents
+        SET 
+          ai_analysis_status = 'completed',
+          ai_analysis_summary = ${analysis},
+          ai_extracted_insights = ${JSON.stringify(insights)},
+          last_analyzed_at = NOW()
+        WHERE id = ${parseInt(id)}
+      `);
+
+      // Track agent completion
+      try {
+        await db.execute(sql`
+          INSERT INTO agent_activity_tracking (agent_name, last_activity_time, status, activity_count, last_action, updated_at)
+          VALUES ('Max AI', NOW(), 'idle', 1, 'Document Analysis Complete', NOW())
+          ON CONFLICT (agent_name) 
+          DO UPDATE SET 
+            last_activity_time = NOW(),
+            status = 'idle',
+            last_action = 'Document Analysis Complete',
+            updated_at = NOW()
+        `);
+      } catch (error) {
+        console.error('Failed to track agent activity:', error);
+      }
+
+      res.json({
+        success: true,
+        summary: analysis,
+        insights
+      });
+    } catch (aiError: any) {
+      console.error('AI analysis error:', aiError);
+      
+      // Mark as failed
+      await db.execute(sql`
+        UPDATE onboarding_documents
+        SET ai_analysis_status = 'failed'
+        WHERE id = ${parseInt(id)}
+      `);
+
+      res.status(500).json({ error: 'AI analysis failed', details: aiError.message });
+    }
+  } catch (error: any) {
+    console.error('Error analyzing document:', error);
+    res.status(500).json({ error: 'Failed to analyze document' });
+  }
+});
+
+// Get document categories stats
+router.get("/api/onboarding/documents/stats", requireAuth, async (req, res) => {
+  try {
+    const userId = req.session?.user?.id || 1;
+
+    const result = await db.execute(sql`
+      SELECT 
+        category,
+        COUNT(*) as count,
+        SUM(file_size) as total_size,
+        COUNT(CASE WHEN ai_analysis_status = 'completed' THEN 1 END) as analyzed_count
+      FROM onboarding_documents
+      WHERE user_id = ${userId} AND is_archived = FALSE
+      GROUP BY category
+      ORDER BY count DESC
+    `);
+
+    res.json(result.rows || []);
+  } catch (error: any) {
+    console.error('Error fetching document stats:', error);
+    res.status(500).json({ error: 'Failed to fetch stats' });
+  }
+});
+
 // Forced rebuild - all duplicate keys fixed
 export default router;

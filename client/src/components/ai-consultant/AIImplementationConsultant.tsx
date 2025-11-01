@@ -10,10 +10,12 @@ import {
   TrendingUp, Users, Package, Calendar, Brain,
   Sparkles, BookOpen, Video, Phone, Mail,
   ChevronRight, Clock, Award, BarChart3,
-  Settings, Database, Workflow, Globe, GraduationCap, X
+  Settings, Database, Workflow, Globe, GraduationCap, X,
+  Upload, FileText, Trash2, Eye, Download, Loader2
 } from 'lucide-react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { queryClient } from '@/lib/queryClient';
+import { useToast } from '@/hooks/use-toast';
 
 interface ImplementationPhase {
   id: string;
@@ -184,9 +186,10 @@ export const AIImplementationConsultant: React.FC = () => {
 
       {/* Main Implementation Tabs */}
       <Tabs defaultValue="roadmap" className="space-y-4">
-        <TabsList className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 w-full">
+        <TabsList className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 w-full">
           <TabsTrigger value="roadmap" className="text-xs sm:text-sm">Roadmap</TabsTrigger>
           <TabsTrigger value="goals" className="text-xs sm:text-sm">Goals</TabsTrigger>
+          <TabsTrigger value="documents" className="text-xs sm:text-sm">Documents</TabsTrigger>
           <TabsTrigger value="recommendations" className="text-xs sm:text-sm">AI Rec.</TabsTrigger>
           <TabsTrigger value="training" className="text-xs sm:text-sm">Training</TabsTrigger>
           <TabsTrigger value="success" className="text-xs sm:text-sm">Metrics</TabsTrigger>
@@ -206,6 +209,10 @@ export const AIImplementationConsultant: React.FC = () => {
             onGoalSelect={setSelectedGoal}
             onGoalSave={saveGoalMutation.mutate}
           />
+        </TabsContent>
+
+        <TabsContent value="documents">
+          <OnboardingDocuments />
         </TabsContent>
 
         <TabsContent value="recommendations">
@@ -834,6 +841,518 @@ const AIConsultantChat: React.FC<{ onClose: () => void; context: any }> = ({ onC
 };
 
 // Data functions
+// Onboarding Documents Upload Component
+const OnboardingDocuments: React.FC = () => {
+  const [isDragging, setIsDragging] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [uploadProgress, setUploadProgress] = useState<number>(0);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
+  const { toast } = useToast();
+
+  // Fetch documents
+  const { data: documents = [], isLoading, refetch } = useQuery<any[]>({
+    queryKey: ['/api/onboarding/documents'],
+  });
+
+  // Fetch stats
+  const { data: stats = [] } = useQuery<any[]>({
+    queryKey: ['/api/onboarding/documents/stats'],
+  });
+
+  // Upload mutation
+  const uploadMutation = useMutation({
+    mutationFn: async (formData: FormData) => {
+      const response = await fetch('/api/onboarding/documents', {
+        method: 'POST',
+        body: formData,
+      });
+      if (!response.ok) throw new Error('Upload failed');
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Document Uploaded",
+        description: "Your document has been uploaded successfully and is ready for AI analysis.",
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/onboarding/documents'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/onboarding/documents/stats'] });
+      setSelectedFile(null);
+      setUploadProgress(0);
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Upload Failed",
+        description: error.message || "Failed to upload document.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Delete mutation
+  const deleteMutation = useMutation({
+    mutationFn: async (id: number) => {
+      const response = await fetch(`/api/onboarding/documents/${id}`, {
+        method: 'DELETE',
+      });
+      if (!response.ok) throw new Error('Delete failed');
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Document Deleted",
+        description: "Document has been removed successfully.",
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/onboarding/documents'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/onboarding/documents/stats'] });
+    },
+  });
+
+  // Analyze mutation
+  const analyzeMutation = useMutation({
+    mutationFn: async (id: number) => {
+      const response = await fetch(`/api/onboarding/documents/${id}/analyze`, {
+        method: 'POST',
+      });
+      if (!response.ok) throw new Error('Analysis failed');
+      return response.json();
+    },
+    onSuccess: (data) => {
+      toast({
+        title: "Analysis Complete",
+        description: "AI has analyzed your document and extracted key insights.",
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/onboarding/documents'] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Analysis Failed",
+        description: error.message || "Failed to analyze document.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = () => {
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    
+    const files = Array.from(e.dataTransfer.files);
+    if (files.length > 0) {
+      handleFileSelect(files[0]);
+    }
+  };
+
+  const handleFileSelect = (file: File) => {
+    setSelectedFile(file);
+  };
+
+  const handleUpload = async (category: string, description: string, tags: string) => {
+    if (!selectedFile) return;
+
+    const formData = new FormData();
+    formData.append('document', selectedFile);
+    formData.append('category', category);
+    formData.append('description', description);
+    formData.append('tags', tags);
+
+    uploadMutation.mutate(formData);
+  };
+
+  const filteredDocuments = selectedCategory === 'all' 
+    ? documents 
+    : documents.filter(d => d.category === selectedCategory);
+
+  const categoryOptions = [
+    { value: 'requirements', label: 'Requirements Documents', icon: FileText },
+    { value: 'layout', label: 'Factory Floor Layouts', icon: Workflow },
+    { value: 'machines', label: 'Machine Lists', icon: Settings },
+    { value: 'features', label: 'Must-Have Features', icon: CheckCircle },
+    { value: 'processes', label: 'Process Documentation', icon: BookOpen },
+    { value: 'general', label: 'General', icon: FileText },
+  ];
+
+  return (
+    <div className="space-y-6">
+      {/* Document Stats */}
+      {stats.length > 0 && (
+        <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+          {categoryOptions.map(cat => {
+            const statItem = stats.find(s => s.category === cat.value);
+            const Icon = cat.icon;
+            return (
+              <Card key={cat.value} className="p-4">
+                <div className="flex items-center justify-between mb-2">
+                  <Icon className="h-4 w-4 text-muted-foreground" />
+                  <Badge variant="outline">{statItem?.count || 0}</Badge>
+                </div>
+                <p className="text-xs font-medium truncate">{cat.label}</p>
+                {statItem && statItem.analyzed_count > 0 && (
+                  <p className="text-xs text-green-600 dark:text-green-400 mt-1">
+                    {statItem.analyzed_count} analyzed
+                  </p>
+                )}
+              </Card>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Upload Section */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Upload className="h-5 w-5" />
+            Upload Implementation Documents
+          </CardTitle>
+          <p className="text-sm text-muted-foreground mt-2">
+            Upload your requirements documents, factory layouts, machine lists, and other materials for AI analysis
+          </p>
+        </CardHeader>
+        <CardContent>
+          <DocumentUploadForm
+            selectedFile={selectedFile}
+            onFileSelect={handleFileSelect}
+            onUpload={handleUpload}
+            isDragging={isDragging}
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
+            isUploading={uploadMutation.isPending}
+            categoryOptions={categoryOptions}
+          />
+        </CardContent>
+      </Card>
+
+      {/* Documents List */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <CardTitle>Your Documents</CardTitle>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setSelectedCategory('all')}
+              >
+                All ({documents.length})
+              </Button>
+              {categoryOptions.map(cat => {
+                const count = documents.filter(d => d.category === cat.value).length;
+                if (count === 0) return null;
+                return (
+                  <Button
+                    key={cat.value}
+                    variant={selectedCategory === cat.value ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setSelectedCategory(cat.value)}
+                  >
+                    {cat.label} ({count})
+                  </Button>
+                );
+              })}
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {isLoading ? (
+            <div className="flex items-center justify-center p-8">
+              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+            </div>
+          ) : filteredDocuments.length === 0 ? (
+            <div className="text-center py-12">
+              <FileText className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+              <p className="text-muted-foreground">No documents uploaded yet</p>
+              <p className="text-sm text-muted-foreground mt-2">
+                Upload your first document to get started with AI-powered implementation guidance
+              </p>
+            </div>
+          ) : (
+            <ScrollArea className="h-[500px]">
+              <div className="space-y-4">
+                {filteredDocuments.map(doc => (
+                  <DocumentCard
+                    key={doc.id}
+                    document={doc}
+                    onDelete={() => deleteMutation.mutate(doc.id)}
+                    onAnalyze={() => analyzeMutation.mutate(doc.id)}
+                    isDeleting={deleteMutation.isPending}
+                    isAnalyzing={analyzeMutation.isPending}
+                  />
+                ))}
+              </div>
+            </ScrollArea>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+};
+
+// Document Upload Form Component
+const DocumentUploadForm: React.FC<{
+  selectedFile: File | null;
+  onFileSelect: (file: File) => void;
+  onUpload: (category: string, description: string, tags: string) => void;
+  isDragging: boolean;
+  onDragOver: (e: React.DragEvent) => void;
+  onDragLeave: () => void;
+  onDrop: (e: React.DragEvent) => void;
+  isUploading: boolean;
+  categoryOptions: any[];
+}> = ({ selectedFile, onFileSelect, onUpload, isDragging, onDragOver, onDragLeave, onDrop, isUploading, categoryOptions }) => {
+  const [category, setCategory] = useState('requirements');
+  const [description, setDescription] = useState('');
+  const [tags, setTags] = useState('');
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (selectedFile) {
+      onUpload(category, description, tags);
+      setDescription('');
+      setTags('');
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div
+        className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
+          isDragging ? 'border-blue-500 bg-blue-50 dark:bg-blue-950/20' : 'border-gray-300 dark:border-gray-700'
+        }`}
+        onDragOver={onDragOver}
+        onDragLeave={onDragLeave}
+        onDrop={onDrop}
+      >
+        <input
+          ref={fileInputRef}
+          type="file"
+          className="hidden"
+          onChange={(e) => e.target.files?.[0] && onFileSelect(e.target.files[0])}
+          accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg,.gif,.svg,.txt,.csv,.json"
+        />
+        
+        {selectedFile ? (
+          <div className="flex items-center justify-center gap-3">
+            <FileText className="h-8 w-8 text-blue-600" />
+            <div className="text-left">
+              <p className="font-medium">{selectedFile.name}</p>
+              <p className="text-sm text-muted-foreground">
+                {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
+              </p>
+            </div>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => onFileSelect(null as any)}
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+        ) : (
+          <>
+            <Upload className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+            <p className="text-lg font-medium mb-2">Drop your documents here</p>
+            <p className="text-sm text-muted-foreground mb-4">
+              or{' '}
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="text-blue-600 hover:underline"
+              >
+                browse files
+              </button>
+            </p>
+            <p className="text-xs text-muted-foreground">
+              Supports PDF, Word, Excel, Images, Text, CSV, JSON (max 50MB)
+            </p>
+          </>
+        )}
+      </div>
+
+      {selectedFile && (
+        <>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="text-sm font-medium mb-2 block">Document Category *</label>
+              <select
+                value={category}
+                onChange={(e) => setCategory(e.target.value)}
+                className="w-full p-2 border rounded-md"
+                required
+              >
+                {categoryOptions.map(cat => (
+                  <option key={cat.value} value={cat.value}>{cat.label}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="text-sm font-medium mb-2 block">Tags (comma-separated)</label>
+              <input
+                type="text"
+                value={tags}
+                onChange={(e) => setTags(e.target.value)}
+                placeholder="e.g. urgent, phase1, requirements"
+                className="w-full p-2 border rounded-md"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="text-sm font-medium mb-2 block">Description</label>
+            <textarea
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Brief description of the document and its purpose..."
+              className="w-full p-2 border rounded-md h-20"
+            />
+          </div>
+
+          <Button
+            type="submit"
+            disabled={isUploading}
+            className="w-full"
+          >
+            {isUploading ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                Uploading...
+              </>
+            ) : (
+              <>
+                <Upload className="h-4 w-4 mr-2" />
+                Upload Document
+              </>
+            )}
+          </Button>
+        </>
+      )}
+    </form>
+  );
+};
+
+// Document Card Component
+const DocumentCard: React.FC<{
+  document: any;
+  onDelete: () => void;
+  onAnalyze: () => void;
+  isDeleting: boolean;
+  isAnalyzing: boolean;
+}> = ({ document, onDelete, onAnalyze, isDeleting, isAnalyzing }) => {
+  const [showAnalysis, setShowAnalysis] = useState(false);
+
+  const formatFileSize = (bytes: number) => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+  };
+
+  const getStatusBadge = () => {
+    switch (document.aiAnalysisStatus) {
+      case 'completed':
+        return <Badge className="bg-green-500">Analyzed</Badge>;
+      case 'analyzing':
+        return <Badge className="bg-blue-500">Analyzing...</Badge>;
+      case 'failed':
+        return <Badge variant="destructive">Failed</Badge>;
+      default:
+        return <Badge variant="outline">Pending</Badge>;
+    }
+  };
+
+  return (
+    <Card className="p-4">
+      <div className="flex items-start justify-between">
+        <div className="flex items-start gap-3 flex-1">
+          <FileText className="h-10 w-10 text-blue-600 shrink-0" />
+          <div className="flex-1 min-w-0">
+            <h4 className="font-semibold truncate">{document.name}</h4>
+            <div className="flex flex-wrap gap-2 mt-2">
+              <Badge variant="secondary">{document.category}</Badge>
+              {getStatusBadge()}
+              <span className="text-xs text-muted-foreground">
+                {formatFileSize(document.size)}
+              </span>
+              <span className="text-xs text-muted-foreground">
+                {new Date(document.uploadDate).toLocaleDateString()}
+              </span>
+            </div>
+            {document.description && (
+              <p className="text-sm text-muted-foreground mt-2">{document.description}</p>
+            )}
+            {document.tags && document.tags.length > 0 && (
+              <div className="flex flex-wrap gap-1 mt-2">
+                {document.tags.map((tag: string, idx: number) => (
+                  <Badge key={idx} variant="outline" className="text-xs">{tag}</Badge>
+                ))}
+              </div>
+            )}
+            {document.aiAnalysisStatus === 'completed' && document.aiAnalysisSummary && (
+              <div className="mt-3">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowAnalysis(!showAnalysis)}
+                  className="text-xs"
+                >
+                  <Sparkles className="h-3 w-3 mr-1" />
+                  {showAnalysis ? 'Hide' : 'View'} AI Analysis
+                </Button>
+                {showAnalysis && (
+                  <div className="mt-2 p-3 bg-purple-50 dark:bg-purple-950/20 rounded-lg">
+                    <p className="text-sm text-purple-900 dark:text-purple-100 whitespace-pre-wrap">
+                      {document.aiAnalysisSummary}
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+        <div className="flex gap-2 ml-4">
+          {document.aiAnalysisStatus !== 'completed' && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onAnalyze}
+              disabled={isAnalyzing || document.aiAnalysisStatus === 'analyzing'}
+              title="Analyze with AI"
+            >
+              {document.aiAnalysisStatus === 'analyzing' ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Sparkles className="h-4 w-4" />
+              )}
+            </Button>
+          )}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onDelete}
+            disabled={isDeleting}
+            title="Delete document"
+          >
+            <Trash2 className="h-4 w-4 text-red-600" />
+          </Button>
+        </div>
+      </div>
+    </Card>
+  );
+};
+
 function getImplementationPhases(): ImplementationPhase[] {
   return [
     {
