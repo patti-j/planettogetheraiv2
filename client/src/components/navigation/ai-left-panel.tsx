@@ -2521,24 +2521,15 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
   );
 }
 
-// AI Analysis Status Component - Compact version for Active Agents tab
+// AI Analysis Status Component - Shows activity for all agents
 function AIAnalysisStatus() {
   const { toast } = useToast();
-  const [lastAnalysisTime, setLastAnalysisTime] = useState<Date | null>(null);
-  const [timeAgo, setTimeAgo] = useState<string>('');
   
-  // Fetch last analysis status
-  const { data: statusData, isFetching: isFetchingStatus } = useQuery<{ lastAnalysisTime: string | null }>({
-    queryKey: ['/api/ai/recommendations/status'],
+  // Fetch all agent activity
+  const { data: agentActivities = [], isFetching } = useQuery<any[]>({
+    queryKey: ['/api/ai/agents/activity'],
     refetchInterval: 5000, // Refresh every 5 seconds
   });
-  
-  // Update last analysis time when status data changes
-  useEffect(() => {
-    if (statusData?.lastAnalysisTime) {
-      setLastAnalysisTime(new Date(statusData.lastAnalysisTime));
-    }
-  }, [statusData]);
   
   // Manual refresh mutation
   const manualRefresh = useMutation({
@@ -2555,7 +2546,7 @@ function AIAnalysisStatus() {
         description: "Fresh recommendations generated successfully.",
       });
       queryClient.invalidateQueries({ queryKey: ['/api/ai/recommendations'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/ai/recommendations/status'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/ai/agents/activity'] });
     },
     onError: (error: any) => {
       toast({
@@ -2566,47 +2557,37 @@ function AIAnalysisStatus() {
     },
   });
   
-  // Update time ago every 10 seconds
-  useEffect(() => {
-    const updateTimeAgo = () => {
-      if (!lastAnalysisTime) {
-        setTimeAgo('Never');
-        return;
-      }
-      
-      const now = new Date();
-      const diff = now.getTime() - lastAnalysisTime.getTime();
-      const minutes = Math.floor(diff / 60000);
-      const seconds = Math.floor((diff % 60000) / 1000);
-      
-      if (minutes === 0) {
-        setTimeAgo(`${seconds}s ago`);
-      } else if (minutes < 60) {
-        setTimeAgo(`${minutes}m ago`);
-      } else {
-        const hours = Math.floor(minutes / 60);
-        setTimeAgo(`${hours}h ago`);
-      }
-    };
+  // Helper to format time ago
+  const getTimeAgo = (timestamp: string | null) => {
+    if (!timestamp) return 'Never';
     
-    updateTimeAgo();
-    const interval = setInterval(updateTimeAgo, 10000);
-    return () => clearInterval(interval);
-  }, [lastAnalysisTime]);
+    const now = new Date();
+    const then = new Date(timestamp);
+    const diff = now.getTime() - then.getTime();
+    const minutes = Math.floor(diff / 60000);
+    const seconds = Math.floor((diff % 60000) / 1000);
+    
+    if (minutes === 0) {
+      return `${seconds}s ago`;
+    } else if (minutes < 60) {
+      return `${minutes}m ago`;
+    } else {
+      const hours = Math.floor(minutes / 60);
+      return `${hours}h ago`;
+    }
+  };
   
-  const isAnalyzing = isFetchingStatus || manualRefresh.isPending;
+  const isAnalyzing = isFetching || manualRefresh.isPending;
+  const activeCount = agentActivities.filter(a => a.status === 'active').length;
   
   return (
     <div className="px-4 py-3 border-b bg-muted/30">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
-          <div className={cn(
-            "w-2 h-2 rounded-full",
-            isAnalyzing ? "bg-purple-500 animate-pulse" : "bg-green-500"
-          )} />
+          <Activity className="h-4 w-4 text-muted-foreground" />
           <div>
-            <p className="text-xs font-medium">AI Analysis Status</p>
-            <p className="text-xs text-muted-foreground">Last analyzed: {timeAgo}</p>
+            <p className="text-xs font-medium">Agent Activity Monitor</p>
+            <p className="text-xs text-muted-foreground">{activeCount} of {agentActivities.length} active</p>
           </div>
         </div>
         <Button
@@ -2620,6 +2601,24 @@ function AIAnalysisStatus() {
           <RefreshCw className={cn("h-3 w-3 mr-1", isAnalyzing && "animate-spin")} />
           Analyze
         </Button>
+      </div>
+      
+      {/* Agent status list */}
+      <div className="space-y-2">
+        {agentActivities.map((agent: any) => (
+          <div key={agent.agent_name} className="flex items-center justify-between text-xs">
+            <div className="flex items-center gap-2 flex-1">
+              <div className={cn(
+                "w-1.5 h-1.5 rounded-full",
+                agent.status === 'active' ? "bg-green-500" : "bg-gray-400"
+              )} />
+              <span className="font-medium truncate">{agent.agent_name}</span>
+            </div>
+            <span className="text-muted-foreground ml-2">
+              {getTimeAgo(agent.last_activity_time)}
+            </span>
+          </div>
+        ))}
       </div>
     </div>
   );

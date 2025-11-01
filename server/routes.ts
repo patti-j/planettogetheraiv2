@@ -3368,7 +3368,48 @@ router.get("/api/ai/recommendations", requireAuth, async (req, res) => {
   }
 });
 
-// Get last analysis timestamp
+// Get all agent activity status
+router.get("/api/ai/agents/activity", requireAuth, async (req, res) => {
+  try {
+    const result = await db.execute(sql`
+      SELECT agent_name, last_activity_time, status, activity_count, last_action, updated_at
+      FROM agent_activity_tracking
+      ORDER BY agent_name
+    `);
+    
+    res.json(result.rows || []);
+  } catch (error: any) {
+    console.error('Error fetching agent activity:', error);
+    res.status(500).json({ error: 'Failed to fetch agent activity' });
+  }
+});
+
+// Update agent activity (called when agent is used)
+router.post("/api/ai/agents/activity/:agentName", requireAuth, async (req, res) => {
+  try {
+    const { agentName } = req.params;
+    const { action, status = 'active' } = req.body;
+    
+    await db.execute(sql`
+      INSERT INTO agent_activity_tracking (agent_name, last_activity_time, status, activity_count, last_action, updated_at)
+      VALUES (${agentName}, NOW(), ${status}, 1, ${action || 'Activity'}, NOW())
+      ON CONFLICT (agent_name) 
+      DO UPDATE SET 
+        last_activity_time = NOW(),
+        status = ${status},
+        activity_count = agent_activity_tracking.activity_count + 1,
+        last_action = ${action || 'Activity'},
+        updated_at = NOW()
+    `);
+    
+    res.json({ success: true });
+  } catch (error: any) {
+    console.error('Error updating agent activity:', error);
+    res.status(500).json({ error: 'Failed to update agent activity' });
+  }
+});
+
+// Get last analysis timestamp (for backward compatibility)
 router.get("/api/ai/recommendations/status", requireAuth, async (req, res) => {
   try {
     const lastAnalysisTime = (aiSchedulingService.constructor as any).getLastAnalysisTime();
@@ -7567,6 +7608,23 @@ router.post("/api/max-ai/chat", async (req, res) => {
       conversationHistory: context?.conversationHistory
     });
     console.log(`[Max AI Chat] Response received:`, response);
+    
+    // Track agent activity
+    try {
+      await db.execute(sql`
+        INSERT INTO agent_activity_tracking (agent_name, last_activity_time, status, activity_count, last_action, updated_at)
+        VALUES ('Max AI', NOW(), 'idle', 1, 'Chat Response', NOW())
+        ON CONFLICT (agent_name) 
+        DO UPDATE SET 
+          last_activity_time = NOW(),
+          status = 'idle',
+          activity_count = agent_activity_tracking.activity_count + 1,
+          last_action = 'Chat Response',
+          updated_at = NOW()
+      `);
+    } catch (error) {
+      console.error('Failed to track Max AI activity:', error);
+    }
 
     res.json(response);
   } catch (error) {
@@ -7617,6 +7675,34 @@ router.post("/api/ai-agent/chat", async (req, res) => {
     });
     
     console.log(`[AI Agent Chat] Response generated for agent: ${agentId || 'max'}`);
+    
+    // Track agent activity based on agent type
+    try {
+      const agentNameMap: Record<string, string> = {
+        'max': 'Max AI',
+        'quality': 'Quality Agent',
+        'planner': 'Planner Agent',
+        'risk': 'Risk Monitor',
+        'capacity': 'Capacity Planner',
+        'efficiency': 'Efficiency Optimizer'
+      };
+      
+      const agentName = agentNameMap[agentId] || 'Max AI';
+      
+      await db.execute(sql`
+        INSERT INTO agent_activity_tracking (agent_name, last_activity_time, status, activity_count, last_action, updated_at)
+        VALUES (${agentName}, NOW(), 'idle', 1, 'Chat Response', NOW())
+        ON CONFLICT (agent_name) 
+        DO UPDATE SET 
+          last_activity_time = NOW(),
+          status = 'idle',
+          activity_count = agent_activity_tracking.activity_count + 1,
+          last_action = 'Chat Response',
+          updated_at = NOW()
+      `);
+    } catch (error) {
+      console.error('Failed to track agent activity:', error);
+    }
 
     // Return response with agent ID for proper attribution
     res.json({

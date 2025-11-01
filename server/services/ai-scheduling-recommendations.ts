@@ -554,6 +554,25 @@ export class AISchedulingRecommendationsService {
       
       // First, analyze the current schedule
       console.log('🔍 Analyzing production schedule...');
+      
+      // Track agent activity - mark as active
+      try {
+        const { db } = await import('../db');
+        const { sql } = await import('drizzle-orm');
+        await db.execute(sql`
+          INSERT INTO agent_activity_tracking (agent_name, last_activity_time, status, activity_count, last_action, updated_at)
+          VALUES ('Production Scheduling Agent', NOW(), 'active', 1, 'Analyzing Schedule', NOW())
+          ON CONFLICT (agent_name) 
+          DO UPDATE SET 
+            last_activity_time = NOW(),
+            status = 'active',
+            last_action = 'Analyzing Schedule',
+            updated_at = NOW()
+        `);
+      } catch (error) {
+        console.error('Failed to track agent activity:', error);
+      }
+      
       const analysis = await this.analyzeSchedule();
       
       console.log(`📊 Analysis complete:
@@ -591,6 +610,25 @@ export class AISchedulingRecommendationsService {
       // Update last analysis timestamp after successful analysis
       AISchedulingRecommendationsService.lastAnalysisTimestamp = new Date();
       console.log('✅ Last analysis timestamp updated');
+      
+      // Track agent activity
+      try {
+        const { db } = await import('../db');
+        const { sql } = await import('drizzle-orm');
+        await db.execute(sql`
+          INSERT INTO agent_activity_tracking (agent_name, last_activity_time, status, activity_count, last_action, updated_at)
+          VALUES ('Production Scheduling Agent', NOW(), 'idle', 1, 'Schedule Analysis Complete', NOW())
+          ON CONFLICT (agent_name) 
+          DO UPDATE SET 
+            last_activity_time = NOW(),
+            status = 'idle',
+            activity_count = agent_activity_tracking.activity_count + 1,
+            last_action = 'Schedule Analysis Complete',
+            updated_at = NOW()
+        `);
+      } catch (error) {
+        console.error('Failed to track agent activity:', error);
+      }
 
       return recommendations;
     } catch (error) {
