@@ -307,8 +307,9 @@ router.post("/api/auth/login", async (req, res) => {
         id: user.id,
         username: user.username,
         email: user.email,
-        firstName: user.firstName,
-        lastName: user.lastName,
+        firstName: (user as any).first_name || user.firstName,
+        lastName: (user as any).last_name || user.lastName,
+        avatar: (user as any).avatar,
         roles: roles,
         permissions: allPermissions
       },
@@ -323,8 +324,9 @@ router.post("/api/auth/login", async (req, res) => {
         id: user.id,
         username: user.username,
         email: user.email,
-        firstName: user.firstName,
-        lastName: user.lastName,
+        firstName: (user as any).first_name || user.firstName,
+        lastName: (user as any).last_name || user.lastName,
+        avatar: (user as any).avatar,
         roles: roles,
         permissions: allPermissions
       },
