@@ -33,6 +33,15 @@ interface AIRecommendation {
 }
 
 export class AISchedulingRecommendationsService {
+  private static lastAnalysisTimestamp: Date | null = null;
+  
+  /**
+   * Get last analysis timestamp
+   */
+  static getLastAnalysisTime(): Date | null {
+    return this.lastAnalysisTimestamp;
+  }
+  
   /**
    * Get or create agent ID by name
    */
@@ -545,6 +554,7 @@ export class AISchedulingRecommendationsService {
       
       // First, analyze the current schedule
       console.log('🔍 Analyzing production schedule...');
+      AISchedulingRecommendationsService.lastAnalysisTimestamp = new Date();
       const analysis = await this.analyzeSchedule();
       
       console.log(`📊 Analysis complete:

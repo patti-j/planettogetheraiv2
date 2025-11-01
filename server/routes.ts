@@ -3368,6 +3368,19 @@ router.get("/api/ai/recommendations", requireAuth, async (req, res) => {
   }
 });
 
+// Get last analysis timestamp
+router.get("/api/ai/recommendations/status", requireAuth, async (req, res) => {
+  try {
+    const lastAnalysisTime = AISchedulingRecommendationsService.getLastAnalysisTime();
+    res.json({ 
+      lastAnalysisTime: lastAnalysisTime ? lastAnalysisTime.toISOString() : null 
+    });
+  } catch (error: any) {
+    console.error('Error fetching analysis status:', error);
+    res.status(500).json({ error: 'Failed to fetch analysis status' });
+  }
+});
+
 // Apply a recommendation
 router.post("/api/ai/recommendations/:id/apply", requireAuth, async (req, res) => {
   try {
