@@ -554,7 +554,6 @@ export class AISchedulingRecommendationsService {
       
       // First, analyze the current schedule
       console.log('🔍 Analyzing production schedule...');
-      AISchedulingRecommendationsService.lastAnalysisTimestamp = new Date();
       const analysis = await this.analyzeSchedule();
       
       console.log(`📊 Analysis complete:
@@ -588,6 +587,10 @@ export class AISchedulingRecommendationsService {
         if (priorityDiff !== 0) return priorityDiff;
         return b.confidence - a.confidence;
       });
+      
+      // Update last analysis timestamp after successful analysis
+      AISchedulingRecommendationsService.lastAnalysisTimestamp = new Date();
+      console.log('✅ Last analysis timestamp updated');
 
       return recommendations;
     } catch (error) {

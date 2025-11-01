@@ -1658,9 +1658,12 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
         <>
           {/* Tabs */}
           <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col overflow-hidden">
-            <TabsList className="grid grid-cols-3 mx-4 mt-2 text-xs">
+            <TabsList className="grid grid-cols-4 mx-4 mt-2 text-xs">
               <TabsTrigger value="chat" className="px-2" title="Chat">
                 <MessageSquare className="w-4 h-4" />
+              </TabsTrigger>
+              <TabsTrigger value="recommendations" className="px-2" title="Recommendations">
+                <Lightbulb className="w-4 h-4" />
               </TabsTrigger>
               <TabsTrigger value="simulations" className="px-2" title="Simulations">
                 <Activity className="w-4 h-4" />
@@ -1878,6 +1881,11 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
                   </Button>
                 )}
               </div>
+            </TabsContent>
+
+            {/* Recommendations Tab */}
+            <TabsContent value="recommendations" className="flex-1 overflow-hidden mt-2 data-[state=inactive]:hidden">
+              <AIRecommendationsPanel />
             </TabsContent>
 
             {/* Simulations Tab */}
@@ -2512,6 +2520,191 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
           </Card>
         </div>
       )}
+    </div>
+  );
+}
+
+// AI Recommendations Panel Component with Monitoring Features
+function AIRecommendationsPanel() {
+  const { toast } = useToast();
+  const [lastAnalysisTime, setLastAnalysisTime] = useState<Date | null>(null);
+  const [timeAgo, setTimeAgo] = useState<string>('');
+  
+  // Fetch recommendations
+  const { data: recommendations = [], isLoading, isFetching: isFetchingRecs, refetch } = useQuery<any[]>({
+    queryKey: ['/api/ai/recommendations'],
+    refetchInterval: 60000, // Refetch every minute
+  });
+  
+  // Fetch last analysis status
+  const { data: statusData, isFetching: isFetchingStatus } = useQuery<{ lastAnalysisTime: string | null }>({
+    queryKey: ['/api/ai/recommendations/status'],
+    refetchInterval: 5000, // Refresh every 5 seconds
+  });
+  
+  // Update last analysis time when status data changes
+  useEffect(() => {
+    if (statusData?.lastAnalysisTime) {
+      setLastAnalysisTime(new Date(statusData.lastAnalysisTime));
+    }
+  }, [statusData]);
+  
+  // Manual refresh mutation
+  const manualRefresh = useMutation({
+    mutationFn: async () => {
+      const response = await fetch('/api/ai/recommendations?forceAnalyze=true', {
+        headers: { 'Content-Type': 'application/json' },
+      });
+      if (!response.ok) throw new Error('Failed to analyze');
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Analysis Complete",
+        description: "Fresh recommendations generated successfully.",
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/ai/recommendations'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/ai/recommendations/status'] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Analysis Failed",
+        description: error.message || "Failed to generate new recommendations.",
+        variant: "destructive",
+      });
+    },
+  });
+  
+  // Update time ago every 10 seconds
+  useEffect(() => {
+    const updateTimeAgo = () => {
+      if (!lastAnalysisTime) {
+        setTimeAgo('Never analyzed');
+        return;
+      }
+      
+      const now = new Date();
+      const diff = now.getTime() - lastAnalysisTime.getTime();
+      const minutes = Math.floor(diff / 60000);
+      const seconds = Math.floor((diff % 60000) / 1000);
+      
+      if (minutes === 0) {
+        setTimeAgo(`${seconds}s ago`);
+      } else if (minutes < 60) {
+        setTimeAgo(`${minutes}m ago`);
+      } else {
+        const hours = Math.floor(minutes / 60);
+        setTimeAgo(`${hours}h ago`);
+      }
+    };
+    
+    updateTimeAgo();
+    const interval = setInterval(updateTimeAgo, 10000);
+    return () => clearInterval(interval);
+  }, [lastAnalysisTime]);
+  
+  const isAnalyzing = isLoading || isFetchingRecs || isFetchingStatus || manualRefresh.isPending;
+  
+  return (
+    <div className="flex flex-col h-full">
+      {/* Header with status and refresh */}
+      <div className="px-4 py-3 border-b bg-muted/30">
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center gap-2">
+            <h3 className="text-sm font-semibold">AI Recommendations</h3>
+            {isAnalyzing && (
+              <div className="flex items-center gap-1">
+                <Loader2 className="h-3 w-3 animate-spin text-purple-500" />
+                <span className="text-xs text-purple-500 animate-pulse">Analyzing...</span>
+              </div>
+            )}
+          </div>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => manualRefresh.mutate()}
+            disabled={isAnalyzing}
+            className="h-7 text-xs"
+            title="Force new analysis"
+          >
+            <RefreshCw className={cn("h-3 w-3 mr-1", isAnalyzing && "animate-spin")} />
+            Analyze Now
+          </Button>
+        </div>
+        <div className="flex items-center justify-between text-xs text-muted-foreground">
+          <div className="flex items-center gap-2">
+            <div className={cn(
+              "w-2 h-2 rounded-full",
+              isAnalyzing ? "bg-purple-500 animate-pulse" : "bg-green-500"
+            )} />
+            <span>Last analyzed: {timeAgo}</span>
+          </div>
+          <span className="text-xs">
+            {recommendations.length} recommendation{recommendations.length !== 1 ? 's' : ''}
+          </span>
+        </div>
+      </div>
+      
+      {/* Recommendations list */}
+      <ScrollArea className="flex-1 px-4">
+        <div className="space-y-3 pt-3 pb-4">
+          {isLoading && !recommendations.length ? (
+            <div className="flex flex-col items-center justify-center py-12">
+              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground mb-3" />
+              <p className="text-sm text-muted-foreground">Analyzing production schedule...</p>
+            </div>
+          ) : recommendations.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-12">
+              <Lightbulb className="h-12 w-12 text-muted-foreground/50 mb-3" />
+              <p className="text-sm text-muted-foreground mb-1">No recommendations yet</p>
+              <p className="text-xs text-muted-foreground/70 text-center px-4">
+                Click "Analyze Now" to generate AI-powered recommendations
+              </p>
+            </div>
+          ) : (
+            recommendations.map((rec: any) => (
+              <Card key={rec.id} className="cursor-pointer hover:shadow-md transition-all">
+                <CardHeader className="pb-2">
+                  <div className="flex items-start justify-between gap-2">
+                    <CardTitle className="text-sm font-semibold flex items-start gap-2 flex-1">
+                      <Lightbulb className={cn(
+                        "h-4 w-4 mt-0.5 flex-shrink-0",
+                        rec.priority === 'high' ? "text-red-500" :
+                        rec.priority === 'medium' ? "text-yellow-500" :
+                        "text-blue-500"
+                      )} />
+                      <span className="flex-1">{rec.title}</span>
+                    </CardTitle>
+                    <Badge variant={
+                      rec.priority === 'high' ? 'destructive' :
+                      rec.priority === 'medium' ? 'default' :
+                      'secondary'
+                    } className="text-xs">
+                      {rec.priority}
+                    </Badge>
+                  </div>
+                </CardHeader>
+                <CardContent className="pt-0">
+                  <p className="text-xs text-muted-foreground mb-3 line-clamp-3">
+                    {rec.description}
+                  </p>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                      <span className="flex items-center gap-1">
+                        <Activity className="h-3 w-3" />
+                        {rec.confidence}% confident
+                      </span>
+                    </div>
+                    <span className="text-xs text-muted-foreground">
+                      {rec.category}
+                    </span>
+                  </div>
+                </CardContent>
+              </Card>
+            ))
+          )}
+        </div>
+      </ScrollArea>
     </div>
   );
 }
