@@ -3352,8 +3352,11 @@ router.get("/api/ai/recommendations", requireAuth, async (req, res) => {
   try {
     console.log('📊 Fetching AI recommendations based on production schedule...');
     
+    const userId = req.user?.id || 1;
+    const forceAnalyze = req.query.forceAnalyze === 'true';
+    
     // Get recommendations from the AI service that analyzes real production data
-    const recommendations = await aiSchedulingService.getAllRecommendations();
+    const recommendations = await aiSchedulingService.getAllRecommendations(userId, forceAnalyze);
     
     console.log(`✅ Returning ${recommendations.length} AI recommendations`);
     res.json(recommendations);
