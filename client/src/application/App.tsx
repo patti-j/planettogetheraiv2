@@ -433,6 +433,7 @@ export default function ApplicationApp() {
               
               {/* Training & Support Routes */}
               <Route path="/training" component={Training} />
+              <Route path="/guided-tour" component={lazy(() => import("@/pages/guided-tour-page"))} />
               <Route path="/help" component={Help} />
               <Route path="/industry-templates" component={IndustryTemplates} />
               <Route path="/presentation-system" component={PresentationSystem} />
