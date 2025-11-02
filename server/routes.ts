@@ -13744,5 +13744,34 @@ router.post("/api/playbooks", requireAuth, async (req, res) => {
   }
 });
 
+router.patch("/api/playbooks/:id", requireAuth, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { title, description, content, agentId, category } = req.body;
+
+    const result = await db.execute(sql`
+      UPDATE playbooks
+      SET 
+        title = ${title},
+        description = ${description},
+        content = ${content},
+        agent_id = ${agentId},
+        category = ${category},
+        updated_at = NOW()
+      WHERE id = ${parseInt(id)}
+      RETURNING id, title, description, content, agent_id, category, tags, is_active, created_by, created_at, updated_at
+    `);
+
+    if (!result.rows || result.rows.length === 0) {
+      return res.status(404).json({ error: 'Playbook not found' });
+    }
+
+    res.json(result.rows[0]);
+  } catch (error: any) {
+    console.error('Error updating playbook:', error);
+    res.status(500).json({ error: 'Failed to update playbook' });
+  }
+});
+
 // Forced rebuild - all duplicate keys fixed
 export default router;

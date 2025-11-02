@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Search, Plus, Sparkles, FileText, Clock, Users, Target, Bot } from "lucide-react";
+import { Search, Plus, Sparkles, FileText, Clock, Users, Target, Bot, Edit } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { insertPlaybookSchema } from "@shared/schema";
@@ -29,6 +29,7 @@ const AI_AGENTS = [
 export default function MemoryBooksPage() {
   const [selectedBook, setSelectedBook] = useState<Playbook | null>(null);
   const [createBookOpen, setCreateBookOpen] = useState(false);
+  const [editBookOpen, setEditBookOpen] = useState(false);
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
@@ -49,8 +50,20 @@ export default function MemoryBooksPage() {
     agentId: z.string().min(1, "Please select an agent"),
   }).omit({ createdBy: true, isActive: true, tags: true });
 
-  // Form instance
+  // Form instance for creating
   const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      title: "",
+      description: "",
+      content: "",
+      agentId: "",
+      category: "",
+    },
+  });
+
+  // Form instance for editing
+  const editForm = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       title: "",
@@ -94,6 +107,52 @@ export default function MemoryBooksPage() {
       createdBy: 1,
     };
     createBookMutation.mutate(bookData);
+  };
+
+  // Update playbook mutation
+  const updateBookMutation = useMutation({
+    mutationFn: async (data: { id: number; updates: Partial<InsertPlaybook> }) => {
+      return await apiRequest(`/api/playbooks/${data.id}`, {
+        method: "PATCH",
+        body: JSON.stringify(data.updates),
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/playbooks"] });
+      setEditBookOpen(false);
+      setSelectedBook(null);
+      toast({
+        title: "Success",
+        description: "Playbook updated successfully",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: "Failed to update playbook",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleEditBook = (values: z.infer<typeof formSchema>) => {
+    if (!selectedBook) return;
+    updateBookMutation.mutate({
+      id: selectedBook.id,
+      updates: values,
+    });
+  };
+
+  const openEditDialog = (book: Playbook) => {
+    setSelectedBook(book);
+    editForm.reset({
+      title: book.title,
+      description: book.description || "",
+      content: book.content,
+      agentId: book.agentId,
+      category: book.category || "",
+    });
+    setEditBookOpen(true);
   };
 
   return (
@@ -287,6 +346,15 @@ export default function MemoryBooksPage() {
                       <CardDescription>{selectedBook.description}</CardDescription>
                     )}
                   </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => openEditDialog(selectedBook)}
+                    data-testid="button-edit-playbook"
+                  >
+                    <Edit className="h-4 w-4 mr-2" />
+                    Edit
+                  </Button>
                 </div>
                 <div className="flex items-center gap-3 mt-3 flex-wrap">
                   {selectedBook.agentId && (
@@ -334,6 +402,115 @@ export default function MemoryBooksPage() {
           )}
         </div>
       </div>
+
+      {/* Edit Dialog */}
+      <Dialog open={editBookOpen} onOpenChange={setEditBookOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col">
+          <DialogHeader>
+            <DialogTitle>Edit Playbook</DialogTitle>
+          </DialogHeader>
+          <Form {...editForm}>
+            <form onSubmit={editForm.handleSubmit(handleEditBook)} className="space-y-4 flex-1 flex flex-col overflow-hidden">
+              <div className="flex-1 overflow-y-auto space-y-4 pr-2">
+                <FormField
+                  control={editForm.control}
+                  name="title"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Title</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Playbook title" {...field} data-testid="input-edit-title" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={editForm.control}
+                  name="description"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Description</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Brief description" {...field} data-testid="input-edit-description" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={editForm.control}
+                  name="agentId"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Agent</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <FormControl>
+                          <SelectTrigger data-testid="select-edit-agent">
+                            <SelectValue placeholder="Select an agent" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {AI_AGENTS.map((agent) => (
+                            <SelectItem key={agent.id} value={agent.id}>
+                              {agent.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={editForm.control}
+                  name="content"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Content</FormLabel>
+                      <FormControl>
+                        <Textarea 
+                          placeholder="Enter the playbook instructions, rules, and guidelines..." 
+                          className="min-h-[400px] font-mono text-sm" 
+                          {...field} 
+                          data-testid="input-edit-content"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={editForm.control}
+                  name="category"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Category</FormLabel>
+                      <FormControl>
+                        <Input placeholder="e.g., Scheduling, Quality, Planning" {...field} data-testid="input-edit-category" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+              <div className="flex justify-end gap-2 pt-4 border-t">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setEditBookOpen(false)}
+                  data-testid="button-cancel-edit"
+                >
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={updateBookMutation.isPending} data-testid="button-save-edit">
+                  {updateBookMutation.isPending ? "Saving..." : "Save Changes"}
+                </Button>
+              </div>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
