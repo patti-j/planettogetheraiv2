@@ -20,10 +20,14 @@ import type { Playbook, InsertPlaybook } from "@shared/schema";
 import { z } from "zod";
 
 const AI_AGENTS = [
-  { id: 'max', name: 'Max AI', description: 'Production intelligence and optimization' },
-  { id: 'scheduler', name: 'Scheduler Agent', description: 'Scheduling and resource allocation' },
-  { id: 'quality', name: 'Quality Agent', description: 'Quality control and compliance' },
-  { id: 'planner', name: 'Planner Agent', description: 'Demand planning and forecasting' },
+  { id: 'max', name: 'Max AI', description: 'System orchestrator and production intelligence' },
+  { id: 'production_scheduling', name: 'Production Scheduling Agent', description: 'Schedule optimization and resource allocation' },
+  { id: 'shop_floor', name: 'Shop Floor Agent', description: 'Real-time monitoring and event response' },
+  { id: 'quality_management', name: 'Quality Management Agent', description: 'Quality control and compliance' },
+  { id: 'demand_management', name: 'Demand Management Agent', description: 'Demand forecasting and planning' },
+  { id: 'supply_plan', name: 'Supply Planning Agent', description: 'Supply planning and procurement' },
+  { id: 'inventory_planning', name: 'Inventory Planning Agent', description: 'Inventory optimization' },
+  { id: 'predictive_maintenance', name: 'Predictive Maintenance Agent', description: 'Equipment health and maintenance' },
 ];
 
 export default function MemoryBooksPage() {
