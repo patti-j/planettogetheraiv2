@@ -13698,5 +13698,51 @@ router.get("/api/onboarding/documents/stats", requireAuth, async (req, res) => {
   }
 });
 
+// Playbooks API
+router.get("/api/playbooks", requireAuth, async (req, res) => {
+  try {
+    const result = await db.execute(sql`
+      SELECT 
+        id,
+        title,
+        description,
+        content,
+        agent_id,
+        category,
+        tags,
+        is_active,
+        created_by,
+        created_at,
+        updated_at
+      FROM playbooks
+      WHERE is_active = true
+      ORDER BY created_at DESC
+    `);
+
+    res.json(result.rows || []);
+  } catch (error: any) {
+    console.error('Error fetching playbooks:', error);
+    res.status(500).json({ error: 'Failed to fetch playbooks' });
+  }
+});
+
+router.post("/api/playbooks", requireAuth, async (req, res) => {
+  try {
+    const { title, description, content, agentId, category, tags } = req.body;
+    const userId = req.session?.user?.id || 1;
+
+    const result = await db.execute(sql`
+      INSERT INTO playbooks (title, description, content, agent_id, category, tags, created_by, is_active, created_at, updated_at)
+      VALUES (${title}, ${description}, ${content}, ${agentId}, ${category}, ${JSON.stringify(tags || [])}, ${userId}, true, NOW(), NOW())
+      RETURNING id, title, description, content, agent_id, category, tags, is_active, created_by, created_at, updated_at
+    `);
+
+    res.status(201).json(result.rows[0]);
+  } catch (error: any) {
+    console.error('Error creating playbook:', error);
+    res.status(500).json({ error: 'Failed to create playbook' });
+  }
+});
+
 // Forced rebuild - all duplicate keys fixed
 export default router;
