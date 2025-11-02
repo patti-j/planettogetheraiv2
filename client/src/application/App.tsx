@@ -180,7 +180,13 @@ export default function ApplicationApp() {
     return null;
   }
 
-  const Layout = isMobile ? MobileLayout : DesktopLayout;
+  // Render layout conditionally without dynamic component reference to prevent unmounting
+  const renderLayout = (children: React.ReactNode) => {
+    if (isMobile) {
+      return <MobileLayout>{children}</MobileLayout>;
+    }
+    return <DesktopLayout>{children}</DesktopLayout>;
+  };
 
   return (
     <AuthAdapterProvider>
@@ -188,7 +194,8 @@ export default function ApplicationApp() {
         <TooltipProvider>
           <AgentAdapterProvider>
             <NavigationAdapterProvider>
-          <Layout>
+          {renderLayout(
+            <>
             <HintSystem />
             <SplitScreenLayout>
               <OnboardingGate>
@@ -599,7 +606,8 @@ export default function ApplicationApp() {
               </Switch>
               </OnboardingGate>
             </SplitScreenLayout>
-          </Layout>
+            </>
+          )}
             </NavigationAdapterProvider>
           </AgentAdapterProvider>
           <Toaster />
