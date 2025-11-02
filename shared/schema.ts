@@ -425,6 +425,23 @@ export const userPreferences = pgTable("user_preferences", {
 });
 
 // ============================================
+// Guided Tours & Training
+// ============================================
+
+export const tours = pgTable("tours", {
+  id: serial("id").primaryKey(),
+  roleId: integer("role_id").references(() => roles.id).notNull(),
+  roleName: varchar("role_name", { length: 100 }).notNull(),
+  roleDisplayName: varchar("role_display_name", { length: 100 }),
+  tourData: jsonb("tour_data").notNull(), // Contains steps, totalSteps, estimatedDuration, voiceScriptCount
+  status: varchar("status", { length: 50 }).default("active"), // active, draft, archived
+  version: integer("version").default(1),
+  createdBy: integer("created_by").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// ============================================
 // Essential PT Tables (Manufacturing Data)
 // ============================================
 
@@ -3324,3 +3341,12 @@ export const insertAutomationExecutionSchema = createInsertSchema(automationExec
 });
 export type InsertAutomationExecution = z.infer<typeof insertAutomationExecutionSchema>;
 export type AutomationExecution = typeof automationExecutions.$inferSelect;
+
+// Create insert schemas and types for tours
+export const insertTourSchema = createInsertSchema(tours).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true
+});
+export type InsertTour = z.infer<typeof insertTourSchema>;
+export type Tour = typeof tours.$inferSelect;
