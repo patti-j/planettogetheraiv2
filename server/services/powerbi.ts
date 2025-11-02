@@ -400,29 +400,77 @@ export class PowerBIService {
 
   // Get dataset tables (schema information) - works for all dataset types
   async getDatasetTables(accessToken: string, workspaceId: string, datasetId: string): Promise<any> {
-    // First try the REST API for push datasets
-    const tablesUrl = `https://api.powerbi.com/v1.0/myorg/groups/${workspaceId}/datasets/${datasetId}/tables`;
-
+    console.log(`📊 Getting tables for dataset ${datasetId} in workspace ${workspaceId}`);
+    
     try {
-      const response = await fetch(tablesUrl, {
-        headers: {
-          "Authorization": `Bearer ${accessToken}`,
-        },
-      });
+      // First, get dataset info to determine type
+      const datasetInfo = await this.getDatasetInfo(accessToken, workspaceId, datasetId);
+      console.log(`Dataset properties - isRefreshable: ${datasetInfo?.isRefreshable}, isEffectiveSemanticModel: ${datasetInfo?.isEffectiveSemanticModel}`);
+      
+      // Check if it's a push dataset (push datasets are NOT refreshable)
+      const isPushDataset = datasetInfo && datasetInfo.isRefreshable === false;
+      
+      if (isPushDataset) {
+        // Use REST API for push/streaming datasets
+        console.log('📌 Dataset identified as PUSH/STREAMING dataset, using REST API...');
+        const tablesUrl = `https://api.powerbi.com/v1.0/myorg/groups/${workspaceId}/datasets/${datasetId}/tables`;
+        
+        const response = await fetch(tablesUrl, {
+          headers: {
+            "Authorization": `Bearer ${accessToken}`,
+          },
+        });
 
-      if (response.ok) {
-        const data = await response.json();
-        if (data.value && data.value.length > 0) {
-          // Push dataset - return the tables
-          return data.value;
+        if (response.ok) {
+          const data = await response.json();
+          if (data.value && data.value.length > 0) {
+            console.log(`✅ REST API successful, found ${data.value.length} tables`);
+            return data.value;
+          }
         }
+        console.log('⚠️ REST API returned no tables for push dataset');
+        return [];
+      } else {
+        // Use DMV queries for regular semantic models
+        console.log('📌 Dataset identified as REGULAR semantic model, using DMV queries...');
+        const tables = await this.discoverTablesUsingDAX(accessToken, workspaceId, datasetId);
+        
+        if (tables && tables.length > 0) {
+          console.log(`✅ DMV query successful, found ${tables.length} tables`);
+          return tables;
+        }
+        
+        console.log('⚠️ DMV queries returned no tables, trying fallback methods...');
+        // Try the simpler discovery method as final fallback
+        const simpleTables = await this.discoverTablesSimple(accessToken, workspaceId, datasetId);
+        return simpleTables || [];
       }
     } catch (error) {
-      console.log('Not a push dataset, trying DAX query approach...');
+      console.error('Error getting dataset tables:', error);
+      // As a final fallback, try DAX discovery
+      return this.discoverTablesUsingDAX(accessToken, workspaceId, datasetId);
     }
+  }
 
-    // For regular datasets, use DAX to discover tables
-    return this.discoverTablesUsingDAX(accessToken, workspaceId, datasetId);
+  // Helper to get dataset info for type detection
+  private async getDatasetInfo(accessToken: string, workspaceId: string, datasetId: string): Promise<any> {
+    try {
+      const url = `https://api.powerbi.com/v1.0/myorg/groups/${workspaceId}/datasets/${datasetId}`;
+      const response = await fetch(url, {
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (response.ok) {
+        return await response.json();
+      }
+      return null;
+    } catch (error) {
+      console.error('Error getting dataset info:', error);
+      return null;
+    }
   }
 
   // Discover tables in a dataset using DMV queries (works for standard semantic models)
@@ -444,6 +492,8 @@ export class PowerBIService {
       }
     };
 
+    console.log('📊 Executing DMV query to discover tables...');
+    
     try {
       const response = await fetch(queryUrl, {
         method: 'POST',
@@ -455,28 +505,38 @@ export class PowerBIService {
       });
 
       if (!response.ok) {
-        console.log('DMV query failed, trying fallback approach...');
+        const errorText = await response.text();
+        console.log(`DMV query failed with status ${response.status}: ${errorText}`);
         // If DMV query fails, try a simpler approach
         return this.discoverTablesSimple(accessToken, workspaceId, datasetId);
       }
 
       const result = await response.json();
+      console.log('DMV query response structure:', JSON.stringify(result, null, 2).substring(0, 500));
       
       if (result.results && result.results[0] && result.results[0].tables && result.results[0].tables[0]) {
         const tablesData = result.results[0].tables[0].rows || [];
+        console.log(`Found ${tablesData.length} tables from DMV query`);
         
         // Filter out hidden and private tables, get visible tables only
         const visibleTables = tablesData.filter((table: any) => {
-          // DMV results come with bracket notation
-          const isHidden = table["[IsHidden]"] || table.IsHidden;
-          const isPrivate = table["[IsPrivate]"] || table.IsPrivate;
-          return !isHidden && !isPrivate;
+          // DMV results might come with bracket notation or without
+          const tableName = table["[Name]"] || table.Name || table["Name"];
+          const isHidden = table["[IsHidden]"] || table.IsHidden || table["IsHidden"];
+          const isPrivate = table["[IsPrivate]"] || table.IsPrivate || table["IsPrivate"];
+          
+          console.log(`Table: ${tableName}, Hidden: ${isHidden}, Private: ${isPrivate}`);
+          
+          // Include tables that are not explicitly hidden or private
+          return tableName && !isHidden && !isPrivate;
         });
+
+        console.log(`${visibleTables.length} visible tables after filtering`);
 
         // For each table, get column information using DMV or sample query
         const tablesWithColumns = [];
         for (const table of visibleTables) {
-          const tableName = table["[Name]"] || table.Name;
+          const tableName = table["[Name]"] || table.Name || table["Name"];
           if (tableName) {
             // Try to get columns using DMV first
             const columns = await this.getTableColumnsUsingDMV(accessToken, workspaceId, datasetId, tableName);
@@ -489,10 +549,12 @@ export class PowerBIService {
         }
 
         if (tablesWithColumns.length > 0) {
+          console.log(`✅ Successfully discovered ${tablesWithColumns.length} tables with columns`);
           return tablesWithColumns;
         }
       }
 
+      console.log('No tables found using DMV, trying simple discovery...');
       // If no tables found using DMV, try simple discovery
       return this.discoverTablesSimple(accessToken, workspaceId, datasetId);
     } catch (error) {
@@ -505,6 +567,8 @@ export class PowerBIService {
   // Get columns for a table using DMV query
   private async getTableColumnsUsingDMV(accessToken: string, workspaceId: string, datasetId: string, tableName: string): Promise<any[]> {
     const queryUrl = `https://api.powerbi.com/v1.0/myorg/groups/${workspaceId}/datasets/${datasetId}/executeQueries`;
+    
+    console.log(`📋 Getting columns for table: ${tableName}`);
     
     try {
       // DMV query to get columns for a specific table
@@ -527,14 +591,23 @@ export class PowerBIService {
         
         if (result.results && result.results[0] && result.results[0].tables && result.results[0].tables[0]) {
           const columnsData = result.results[0].tables[0].rows || [];
+          console.log(`Found ${columnsData.length} columns for table ${tableName}`);
           
           // Filter out hidden columns and format
-          return columnsData
-            .filter((col: any) => !(col["[IsHidden]"] || col.IsHidden))
+          const visibleColumns = columnsData
+            .filter((col: any) => {
+              const colName = col["[Name]"] || col.Name || col["Name"];
+              const isHidden = col["[IsHidden]"] || col.IsHidden || col["IsHidden"];
+              return colName && !isHidden;
+            })
             .map((col: any) => ({
-              name: col["[Name]"] || col.Name,
-              dataType: col["[DataType]"] || col.DataType || 'Auto'
+              name: col["[Name]"] || col.Name || col["Name"],
+              dataType: col["[DataType]"] || col.DataType || col["DataType"] || 'Auto'
             }));
+          
+          if (visibleColumns.length > 0) {
+            return visibleColumns;
+          }
         }
       }
     } catch (error) {
@@ -542,6 +615,7 @@ export class PowerBIService {
     }
 
     // Fallback to sample query approach
+    console.log(`Falling back to sample query for columns of ${tableName}`);
     return this.getTableColumns(accessToken, workspaceId, datasetId, tableName);
   }
 
