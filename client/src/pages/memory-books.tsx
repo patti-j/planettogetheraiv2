@@ -28,7 +28,6 @@ const AI_AGENTS = [
 
 export default function MemoryBooksPage() {
   const [selectedBook, setSelectedBook] = useState<Playbook | null>(null);
-  const [selectedAgent, setSelectedAgent] = useState<string>("all");
   const [createBookOpen, setCreateBookOpen] = useState(false);
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -39,10 +38,11 @@ export default function MemoryBooksPage() {
     retry: false,
   });
 
-  // Filter playbooks by agent
-  const playbooks = selectedAgent === "all" 
-    ? allPlaybooks 
-    : allPlaybooks.filter((book: Playbook) => book.agentId === selectedAgent);
+  // Group playbooks by agent
+  const playbooksByAgent = AI_AGENTS.map(agent => ({
+    agent,
+    playbooks: allPlaybooks.filter((book: Playbook) => book.agentId === agent.id)
+  })).filter(group => group.playbooks.length > 0); // Only show agents that have playbooks
 
   // Form validation schema
   const formSchema = insertPlaybookSchema.extend({
@@ -109,30 +109,14 @@ export default function MemoryBooksPage() {
           </p>
         </div>
         
-        <div className="flex items-center gap-3">
-          <div className="w-56">
-            <Select value={selectedAgent} onValueChange={setSelectedAgent}>
-              <SelectTrigger>
-                <SelectValue placeholder="Filter by agent" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Agents</SelectItem>
-                {AI_AGENTS.map((agent) => (
-                  <SelectItem key={agent.id} value={agent.id}>
-                    {agent.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        
-        <Dialog open={createBookOpen} onOpenChange={setCreateBookOpen}>
-          <DialogTrigger asChild>
-            <Button data-testid="button-create-playbook">
-              <Plus className="h-4 w-4 mr-2" />
-              Create Playbook
-            </Button>
-          </DialogTrigger>
+        <div>
+          <Dialog open={createBookOpen} onOpenChange={setCreateBookOpen}>
+            <DialogTrigger asChild>
+              <Button data-testid="button-create-playbook">
+                <Plus className="h-4 w-4 mr-2" />
+                Create Playbook
+              </Button>
+            </DialogTrigger>
           <DialogContent className="max-w-2xl">
             <DialogHeader>
               <DialogTitle>Create New Playbook</DialogTitle>
@@ -235,51 +219,56 @@ export default function MemoryBooksPage() {
         <div className="lg:col-span-1">
           <Card>
             <CardHeader>
-              <CardTitle className="text-lg">Playbooks</CardTitle>
-              <CardDescription>Select a playbook to view its entries</CardDescription>
+              <CardTitle className="text-lg">Playbooks by Agent</CardTitle>
+              <CardDescription>Organized by AI agent - select a playbook to view details</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-2">
+              <div className="space-y-4">
                 {booksLoading ? (
                   <div className="text-sm text-gray-500">Loading playbooks...</div>
-                ) : playbooks.length === 0 ? (
+                ) : playbooksByAgent.length === 0 ? (
                   <div className="text-sm text-gray-500">
-                    {selectedAgent === "all" ? "No playbooks found" : `No playbooks for ${AI_AGENTS.find(a => a.id === selectedAgent)?.name}`}
+                    No playbooks found. Create your first playbook to get started!
                   </div>
                 ) : (
-                  playbooks.map((book: Playbook) => {
-                    const agent = AI_AGENTS.find(a => a.id === book.agentId);
-                    return (
-                      <div
-                        key={book.id}
-                        className={`p-3 border rounded-lg cursor-pointer transition-colors ${
-                          selectedBook?.id === book.id
-                            ? "border-purple-500 bg-purple-50 dark:bg-purple-900/20"
-                            : "border-gray-200 hover:border-gray-300 dark:border-gray-700"
-                        }`}
-                        onClick={() => setSelectedBook(book)}
-                        data-testid={`playbook-item-${book.id}`}
-                      >
-                        <div className="font-medium text-sm">{book.title}</div>
-                        {book.description && (
-                          <div className="text-xs text-gray-500 mt-1">{book.description}</div>
-                        )}
-                        <div className="flex items-center gap-2 mt-2 flex-wrap">
-                          {agent && (
-                            <Badge variant="default" className="text-xs bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300">
-                              <Bot className="h-3 w-3 mr-1" />
-                              {agent.name}
-                            </Badge>
-                          )}
-                          {book.category && (
-                            <Badge variant="outline" className="text-xs">
-                              {book.category}
-                            </Badge>
-                          )}
+                  playbooksByAgent.map(({ agent, playbooks }) => (
+                    <div key={agent.id} className="space-y-2">
+                      {/* Agent Header */}
+                      <div className="flex items-center gap-2 px-2 py-1 bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20 rounded-md border-l-4 border-purple-500">
+                        <Bot className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+                        <div>
+                          <h3 className="font-semibold text-sm text-purple-900 dark:text-purple-200">{agent.name}</h3>
+                          <p className="text-xs text-purple-700 dark:text-purple-300">{playbooks.length} playbook{playbooks.length !== 1 ? 's' : ''}</p>
                         </div>
                       </div>
-                    );
-                  })
+                      
+                      {/* Playbooks for this agent */}
+                      {playbooks.map((book: Playbook) => (
+                        <div
+                          key={book.id}
+                          className={`p-3 border rounded-lg cursor-pointer transition-colors ml-4 ${
+                            selectedBook?.id === book.id
+                              ? "border-purple-500 bg-purple-50 dark:bg-purple-900/20"
+                              : "border-gray-200 hover:border-gray-300 dark:border-gray-700"
+                          }`}
+                          onClick={() => setSelectedBook(book)}
+                          data-testid={`playbook-item-${book.id}`}
+                        >
+                          <div className="font-medium text-sm">{book.title}</div>
+                          {book.description && (
+                            <div className="text-xs text-gray-500 mt-1">{book.description}</div>
+                          )}
+                          <div className="flex items-center gap-2 mt-2 flex-wrap">
+                            {book.category && (
+                              <Badge variant="outline" className="text-xs">
+                                {book.category}
+                              </Badge>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ))
                 )}
               </div>
             </CardContent>
