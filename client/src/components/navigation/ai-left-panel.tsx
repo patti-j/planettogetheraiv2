@@ -2416,11 +2416,8 @@ function AgentActivityCards() {
   // Manual refresh mutation
   const manualRefresh = useMutation({
     mutationFn: async () => {
-      const response = await fetch('/api/ai/recommendations?forceAnalyze=true', {
-        headers: { 'Content-Type': 'application/json' },
-      });
-      if (!response.ok) throw new Error('Failed to analyze');
-      return response.json();
+      // Use apiRequest which handles authentication
+      return apiRequest('GET', '/api/ai/recommendations?forceAnalyze=true');
     },
     onSuccess: () => {
       toast({
@@ -2618,11 +2615,8 @@ function AIAnalysisStatus() {
   // Manual refresh mutation
   const manualRefresh = useMutation({
     mutationFn: async () => {
-      const response = await fetch('/api/ai/recommendations?forceAnalyze=true', {
-        headers: { 'Content-Type': 'application/json' },
-      });
-      if (!response.ok) throw new Error('Failed to analyze');
-      return response.json();
+      // Use apiRequest which handles authentication
+      return apiRequest('GET', '/api/ai/recommendations?forceAnalyze=true');
     },
     onSuccess: () => {
       toast({
