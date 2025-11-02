@@ -180,26 +180,13 @@ export default function ApplicationApp() {
     return null;
   }
 
-  // Render layout conditionally without dynamic component reference to prevent unmounting
-  const renderLayout = (children: React.ReactNode) => {
-    if (isMobile) {
-      return <MobileLayout>{children}</MobileLayout>;
-    }
-    return <DesktopLayout>{children}</DesktopLayout>;
-  };
-
-  return (
-    <AuthAdapterProvider>
-      <ThemeAdapterProvider>
-        <TooltipProvider>
-          <AgentAdapterProvider>
-            <NavigationAdapterProvider>
-          {renderLayout(
-            <>
-            <HintSystem />
-            <SplitScreenLayout>
-              <OnboardingGate>
-              <Switch>
+  // Define the app content once to prevent remounting
+  const appContent = (
+    <>
+      <HintSystem />
+      <SplitScreenLayout>
+        <OnboardingGate>
+          <Switch>
               {/* Demo and Test Pages */}
               {/* <Route path="/demo" component={DemoPage} /> */}
               <Route path="/onboarding" component={Onboarding} />
@@ -603,11 +590,23 @@ export default function ApplicationApp() {
                 }}
               </Route>
               */}
-              </Switch>
-              </OnboardingGate>
-            </SplitScreenLayout>
-            </>
-          )}
+          </Switch>
+        </OnboardingGate>
+      </SplitScreenLayout>
+    </>
+  );
+
+  return (
+    <AuthAdapterProvider>
+      <ThemeAdapterProvider>
+        <TooltipProvider>
+          <AgentAdapterProvider>
+            <NavigationAdapterProvider>
+              {isMobile ? (
+                <MobileLayout>{appContent}</MobileLayout>
+              ) : (
+                <DesktopLayout>{appContent}</DesktopLayout>
+              )}
             </NavigationAdapterProvider>
           </AgentAdapterProvider>
           <Toaster />
