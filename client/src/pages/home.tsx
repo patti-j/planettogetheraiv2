@@ -365,6 +365,35 @@ export default function HomePage() {
     }
   };
 
+  // Show minimal skeleton only on very first load to prevent white screen
+  // Once data starts flowing, show the real content (even if still loading)
+  const isInitialLoad = isLoadingRecommendations && !aiRecommendations.length && 
+                        isLoadingMetrics && !dashboardMetrics &&
+                        isLoadingAlerts && !alerts.length;
+
+  if (isInitialLoad && !dashboards?.length) {
+    return (
+      <div className="flex flex-col h-full bg-background">
+        <div className={`border-b ${isMobile ? 'p-4' : 'p-6'}`}>
+          <div className="flex items-center gap-3 animate-pulse">
+            <div className="h-5 bg-gray-200 dark:bg-gray-700 rounded w-24"></div>
+            <div className="h-10 bg-gray-200 dark:bg-gray-700 rounded flex-1 max-w-xs"></div>
+          </div>
+        </div>
+        <div className={`flex-1 ${isMobile ? 'p-4' : 'p-6'}`}>
+          <div className="space-y-4 animate-pulse">
+            <div className="h-40 bg-gray-100 dark:bg-gray-800 rounded"></div>
+            <div className="h-12 bg-gray-100 dark:bg-gray-800 rounded"></div>
+            <div className="space-y-3">
+              <div className="h-24 bg-gray-100 dark:bg-gray-800 rounded"></div>
+              <div className="h-24 bg-gray-100 dark:bg-gray-800 rounded"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col h-full bg-background">
       {/* Header */}
