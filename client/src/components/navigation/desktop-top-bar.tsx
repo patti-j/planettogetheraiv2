@@ -326,39 +326,58 @@ export function DesktopTopBar() {
       </DropdownMenu>
 
       {/* User Profile/Settings */}
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button variant="ghost" size="icon" className="rounded-full p-0 w-9 h-9">
-            <Avatar className="w-9 h-9 border-2 border-muted-foreground/20">
-              <AvatarImage src={(user as any)?.avatar || undefined} />
-              <AvatarFallback className="text-xs bg-muted border border-border">
-                {user?.firstName?.[0]?.toUpperCase() || 'U'}
-                {user?.lastName?.[0]?.toUpperCase() || ''}
-              </AvatarFallback>
-            </Avatar>
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-[200px]">
-          <DropdownMenuLabel>
-            <div className="flex flex-col">
-              <span>{user?.firstName} {user?.lastName}</span>
-              <span className="text-xs text-muted-foreground font-normal">{user?.email}</span>
-            </div>
-          </DropdownMenuLabel>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem onClick={() => setLocation('/profile')}>
-            Profile
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => setLocation('/settings')}>
-            <Settings className="w-4 h-4 mr-2" />
-            Settings
-          </DropdownMenuItem>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem onClick={logout} className="text-red-600">
-            Log out
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
+      {user ? (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="icon" className="rounded-full p-0 w-9 h-9">
+              <Avatar className="w-9 h-9 border-2 border-muted-foreground/20">
+                <AvatarImage src={(user as any)?.avatar || undefined} />
+                <AvatarFallback className="text-xs bg-muted border border-border">
+                  {user.firstName?.[0]?.toUpperCase() || 'U'}
+                  {user.lastName?.[0]?.toUpperCase() || ''}
+                </AvatarFallback>
+              </Avatar>
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-[200px]">
+            <DropdownMenuLabel>
+              <div className="flex flex-col">
+                <span>{user.firstName} {user.lastName}</span>
+                <span className="text-xs text-muted-foreground font-normal">{user.email}</span>
+              </div>
+            </DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={() => setLocation('/profile')}>
+              Profile
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setLocation('/settings')}>
+              <Settings className="w-4 h-4 mr-2" />
+              Settings
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={logout} className="text-red-600">
+              Log out
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      ) : (
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div className="rounded-full p-0 w-9 h-9 flex items-center justify-center">
+                <Avatar className="w-9 h-9 border-2 border-muted-foreground/20 animate-pulse">
+                  <AvatarFallback className="text-xs bg-muted border border-border">
+                    <User className="w-4 h-4" />
+                  </AvatarFallback>
+                </Avatar>
+              </div>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Loading user...</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      )}
 
       {/* Command Palette Dialog */}
       <CommandDialog open={commandOpen} onOpenChange={setCommandOpen}>

@@ -47,28 +47,34 @@ export function SplitScreenProvider({ children }: SplitScreenProviderProps) {
 
   // New method for handling navigation that might trigger pane selection
   const handleNavigation = (path: string, label: string) => {
-    // Save current page before navigating to agent pages (for back button)
-    const agentPages = ['/canvas', '/playbooks', '/agent-history', '/ai-insights'];
-    if (agentPages.includes(path)) {
-      const currentPath = window.location.pathname;
-      if (!agentPages.includes(currentPath)) {
-        sessionStorage.setItem('previousPage', currentPath);
-      }
-    }
-    
-    if (splitMode !== 'none') {
-      // Check if this path is already displayed in either pane
-      if (path === primaryPage || path === secondaryPage) {
-        // Already displayed, just navigate normally using React router
-        setLocation(path);
-        return;
+    try {
+      // Save current page before navigating to agent pages (for back button)
+      const agentPages = ['/canvas', '/playbooks', '/agent-history', '/ai-insights'];
+      if (agentPages.includes(path)) {
+        const currentPath = window.location.pathname;
+        if (!agentPages.includes(currentPath)) {
+          sessionStorage.setItem('previousPage', currentPath);
+        }
       }
       
-      // New page in split mode - show pane selector WITHOUT navigating
-      setPendingNavigation({ path, label });
-      setShowPaneSelector(true);
-    } else {
-      // Single pane mode - navigate normally using React router
+      if (splitMode !== 'none') {
+        // Check if this path is already displayed in either pane
+        if (path === primaryPage || path === secondaryPage) {
+          // Already displayed, just navigate normally using React router
+          setLocation(path);
+          return;
+        }
+        
+        // New page in split mode - show pane selector WITHOUT navigating
+        setPendingNavigation({ path, label });
+        setShowPaneSelector(true);
+      } else {
+        // Single pane mode - navigate normally using React router
+        setLocation(path);
+      }
+    } catch (error) {
+      console.error('Navigation error:', error);
+      // If navigation fails, try simple setLocation as fallback
       setLocation(path);
     }
   };
