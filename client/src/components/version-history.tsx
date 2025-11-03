@@ -105,7 +105,7 @@ export function VersionHistory({ scheduleId, currentVersionId }: VersionHistoryP
 
   // Fetch version comparison
   const { data: comparisonData, isLoading: isLoadingComparison } = useQuery({
-    queryKey: ['/api/schedules', scheduleId, 'versions', compareVersions.base, 'compare', compareVersions.compare'],
+    queryKey: ['/api/schedules', scheduleId, 'versions', compareVersions.base, 'compare', compareVersions.compare],
     enabled: !!compareVersions.base && !!compareVersions.compare
   });
   

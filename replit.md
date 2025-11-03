@@ -19,6 +19,7 @@ Note on concurrent work:
 - If continuing previous work, briefly mention what was done before
 
 ## Recent Updates (November 3, 2025)
+- **Version History Component Fix**: Fixed TypeError when accessing version history by adding null checks for changeType property and creating mock API endpoints for version data
 - **Algorithm Execution Fix**: Fixed Production Scheduling Agent algorithm execution by updating API endpoint to check AlgorithmRegistry first instead of requiring database entries
 - **Cleaned Up Non-Working Algorithms**: Removed stubs for Resource Leveling and Critical Path - only ASAP and ALAP are functional
 - **Fixed Database Column Names**: Corrected `cycle_duration_hours` to `cycle_hrs` in Max AI service queries
