@@ -70,7 +70,11 @@ export const navigationGroups: NavigationGroup[] = [
       
       // 6. Constraints and optimization
       { icon: AlertCircle, label: "Constraints Management", href: "/constraints", feature: "schedule", action: "view", color: "bg-orange-600" },
-      { icon: Sparkles, label: "Order Optimization", href: "/order-optimization", feature: "scheduling-optimizer", action: "view", color: "bg-amber-500" }
+      { icon: Sparkles, label: "Order Optimization", href: "/order-optimization", feature: "scheduling-optimizer", action: "view", color: "bg-amber-500" },
+      { icon: Sparkles, label: "Scheduling Optimizer", href: "/scheduling-optimizer", feature: "scheduling-optimizer", action: "view", color: "bg-purple-600" },
+      { icon: Settings, label: "Schedule Management", href: "/schedule-management", feature: "schedule", action: "view", color: "bg-gray-600" },
+      { icon: Target, label: "Theory of Constraints", href: "/theory-of-constraints", feature: "schedule", action: "view", color: "bg-blue-700" },
+      { icon: Target, label: "Demand Management", href: "/demand-management", feature: "demand-planning", action: "view", color: "bg-teal-600" }
     ]
   },
   {
@@ -94,7 +98,9 @@ export const navigationGroups: NavigationGroup[] = [
       { icon: GitBranch, label: "AI Scenario Creator", href: "/ai-scenario-creator", feature: "systems-management", action: "view", color: "bg-gradient-to-r from-blue-500 to-purple-600" },
       { icon: BookOpen, label: "Playbooks", href: "/playbooks", feature: "systems-management", action: "view", color: "bg-gradient-to-r from-green-500 to-blue-600" },
       { icon: History, label: "Agent History", href: "/agent-history", feature: "systems-management", action: "view", color: "bg-gradient-to-r from-gray-500 to-blue-600" },
-      { icon: Monitor, label: "Agent Monitoring", href: "/agent-monitoring", feature: "systems-management", action: "view", color: "bg-gradient-to-r from-purple-500 to-indigo-600" }
+      { icon: Monitor, label: "Agent Monitoring", href: "/agent-monitoring", feature: "systems-management", action: "view", color: "bg-gradient-to-r from-purple-500 to-indigo-600" },
+      { icon: Settings, label: "Automation Rules", href: "/automation-rules", feature: "workflows", action: "view", color: "bg-gradient-to-r from-blue-500 to-purple-600" },
+      { icon: Code, label: "Algorithm Management", href: "/algorithm-management", feature: "systems-management", action: "view", color: "bg-gradient-to-r from-indigo-500 to-purple-600" }
     ]
   },
   {
@@ -113,7 +119,10 @@ export const navigationGroups: NavigationGroup[] = [
       { icon: Database, label: "System Integration", href: "/systems-integration", feature: "systems-management", action: "view", color: "bg-stone-500" },
       { icon: ArrowRightLeft, label: "Data Relationships", href: "/data-relationships", feature: "systems-management", action: "view", color: "bg-blue-600" },
       { icon: Network, label: "Data Map View", href: "/data-map", feature: "systems-management", action: "view", color: "bg-purple-600" },
-      { icon: Shield, label: "Data Validation", href: "/data-validation", feature: "systems-management", action: "view", color: "bg-blue-600" }
+      { icon: Shield, label: "Data Validation", href: "/data-validation", feature: "systems-management", action: "view", color: "bg-blue-600" },
+      { icon: Code, label: "API Integrations", href: "/api-integrations", feature: "systems-management", action: "view", color: "bg-violet-600" },
+      { icon: Network, label: "Integrations", href: "/integrations", feature: "systems-management", action: "view", color: "bg-blue-700" },
+      { icon: Upload, label: "ERP Import", href: "/erp-import", feature: "data-import", action: "view", color: "bg-green-700" }
     ]
   },
   {
@@ -146,7 +155,10 @@ export const navigationGroups: NavigationGroup[] = [
       { icon: Code, label: "Extension Studio", href: "/extension-studio", feature: "systems-management", action: "view", color: "bg-violet-500" },
       { icon: FileSearch, label: "Logs", href: "/error-logs", feature: "systems-management", action: "view", color: "bg-red-500" },
       { icon: AlertTriangle, label: "Constraints Management", href: "/constraints", feature: "systems-management", action: "view", color: "bg-orange-600" },
-      { icon: Settings, label: "Tenant Administration", href: "/tenant-admin", feature: "systems-management", action: "view", color: "bg-purple-600" }
+      { icon: Settings, label: "Tenant Administration", href: "/tenant-admin", feature: "systems-management", action: "view", color: "bg-purple-600" },
+      { icon: Shield, label: "Role Management", href: "/role-management", feature: "user-management", action: "view", color: "bg-indigo-600" },
+      { icon: UserCheck, label: "User Role Assignments", href: "/user-role-assignments", feature: "user-management", action: "view", color: "bg-teal-600" },
+      { icon: Settings, label: "Settings", href: "/settings", feature: "systems-management", action: "view", color: "bg-slate-600" }
     ]
   },
   {
@@ -160,7 +172,8 @@ export const navigationGroups: NavigationGroup[] = [
       { icon: GraduationCap, label: "Training", href: "/training", feature: "training", action: "view", color: "bg-cyan-500", requiresOnboarding: false },
       { icon: Building, label: "Industry Templates", href: "/industry-templates", feature: "systems-management", action: "view", color: "bg-cyan-600" },
       { icon: Presentation, label: "Presentation System", href: "/presentation-system", feature: "training", action: "view", color: "bg-blue-700" },
-      { icon: PlayCircle, label: "Take a Guided Tour", href: "/guided-tour", feature: "training", action: "view", color: "bg-blue-500", requiresOnboarding: false, isSpecial: true }
+      { icon: PlayCircle, label: "Take a Guided Tour", href: "/guided-tour", feature: "training", action: "view", color: "bg-blue-500", requiresOnboarding: false, isSpecial: true },
+      { icon: BookOpen, label: "Help", href: "/help", feature: "training", action: "view", color: "bg-blue-600" }
     ]
   },
   {
@@ -173,7 +186,10 @@ export const navigationGroups: NavigationGroup[] = [
       { icon: MessageCircle, label: "Chat", href: "/chat", feature: "feedback", action: "view", color: "bg-green-600" },
       { icon: Columns3, label: "Boards", href: "/boards", feature: "boards", action: "view", color: "bg-blue-700" },
       { icon: Factory, label: "Visual Factory", href: "/visual-factory", feature: "visual-factory", action: "view", color: "bg-indigo-500" },
-      { icon: MessageSquare, label: "Feedback", href: "/feedback", feature: "feedback", action: "view", color: "bg-orange-600" }
+      { icon: MessageSquare, label: "Feedback", href: "/feedback", feature: "feedback", action: "view", color: "bg-orange-600" },
+      { icon: MessageCircle, label: "Inbox", href: "/inbox", feature: "feedback", action: "view", color: "bg-blue-500" },
+      { icon: FileText, label: "Tasks", href: "/tasks", feature: "boards", action: "view", color: "bg-purple-600" },
+      { icon: MessageSquare, label: "SMS", href: "/sms", feature: "feedback", action: "view", color: "bg-teal-600" }
     ]
   }
 ];
