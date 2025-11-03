@@ -34,7 +34,18 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { FileText, Search, Download, Calendar, Database, Columns3, X, RefreshCw, AlertCircle, Eye, EyeOff, ChevronLeft, ChevronRight, Filter } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Switch } from "@/components/ui/switch";
+import { FileText, Search, Download, Calendar, Database, Columns3, X, RefreshCw, AlertCircle, Eye, EyeOff, ChevronLeft, ChevronRight, Filter, Check, BarChart3, GripVertical, Settings, FileInput, FileOutput } from "lucide-react";
 import { format } from "date-fns";
 
 interface SQLTable {
@@ -73,6 +84,17 @@ export default function PaginatedReports() {
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
   const [selectedColumns, setSelectedColumns] = useState<string[]>([]);
   const [columnFilters, setColumnFilters] = useState<Record<string, string>>({});
+  
+  // Export settings
+  const [showExportDialog, setShowExportDialog] = useState(false);
+  const [exportFormat, setExportFormat] = useState<"csv" | "excel" | "pdf">("excel");
+  const [exportHeader, setExportHeader] = useState("");
+  const [exportFooter, setExportFooter] = useState("");
+  const [includeTimestamp, setIncludeTimestamp] = useState(true);
+  
+  // Column ordering
+  const [columnOrder, setColumnOrder] = useState<string[]>([]);
+  const [isDraggingColumn, setIsDraggingColumn] = useState<string | null>(null);
 
   // Power BI authentication
   const { isAuthenticated, authenticateAuto } = usePowerBIAuth();
@@ -284,6 +306,122 @@ export default function PaginatedReports() {
     setCurrentPage(1);
   };
 
+  // Initialize column order when schema is loaded
+  useEffect(() => {
+    if (tableSchema && tableSchema.length > 0 && columnOrder.length === 0) {
+      const initialOrder = tableSchema.map(col => col.columnName);
+      setColumnOrder(initialOrder);
+      setSelectedColumns(initialOrder);
+    }
+  }, [tableSchema]);
+
+  // Reorder columns
+  const moveColumn = (fromIndex: number, toIndex: number) => {
+    const newOrder = [...columnOrder];
+    const [movedColumn] = newOrder.splice(fromIndex, 1);
+    newOrder.splice(toIndex, 0, movedColumn);
+    setColumnOrder(newOrder);
+  };
+
+  // Export handler
+  const handleExport = async () => {
+    if (!data?.items || data.items.length === 0) {
+      alert("No data to export");
+      return;
+    }
+
+    const columnsToExport = columnOrder.filter(col => selectedColumns.includes(col));
+    
+    // Prepare export data with ordered columns
+    const exportData = filteredData.map(row => {
+      const orderedRow: any = {};
+      columnsToExport.forEach(col => {
+        orderedRow[col] = row[col];
+      });
+      return orderedRow;
+    });
+
+    // Add header and footer
+    const exportContent = {
+      header: exportHeader,
+      footer: exportFooter,
+      timestamp: includeTimestamp ? new Date().toLocaleString() : null,
+      tableName: sourceType === 'sql' 
+        ? `${selectedTable?.schemaName}.${selectedTable?.tableName}`
+        : selectedPowerBITable,
+      data: exportData,
+      columns: columnsToExport
+    };
+
+    // Convert to desired format
+    if (exportFormat === 'csv') {
+      const csv = convertToCSV(exportContent);
+      downloadFile(csv, `report_${Date.now()}.csv`, 'text/csv');
+    } else if (exportFormat === 'excel') {
+      // For Excel, we'd need to import xlsx library
+      alert("Excel export will be implemented with xlsx library");
+    } else if (exportFormat === 'pdf') {
+      // For PDF, we'd need to implement with jsPDF
+      alert("PDF export will be implemented with jsPDF library");
+    }
+    
+    setShowExportDialog(false);
+  };
+
+  const convertToCSV = (exportContent: any) => {
+    let csv = '';
+    
+    // Add header if provided
+    if (exportContent.header) {
+      csv += exportContent.header + '\n\n';
+    }
+    
+    // Add timestamp if enabled
+    if (exportContent.timestamp) {
+      csv += `Generated: ${exportContent.timestamp}\n`;
+      csv += `Table: ${exportContent.tableName}\n\n`;
+    }
+    
+    // Add column headers
+    csv += exportContent.columns.join(',') + '\n';
+    
+    // Add data rows
+    exportContent.data.forEach((row: any) => {
+      const values = exportContent.columns.map((col: string) => {
+        const val = row[col];
+        // Escape commas and quotes in CSV
+        if (val !== null && val !== undefined) {
+          const strVal = String(val);
+          if (strVal.includes(',') || strVal.includes('"') || strVal.includes('\n')) {
+            return `"${strVal.replace(/"/g, '""')}"`;
+          }
+          return strVal;
+        }
+        return '';
+      });
+      csv += values.join(',') + '\n';
+    });
+    
+    // Add footer if provided
+    if (exportContent.footer) {
+      csv += '\n' + exportContent.footer;
+    }
+    
+    return csv;
+  };
+
+  const downloadFile = (content: string, filename: string, mimeType: string) => {
+    const blob = new Blob([content], { type: mimeType });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
   const handleSearch = (value: string) => {
     setSearchTerm(value);
     setCurrentPage(1);
@@ -438,13 +576,20 @@ export default function PaginatedReports() {
               </p>
             </div>
           </div>
-          <Button variant="outline" data-testid="button-export">
-            <Download className="w-4 h-4 mr-2" />
-            Export
-          </Button>
+          <div className="flex gap-2">
+            <Button 
+              variant="outline" 
+              onClick={() => setShowExportDialog(true)}
+              disabled={!data?.items || data.items.length === 0}
+              data-testid="button-export"
+            >
+              <Download className="w-4 h-4 mr-2" />
+              Export
+            </Button>
+          </div>
         </div>
 
-        {/* Source Type Selector */}
+        {/* Source Type Selector - Big Tiles */}
         <Card>
           <CardHeader>
             <CardTitle className="text-lg flex items-center gap-2">
@@ -454,20 +599,62 @@ export default function PaginatedReports() {
             <CardDescription>Choose between Analytics SQL Database or Power BI Datasets</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="max-w-md">
-              <Label htmlFor="source-select">Data Source</Label>
-              <Select
-                value={sourceType || ""}
-                onValueChange={(value) => handleSourceTypeChange(value as SourceType)}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-3xl">
+              {/* SQL Database Tile */}
+              <button
+                onClick={() => handleSourceTypeChange('sql')}
+                className={`relative p-6 rounded-lg border-2 transition-all cursor-pointer hover:shadow-lg ${
+                  sourceType === 'sql'
+                    ? 'border-primary bg-primary/5 shadow-md'
+                    : 'border-border hover:border-primary/50'
+                }`}
+                data-testid="button-select-sql"
               >
-                <SelectTrigger id="source-select" data-testid="select-source-type">
-                  <SelectValue placeholder="Select a data source..." />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="sql">Analytics SQL Database</SelectItem>
-                  <SelectItem value="powerbi">Power BI Datasets</SelectItem>
-                </SelectContent>
-              </Select>
+                {sourceType === 'sql' && (
+                  <div className="absolute top-3 right-3">
+                    <Check className="w-5 h-5 text-primary" />
+                  </div>
+                )}
+                <div className="flex flex-col items-center text-center space-y-3">
+                  <div className="w-16 h-16 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center">
+                    <Database className="w-8 h-8 text-blue-600 dark:text-blue-400" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-lg">Analytics SQL Database</h3>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Connect to SQL Server tables for direct data access
+                    </p>
+                  </div>
+                </div>
+              </button>
+
+              {/* Power BI Tile */}
+              <button
+                onClick={() => handleSourceTypeChange('powerbi')}
+                className={`relative p-6 rounded-lg border-2 transition-all cursor-pointer hover:shadow-lg ${
+                  sourceType === 'powerbi'
+                    ? 'border-primary bg-primary/5 shadow-md'
+                    : 'border-border hover:border-primary/50'
+                }`}
+                data-testid="button-select-powerbi"
+              >
+                {sourceType === 'powerbi' && (
+                  <div className="absolute top-3 right-3">
+                    <Check className="w-5 h-5 text-primary" />
+                  </div>
+                )}
+                <div className="flex flex-col items-center text-center space-y-3">
+                  <div className="w-16 h-16 bg-yellow-100 dark:bg-yellow-900/30 rounded-full flex items-center justify-center">
+                    <BarChart3 className="w-8 h-8 text-yellow-600 dark:text-yellow-400" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-lg">Power BI Datasets</h3>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Access semantic models from your Power BI workspaces
+                    </p>
+                  </div>
+                </div>
+              </button>
             </div>
           </CardContent>
         </Card>
@@ -953,6 +1140,130 @@ export default function PaginatedReports() {
           </Card>
         )}
       </div>
+
+      {/* Export Dialog */}
+      <Dialog open={showExportDialog} onOpenChange={setShowExportDialog}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Export Report</DialogTitle>
+            <DialogDescription>
+              Configure your export settings including headers, footers, and column order
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-6 py-4">
+            {/* Export Format */}
+            <div className="space-y-2">
+              <Label>Export Format</Label>
+              <RadioGroup value={exportFormat} onValueChange={(value: any) => setExportFormat(value)}>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="csv" id="csv" />
+                  <Label htmlFor="csv" className="font-normal">CSV (Comma Separated Values)</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="excel" id="excel" />
+                  <Label htmlFor="excel" className="font-normal">Excel Spreadsheet (.xlsx)</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="pdf" id="pdf" />
+                  <Label htmlFor="pdf" className="font-normal">PDF Document</Label>
+                </div>
+              </RadioGroup>
+            </div>
+
+            {/* Header Text */}
+            <div className="space-y-2">
+              <Label htmlFor="export-header">
+                <FileInput className="w-4 h-4 inline mr-2" />
+                Report Header (Optional)
+              </Label>
+              <Textarea
+                id="export-header"
+                value={exportHeader}
+                onChange={(e) => setExportHeader(e.target.value)}
+                placeholder="Enter a custom header for your report (e.g., company name, report title)"
+                className="resize-none"
+                rows={3}
+              />
+            </div>
+
+            {/* Footer Text */}
+            <div className="space-y-2">
+              <Label htmlFor="export-footer">
+                <FileOutput className="w-4 h-4 inline mr-2" />
+                Report Footer (Optional)
+              </Label>
+              <Textarea
+                id="export-footer"
+                value={exportFooter}
+                onChange={(e) => setExportFooter(e.target.value)}
+                placeholder="Enter a custom footer for your report (e.g., confidentiality notice, contact info)"
+                className="resize-none"
+                rows={3}
+              />
+            </div>
+
+            {/* Include Timestamp */}
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5">
+                <Label htmlFor="include-timestamp">Include Timestamp</Label>
+                <p className="text-sm text-muted-foreground">Add generation date/time to the export</p>
+              </div>
+              <Switch
+                id="include-timestamp"
+                checked={includeTimestamp}
+                onCheckedChange={setIncludeTimestamp}
+              />
+            </div>
+
+            {/* Column Order */}
+            <div className="space-y-2">
+              <Label>Column Order (Drag to reorder)</Label>
+              <div className="border rounded-lg p-3 max-h-60 overflow-y-auto">
+                {columnOrder.filter(col => selectedColumns.includes(col)).map((column, index) => (
+                  <div
+                    key={column}
+                    className="flex items-center gap-2 p-2 hover:bg-accent rounded-md cursor-move"
+                    draggable
+                    onDragStart={(e) => {
+                      setIsDraggingColumn(column);
+                      e.dataTransfer.effectAllowed = "move";
+                    }}
+                    onDragEnd={() => setIsDraggingColumn(null)}
+                    onDragOver={(e) => {
+                      e.preventDefault();
+                      e.dataTransfer.dropEffect = "move";
+                    }}
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      if (isDraggingColumn) {
+                        const dragIndex = columnOrder.indexOf(isDraggingColumn);
+                        const dropIndex = index;
+                        if (dragIndex !== dropIndex) {
+                          moveColumn(dragIndex, dropIndex);
+                        }
+                      }
+                    }}
+                  >
+                    <GripVertical className="w-4 h-4 text-muted-foreground" />
+                    <span className="flex-1">{column}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowExportDialog(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleExport}>
+              <Download className="w-4 h-4 mr-2" />
+              Export Report
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
