@@ -273,6 +273,11 @@ export default function ApplicationApp() {
                   <DemandManagement />
                 </ProtectedRoute>
               </Route>
+              <Route path="/demand-management">
+                <ProtectedRoute feature="demand-planning" action="view">
+                  <DemandManagement />
+                </ProtectedRoute>
+              </Route>
               <Route path="/demand-supply-alignment">
                 <ProtectedRoute feature="demand-supply-alignment" action="view">
                   <DemandSupplyAlignment />
