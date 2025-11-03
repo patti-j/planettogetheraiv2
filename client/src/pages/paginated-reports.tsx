@@ -131,9 +131,8 @@ export default function PaginatedReports() {
       if (sourceType === 'sql' && selectedTable) {
         // Use apiRequest to include authentication headers for SQL
         const { apiRequest } = await import('@/lib/queryClient');
-        return apiRequest(`/api/sql-tables/${selectedTable.schemaName}/${selectedTable.tableName}/schema`, {
-          method: 'GET',
-        });
+        const response = await apiRequest('GET', `/api/sql-tables/${selectedTable.schemaName}/${selectedTable.tableName}/schema`);
+        return response.json();
       } else if (sourceType === 'powerbi' && selectedPowerBITable && datasetTables) {
         // For Power BI, transform columns to match SQL schema format
         const table = datasetTables.find((t: any) => t.name === selectedPowerBITable);
