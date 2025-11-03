@@ -583,6 +583,19 @@ export const ptResources = pgTable("ptresources", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+// PT Resource Capabilities - Maps resources to their operational capabilities
+export const ptResourceCapabilities = pgTable("ptresourcecapabilities", {
+  id: serial("id").primaryKey(),
+  publishDate: timestamp("publish_date").notNull(),
+  instanceId: varchar("instance_id", { length: 38 }).notNull(),
+  resourceId: integer("resource_id"),
+  capabilityId: integer("capability_id"),
+  throughputModifier: numeric("throughput_modifier"),
+  setupHoursOverride: numeric("setup_hours_override"),
+  useThroughputModifier: boolean("use_throughput_modifier"),
+  useSetupHoursOverride: boolean("use_setup_hours_override"),
+});
+
 // ============================================
 // Production Scheduler - Saved Schedules
 // ============================================
@@ -1331,6 +1344,7 @@ export const insertUserPreferencesSchema = createInsertSchema(userPreferences);
 export const insertPtPlantSchema = createInsertSchema(ptPlants);
 export const insertPtManufacturingOrderSchema = createInsertSchema(ptManufacturingOrders);
 export const insertPtResourceSchema = createInsertSchema(ptResources);
+export const insertPtResourceCapabilitySchema = createInsertSchema(ptResourceCapabilities);
 export const insertRecentPageSchema = createInsertSchema(recentPages);
 export const insertProductionOrderSchema = createInsertSchema(productionOrders);
 export const insertSchedulingConversationSchema = createInsertSchema(schedulingConversations);
@@ -1514,6 +1528,8 @@ export type PtManufacturingOrder = typeof ptManufacturingOrders.$inferSelect;
 export type InsertPtManufacturingOrder = z.infer<typeof insertPtManufacturingOrderSchema>;
 export type PtResource = typeof ptResources.$inferSelect;
 export type InsertPtResource = z.infer<typeof insertPtResourceSchema>;
+export type PtResourceCapability = typeof ptResourceCapabilities.$inferSelect;
+export type InsertPtResourceCapability = z.infer<typeof insertPtResourceCapabilitySchema>;
 export type RecentPage = typeof recentPages.$inferSelect;
 export type InsertRecentPage = z.infer<typeof insertRecentPageSchema>;
 export type SchedulingConversation = typeof schedulingConversations.$inferSelect;

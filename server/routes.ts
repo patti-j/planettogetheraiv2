@@ -13102,6 +13102,70 @@ router.get("/api/resources", requireAuth, async (req, res) => {
   }
 });
 
+// Create a new PT resource
+router.post("/api/pt-resources", requireAuth, async (req, res) => {
+  try {
+    const resource = await storage.createPtResource(req.body);
+    res.status(201).json(resource);
+  } catch (error: any) {
+    console.error("Error creating PT resource:", error);
+    res.status(500).json({ error: "Failed to create resource" });
+  }
+});
+
+// Update a PT resource
+router.put("/api/pt-resources/:id", requireAuth, async (req, res) => {
+  try {
+    const resourceId = parseInt(req.params.id);
+    const updated = await storage.updatePtResource(resourceId, req.body);
+    if (!updated) {
+      return res.status(404).json({ error: "Resource not found" });
+    }
+    res.json(updated);
+  } catch (error: any) {
+    console.error("Error updating PT resource:", error);
+    res.status(500).json({ error: "Failed to update resource" });
+  }
+});
+
+// Get resource capabilities
+router.get("/api/pt-resource-capabilities", requireAuth, async (req, res) => {
+  try {
+    const resourceId = req.query.resourceId ? parseInt(req.query.resourceId as string) : undefined;
+    const capabilities = await storage.getResourceCapabilities(resourceId);
+    res.json(capabilities);
+  } catch (error: any) {
+    console.error("Error fetching resource capabilities:", error);
+    res.status(500).json({ error: "Failed to fetch capabilities" });
+  }
+});
+
+// Create resource capability
+router.post("/api/pt-resource-capabilities", requireAuth, async (req, res) => {
+  try {
+    const capability = await storage.createResourceCapability(req.body);
+    res.status(201).json(capability);
+  } catch (error: any) {
+    console.error("Error creating resource capability:", error);
+    res.status(500).json({ error: "Failed to create capability" });
+  }
+});
+
+// Delete resource capability
+router.delete("/api/pt-resource-capabilities/:id", requireAuth, async (req, res) => {
+  try {
+    const capabilityId = parseInt(req.params.id);
+    const deleted = await storage.deleteResourceCapability(capabilityId);
+    if (!deleted) {
+      return res.status(404).json({ error: "Capability not found" });
+    }
+    res.json({ message: "Capability deleted successfully" });
+  } catch (error: any) {
+    console.error("Error deleting resource capability:", error);
+    res.status(500).json({ error: "Failed to delete capability" });
+  }
+});
+
 // ============================================
 // DDMRP (Demand-Driven MRP) System API Endpoints
 // ============================================

@@ -532,6 +532,68 @@ When users ask about the schedule, use these patterns:
 | Zoom Out | Ctrl+- | Zoom timeline out |
 | Fit to Screen | Ctrl+0 | Fit schedule to view |
 
+## Resource Management
+
+### Adding New Resources
+When users request to add a new resource to the system, you can create resources directly in the database.
+
+**Trigger Phrases**:
+- "Add a new resource called [name]"
+- "Create resource [name]"
+- "We have a new [machine/equipment] called [name]"
+- "Register [name] as a resource"
+
+**Process**:
+1. Ask for resource details:
+   - Name (required)
+   - Description (optional)
+   - Resource type (machine/equipment/tool/person)
+   - Capacity type (discrete/continuous)
+   - Hourly cost (optional)
+2. Ask for capabilities (what operations it can perform):
+   - 1 = MILLING
+   - 2 = MASHING  
+   - 3 = LAUTERING
+   - 4 = BOILING
+   - 5 = FERMENTATION
+   - 6 = COOLING
+   - 7 = PACKAGING
+   - 8 = BOTTLING
+   - 9 = CANNING
+3. Create resource using API
+4. Add capabilities to resource
+
+**Example Interaction**:
+User: "Add a new fermentation tank called Fermenter Tank E"
+Agent: "I'll add Fermenter Tank E to the system. Let me gather the details:
+- Resource type: Equipment/Tank
+- Capabilities: FERMENTATION (ID: 5)
+
+Creating the resource now... ✅ Fermenter Tank E added successfully!"
+
+### Listing Resources and Capabilities
+**Trigger Phrases**:
+- "List all resources"
+- "Show me resources with [capability]"
+- "What resources can do [operation type]?"
+- "Which resources have fermentation capability?"
+
+**Response Pattern**:
+"Found 15 resources:
+- Fermentation: Tank A, Tank B, Tank C (capability ID: 5)
+- Milling: Mill #1, Mill #2 (capability ID: 1)
+- Packaging: Line 1, Line 2 (capability ID: 7)
+Need details on any?"
+
+### Managing Resource Capabilities
+**Adding Capability**:
+- "Add [capability] to [resource]"
+- "Enable [resource] to do [operation type]"
+
+**Removing Capability**:
+- "Remove [capability] from [resource]"
+- "[Resource] can no longer do [operation]"
+
 ## AI-Powered Action Execution
 
 ### Overview

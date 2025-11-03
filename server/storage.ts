@@ -2,6 +2,7 @@ import {
   users, roles, permissions, userRoles, rolePermissions, 
   companyOnboarding, userPreferences, recentPages,
   ptPlants, ptResources, ptJobs, ptJobOperations, ptManufacturingOrders,
+  ptResourceCapabilities,
   schedulingConversations, schedulingMessages, savedSchedules,
   widgets,
   agentConnections, agentActions, agentMetricsHourly, agentPolicies, agentAlerts,
@@ -19,7 +20,8 @@ import {
   type CompanyOnboarding, type InsertCompanyOnboarding,
   type UserPreferences, type InsertUserPreferences,
   type RecentPage, type InsertRecentPage,
-  type PtPlant, type PtResource, type PtJobOperation, type PtManufacturingOrder,
+  type PtPlant, type PtResource, type InsertPtResource, type PtJobOperation, type PtManufacturingOrder,
+  type PtResourceCapability, type InsertPtResourceCapability,
   type SchedulingConversation, type InsertSchedulingConversation,
   type SchedulingMessage, type InsertSchedulingMessage,
   type SavedSchedule, type InsertSavedSchedule,
@@ -134,6 +136,14 @@ export interface IStorage {
   // Basic PT Table Access
   getPlants(): Promise<PtPlant[]>;
   getResources(planningArea?: string): Promise<PtResource[]>;
+  createPtResource(resource: Partial<InsertPtResource>): Promise<PtResource>;
+  updatePtResource(id: number, resource: Partial<InsertPtResource>): Promise<PtResource | undefined>;
+  
+  // PT Resource Capabilities
+  getResourceCapabilities(resourceId?: number): Promise<PtResourceCapability[]>;
+  createResourceCapability(capability: Partial<InsertPtResourceCapability>): Promise<PtResourceCapability>;
+  deleteResourceCapability(id: number): Promise<boolean>;
+  
   getJobs(): Promise<any[]>;
   getJobOperations(): Promise<PtJobOperation[]>;
   getManufacturingOrders(): Promise<PtManufacturingOrder[]>;
@@ -959,6 +969,83 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error('Error fetching jobs:', error);
       return [];
+    }
+  }
+
+  async createPtResource(resource: Partial<InsertPtResource>): Promise<PtResource> {
+    try {
+      const now = new Date();
+      const newResource = {
+        ...resource,
+        publishDate: resource.publishDate || now,
+        instanceId: resource.instanceId || `resource-${Date.now()}`,
+        plantId: resource.plantId || 1,
+        isActive: resource.isActive !== undefined ? resource.isActive : true,
+      };
+      
+      const [created] = await db.insert(ptResources).values(newResource).returning();
+      return created;
+    } catch (error) {
+      console.error('Error creating PT resource:', error);
+      throw error;
+    }
+  }
+  
+  async updatePtResource(id: number, resource: Partial<InsertPtResource>): Promise<PtResource | undefined> {
+    try {
+      const [updated] = await db.update(ptResources)
+        .set({
+          ...resource,
+          updatedAt: new Date()
+        })
+        .where(eq(ptResources.id, id))
+        .returning();
+      return updated;
+    } catch (error) {
+      console.error('Error updating PT resource:', error);
+      throw error;
+    }
+  }
+  
+  async getResourceCapabilities(resourceId?: number): Promise<PtResourceCapability[]> {
+    try {
+      if (resourceId !== undefined) {
+        return await db.select()
+          .from(ptResourceCapabilities)
+          .where(eq(ptResourceCapabilities.resourceId, resourceId));
+      }
+      return await db.select().from(ptResourceCapabilities);
+    } catch (error) {
+      console.error('Error fetching resource capabilities:', error);
+      return [];
+    }
+  }
+  
+  async createResourceCapability(capability: Partial<InsertPtResourceCapability>): Promise<PtResourceCapability> {
+    try {
+      const now = new Date();
+      const newCapability = {
+        ...capability,
+        publishDate: capability.publishDate || now,
+        instanceId: capability.instanceId || `capability-${Date.now()}`,
+      };
+      
+      const [created] = await db.insert(ptResourceCapabilities).values(newCapability).returning();
+      return created;
+    } catch (error) {
+      console.error('Error creating resource capability:', error);
+      throw error;
+    }
+  }
+  
+  async deleteResourceCapability(id: number): Promise<boolean> {
+    try {
+      const result = await db.delete(ptResourceCapabilities)
+        .where(eq(ptResourceCapabilities.id, id));
+      return true;
+    } catch (error) {
+      console.error('Error deleting resource capability:', error);
+      return false;
     }
   }
 

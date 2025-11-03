@@ -23,6 +23,11 @@ Note on concurrent work:
 - **AI Agent Training Enhancement**: Production Scheduling Agent now recognizes natural language optimization requests:
   - ASAP Algorithm triggers: "optimize schedule", "minimize lead times", "speed up production"
   - ALAP Algorithm triggers: "JIT optimization", "minimize inventory", "reduce WIP"
+- **Resource Management**: Production Scheduling Agent can now manage resources and capabilities:
+  - Add new resources to ptresources table with natural language requests
+  - Prompt users for resource capabilities (MILLING, MASHING, FERMENTATION, etc.)
+  - List resources and their capabilities on request
+  - API endpoints for resource CRUD operations
 
 ## System Architecture
 The system prioritizes user experience, data integrity, performance, accessibility, and consistency, with a focus on quality assurance.
