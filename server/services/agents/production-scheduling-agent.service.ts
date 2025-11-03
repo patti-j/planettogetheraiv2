@@ -112,8 +112,7 @@ export class ProductionSchedulingAgent extends BaseAgent {
     
     this.log(`Executing ${algorithm} algorithm via client bridge`);
     
-    // Return a response that indicates we need client-side action
-    // This will be handled by the Agent Bridge
+    // Return a response that includes scheduler-specific action
     return {
       content: `I'm executing the ${algorithm.toUpperCase()} scheduling algorithm. This will optimize your production schedule.`,
       requiresClientAction: true,
@@ -123,8 +122,12 @@ export class ProductionSchedulingAgent extends BaseAgent {
         targetPage: 'production-scheduler'
       },
       action: {
-        type: 'navigate',
-        target: '/production-scheduler'
+        type: 'scheduler_action',
+        target: '/production-scheduler',
+        schedulerCommand: {
+          type: 'RUN_ALGORITHM',
+          algorithm: algorithm.toUpperCase()
+        }
       },
       error: false
     };

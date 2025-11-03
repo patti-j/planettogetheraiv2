@@ -707,18 +707,49 @@ export function MaxSidebar({ onClose }: MaxSidebarProps = {}) {
         handleFrontendAction(response.frontendAction);
       }
 
-      // Handle navigation actions from Max AI
-      if (response.action && response.action.type === 'navigate' && response.action.target) {
-        console.log('Max AI navigation action detected:', response.action);
-        // Decode HTML entities in the URL (e.g., &amp; to &)
-        const targetUrl = response.action.target.replace(/&amp;/g, '&');
-        // Directly navigate using the target URL
-        setLocation(targetUrl);
-        // Show toast notification
-        toast({
-          title: "Navigation",
-          description: response.content || `Navigating to requested page`,
-        });
+      // Handle navigation and scheduler actions from Max AI
+      if (response.action) {
+        if (response.action.type === 'navigate' && response.action.target) {
+          console.log('Max AI navigation action detected:', response.action);
+          // Decode HTML entities in the URL (e.g., &amp; to &)
+          const targetUrl = response.action.target.replace(/&amp;/g, '&');
+          // Directly navigate using the target URL
+          setLocation(targetUrl);
+          // Show toast notification
+          toast({
+            title: "Navigation",
+            description: response.content || `Navigating to requested page`,
+          });
+        } else if (response.action.type === 'scheduler_action' && response.action.schedulerCommand) {
+          console.log('Max AI scheduler action detected:', response.action);
+          // Navigate to scheduler if needed
+          if (response.action.target && window.location.pathname !== response.action.target) {
+            setLocation(response.action.target);
+          }
+          
+          // Send message to scheduler iframe after a delay to ensure it's loaded
+          setTimeout(() => {
+            // Find the scheduler iframe
+            const schedulerIframe = document.querySelector('iframe[data-testid="production-scheduler-iframe"]') as HTMLIFrameElement;
+            if (schedulerIframe && schedulerIframe.contentWindow) {
+              console.log('Sending scheduler command to iframe:', response.action.schedulerCommand);
+              schedulerIframe.contentWindow.postMessage(response.action.schedulerCommand, '*');
+              
+              // Show toast notification
+              toast({
+                title: "Schedule Optimization",
+                description: response.content || `Running ${response.action.schedulerCommand.algorithm} algorithm`,
+              });
+            } else {
+              console.error('Scheduler iframe not found');
+              toast({
+                title: "Error",
+                description: "Could not communicate with scheduler. Please navigate to the Production Scheduler page.",
+                variant: "destructive",
+              });
+            }
+          }, 1000); // Wait 1 second for navigation and iframe load
+        }
       } else if (response.data?.path && response.data?.action) {
         // Legacy navigation action handling
         console.log('Legacy navigation action detected:', response.data);
