@@ -18,7 +18,7 @@ Note on concurrent work:
 - Best practice: Start each request with your name/initials for clarity
 - If continuing previous work, briefly mention what was done before
 
-## Recent Updates (November 3, 2025 - Evening - Part 3)
+## Recent Updates (November 3, 2025 - Evening - Part 4)
 - **Version History Component Fix**: Fixed TypeError when accessing version history by adding null checks for changeType property and creating mock API endpoints for version data
 - **Algorithm Execution Fix**: Fixed Production Scheduling Agent algorithm execution by updating API endpoint to check AlgorithmRegistry first instead of requiring database entries
 - **Cleaned Up Non-Working Algorithms**: Removed stubs for Resource Leveling and Critical Path - only ASAP and ALAP are functional
@@ -57,6 +57,12 @@ Note on concurrent work:
   - Implemented real database persistence for version history (POST and GET endpoints)
   - Version history now properly saves to scheduleVersions table with auto-incrementing version numbers
   - Both manual saves and algorithm executions now create permanent version history records
+- **Production Scheduling Agent Job Query Fix (Fixed November 3, 2025 - Evening Part 4)**:
+  - Fixed Production Scheduling Agent unable to read jobs and priorities from database
+  - Added comprehensive job query handling methods to production-scheduling-agent.service.ts
+  - Agent can now: show all jobs, query specific job priorities, find high priority jobs, show jobs due today/this week, list operations
+  - Follows training document specifications for ultra-brief responses with "Need details?" prompts
+  - Properly reads from `ptjobs` and `ptjoboperations` tables as documented
 
 ## System Architecture
 The system prioritizes user experience, data integrity, performance, accessibility, and consistency, with a focus on quality assurance.
