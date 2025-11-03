@@ -161,6 +161,9 @@ export default function ApplicationApp() {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
+  // Use useMemo to prevent layout from remounting on route changes - MUST be before early returns
+  const LayoutComponent = useMemo(() => (isMobile ? MobileLayout : DesktopLayout), [isMobile]);
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -179,9 +182,6 @@ export default function ApplicationApp() {
     }
     return null;
   }
-
-  // Use useMemo to prevent layout from remounting on route changes
-  const LayoutComponent = useMemo(() => (isMobile ? MobileLayout : DesktopLayout), [isMobile]);
 
   // Define the app content once to prevent remounting
   const appContent = (
