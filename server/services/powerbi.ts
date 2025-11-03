@@ -473,95 +473,117 @@ export class PowerBIService {
     }
   }
 
-  // Discover tables in a dataset using DMV queries (works for standard semantic models)
+  // Discover tables in a dataset using DAX queries (works for standard semantic models)
   private async discoverTablesUsingDAX(accessToken: string, workspaceId: string, datasetId: string): Promise<any[]> {
     const queryUrl = `https://api.powerbi.com/v1.0/myorg/groups/${workspaceId}/datasets/${datasetId}/executeQueries`;
 
-    // DMV query to get all tables from the dataset
-    // This works for Premium/Premium Per User/Embedded capacity datasets
-    const dmvQuery = `SELECT [Name], [IsHidden], [IsPrivate] FROM $SYSTEM.TMSCHEMA_TABLES ORDER BY [Name]`;
-
-    const requestBody = {
-      queries: [
-        {
-          query: dmvQuery
-        }
-      ],
-      serializerSettings: {
-        includeNulls: true
-      }
-    };
-
-    console.log('📊 Executing DMV query to discover tables...');
+    console.log('📊 Attempting to discover tables using DAX queries...');
     
     try {
+      // First try INFO.TABLES() which works on some datasets
+      const infoTablesQuery = `EVALUATE INFO.TABLES()`;
+      
       const response = await fetch(queryUrl, {
         method: 'POST',
         headers: {
           "Authorization": `Bearer ${accessToken}`,
           "Content-Type": "application/json"
         },
-        body: JSON.stringify(requestBody)
+        body: JSON.stringify({
+          queries: [{ query: infoTablesQuery }],
+          serializerSettings: { includeNulls: true }
+        })
       });
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.log(`DMV query failed with status ${response.status}: ${errorText}`);
-        // If DMV query fails, try a simpler approach
-        return this.discoverTablesSimple(accessToken, workspaceId, datasetId);
-      }
-
-      const result = await response.json();
-      console.log('DMV query response structure:', JSON.stringify(result, null, 2).substring(0, 500));
-      
-      if (result.results && result.results[0] && result.results[0].tables && result.results[0].tables[0]) {
-        const tablesData = result.results[0].tables[0].rows || [];
-        console.log(`Found ${tablesData.length} tables from DMV query`);
+      if (response.ok) {
+        const result = await response.json();
         
-        // Filter out hidden and private tables, get visible tables only
-        const visibleTables = tablesData.filter((table: any) => {
-          // DMV results might come with bracket notation or without
-          const tableName = table["[Name]"] || table.Name || table["Name"];
-          const isHidden = table["[IsHidden]"] || table.IsHidden || table["IsHidden"];
-          const isPrivate = table["[IsPrivate]"] || table.IsPrivate || table["IsPrivate"];
+        if (result.results && result.results[0] && result.results[0].tables && result.results[0].tables[0]) {
+          const tablesData = result.results[0].tables[0].rows || [];
+          console.log(`Found ${tablesData.length} tables from INFO.TABLES()`);
           
-          console.log(`Table: ${tableName}, Hidden: ${isHidden}, Private: ${isPrivate}`);
-          
-          // Include tables that are not explicitly hidden or private
-          return tableName && !isHidden && !isPrivate;
-        });
+          // Extract table names and get columns for each
+          const tablesWithColumns = [];
+          for (const table of tablesData) {
+            const tableName = table["[Name]"] || table.Name || table["Name"] || table.TableName;
+            if (tableName) {
+              const columns = await this.getTableColumns(accessToken, workspaceId, datasetId, tableName);
+              tablesWithColumns.push({
+                name: tableName,
+                columns: columns,
+                rows: 0
+              });
+            }
+          }
 
-        console.log(`${visibleTables.length} visible tables after filtering`);
-
-        // For each table, get column information using DMV or sample query
-        const tablesWithColumns = [];
-        for (const table of visibleTables) {
-          const tableName = table["[Name]"] || table.Name || table["Name"];
-          if (tableName) {
-            // Try to get columns using DMV first
-            const columns = await this.getTableColumnsUsingDMV(accessToken, workspaceId, datasetId, tableName);
-            tablesWithColumns.push({
-              name: tableName,
-              columns: columns,
-              rows: 0 // Row count can be obtained through separate query if needed
-            });
+          if (tablesWithColumns.length > 0) {
+            console.log(`✅ Successfully discovered ${tablesWithColumns.length} tables with columns`);
+            return tablesWithColumns;
           }
         }
+      }
+    } catch (error) {
+      console.log('INFO.TABLES() not available, trying alternative discovery...');
+    }
+    
+    // If INFO.TABLES() doesn't work, try DMV queries for Premium workspaces
+    try {
+      const dmvQuery = `SELECT [Name], [IsHidden], [IsPrivate] FROM $SYSTEM.TMSCHEMA_TABLES ORDER BY [Name]`;
+      
+      const response = await fetch(queryUrl, {
+        method: 'POST',
+        headers: {
+          "Authorization": `Bearer ${accessToken}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          queries: [{ query: dmvQuery }],
+          serializerSettings: { includeNulls: true }
+        })
+      });
 
-        if (tablesWithColumns.length > 0) {
-          console.log(`✅ Successfully discovered ${tablesWithColumns.length} tables with columns`);
-          return tablesWithColumns;
+      if (response.ok) {
+        const result = await response.json();
+        
+        if (result.results && result.results[0] && result.results[0].tables && result.results[0].tables[0]) {
+          const tablesData = result.results[0].tables[0].rows || [];
+          console.log(`Found ${tablesData.length} tables from DMV query`);
+          
+          // Filter out hidden and private tables
+          const visibleTables = tablesData.filter((table: any) => {
+            const tableName = table["[Name]"] || table.Name || table["Name"];
+            const isHidden = table["[IsHidden]"] || table.IsHidden || table["IsHidden"];
+            const isPrivate = table["[IsPrivate]"] || table.IsPrivate || table["IsPrivate"];
+            return tableName && !isHidden && !isPrivate;
+          });
+
+          // Get columns for each visible table
+          const tablesWithColumns = [];
+          for (const table of visibleTables) {
+            const tableName = table["[Name]"] || table.Name || table["Name"];
+            if (tableName) {
+              const columns = await this.getTableColumns(accessToken, workspaceId, datasetId, tableName);
+              tablesWithColumns.push({
+                name: tableName,
+                columns: columns,
+                rows: 0
+              });
+            }
+          }
+
+          if (tablesWithColumns.length > 0) {
+            console.log(`✅ Successfully discovered ${tablesWithColumns.length} tables using DMV`);
+            return tablesWithColumns;
+          }
         }
       }
-
-      console.log('No tables found using DMV, trying simple discovery...');
-      // If no tables found using DMV, try simple discovery
-      return this.discoverTablesSimple(accessToken, workspaceId, datasetId);
     } catch (error) {
-      console.error('Failed to discover tables using DMV:', error);
-      // Fallback to simple discovery
-      return this.discoverTablesSimple(accessToken, workspaceId, datasetId);
+      console.log('DMV queries not available (non-Premium workspace or insufficient permissions)');
     }
+    
+    // If both methods fail, fall back to trying common table names
+    console.log('⚠️ Standard discovery methods unavailable, trying common table names...');
+    return this.discoverTablesSimple(accessToken, workspaceId, datasetId);
   }
 
   // Get columns for a table using DMV query
@@ -626,8 +648,19 @@ export class PowerBIService {
     // Try to get a sample from any table to discover what tables exist
     // This is a fallback when INFO.TABLES() doesn't work
     const commonTableNames = [
-      'Sales', 'Orders', 'Customers', 'Products', 'Date', 'Calendar',
-      'Fact', 'Dim', 'Data', 'Table', 'Sheet1', 'Query1'
+      // Known user tables
+      'HistoricalKPIs', 'Dispatch', 'DispatchList',
+      // Common fact tables
+      'Sales', 'Orders', 'Transactions', 'Revenue', 'Invoices',
+      // Common dimension tables
+      'Customers', 'Products', 'Date', 'Calendar', 'Time',
+      'Geography', 'Store', 'Employee', 'Vendor', 'Supplier',
+      // Generic names
+      'Fact', 'Dim', 'Data', 'Table', 'Master',
+      // Excel/CSV imports
+      'Sheet1', 'Sheet2', 'Query1', 'Table1',
+      // Common KPI/metrics tables
+      'KPIs', 'Metrics', 'Performance', 'Targets'
     ];
 
     const discoveredTables = [];
