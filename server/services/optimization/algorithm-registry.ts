@@ -67,27 +67,13 @@ export class AlgorithmRegistry {
       implementation: ALAPAlgorithm
     });
 
-    // DRUM TOC Method (replaced Critical Path)
+    // DRUM TOC Method
     this.register({
-      id: 'critical-path',
+      id: 'drum-toc',
       name: 'DRUM (Theory of Constraints)',
       description: 'Optimizes schedule around bottleneck resource using TOC principles',
       category: 'optimization',
       implementation: DrumTOCAlgorithm
-    });
-
-    // Resource Leveling (stub for now)
-    this.register({
-      id: 'resource-leveling',
-      name: 'Resource Leveling',
-      description: 'Balances resource utilization across the scheduling horizon',
-      category: 'resource-based',
-      implementation: class ResourceLevelingAlgorithm implements ISchedulingAlgorithm {
-        execute(scheduleData: ScheduleDataPayload): ScheduleDataPayload {
-          console.log('[Resource Leveling] Algorithm not yet implemented, using ASAP as fallback');
-          return new ASAPAlgorithm().execute(scheduleData);
-        }
-      }
     });
 
     // Bottleneck Optimizer - uses DRUM-TOC implementation

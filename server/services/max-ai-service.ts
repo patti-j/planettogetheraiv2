@@ -3655,14 +3655,6 @@ Respond with JSON format:
         algorithmName = 'ALAP (As Late As Possible)';
         algorithmApiName = 'backward-scheduling';
         algorithmDescription = 'This will schedule operations as late as possible while still meeting due dates, reducing work-in-process inventory.';
-      } else if (searchText.includes('critical_path') || searchText.includes('critical path')) {
-        algorithmName = 'Critical Path Method';
-        algorithmApiName = 'critical-path';
-        algorithmDescription = 'This will identify and highlight operations that directly impact the completion time.';
-      } else if (searchText.includes('resource_level') || searchText.includes('leveling')) {
-        algorithmName = 'Resource Leveling';
-        algorithmApiName = 'resource-leveling';
-        algorithmDescription = 'This will redistribute operations to balance resource utilization and reduce overloads.';
       } else if (searchText.includes('drum') || searchText.includes('toc') || searchText.includes('theory of constraints') || searchText.includes('bottleneck')) {
         algorithmName = 'Drum/TOC (Theory of Constraints)';
         algorithmApiName = 'bottleneck-optimizer';
