@@ -6278,6 +6278,36 @@
                             // Show success message
                             saveBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg><span>Schedule Updated!</span>';
                             
+                            // Create version history entry for the manual save
+                            try {
+                                console.log('📝 Creating version history entry for manual save...');
+                                const authToken = getAuthToken();
+                                const versionData = {
+                                    scheduleName: 'Main Schedule',
+                                    changeType: 'manual_save',
+                                    changeDescription: 'Schedule manually saved by user',
+                                    comment: `${result.updated} operations updated`,
+                                    userId: 5 // Hardcoded for now, should ideally get from auth context
+                                };
+                                
+                                const versionResponse = await fetch('/api/schedules/1/versions', {
+                                    method: 'POST',
+                                    headers: {
+                                        'Content-Type': 'application/json',
+                                        'Authorization': authToken ? `Bearer ${authToken}` : ''
+                                    },
+                                    body: JSON.stringify(versionData)
+                                });
+                                
+                                if (versionResponse.ok) {
+                                    console.log('✅ Version history entry created for manual save');
+                                } else {
+                                    console.error('Failed to create version history entry:', await versionResponse.text());
+                                }
+                            } catch (error) {
+                                console.error('Failed to create version history entry:', error);
+                            }
+                            
                             // Optional: Also save a version/snapshot for history
                             // This happens automatically with the existing saved-schedules system
                             try {

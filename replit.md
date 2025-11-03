@@ -18,7 +18,7 @@ Note on concurrent work:
 - Best practice: Start each request with your name/initials for clarity
 - If continuing previous work, briefly mention what was done before
 
-## Recent Updates (November 3, 2025 - Evening)
+## Recent Updates (November 3, 2025 - Evening - Part 2)
 - **Version History Component Fix**: Fixed TypeError when accessing version history by adding null checks for changeType property and creating mock API endpoints for version data
 - **Algorithm Execution Fix**: Fixed Production Scheduling Agent algorithm execution by updating API endpoint to check AlgorithmRegistry first instead of requiring database entries
 - **Cleaned Up Non-Working Algorithms**: Removed stubs for Resource Leveling and Critical Path - only ASAP and ALAP are functional
@@ -47,6 +47,10 @@ Note on concurrent work:
   - **Root Cause Resolved**: Synthetic clicks were blocked by Bryntum's `event.isTrusted` check
   - Agent now directly calls algorithm functions, ensuring save to database and version history creation
   - Both manual UI clicks and agent-triggered executions now use same code path
+- **Manual Save Version History Fix (Fixed November 3, 2025 - Evening Part 2)**:
+  - Fixed manual save button not creating version history entries
+  - Manual save now creates both auto-save snapshot AND version history entry
+  - Version history properly tracks manual saves with changeType 'manual_save'
 
 ## System Architecture
 The system prioritizes user experience, data integrity, performance, accessibility, and consistency, with a focus on quality assurance.
