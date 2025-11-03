@@ -104,7 +104,8 @@ export class ProductionSchedulingAgent extends BaseAgent {
   private isJobQuery(message: string): boolean {
     const jobKeywords = [
       'job', 'priority', 'priorities', 'due', 'operations', 
-      'what job', 'which job', 'show job', 'list job', 'all job'
+      'what job', 'which job', 'show job', 'list job', 'all job',
+      'need by', 'need date', 'scheduled', 'status', 'delivery'
     ];
     return jobKeywords.some(keyword => message.includes(keyword));
   }
@@ -368,6 +369,12 @@ export class ProductionSchedulingAgent extends BaseAgent {
     const lowerMessage = message.toLowerCase();
     
     try {
+      // Check if asking for detailed list with priorities and dates
+      if ((lowerMessage.includes('list') || lowerMessage.includes('show')) && 
+          (lowerMessage.includes('priorities') || lowerMessage.includes('need') || lowerMessage.includes('date'))) {
+        return await this.getJobsWithDetails(context);
+      }
+      
       // Check for priority queries
       if (lowerMessage.includes('priority')) {
         if (lowerMessage.includes('high') || lowerMessage.includes('highest')) {
@@ -378,6 +385,8 @@ export class ProductionSchedulingAgent extends BaseAgent {
         if (jobMatch) {
           return await this.getJobPriority(jobMatch[1], context);
         }
+        // If just asking about priorities in general, show detailed list
+        return await this.getJobsWithDetails(context);
       }
       
       // Check for due date queries
@@ -398,7 +407,32 @@ export class ProductionSchedulingAgent extends BaseAgent {
         }
       }
       
-      // Default: show all jobs
+      // Check for status queries
+      if (lowerMessage.includes('status')) {
+        return await this.getJobsByStatus(context);
+      }
+      
+      // Check for specific job query by name/ID
+      const specificJobMatch = message.match(/(?:what is|tell me about|show me|details? (?:of|for|about)?)\s+(?:job\s+)?([A-Za-z0-9-]+)/i);
+      if (specificJobMatch) {
+        return await this.getJobDetails(specificJobMatch[1], context);
+      }
+      
+      // Check for late/overdue jobs
+      if (lowerMessage.includes('late') || lowerMessage.includes('overdue') || lowerMessage.includes('behind')) {
+        return await this.getOverdueJobs(context);
+      }
+      
+      // Check for completed jobs
+      if (lowerMessage.includes('completed') || lowerMessage.includes('finished') || lowerMessage.includes('done')) {
+        return await this.getCompletedJobs(context);
+      }
+      
+      // Default: show all jobs - if user is asking generically, show details
+      if (lowerMessage.includes('all jobs') || lowerMessage.includes('show jobs')) {
+        return await this.getJobsWithDetails(context);
+      }
+      
       return await this.getAllJobs(context);
     } catch (error: any) {
       this.error(`Failed to handle job query: ${error.message}`, error);
@@ -406,6 +440,87 @@ export class ProductionSchedulingAgent extends BaseAgent {
         content: `Failed to retrieve job information: ${error.message}`,
         error: true
       };
+    }
+  }
+  
+  private async getJobsWithDetails(context: AgentContext): Promise<AgentResponse> {
+    try {
+      const jobs = await db.execute(sql`
+        SELECT id, name, external_id, priority, need_date_time, scheduled_status, 
+               scheduled_start, scheduled_completion
+        FROM ptjobs
+        WHERE scheduled_status NOT IN ('Completed', 'Shipped', 'Delivered')
+        ORDER BY priority ASC, need_date_time ASC
+        LIMIT 20
+      `);
+      
+      if (!jobs.rows || jobs.rows.length === 0) {
+        return { content: 'No active jobs found.', error: false };
+      }
+      
+      let response = `**${jobs.rows.length} active jobs with details:**\n\n`;
+      
+      // Group by priority for better organization
+      const byPriority: any = {};
+      for (const job of jobs.rows) {
+        const p = job.priority || 999;
+        if (!byPriority[p]) byPriority[p] = [];
+        byPriority[p].push(job);
+      }
+      
+      for (const priority of Object.keys(byPriority).sort((a, b) => Number(a) - Number(b))) {
+        const priorityLabel = priority === '1' ? 'Highest' : 
+                            priority === '2' ? 'High' :
+                            priority === '3' ? 'Medium' :
+                            priority === '4' ? 'Low' : 'Lowest';
+        
+        response += `**Priority ${priority} (${priorityLabel}):**\n`;
+        
+        for (const job of byPriority[priority]) {
+          const needDate = job.need_date_time ? 
+            new Date(job.need_date_time).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 
+            'No due date';
+          const status = job.scheduled_status || 'Not scheduled';
+          
+          response += `• ${job.name || job.external_id} - Due: ${needDate}, Status: ${status}\n`;
+        }
+        response += '\n';
+      }
+      
+      return { 
+        content: response + 'Would you like to see operations for any specific job?', 
+        error: false 
+      };
+    } catch (error: any) {
+      throw error;
+    }
+  }
+  
+  private async getJobsByStatus(context: AgentContext): Promise<AgentResponse> {
+    try {
+      const jobs = await db.execute(sql`
+        SELECT scheduled_status, COUNT(*) as count
+        FROM ptjobs
+        GROUP BY scheduled_status
+        ORDER BY count DESC
+      `);
+      
+      if (!jobs.rows || jobs.rows.length === 0) {
+        return { content: 'No jobs found.', error: false };
+      }
+      
+      let response = `**Jobs by status:**\n\n`;
+      
+      for (const row of jobs.rows) {
+        const status = row.scheduled_status || 'Not Scheduled';
+        response += `• ${status}: ${row.count} jobs\n`;
+      }
+      
+      response += '\nWould you like to see jobs with a specific status?';
+      
+      return { content: response, error: false };
+    } catch (error: any) {
+      throw error;
     }
   }
   
@@ -610,6 +725,119 @@ export class ProductionSchedulingAgent extends BaseAgent {
       const opNames = operations.rows.map(op => op.name).join(' → ');
       response += opNames;
       response += '\n\nWould you like to see the scheduled timelines for these operations?';
+      
+      return { content: response, error: false };
+    } catch (error: any) {
+      throw error;
+    }
+  }
+  
+  private async getJobDetails(jobId: string, context: AgentContext): Promise<AgentResponse> {
+    try {
+      const job = await db.execute(sql`
+        SELECT id, name, external_id, priority, need_date_time, scheduled_status,
+               scheduled_start, scheduled_completion, quantity_ordered, quantity_completed,
+               notes, customer_name
+        FROM ptjobs
+        WHERE name = ${jobId} OR external_id = ${jobId} OR id::text = ${jobId}
+        LIMIT 1
+      `);
+      
+      if (!job.rows || job.rows.length === 0) {
+        return { content: `Job ${jobId} not found.`, error: false };
+      }
+      
+      const jobData = job.rows[0];
+      const priorityLabel = jobData.priority === 1 ? 'Highest' :
+                           jobData.priority === 2 ? 'High' :
+                           jobData.priority === 3 ? 'Medium' :
+                           jobData.priority === 4 ? 'Low' : 'Lowest';
+      
+      let response = `**Job Details: ${jobData.name || jobData.external_id}**\n\n`;
+      response += `• Priority: ${jobData.priority} (${priorityLabel})\n`;
+      response += `• Due Date: ${jobData.need_date_time ? new Date(jobData.need_date_time).toLocaleDateString() : 'Not set'}\n`;
+      response += `• Status: ${jobData.scheduled_status || 'Not scheduled'}\n`;
+      
+      if (jobData.scheduled_start) {
+        response += `• Scheduled Start: ${new Date(jobData.scheduled_start).toLocaleDateString()}\n`;
+      }
+      if (jobData.scheduled_completion) {
+        response += `• Scheduled Completion: ${new Date(jobData.scheduled_completion).toLocaleDateString()}\n`;
+      }
+      if (jobData.quantity_ordered) {
+        response += `• Quantity Ordered: ${jobData.quantity_ordered}\n`;
+        if (jobData.quantity_completed) {
+          response += `• Quantity Completed: ${jobData.quantity_completed}\n`;
+        }
+      }
+      if (jobData.customer_name) {
+        response += `• Customer: ${jobData.customer_name}\n`;
+      }
+      
+      response += '\nWould you like to see the operations for this job?';
+      
+      return { content: response, error: false };
+    } catch (error: any) {
+      throw error;
+    }
+  }
+  
+  private async getOverdueJobs(context: AgentContext): Promise<AgentResponse> {
+    try {
+      const now = new Date();
+      const jobs = await db.execute(sql`
+        SELECT id, name, external_id, priority, need_date_time, scheduled_completion
+        FROM ptjobs
+        WHERE need_date_time < ${now.toISOString()}
+          AND scheduled_status NOT IN ('Completed', 'Shipped', 'Delivered')
+        ORDER BY need_date_time ASC, priority ASC
+      `);
+      
+      if (!jobs.rows || jobs.rows.length === 0) {
+        return { content: 'No overdue jobs found. All jobs are on schedule!', error: false };
+      }
+      
+      let response = `**${jobs.rows.length} overdue jobs requiring immediate attention:**\n\n`;
+      
+      for (const job of jobs.rows) {
+        const daysOverdue = Math.floor((now.getTime() - new Date(job.need_date_time).getTime()) / (1000 * 60 * 60 * 24));
+        response += `• ${job.name || job.external_id} - ${daysOverdue} days overdue (P${job.priority})\n`;
+      }
+      
+      response += '\nWould you like to prioritize these jobs for scheduling?';
+      
+      return { content: response, error: false };
+    } catch (error: any) {
+      throw error;
+    }
+  }
+  
+  private async getCompletedJobs(context: AgentContext): Promise<AgentResponse> {
+    try {
+      const jobs = await db.execute(sql`
+        SELECT id, name, external_id, scheduled_status, scheduled_completion,
+               quantity_ordered, quantity_completed
+        FROM ptjobs
+        WHERE scheduled_status IN ('Completed', 'Shipped', 'Delivered')
+        ORDER BY scheduled_completion DESC
+        LIMIT 20
+      `);
+      
+      if (!jobs.rows || jobs.rows.length === 0) {
+        return { content: 'No completed jobs found.', error: false };
+      }
+      
+      let response = `**${jobs.rows.length} recently completed jobs:**\n\n`;
+      
+      for (const job of jobs.rows) {
+        const completedDate = job.scheduled_completion ? 
+          new Date(job.scheduled_completion).toLocaleDateString() : 'Unknown';
+        const completion = job.quantity_completed && job.quantity_ordered ?
+          ` (${job.quantity_completed}/${job.quantity_ordered} units)` : '';
+        response += `• ${job.name || job.external_id} - Completed ${completedDate}${completion}\n`;
+      }
+      
+      response += '\nWould you like to see more details about any specific job?';
       
       return { content: response, error: false };
     } catch (error: any) {
