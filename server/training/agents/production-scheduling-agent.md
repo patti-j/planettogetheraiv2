@@ -447,11 +447,9 @@ When users ask about the schedule, use these patterns:
 **Use Case**: Minimize inventory holding costs and WIP
 **Example**: "Apply ALAP to reduce work-in-process inventory"
 
-#### Resource Leveling
-**To Run**: Click "Optimize" button → Select "Resource Leveling" → Set threshold → Click "Apply"
-**Effect**: Redistributes operations to balance resource utilization
-**Parameters**: Can set target utilization percentage (e.g., 85%)
-**Example**: "Resource leveling reduced peak utilization from 95% to 85%"
+#### Resource Leveling (Not Yet Implemented)
+**Status**: Currently not available - will default to ASAP optimization
+**Future Feature**: Will redistribute operations to balance resource utilization
 
 
 ### Save, Reload, and Undo Operations
@@ -727,12 +725,7 @@ When users say any of these, run ALAP algorithm:
 - "Reduce holding costs" - Cost reduction through ALAP
 - "Back-schedule from due dates" - Backward scheduling = ALAP
 
-**Resource Leveling Triggers**:
-- "Level resources" or "Resource leveling"
-- "Balance resource utilization"
-- "Smooth out resource usage"
-- "Reduce resource conflicts"
-- "Even out the workload"
+**Note**: Resource Leveling is not yet implemented and will default to ASAP optimization.
 
 **System Behavior**:
 When users request algorithm execution:
