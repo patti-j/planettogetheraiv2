@@ -13856,5 +13856,58 @@ router.patch("/api/playbooks/:id", requireAuth, async (req, res) => {
   }
 });
 
+// Demand Change Requests API
+router.get("/api/demand-change-requests", requireAuth, async (req, res) => {
+  try {
+    // Return sample data for now - can be replaced with actual database queries later
+    const sampleRequests = [
+      {
+        id: 1,
+        title: "Increase Production Capacity - Product A",
+        description: "Request to increase weekly production capacity from 1000 to 1500 units",
+        status: "under_review",
+        priority: "high",
+        requestedBy: "John Smith",
+        requestedDate: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+        affectedProducts: ["Product A"],
+        estimatedImpact: "15% revenue increase",
+        reviewers: ["Jane Doe", "Mike Johnson"],
+        comments: 5
+      },
+      {
+        id: 2,
+        title: "Adjust Forecast for Q4",
+        description: "Update demand forecast based on new market trends",
+        status: "approved",
+        priority: "medium",
+        requestedBy: "Sarah Wilson",
+        requestedDate: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
+        affectedProducts: ["Product B", "Product C"],
+        estimatedImpact: "Improved accuracy by 8%",
+        reviewers: ["Tom Anderson"],
+        comments: 12
+      },
+      {
+        id: 3,
+        title: "Emergency Order - Customer XYZ",
+        description: "Rush order for 500 units needed by end of month",
+        status: "submitted",
+        priority: "critical",
+        requestedBy: "Emily Davis",
+        requestedDate: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
+        affectedProducts: ["Product D"],
+        estimatedImpact: "Potential delay in other orders",
+        reviewers: ["John Smith", "Sarah Wilson"],
+        comments: 3
+      }
+    ];
+
+    res.json(sampleRequests);
+  } catch (error: any) {
+    console.error('Error fetching demand change requests:', error);
+    res.status(500).json({ error: 'Failed to fetch demand change requests' });
+  }
+});
+
 // Forced rebuild - all duplicate keys fixed
 export default router;
