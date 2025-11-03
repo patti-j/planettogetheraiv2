@@ -326,7 +326,12 @@ export default function PaginatedReports() {
   // Export handler
   const handleExport = async () => {
     if (!data?.items || data.items.length === 0) {
-      alert("No data to export");
+      toast({
+        title: "No Data",
+        description: "There is no data to export.",
+        variant: "default"
+      });
+      setShowExportDialog(false);
       return;
     }
 
@@ -356,13 +361,27 @@ export default function PaginatedReports() {
     // Convert to desired format
     if (exportFormat === 'csv') {
       const csv = convertToCSV(exportContent);
-      downloadFile(csv, `report_${Date.now()}.csv`, 'text/csv');
+      const fileName = `${exportContent.tableName?.replace(/[^a-zA-Z0-9]/g, '_') || 'report'}_${new Date().toISOString().split('T')[0]}.csv`;
+      downloadFile(csv, fileName, 'text/csv');
+      toast({
+        title: "Export Successful",
+        description: `Your report has been exported as CSV`,
+        variant: "default"
+      });
     } else if (exportFormat === 'excel') {
       // For Excel, we'd need to import xlsx library
-      alert("Excel export will be implemented with xlsx library");
+      toast({
+        title: "Coming Soon",
+        description: "Excel export will be available in a future update.",
+        variant: "default"
+      });
     } else if (exportFormat === 'pdf') {
       // For PDF, we'd need to implement with jsPDF
-      alert("PDF export will be implemented with jsPDF library");
+      toast({
+        title: "Coming Soon",
+        description: "PDF export will be available in a future update.",
+        variant: "default"
+      });
     }
     
     setShowExportDialog(false);
@@ -1155,18 +1174,28 @@ export default function PaginatedReports() {
             {/* Export Format */}
             <div className="space-y-2">
               <Label>Export Format</Label>
-              <RadioGroup value={exportFormat} onValueChange={(value: any) => setExportFormat(value)}>
+              <RadioGroup 
+                value={exportFormat} 
+                onValueChange={(value: 'csv' | 'excel' | 'pdf') => setExportFormat(value)}
+                className="space-y-2"
+              >
                 <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="csv" id="csv" />
-                  <Label htmlFor="csv" className="font-normal">CSV (Comma Separated Values)</Label>
+                  <RadioGroupItem value="csv" id="export-csv" />
+                  <Label htmlFor="export-csv" className="font-normal cursor-pointer">
+                    CSV (Comma Separated Values)
+                  </Label>
                 </div>
                 <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="excel" id="excel" />
-                  <Label htmlFor="excel" className="font-normal">Excel Spreadsheet (.xlsx)</Label>
+                  <RadioGroupItem value="excel" id="export-excel" />
+                  <Label htmlFor="export-excel" className="font-normal cursor-pointer">
+                    Excel Spreadsheet (.xlsx)
+                  </Label>
                 </div>
                 <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="pdf" id="pdf" />
-                  <Label htmlFor="pdf" className="font-normal">PDF Document</Label>
+                  <RadioGroupItem value="pdf" id="export-pdf" />
+                  <Label htmlFor="export-pdf" className="font-normal cursor-pointer">
+                    PDF Document
+                  </Label>
                 </div>
               </RadioGroup>
             </div>
