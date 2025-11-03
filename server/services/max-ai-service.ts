@@ -3655,10 +3655,6 @@ Respond with JSON format:
         algorithmName = 'ALAP (As Late As Possible)';
         algorithmApiName = 'backward-scheduling';
         algorithmDescription = 'This will schedule operations as late as possible while still meeting due dates, reducing work-in-process inventory.';
-      } else if (searchText.includes('drum') || searchText.includes('toc') || searchText.includes('theory of constraints') || searchText.includes('bottleneck')) {
-        algorithmName = 'Drum/TOC (Theory of Constraints)';
-        algorithmApiName = 'bottleneck-optimizer';
-        algorithmDescription = 'This will schedule operations around the bottleneck resource to maximize throughput.';
       } else {
         // Default to ASAP for general optimization requests
         algorithmName = 'ASAP Schedule Optimization';

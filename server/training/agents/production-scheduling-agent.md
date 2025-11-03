@@ -725,7 +725,7 @@ When users say any of these, run ALAP algorithm:
 - "Reduce holding costs" - Cost reduction through ALAP
 - "Back-schedule from due dates" - Backward scheduling = ALAP
 
-**Note**: Resource Leveling is not yet implemented and will default to ASAP optimization.
+**Important**: Only ASAP and ALAP algorithms are actually implemented. Any other algorithm requests should default to ASAP.
 
 **System Behavior**:
 When users request algorithm execution:

@@ -1,7 +1,6 @@
 import type { ScheduleDataPayload } from '../../../shared/schema';
 import { ASAPAlgorithm } from './asap-algorithm';
 import { ALAPAlgorithm } from './alap-algorithm';
-import { DrumTOCAlgorithm } from './drum-toc-algorithm';
 
 /**
  * Algorithm interface that all scheduling algorithms must implement
@@ -67,32 +66,6 @@ export class AlgorithmRegistry {
       implementation: ALAPAlgorithm
     });
 
-    // DRUM TOC Method
-    this.register({
-      id: 'drum-toc',
-      name: 'DRUM (Theory of Constraints)',
-      description: 'Optimizes schedule around bottleneck resource using TOC principles',
-      category: 'optimization',
-      implementation: DrumTOCAlgorithm
-    });
-
-    // Bottleneck Optimizer - uses DRUM-TOC implementation
-    this.register({
-      id: 'bottleneck-optimizer',
-      name: 'Drum-Buffer-Rope (TOC)',
-      description: 'Optimizes schedule based on Theory of Constraints focusing on bottlenecks',
-      category: 'constraint-based',
-      implementation: DrumTOCAlgorithm
-    });
-
-    // DBR Scheduling - uses DRUM-TOC implementation
-    this.register({
-      id: 'dbr-scheduling',
-      name: 'Theory of Constraints DBR',
-      description: 'Drum-Buffer-Rope scheduling based on Theory of Constraints',
-      category: 'constraint-based',
-      implementation: DrumTOCAlgorithm
-    });
 
     console.log(`[Algorithm Registry] Registered ${this.algorithms.size} algorithms`);
   }
