@@ -699,16 +699,18 @@ export class PowerBIService {
   private async tryDatasetNameAsTable(accessToken: string, workspaceId: string, datasetId: string, datasetName: string): Promise<any[]> {
     const queryUrl = `https://api.powerbi.com/v1.0/myorg/groups/${workspaceId}/datasets/${datasetId}/executeQueries`;
     
-    // Try variations of the dataset name
-    const nameVariations = [
-      datasetName, // As-is
-      datasetName.replace(/List$/, ''), // Remove "List" suffix (e.g., "DispatchList" -> "Dispatch")
-      datasetName.replace(/Data$/, ''), // Remove "Data" suffix
-      datasetName.replace(/Dataset$/, ''), // Remove "Dataset" suffix
-      datasetName.replace(/Table$/, ''), // Remove "Table" suffix
-      datasetName + 's', // Plural form
-      datasetName.replace(/s$/, ''), // Singular form
-    ];
+    // For DispatchList specifically, let's try Dispatch first (the actual table name)
+    const nameVariations = datasetName === 'DispatchList' 
+      ? ['Dispatch', 'DispatchList', 'DispatchLists'] // Prioritize 'Dispatch' for DispatchList
+      : [
+          datasetName, // As-is
+          datasetName.replace(/List$/, ''), // Remove "List" suffix 
+          datasetName.replace(/Data$/, ''), // Remove "Data" suffix
+          datasetName.replace(/Dataset$/, ''), // Remove "Dataset" suffix
+          datasetName.replace(/Table$/, ''), // Remove "Table" suffix
+          datasetName + 's', // Plural form
+          datasetName.replace(/s$/, ''), // Singular form
+        ];
 
     // Remove duplicates
     const uniqueNames = [...new Set(nameVariations)];
@@ -717,6 +719,7 @@ export class PowerBIService {
 
     for (const tableName of uniqueNames) {
       try {
+        // Try a simple query first
         const daxQuery = `EVALUATE TOPN(1, '${tableName}')`;
         
         const response = await fetch(queryUrl, {
@@ -735,14 +738,19 @@ export class PowerBIService {
           const result = await response.json();
           if (result.results && result.results[0] && result.results[0].tables && result.results[0].tables[0]) {
             const tableData = result.results[0].tables[0];
+            
+            // Get columns from the actual data returned
             const columns = tableData.rows && tableData.rows.length > 0 
-              ? Object.keys(tableData.rows[0]).map(col => ({
-                  name: col.replace(/^\[|\]$/g, '').replace(/^.*\[|\]$/g, ''),
-                  dataType: 'Auto'
-                }))
+              ? Object.keys(tableData.rows[0]).map(col => {
+                  const cleanName = col.replace(/^\[|\]$/g, '').replace(/^.*\[|\]$/g, '');
+                  return {
+                    name: cleanName,
+                    dataType: 'Auto'
+                  };
+                })
               : [];
             
-            console.log(`✅ Found table '${tableName}' matching dataset name`);
+            console.log(`✅ Found table '${tableName}' with ${columns.length} columns`);
             
             return [{
               name: tableName,
@@ -750,9 +758,12 @@ export class PowerBIService {
               rows: 0
             }];
           }
+        } else {
+          const errorText = await response.text();
+          console.log(`Table '${tableName}' not found: ${errorText.substring(0, 200)}`);
         }
       } catch (error) {
-        // Table doesn't exist, continue
+        console.log(`Error trying table '${tableName}':`, error);
         continue;
       }
     }

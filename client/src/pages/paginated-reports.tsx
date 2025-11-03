@@ -73,6 +73,7 @@ export default function PaginatedReports() {
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
   const [selectedColumns, setSelectedColumns] = useState<string[]>([]);
   const [columnFilters, setColumnFilters] = useState<Record<string, string>>({});
+  const [manualTableName, setManualTableName] = useState("");
 
   // Power BI authentication
   const { isAuthenticated, authenticateAuto } = usePowerBIAuth();
@@ -213,6 +214,7 @@ export default function PaginatedReports() {
     }
     setSelectedDatasetId("");
     setSelectedPowerBITable("");
+    setManualTableName("");
     setSelectedTable(null);
     setCurrentPage(1);
   };
