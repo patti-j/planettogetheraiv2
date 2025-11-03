@@ -47,7 +47,7 @@ export const navigationGroups: NavigationGroup[] = [
       { icon: Workflow, label: "Planning Process Guide", href: "/planning-overview", feature: "schedule", action: "view", color: "bg-gradient-to-r from-blue-500 to-purple-600" },
       { icon: Sparkles, label: "Demand Forecasting", href: "/demand-forecasting", feature: "analytics", action: "view", color: "bg-purple-500" },
       { icon: Target, label: "Demand Management", href: "/demand-management", feature: "demand-planning", action: "view", color: "bg-teal-600" },
-      { icon: Target, label: "Demand/Supply Alignment", href: "/demand-supply-alignment", feature: "analytics", action: "view", color: "bg-blue-700" }
+      { icon: Target, label: "Demand/Supply Alignment", href: "/demand-supply-alignment", feature: "demand-supply-alignment", action: "view", color: "bg-blue-700" }
     ]
   },
   {
