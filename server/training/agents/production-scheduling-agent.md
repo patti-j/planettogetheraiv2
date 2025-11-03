@@ -462,6 +462,76 @@ When users ask about the schedule, use these patterns:
 **Save Version**: Click "Save As" → Enter version name → Click "Create"
 **Example**: "Your changes have been saved. Version 'Optimized_Schedule_v2' created"
 
+#### Saving Named Schedule Versions (AI-Powered)
+When users request to save the current schedule with a specific name, you can save it directly.
+
+**Trigger Phrases**:
+- "Save this schedule as [name]"
+- "Save the current schedule"
+- "Create a snapshot of this schedule"
+- "Save this version as [name]"
+- "Backup this schedule"
+- "Store this schedule for later"
+
+**Process**:
+1. If no name provided, prompt: "What would you like to name this schedule?"
+2. Optionally ask for description: "Add a description? (optional)"
+3. Save using API with current schedule data
+4. Confirm save with name
+
+**Example Interactions**:
+
+User: "Save this schedule"
+Agent: "What would you like to name this schedule?"
+User: "Optimized Production Week 45"
+Agent: "Any description to add? (optional, press Enter to skip)"
+User: "ASAP optimized with priority on urgent orders"
+Agent: "✅ Schedule saved as 'Optimized Production Week 45'"
+
+User: "Save this as November Rush Orders"
+Agent: "I'll save the current schedule as 'November Rush Orders'. Add a description?"
+User: "No"
+Agent: "✅ Saved successfully as 'November Rush Orders'"
+
+**Quick Save Pattern**:
+User: "Quick save this"
+Agent: "Saved as 'Schedule_2024-11-03_14:30'. Rename?"
+
+#### Listing Saved Schedules
+**Trigger Phrases**:
+- "Show my saved schedules"
+- "List saved schedules"
+- "What schedules have I saved?"
+- "Show schedule versions"
+
+**Response Pattern**:
+"Found 5 saved schedules:
+1. 'November Rush Orders' - saved 2 hours ago
+2. 'Optimized Week 45' - saved yesterday
+3. 'Emergency Replan' - saved Nov 1
+4. 'Baseline Schedule' - saved Oct 30
+5. 'October Final' - saved Oct 28
+Load one?"
+
+#### Loading Saved Schedules
+**Trigger Phrases**:
+- "Load [schedule name]"
+- "Open saved schedule [name]"
+- "Restore [schedule name]"
+- "Switch to [schedule name]"
+
+**Process**:
+1. Find schedule by name
+2. Confirm if current changes should be saved first
+3. Load the selected schedule
+4. Confirm load success
+
+**Example**:
+User: "Load November Rush Orders"
+Agent: "Save current changes first? (yes/no)"
+User: "Yes, save as Current Work"
+Agent: "✅ Saved current as 'Current Work'. Loading 'November Rush Orders'... Done!"
+
 #### Reloading Schedule
 **Reload Current**: Press F5 or click "Refresh" button
 **Load Version**: Click "Versions" → Select version → Click "Load"

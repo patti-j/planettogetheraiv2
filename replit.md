@@ -28,6 +28,12 @@ Note on concurrent work:
   - Prompt users for resource capabilities (MILLING, MASHING, FERMENTATION, etc.)
   - List resources and their capabilities on request
   - API endpoints for resource CRUD operations
+- **Schedule Saving**: Production Scheduling Agent can now save and manage named schedule versions:
+  - Save current schedule with custom name
+  - Prompt for schedule name if not provided
+  - Optional description support
+  - List all saved schedules
+  - Load previously saved schedules
 
 ## System Architecture
 The system prioritizes user experience, data integrity, performance, accessibility, and consistency, with a focus on quality assurance.
