@@ -47,6 +47,25 @@ Each training document includes:
 - Provide response templates for common queries
 - Include error handling scenarios
 
+## Algorithm Triggers for Production Scheduling Agent
+
+### ASAP Algorithm (Front-loading)
+The Production Scheduling Agent will trigger ASAP when users say:
+- "Optimize the schedule" (default optimization)
+- "Make the schedule more efficient"
+- "Front-load the schedule"
+- "Minimize lead times"
+- "Speed up production"
+- "Get orders done faster"
+
+### ALAP Algorithm (Just-In-Time)
+The agent will trigger ALAP when users say:
+- "JIT optimization" or "Just in time scheduling"
+- "Minimize inventory" or "Reduce WIP"
+- "Schedule as late as possible"
+- "Reduce holding costs"
+- "Back-schedule from due dates"
+
 ## Adding New Agents
 1. Create a new `.md` file following the existing format
 2. Define the agent in `/client/src/config/agents.ts`

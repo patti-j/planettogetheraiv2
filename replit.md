@@ -18,6 +18,12 @@ Note on concurrent work:
 - Best practice: Start each request with your name/initials for clarity
 - If continuing previous work, briefly mention what was done before
 
+## Recent Updates (November 3, 2025)
+- **Navigation Fix**: Fixed critical navigation issue where /home route was blanking screen due to hard redirect
+- **AI Agent Training Enhancement**: Production Scheduling Agent now recognizes natural language optimization requests:
+  - ASAP Algorithm triggers: "optimize schedule", "minimize lead times", "speed up production"
+  - ALAP Algorithm triggers: "JIT optimization", "minimize inventory", "reduce WIP"
+
 ## System Architecture
 The system prioritizes user experience, data integrity, performance, accessibility, and consistency, with a focus on quality assurance.
 
