@@ -3723,48 +3723,37 @@ Respond with JSON format:
         WHERE j.scheduled_status != 'Completed'
       `);
       
+      // Get job names mapping for operations
+      const jobsMap = new Map(jobsResult.rows.map((job: any) => [job.id, job.name]));
+      
       // Format the schedule data for the algorithm API
       const scheduleData = {
         operations: operationsResult.rows.map((op: any) => ({
-          id: op.id,
-          externalId: op.externalid || `OP-${op.id}`,
+          id: String(op.id), // Schema expects string ID
           name: op.name || '',
-          description: op.description || '',
-          jobId: op.jobid,
-          sequenceNumber: op.sequencenumber || 0,
-          startTime: op.starttime ? new Date(op.starttime).toISOString() : null,
-          endTime: op.endtime ? new Date(op.endtime).toISOString() : null,
+          jobId: String(op.jobid), // Schema expects string
+          jobName: jobsMap.get(op.jobid) || `Job ${op.jobid}`, // Required field
+          resourceId: String(op.resourceid || ''), // Schema expects string
           duration: Number(op.duration) || 8,
           setupTime: Number(op.setuptime) || 0,
-          teardownTime: Number(op.teardowntime) || 0,
-          resourceId: op.resourceid,
-          manuallyScheduled: op.manuallyscheduled || false,
-          jobPriority: op.jobpriority || 3,
-          jobDueDate: op.jobduedate ? new Date(op.jobduedate).toISOString() : null
+          startTime: op.starttime ? new Date(op.starttime).toISOString() : undefined,
+          endTime: op.endtime ? new Date(op.endtime).toISOString() : undefined,
+          priority: op.jobpriority || 3,
+          sequenceNumber: op.sequencenumber || 0,
+          manuallyScheduled: op.manuallyscheduled || false
         })),
         resources: resourcesResult.rows.map((res: any) => ({
-          id: res.id,
-          externalId: res.externalid || `RES-${res.id}`,
+          id: String(res.id), // Schema expects string ID
           name: res.name || '',
-          description: res.description || '',
+          capacity: 100, // Required field, default capacity
           isActive: res.isactive !== false,
-          isBottleneck: res.isbottleneck === true,
-          bufferHours: Number(res.bufferhours) || 0,
-          hourlyCost: Number(res.hourlycost) || 0
+          isBottleneck: res.isbottleneck === true
         })),
-        jobs: jobsResult.rows.map((job: any) => ({
-          id: job.id,
-          externalId: job.externalid || `JOB-${job.id}`,
-          name: job.name || '',
-          description: job.description || '',
-          priority: job.priority || 3,
-          dueDate: job.duedate ? new Date(job.duedate).toISOString() : null,
-          releaseDate: job.releasedate ? new Date(job.releasedate).toISOString() : null,
-          status: job.status || 'Scheduled'
-        }))
+        dependencies: [], // Required field - empty array for now as dependencies are handled by sequence numbers
+        constraints: [] // Optional but helpful for the algorithm
       };
       
-      console.log(`[Max AI] Schedule data prepared: ${scheduleData.operations.length} operations, ${scheduleData.resources.length} resources, ${scheduleData.jobs.length} jobs`);
+      console.log(`[Max AI] Schedule data prepared: ${scheduleData.operations.length} operations, ${scheduleData.resources.length} resources`);
       
       // Call the optimization API endpoint
       try {
