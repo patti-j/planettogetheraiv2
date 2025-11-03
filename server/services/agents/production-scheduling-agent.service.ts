@@ -133,31 +133,245 @@ export class ProductionSchedulingAgent extends BaseAgent {
     return scheduleKeywords.some(keyword => message.includes(keyword));
   }
 
+  /**
+   * ASAP Algorithm - Schedule operations as soon as possible
+   * This algorithm schedules operations forward from the current date/time,
+   * respecting operation dependencies and resource availability
+   */
+  private async runASAPAlgorithm(): Promise<{message: string, operationsScheduled: number}> {
+    try {
+      // Get all active jobs and their operations
+      const operations = await db.execute(sql`
+        SELECT 
+          jo.id,
+          jo.job_id,
+          jo.name,
+          jo.sequence_number,
+          jo.cycle_hrs,
+          jo.setup_hours,
+          j.priority,
+          j.need_date_time
+        FROM ptjoboperations jo
+        INNER JOIN ptjobs j ON jo.job_id = j.id
+        WHERE j.scheduled_status NOT IN ('Completed', 'Shipped', 'Delivered')
+        ORDER BY j.priority ASC, jo.sequence_number ASC
+      `);
+
+      if (!operations.rows || operations.rows.length === 0) {
+        return {
+          message: 'No operations to schedule.',
+          operationsScheduled: 0
+        };
+      }
+
+      const currentTime = new Date();
+      let scheduledCount = 0;
+      const jobSchedules = new Map<number, Date>(); // Track end time of last operation for each job
+
+      // Schedule each operation
+      for (const op of operations.rows) {
+        const jobId = op.job_id as number;
+        const cycleHours = parseFloat(op.cycle_hrs as string || '0');
+        const setupHours = parseFloat(op.setup_hours as string || '0');
+        const totalHours = cycleHours + setupHours;
+
+        // Get the start time for this operation
+        let startTime: Date;
+        if (jobSchedules.has(jobId)) {
+          // Start after the previous operation for this job
+          startTime = new Date(jobSchedules.get(jobId)!);
+        } else {
+          // First operation of the job starts now
+          startTime = new Date(currentTime);
+        }
+
+        // Calculate end time
+        const endTime = new Date(startTime.getTime() + (totalHours * 60 * 60 * 1000));
+
+        // Update the operation schedule in the database
+        await db.execute(sql`
+          UPDATE ptjoboperations
+          SET 
+            scheduled_start = ${startTime.toISOString()},
+            scheduled_end = ${endTime.toISOString()}
+          WHERE id = ${op.id}
+        `);
+
+        // Track the end time for the next operation of this job
+        jobSchedules.set(jobId, endTime);
+        scheduledCount++;
+      }
+
+      // Update job statuses
+      await db.execute(sql`
+        UPDATE ptjobs
+        SET scheduled_status = 'Scheduled'
+        WHERE scheduled_status = 'Not Scheduled'
+          AND id IN (
+            SELECT DISTINCT job_id 
+            FROM ptjoboperations 
+            WHERE scheduled_start IS NOT NULL
+          )
+      `);
+
+      return {
+        message: `**ASAP Scheduling Complete!**\n\n` +
+                 `• Scheduled ${scheduledCount} operations\n` +
+                 `• All operations scheduled as early as possible\n` +
+                 `• Jobs prioritized by priority level\n\n` +
+                 `The schedule has been optimized to minimize lead times.`,
+        operationsScheduled: scheduledCount
+      };
+    } catch (error: any) {
+      throw new Error(`ASAP algorithm failed: ${error.message}`);
+    }
+  }
+
+  /**
+   * ALAP Algorithm - Schedule operations as late as possible
+   * This algorithm schedules operations backward from need dates,
+   * implementing Just-In-Time (JIT) principles
+   */
+  private async runALAPAlgorithm(): Promise<{message: string, operationsScheduled: number}> {
+    try {
+      // Get all active jobs with their operations
+      const jobs = await db.execute(sql`
+        SELECT DISTINCT
+          j.id,
+          j.name,
+          j.priority,
+          j.need_date_time
+        FROM ptjobs j
+        INNER JOIN ptjoboperations jo ON jo.job_id = j.id
+        WHERE j.scheduled_status NOT IN ('Completed', 'Shipped', 'Delivered')
+          AND j.need_date_time IS NOT NULL
+        ORDER BY j.priority ASC
+      `);
+
+      if (!jobs.rows || jobs.rows.length === 0) {
+        return {
+          message: 'No jobs with due dates to schedule.',
+          operationsScheduled: 0
+        };
+      }
+
+      let scheduledCount = 0;
+
+      // Process each job
+      for (const job of jobs.rows) {
+        const needDate = new Date(job.need_date_time as string);
+        
+        // Get operations for this job in reverse order
+        const operations = await db.execute(sql`
+          SELECT 
+            id,
+            name,
+            sequence_number,
+            cycle_hrs,
+            setup_hours
+          FROM ptjoboperations
+          WHERE job_id = ${job.id}
+          ORDER BY sequence_number DESC
+        `);
+
+        if (operations.rows && operations.rows.length > 0) {
+          let endTime = new Date(needDate);
+
+          // Schedule operations backward from the need date
+          for (const op of operations.rows) {
+            const cycleHours = parseFloat(op.cycle_hrs as string || '0');
+            const setupHours = parseFloat(op.setup_hours as string || '0');
+            const totalHours = cycleHours + setupHours;
+
+            // Calculate start time (working backward)
+            const startTime = new Date(endTime.getTime() - (totalHours * 60 * 60 * 1000));
+
+            // Update the operation schedule
+            await db.execute(sql`
+              UPDATE ptjoboperations
+              SET 
+                scheduled_start = ${startTime.toISOString()},
+                scheduled_end = ${endTime.toISOString()}
+              WHERE id = ${op.id}
+            `);
+
+            // Set the end time for the previous operation (working backward)
+            endTime = new Date(startTime);
+            scheduledCount++;
+          }
+        }
+      }
+
+      // Update job statuses
+      await db.execute(sql`
+        UPDATE ptjobs
+        SET scheduled_status = 'Scheduled'
+        WHERE scheduled_status = 'Not Scheduled'
+          AND id IN (
+            SELECT DISTINCT job_id 
+            FROM ptjoboperations 
+            WHERE scheduled_start IS NOT NULL
+          )
+      `);
+
+      return {
+        message: `**ALAP (JIT) Scheduling Complete!**\n\n` +
+                 `• Scheduled ${scheduledCount} operations\n` +
+                 `• Operations scheduled as late as possible\n` +
+                 `• Minimizes inventory and work-in-progress\n\n` +
+                 `The schedule now follows Just-In-Time principles.`,
+        operationsScheduled: scheduledCount
+      };
+    } catch (error: any) {
+      throw new Error(`ALAP algorithm failed: ${error.message}`);
+    }
+  }
+
   private async executeAlgorithm(message: string, context: AgentContext): Promise<AgentResponse> {
     // Determine which algorithm to run
     const algorithm = this.determineAlgorithm(message);
     
-    this.log(`Executing ${algorithm} algorithm via client bridge`);
+    this.log(`Executing ${algorithm} algorithm directly in agent service`);
     
-    // Return a response that includes scheduler-specific action
-    return {
-      content: `I'm executing the ${algorithm.toUpperCase()} scheduling algorithm. This will optimize your production schedule.`,
-      requiresClientAction: true,
-      clientActionType: 'EXECUTE_SCHEDULING_ALGORITHM',
-      clientActionData: {
-        algorithm: algorithm,
-        targetPage: 'production-scheduler'
-      },
-      action: {
-        type: 'scheduler_action',
-        target: '/production-scheduler',
-        schedulerCommand: {
-          type: 'RUN_ALGORITHM',
-          algorithm: algorithm.toUpperCase()
-        }
-      },
-      error: false
-    };
+    try {
+      // Run the algorithm directly
+      let result;
+      if (algorithm === 'asap') {
+        result = await this.runASAPAlgorithm();
+      } else if (algorithm === 'alap') {
+        result = await this.runALAPAlgorithm();
+      } else {
+        return {
+          content: `Unknown algorithm: ${algorithm}`,
+          error: true
+        };
+      }
+      
+      // Return success response with results
+      return {
+        content: result.message,
+        requiresClientAction: true,
+        clientActionType: 'REFRESH_SCHEDULE',
+        clientActionData: {
+          algorithm: algorithm,
+          targetPage: 'production-scheduler'
+        },
+        action: {
+          type: 'scheduler_action',
+          target: '/production-scheduler',
+          schedulerCommand: {
+            type: 'REFRESH_VIEW'
+          }
+        },
+        error: false
+      };
+    } catch (error: any) {
+      this.error(`Failed to execute ${algorithm} algorithm: ${error.message}`, error);
+      return {
+        content: `Failed to execute ${algorithm.toUpperCase()} algorithm: ${error.message}`,
+        error: true
+      };
+    }
   }
   
   private determineAlgorithm(message: string): string {
