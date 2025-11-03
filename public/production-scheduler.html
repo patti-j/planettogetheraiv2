@@ -6282,13 +6282,30 @@
                             try {
                                 console.log('📝 Creating version history entry for manual save...');
                                 const authToken = getAuthToken();
+                                
+                                // Get the current user's ID from the token
+                                let userId = null;
+                                try {
+                                    // Parse the JWT token to get the user ID
+                                    const tokenParts = authToken.split('.');
+                                    if (tokenParts.length === 3) {
+                                        const payload = JSON.parse(atob(tokenParts[1]));
+                                        userId = payload.id || payload.userId || payload.sub;
+                                        console.log('📝 Extracted userId from token:', userId);
+                                    }
+                                } catch (e) {
+                                    console.warn('Could not extract userId from token, will let server determine user');
+                                }
+                                
                                 const versionData = {
                                     scheduleName: 'Main Schedule',
                                     changeType: 'manual_save',
                                     changeDescription: 'Schedule manually saved by user',
                                     comment: `${result.updated} operations updated`,
-                                    userId: 5 // Hardcoded for now, should ideally get from auth context
+                                    userId: userId // Use extracted userId or let server determine from auth
                                 };
+                                
+                                console.log('📝 Sending version history request with data:', versionData);
                                 
                                 const versionResponse = await fetch('/api/schedules/1/versions', {
                                     method: 'POST',
@@ -6299,13 +6316,19 @@
                                     body: JSON.stringify(versionData)
                                 });
                                 
+                                console.log('📝 Version history response status:', versionResponse.status);
+                                
                                 if (versionResponse.ok) {
-                                    console.log('✅ Version history entry created for manual save');
+                                    const versionResult = await versionResponse.json();
+                                    console.log('✅ Version history entry created for manual save:', versionResult);
                                 } else {
-                                    console.error('Failed to create version history entry:', await versionResponse.text());
+                                    const errorText = await versionResponse.text();
+                                    console.error('❌ Failed to create version history entry:', errorText);
+                                    console.error('Response status:', versionResponse.status);
                                 }
                             } catch (error) {
-                                console.error('Failed to create version history entry:', error);
+                                console.error('❌ Exception creating version history entry:', error);
+                                console.error('Error stack:', error.stack);
                             }
                             
                             // Optional: Also save a version/snapshot for history
