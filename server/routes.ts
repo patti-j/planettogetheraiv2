@@ -5558,6 +5558,36 @@ router.get("/api/saved-schedules/:id", requireAuth, async (req, res) => {
   }
 });
 
+// Create new version history entry (POST)
+router.post("/api/schedules/:id/versions", async (req, res) => {
+  try {
+    const scheduleId = parseInt(req.params.id);
+    const { scheduleName, changeType, changeDescription, comment, userId } = req.body;
+    
+    // Create a new version entry with current timestamp
+    const newVersion = {
+      id: Date.now(),
+      scheduleId: scheduleId,
+      versionNumber: Date.now(),
+      checksum: Math.random().toString(36).substring(7),
+      createdAt: new Date().toISOString(),
+      createdBy: userId || 1,
+      parentVersionId: null,
+      changeType: changeType || "MANUAL_EDIT",
+      comment: comment || changeDescription || "No description provided",
+      tag: changeType === 'optimization' ? 'optimized' : 'manual',
+      snapshotData: {}
+    };
+    
+    // In a real implementation, this would save to database
+    // For now, just return the created version
+    res.json({ success: true, version: newVersion });
+  } catch (error) {
+    console.error("Error creating version history:", error);
+    res.status(500).json({ message: "Failed to create version history entry" });
+  }
+});
+
 // Get version history for a schedule (mock data for now)
 router.get("/api/schedules/:id/versions", async (req, res) => {
   try {

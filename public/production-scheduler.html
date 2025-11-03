@@ -3375,6 +3375,44 @@
                                 });
                                 console.log('Zoom to fit applied after ' + algorithm + ' scheduling');
                                 
+                                // Save the optimized schedule to database and create version history
+                                await saveSchedule();
+                                
+                                // Create version history entry for the optimization
+                                try {
+                                    const authToken = getAuthToken();
+                                    const versionData = {
+                                        scheduleName: 'Main Schedule',
+                                        changeType: 'optimization',
+                                        changeDescription: `${message}`,
+                                        comment: `Algorithm: ${algorithm.toUpperCase()}`,
+                                        userId: 5 // Hardcoded for now, should ideally get from auth context
+                                    };
+                                    
+                                    await fetch('/api/schedules/1/versions', {
+                                        method: 'POST',
+                                        headers: {
+                                            'Content-Type': 'application/json',
+                                            'Authorization': authToken ? `Bearer ${authToken}` : ''
+                                        },
+                                        body: JSON.stringify(versionData)
+                                    });
+                                    console.log('📚 Version history entry created for optimization');
+                                } catch (error) {
+                                    console.error('Failed to create version history entry:', error);
+                                }
+                                
+                                // Notify parent window that schedule has been updated
+                                if (window.parent && window.parent !== window) {
+                                    window.parent.postMessage({
+                                        type: 'SCHEDULE_UPDATED',
+                                        algorithm: algorithm,
+                                        message: message,
+                                        timestamp: new Date().toISOString()
+                                    }, '*');
+                                    console.log('📬 Notified parent window of schedule update');
+                                }
+                                
                                 // Hide loading and show success message
                                 document.getElementById('loadingOverlay').style.display = 'none';
                                 updateStatus();

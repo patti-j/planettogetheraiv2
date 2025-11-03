@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Loader2, ExternalLink, History, GitBranch } from 'lucide-react';
 import { useTheme } from '@/hooks/useThemeFederated';
 import { VersionHistory } from '@/components/version-history';
+import { useToast } from '@/hooks/use-toast';
 import {
   Sheet,
   SheetContent,
@@ -27,6 +28,7 @@ export default function ProductionScheduler() {
   const [showVersionHistory, setShowVersionHistory] = useState(false);
   const [currentVersionId, setCurrentVersionId] = useState<number | undefined>(undefined);
   const { resolvedTheme, theme } = useTheme();
+  const { toast } = useToast();
 
   // Use resolved theme (light/dark) instead of raw theme (light/dark/system)
   // Initialize with theme from localStorage or default
@@ -106,6 +108,26 @@ export default function ProductionScheduler() {
       } else if (event.data?.type === 'SCHEDULER_ERROR') {
         console.error('❌ Scheduler error:', event.data.error);
         setIsLoading(false); // Hide loading overlay even on error
+      } else if (event.data?.type === 'SCHEDULE_UPDATED') {
+        console.log('📬 Received SCHEDULE_UPDATED from iframe - schedule optimized!', event.data);
+        
+        // Trigger a version history refresh
+        setShowVersionHistory(false);
+        setTimeout(() => {
+          // Force version history component to reload its data
+          // by toggling the sheet closed and open again if it was open
+          if (showVersionHistory) {
+            setShowVersionHistory(true);
+          }
+        }, 100);
+        
+        // Show a toast notification
+        if (event.data.message) {
+          toast({
+            title: "Schedule Optimized",
+            description: event.data.message,
+          });
+        }
       }
     };
 
