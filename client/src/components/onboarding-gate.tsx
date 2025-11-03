@@ -34,10 +34,11 @@ export function OnboardingGate({ children }: OnboardingGateProps) {
   const [isStartingTrial, setIsStartingTrial] = useState(false);
 
   // Get onboarding status for authenticated users
-  const { data: onboardingData, isLoading: onboardingLoading } = useQuery({
+  // Use isLoading only for initial fetch, not for refetches (prevents blank screen during navigation)
+  const { data: onboardingData, isLoading: onboardingLoading, isFetching } = useQuery({
     queryKey: ['/api/onboarding/status'],
     enabled: !!user && (location !== '/onboarding' && !location.startsWith('/onboarding?'))
-  }) as { data: OnboardingData | undefined, isLoading: boolean };
+  }) as { data: OnboardingData | undefined, isLoading: boolean, isFetching: boolean };
 
   // Check if user should see onboarding on first login (but don't force it)
   useEffect(() => {
@@ -97,9 +98,12 @@ export function OnboardingGate({ children }: OnboardingGateProps) {
     }
   };
 
-  // Show subtle loading state in content area only
+  // Show subtle loading state ONLY on initial load, not during navigation refetches
   // Don't show loading state if user is on the onboarding page itself
-  if (authLoading || (user && onboardingLoading && location !== '/onboarding' && !location.startsWith('/onboarding?'))) {
+  // Use onboardingLoading (initial fetch) not isFetching (refetch) to prevent blank screen during navigation
+  const isInitialLoad = authLoading || (user && onboardingLoading && !onboardingData && location !== '/onboarding' && !location.startsWith('/onboarding?'));
+  
+  if (isInitialLoad) {
     return (
       <div className="flex items-center justify-center h-full">
         <div className="text-center space-y-4">
