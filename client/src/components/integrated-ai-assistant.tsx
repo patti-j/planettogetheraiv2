@@ -732,6 +732,62 @@ export default function IntegratedAIAssistant() {
         });
       }
       
+      // Handle scheduler_action from Production Scheduling Agent
+      if (data.action && data.action.type === 'scheduler_action') {
+        console.log('[AI Assistant] Processing scheduler action:', data.action);
+        
+        // Check if we're on the production scheduler page
+        if (window.location.pathname === '/production-scheduler') {
+          // Find the scheduler iframe
+          const iframe = document.querySelector('iframe[src*="production-scheduler.html"]') as HTMLIFrameElement;
+          
+          if (iframe && iframe.contentWindow) {
+            // Send the command to the iframe
+            if (data.action.schedulerCommand) {
+              console.log('[AI Assistant] Sending command to scheduler iframe:', data.action.schedulerCommand);
+              
+              // Send the appropriate message based on command type
+              if (data.action.schedulerCommand.type === 'REFRESH_VIEW') {
+                iframe.contentWindow.postMessage({ type: 'REFRESH_SCHEDULE' }, '*');
+                
+                // Show a toast notification
+                toast({
+                  title: "Schedule Refreshed",
+                  description: "The production schedule has been updated with the latest algorithm results.",
+                });
+              } else if (data.action.schedulerCommand.type === 'RUN_ALGORITHM') {
+                iframe.contentWindow.postMessage({ 
+                  type: 'RUN_ALGORITHM',
+                  algorithm: data.action.schedulerCommand.algorithm 
+                }, '*');
+                
+                toast({
+                  title: "Algorithm Executed",
+                  description: `${data.action.schedulerCommand.algorithm} algorithm has been applied to the schedule.`,
+                });
+              }
+            }
+          } else {
+            console.warn('[AI Assistant] Scheduler iframe not found');
+            toast({
+              title: "Schedule Update",
+              description: "Please navigate to the Production Scheduler to see the updates.",
+            });
+          }
+        } else {
+          // Not on scheduler page, suggest navigation
+          toast({
+            title: "Navigate to Production Scheduler",
+            description: "Please open the Production Scheduler to see the algorithm results.",
+          });
+          
+          // Optionally navigate automatically after a delay
+          setTimeout(() => {
+            window.location.href = '/production-scheduler';
+          }, 2000);
+        }
+      }
+      
       const assistantMessage: Message = {
         id: Date.now().toString() + '_assistant',
         type: 'assistant',

@@ -2748,11 +2748,90 @@
                 //     maxAIBtn.textContent = '🤖 Max AI';
                 // });
                 
+                // Function to reload schedule data from database
+                async function refreshScheduleData() {
+                    console.log('🔄 Refreshing schedule data from database...');
+                    
+                    try {
+                        // Get auth headers
+                        const authHeaders = getAuthHeaders();
+                        const timestamp = new Date().getTime();
+                        
+                        // Fetch updated data
+                        const [operationsResponse, depsResponse, resourcesResponse, jobsResponse] = await Promise.all([
+                            fetch('/api/pt-operations?_=' + timestamp, { headers: authHeaders }), 
+                            fetch('/api/pt-dependencies?_=' + timestamp, { headers: authHeaders }),
+                            fetch('/api/resources-with-capabilities?_=' + timestamp, { headers: authHeaders }),
+                            fetch('/api/jobs?_=' + timestamp, { headers: authHeaders })
+                        ]);
+                        
+                        if (operationsResponse.ok && jobsResponse.ok) {
+                            const operations = await operationsResponse.json();
+                            const jobs = await jobsResponse.json();
+                            
+                            // Clear current event store
+                            scheduler.eventStore.removeAll();
+                            
+                            // Process and load new operations
+                            const events = operations.map(op => {
+                                const job = jobs.find(j => j.id === op.job_id);
+                                const resourceMapping = resourceMappings[op.resource_id] || 
+                                    (op.resource_id && op.resource_id !== '0' ? op.resource_id : 'unscheduled');
+                                
+                                return {
+                                    id: op.id,
+                                    name: op.name || `Operation ${op.sequence_number}`,
+                                    startDate: op.scheduled_start ? new Date(op.scheduled_start) : new Date(),
+                                    endDate: op.scheduled_end ? new Date(op.scheduled_end) : 
+                                        new Date(new Date().getTime() + (parseFloat(op.cycle_hrs || 1) * 3600000)),
+                                    resourceId: resourceMapping,
+                                    jobId: op.job_id,
+                                    jobName: job?.name || 'Unknown Job',
+                                    priority: job?.priority || 999,
+                                    jobPriority: job?.priority || 999,
+                                    eventColor: priorityColors[job?.priority] || priorityColors['default'],
+                                    durationUnit: 'hour',
+                                    duration: parseFloat(op.cycle_hrs || 1),
+                                    percentDone: 0,
+                                    resizable: true,
+                                    draggable: true,
+                                    manuallyScheduled: false
+                                };
+                            });
+                            
+                            // Load new events into scheduler
+                            scheduler.eventStore.add(events);
+                            
+                            // Update gantt chart if it exists
+                            if (window.gantt) {
+                                await loadGanttData();
+                            }
+                            
+                            console.log('✅ Schedule refreshed with', events.length, 'operations');
+                            showNotification('Schedule data refreshed', 'success');
+                            
+                            // Update version history
+                            loadVersionHistory();
+                        } else {
+                            console.error('Failed to refresh schedule data');
+                            showNotification('Failed to refresh schedule', 'error');
+                        }
+                    } catch (error) {
+                        console.error('Error refreshing schedule:', error);
+                        showNotification('Error refreshing schedule', 'error');
+                    }
+                }
+                
                 // Listen for messages from parent window (main app's Max AI panel)
                 window.addEventListener('message', (event) => {
                     // Handle algorithm run requests from parent
                     if (event.data && event.data.type === 'RUN_ALGORITHM') {
                         runSchedulerAlgorithm(event.data.algorithm);
+                    }
+                    // Handle refresh requests after agent updates database
+                    else if (event.data && (event.data.type === 'REFRESH_SCHEDULE' || 
+                                           event.data.type === 'REFRESH_VIEW')) {
+                        refreshScheduleData();
                     }
                 });
                 
