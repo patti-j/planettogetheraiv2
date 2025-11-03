@@ -13863,8 +13863,10 @@ router.get("/api/demand-change-requests", requireAuth, async (req, res) => {
     const sampleRequests = [
       {
         id: 1,
+        requestNumber: "DCR-2024-001",
         title: "Increase Production Capacity - Product A",
         description: "Request to increase weekly production capacity from 1000 to 1500 units",
+        requestType: "capacity_increase",
         status: "under_review",
         priority: "high",
         requestedBy: "John Smith",
@@ -13872,12 +13874,16 @@ router.get("/api/demand-change-requests", requireAuth, async (req, res) => {
         affectedProducts: ["Product A"],
         estimatedImpact: "15% revenue increase",
         reviewers: ["Jane Doe", "Mike Johnson"],
-        comments: 5
+        comments: 5,
+        approvalDeadline: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString(),
+        createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString()
       },
       {
         id: 2,
+        requestNumber: "DCR-2024-002",
         title: "Adjust Forecast for Q4",
         description: "Update demand forecast based on new market trends",
+        requestType: "forecast_adjustment",
         status: "approved",
         priority: "medium",
         requestedBy: "Sarah Wilson",
@@ -13885,12 +13891,16 @@ router.get("/api/demand-change-requests", requireAuth, async (req, res) => {
         affectedProducts: ["Product B", "Product C"],
         estimatedImpact: "Improved accuracy by 8%",
         reviewers: ["Tom Anderson"],
-        comments: 12
+        comments: 12,
+        approvalDeadline: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
+        createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString()
       },
       {
         id: 3,
+        requestNumber: "DCR-2024-003",
         title: "Emergency Order - Customer XYZ",
         description: "Rush order for 500 units needed by end of month",
+        requestType: "emergency_order",
         status: "submitted",
         priority: "critical",
         requestedBy: "Emily Davis",
@@ -13898,7 +13908,9 @@ router.get("/api/demand-change-requests", requireAuth, async (req, res) => {
         affectedProducts: ["Product D"],
         estimatedImpact: "Potential delay in other orders",
         reviewers: ["John Smith", "Sarah Wilson"],
-        comments: 3
+        comments: 3,
+        approvalDeadline: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString(),
+        createdAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString()
       }
     ];
 
