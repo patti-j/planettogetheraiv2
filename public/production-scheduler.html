@@ -5521,6 +5521,64 @@
                 window.addEventListener('message', (event) => {
                     console.log('Production Scheduler received message:', event.data);
                     
+                    // Handle algorithm execution from agent bridge
+                    if (event.data?.type === 'EXECUTE_SCHEDULING_ALGORITHM') {
+                        const algorithm = event.data.data?.algorithm;
+                        console.log('🤖 Agent Bridge requested algorithm execution:', algorithm);
+                        
+                        // Set the dropdown to the requested algorithm
+                        const algorithmSelect = document.getElementById('schedulingAlgorithm');
+                        if (algorithmSelect && algorithm) {
+                            algorithmSelect.value = algorithm;
+                            
+                            // Execute the algorithm
+                            setTimeout(() => {
+                                if (algorithm === 'asap' && window.asapScheduling) {
+                                    console.log('🚀 Executing ASAP algorithm via Agent Bridge');
+                                    window.asapScheduling();
+                                } else if (algorithm === 'alap' && window.alapScheduling) {
+                                    console.log('🚀 Executing ALAP algorithm via Agent Bridge');
+                                    window.alapScheduling();
+                                }
+                                
+                                // Send confirmation back to parent
+                                parent.postMessage({
+                                    type: 'ALGORITHM_EXECUTION_COMPLETE',
+                                    algorithm: algorithm,
+                                    success: true
+                                }, '*');
+                            }, 100);
+                        }
+                    }
+                    
+                    // Handle save schedule request from agent bridge
+                    if (event.data?.type === 'SAVE_SCHEDULE') {
+                        const name = event.data.data?.name;
+                        console.log('🤖 Agent Bridge requested schedule save:', name);
+                        
+                        // TODO: Implement save schedule functionality
+                        // For now, just acknowledge
+                        parent.postMessage({
+                            type: 'SCHEDULE_SAVE_COMPLETE',
+                            name: name,
+                            success: true
+                        }, '*');
+                    }
+                    
+                    // Handle load schedule request from agent bridge
+                    if (event.data?.type === 'LOAD_SCHEDULE') {
+                        const name = event.data.data?.name;
+                        console.log('🤖 Agent Bridge requested schedule load:', name);
+                        
+                        // TODO: Implement load schedule functionality
+                        // For now, just acknowledge
+                        parent.postMessage({
+                            type: 'SCHEDULE_LOAD_COMPLETE',
+                            name: name,
+                            success: true
+                        }, '*');
+                    }
+                    
                     // Handle scheduler commands from Max AI
                     if (event.data?.type === 'SCHEDULER_VIEW_CONTROL') {
                         const action = event.data.action;

@@ -37,9 +37,45 @@ Note on concurrent work:
   - Optional description support
   - List all saved schedules
   - Load previously saved schedules
+- **Algorithm Execution Bridge (Fixed November 3, 2025)**: 
+  - Production Scheduling Agent now properly executes ASAP/ALAP algorithms via client bridge
+  - Server-side agent delegates to client-side Bryntum Scheduler Pro for actual optimization
+  - Bidirectional communication via postMessage between server agent and client scheduler
+  - Algorithms actually optimize the schedule (not just pass-through as before)
 
 ## System Architecture
 The system prioritizes user experience, data integrity, performance, accessibility, and consistency, with a focus on quality assurance.
+
+### Agent Architecture (November 3, 2025)
+The system now uses a **modular agent architecture** designed for role-based access control and independent agent deployment:
+
+#### Core Components:
+1. **Agent Services** (`server/services/agents/`)
+   - `base-agent.interface.ts`: Base interface all agents must implement
+   - `production-scheduling-agent.service.ts`: Scheduling-specific logic
+   - `agent-registry.ts`: Manages available agents based on permissions
+   - `agent-bridge.ts`: Handles client-server communication for agents
+
+2. **Agent Registry Pattern**
+   - Central registry manages all available agents
+   - Loads agents based on user permissions
+   - Enables future role-based access (e.g., some users only get Production Scheduling)
+
+3. **Agent Bridge Communication**
+   - Allows server-side agents to trigger client-side actions
+   - Production Scheduling Agent can execute Bryntum algorithms via postMessage
+   - Supports real-time bidirectional communication
+
+4. **Delegation Architecture**
+   - Max AI delegates to specialized agents when appropriate
+   - Each agent is self-contained with its own logic
+   - Agents can be independently deployed/updated
+
+#### Benefits:
+- **Separation of Concerns**: Each agent's logic is isolated
+- **Role-Based Access**: Users can have access to specific agents only
+- **Scalability**: New agents can be added without modifying core Max AI
+- **Maintainability**: Agent-specific code is organized and modular
 
 ### Frontend
 -   **Framework**: React 18 with TypeScript.

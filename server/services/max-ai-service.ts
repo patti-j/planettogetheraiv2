@@ -13,6 +13,9 @@ import { semanticRegistry } from './semantic-registry';
 import { agentTrainingLoader } from './agent-training-loader';
 import { DEFAULT_MODEL, DEFAULT_TEMPERATURE } from '../config/ai-model';
 import { PowerBIService } from './powerbi';
+import { agentRegistry } from './agents/agent-registry';
+import type { AgentContext } from './agents/agent-registry';
+import { agentBridge } from './agents/agent-bridge';
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -170,6 +173,20 @@ export class MaxAIService {
   
   // PowerBI Service instance
   private powerBIService = new PowerBIService();
+  
+  // Initialize agent registry on service creation
+  constructor() {
+    this.initializeAgents();
+  }
+  
+  private async initializeAgents(): Promise<void> {
+    try {
+      await agentRegistry.initialize();
+      console.log('[MaxAIService] Agent registry initialized successfully');
+    } catch (error) {
+      console.error('[MaxAIService] Failed to initialize agent registry:', error);
+    }
+  }
   
   // Enhanced memory system - detect and store user preferences/instructions with improved context awareness
   private async detectAndStoreMemory(userId: number, userMessage: string, aiResponse: string): Promise<void> {
@@ -1719,6 +1736,35 @@ Rules:
     }
   ): Promise<MaxResponse> {
     try {
+        // Check if any specialized agent can handle this request
+        console.log(`[Max AI] Checking if specialized agent can handle: "${query}"`);
+        const agentContext: AgentContext = {
+          userId: context.userId,
+          userName: context.userRole,
+          db: db,
+          sessionId: context.sessionMetrics?.sessionDuration?.toString(),
+          metadata: context,
+          permissions: ['*'] // TODO: Get actual user permissions
+        };
+        
+        const agentResponse = await agentRegistry.processMessage(query, agentContext);
+        if (agentResponse) {
+          console.log(`[Max AI] ✅ Delegated to specialized agent`);
+          
+          // Handle client actions if needed
+          if (agentResponse.requiresClientAction) {
+            await agentBridge.handleAgentResponse(agentResponse, context.userId);
+          }
+          
+          return {
+            content: agentResponse.content,
+            error: agentResponse.error || false,
+            confidence: 0.95,
+            action: agentResponse.action
+          };
+        }
+        console.log(`[Max AI] No specialized agent available, continuing with Max AI`);
+        
         // Try to analyze internal data FIRST for quick responses
         console.log(`[Max AI] Checking internal data query for: "${query}"`);
         const internalDataResponse = await this.analyzeInternalDataQuery(query, context);
