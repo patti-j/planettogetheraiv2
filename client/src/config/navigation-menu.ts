@@ -99,7 +99,7 @@ export const navigationGroups: NavigationGroup[] = [
       { icon: Truck, label: "Forklift Driver", href: "/forklift-driver", feature: "shop-floor", action: "view", color: "bg-yellow-500" },
       { icon: Wrench, label: "Maintenance", href: "/maintenance", feature: "maintenance-planning", action: "view", color: "bg-red-500" },
       { icon: AlertTriangle, label: "Disruption Management", href: "/disruption-management", feature: "schedule", action: "view", color: "bg-red-600" },
-      { icon: AlertCircle, label: "Alerts & Notifications", href: "/alerts", feature: "analytics", action: "view", color: "bg-red-500" }
+      { icon: AlertCircle, label: "Alerts & Notifications", href: "/alerts", feature: "alerts", action: "view", color: "bg-red-500" }
     ]
   },
   {
