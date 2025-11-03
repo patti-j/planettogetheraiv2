@@ -198,7 +198,9 @@ export default function ApplicationApp() {
                 </ProtectedRoute>
               </Route>
               <Route path="/mobile-home" component={HomePage} />
-              <Route path="/home" component={HomePage} />
+              <Route path="/home">
+                <HomePage />
+              </Route>
 
               {/* Analytics & Reports */}
               <Route path="/federation-dashboard">
