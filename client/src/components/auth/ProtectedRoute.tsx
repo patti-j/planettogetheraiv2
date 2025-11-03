@@ -31,8 +31,10 @@ export function ProtectedRoute({
     userExists: !!user
   });
 
-  // If auth is still loading, show a loading state instead of access denied
-  if (isLoading) {
+  // Only show loading state on TRUE initial load when there's no user data
+  // Don't show loading during refetches when we already have cached user data
+  // This prevents blank screens during navigation
+  if (isLoading && !user) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gray-50">
         <div className="text-center">
