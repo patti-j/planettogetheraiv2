@@ -28,6 +28,37 @@ The system uses a modular agent architecture designed for role-based access cont
 -   **Agent Bridge Communication**: Enables server-side agents to trigger client-side actions and supports real-time bidirectional communication.
 -   **Delegation Architecture**: Max AI delegates to specialized, self-contained agents for specific logic, allowing independent deployment and updates.
 
+#### Agent Training Document and Service Implementation Synchronization
+
+**CRITICAL**: Each agent has two synchronized files that MUST be kept in sync:
+1. **Training Document** (`server/training/agents/[agent-name].md`) - Defines the agent's knowledge, personality, and behavior specifications
+2. **Service Implementation** (`server/services/agents/[agent-name].service.ts`) - Implements the actual code based on the training document
+
+**The Relationship:**
+- **Training Document (`.md`)** = The blueprint/specification that defines:
+  - Agent identity and communication style
+  - Core knowledge and terminology understanding
+  - Trigger phrases that activate features
+  - Response templates and formatting rules
+  - Database tables and relationships to query
+
+- **Service Implementation (`.ts`)** = The engine that executes:
+  - Trigger arrays derived from .md specifications
+  - Handler methods implementing described functionality
+  - Database queries using knowledge from .md
+  - Response formatting following .md style guidelines
+
+**Synchronization Rules:**
+- When adding new capabilities to `.ts`, document them in `.md`
+- When updating communication style in `.md`, update response formatting in `.ts`
+- When adding trigger phrases in `.md`, add them to triggers array in `.ts`
+- When changing database queries in `.ts`, update query examples in `.md`
+
+**Example: Production Scheduling Agent**
+- Training: `server/training/agents/production-scheduling-agent.md`
+- Implementation: `server/services/agents/production-scheduling-agent.service.ts`
+- Must stay synchronized for features like job queries, algorithm execution, and response formatting
+
 ### Frontend
 -   **Framework**: React 18 with TypeScript.
 -   **UI Framework**: Shadcn/UI built on Radix UI primitives.
@@ -63,6 +94,33 @@ The system uses a modular agent architecture designed for role-based access cont
 -   **Voice Chat**: Integrates real-time voice chat with OpenAI's gpt-realtime-mini model using WebSocket and SSE.
 -   **Demand Forecasting**: Native React-based forecasting application with SQL Server integration, dynamic table/column selection, and time-series forecasting with Recharts visualization, including intermittent demand handling.
 -   **Dynamic Paginated Reports**: Enhanced page supporting SQL Server tables and Power BI datasets as data sources, featuring workspace/dataset/table selection, data querying, and full table browsing with pagination, filtering, sorting, and search.
+
+## Important Implementation Notes
+
+### Agent File Synchronization (CRITICAL)
+**Each AI agent requires TWO synchronized files that MUST be kept in sync:**
+- **Training Document** (`server/training/agents/[agent-name].md`): Defines specifications
+- **Service Implementation** (`server/services/agents/[agent-name].service.ts`): Executes the code
+
+**When modifying agents, ALWAYS update both files:**
+- Adding new features → Update both .md documentation AND .ts implementation
+- Changing response style → Update .md guidelines AND .ts formatting code
+- Adding triggers → Update .md trigger list AND .ts triggers array
+- Modifying queries → Update .md examples AND .ts database code
+
+**Failure to synchronize these files will cause:**
+- Agent confusion (implementation differs from specification)
+- Missing features (documented but not implemented)
+- Unexpected behavior (implemented but not documented)
+
+### Production Scheduling Agent Capabilities
+The Production Scheduling Agent (`production-scheduling-agent.service.ts`) can:
+- Query all job data from `ptjobs` table with detailed information
+- Show jobs by priority, status, due dates, completion
+- Execute ASAP and ALAP scheduling algorithms
+- Manage resources and capabilities
+- Create and load schedule versions
+- Uses professional language with bullet points for lists
 
 ## External Dependencies
 -   **Database Provider**: Neon Database (serverless PostgreSQL)
