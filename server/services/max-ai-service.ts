@@ -3678,7 +3678,7 @@ Respond with JSON format:
           jo.sequence_number as sequenceNumber,
           jo.scheduled_start as startTime,
           jo.scheduled_end as endTime,
-          jo.cycle_duration_hours as duration,
+          jo.cycle_hrs as duration,
           jo.setup_hours as setupTime,
           jo.post_processing_hours as teardownTime,
           jo.manually_scheduled as manuallyScheduled,
