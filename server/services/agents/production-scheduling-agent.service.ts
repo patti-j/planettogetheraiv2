@@ -734,8 +734,7 @@ export class ProductionSchedulingAgent extends BaseAgent {
   private async getJobDetails(jobId: string, context: AgentContext): Promise<AgentResponse> {
     try {
       const job = await db.execute(sql`
-        SELECT id, name, external_id, priority, need_date_time, scheduled_status,
-               quantity_ordered, quantity_completed, notes, customer_name
+        SELECT id, name, external_id, priority, need_date_time, scheduled_status
         FROM ptjobs
         WHERE name = ${jobId} OR external_id = ${jobId} OR id::text = ${jobId}
         LIMIT 1
@@ -755,16 +754,6 @@ export class ProductionSchedulingAgent extends BaseAgent {
       response += `• Priority: ${jobData.priority} (${priorityLabel})\n`;
       response += `• Due Date: ${jobData.need_date_time ? new Date(jobData.need_date_time).toLocaleDateString() : 'Not set'}\n`;
       response += `• Status: ${jobData.scheduled_status || 'Not scheduled'}\n`;
-      
-      if (jobData.quantity_ordered) {
-        response += `• Quantity Ordered: ${jobData.quantity_ordered}\n`;
-        if (jobData.quantity_completed) {
-          response += `• Quantity Completed: ${jobData.quantity_completed}\n`;
-        }
-      }
-      if (jobData.customer_name) {
-        response += `• Customer: ${jobData.customer_name}\n`;
-      }
       
       response += '\nWould you like to see the operations for this job?';
       
@@ -807,8 +796,7 @@ export class ProductionSchedulingAgent extends BaseAgent {
   private async getCompletedJobs(context: AgentContext): Promise<AgentResponse> {
     try {
       const jobs = await db.execute(sql`
-        SELECT id, name, external_id, scheduled_status, updated_at,
-               quantity_ordered, quantity_completed
+        SELECT id, name, external_id, scheduled_status, updated_at
         FROM ptjobs
         WHERE scheduled_status IN ('Completed', 'Shipped', 'Delivered')
         ORDER BY updated_at DESC
@@ -824,9 +812,7 @@ export class ProductionSchedulingAgent extends BaseAgent {
       for (const job of jobs.rows) {
         const completedDate = job.updated_at ? 
           new Date(job.updated_at).toLocaleDateString() : 'Unknown';
-        const completion = job.quantity_completed && job.quantity_ordered ?
-          ` (${job.quantity_completed}/${job.quantity_ordered} units)` : '';
-        response += `• ${job.name || job.external_id} - Completed ${completedDate}${completion}\n`;
+        response += `• ${job.name || job.external_id} - Completed ${completedDate}\n`;
       }
       
       response += '\nWould you like to see more details about any specific job?';

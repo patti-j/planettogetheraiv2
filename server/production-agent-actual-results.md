@@ -1,5 +1,5 @@
 # Production Scheduling Agent - Actual Test Results
-## Test Date: 11/3/2025, 10:36:00 PM
+## Test Date: 11/3/2025, 10:41:02 PM
 ## Actual responses from the Production Scheduling Agent
 
 ---
@@ -8,9 +8,25 @@
 
 **Actual Response:**
 ```
-Failed to retrieve job information: column "scheduled_start" does not exist
+**5 active jobs with details:**
+
+**Priority 1 (Highest):**
+• IPA Batch 2024-001 - Due: Nov 15, 2025, Status: In Progress
+
+**Priority 2 (High):**
+• Pilsner Batch 2024-003 - Due: Nov 15, 2025, Status: Scheduled
+
+**Priority 3 (Medium):**
+• Stout Batch 2024-005 - Due: Nov 15, 2025, Status: Scheduled
+
+**Priority 4 (Low):**
+• Wheat Beer 2024-008 - Due: Nov 15, 2025, Status: In Progress
+
+**Priority 5 (Lowest):**
+• Lager Batch 2024-012 - Due: Nov 15, 2025, Status: Scheduled
+
+Would you like to see operations for any specific job?
 ```
-⚠️ **Error Status:** true
 
 ---
 
@@ -18,9 +34,8 @@ Failed to retrieve job information: column "scheduled_start" does not exist
 
 **Actual Response:**
 ```
-Failed to retrieve job information: column "scheduled_start" does not exist
+Job all not found.
 ```
-⚠️ **Error Status:** true
 
 ---
 
@@ -51,9 +66,8 @@ No jobs due this week.
 
 **Actual Response:**
 ```
-Failed to retrieve job information: column "scheduled_start" does not exist
+Job overdue not found.
 ```
-⚠️ **Error Status:** true
 
 ---
 
@@ -76,9 +90,8 @@ Would you like to see jobs with a specific status?
 
 **Actual Response:**
 ```
-Failed to retrieve job information: column "scheduled_start" does not exist
+Job ipa not found.
 ```
-⚠️ **Error Status:** true
 
 ---
 
@@ -103,9 +116,8 @@ Would you like more detailed information?
 
 **Actual Response:**
 ```
-Failed to retrieve job information: column "scheduled_completion" does not exist
+No completed jobs found.
 ```
-⚠️ **Error Status:** true
 
 ---
 
@@ -149,9 +161,25 @@ Job of not found.
 
 **Actual Response:**
 ```
-Failed to retrieve job information: column "scheduled_start" does not exist
+**5 active jobs with details:**
+
+**Priority 1 (Highest):**
+• IPA Batch 2024-001 - Due: Nov 15, 2025, Status: In Progress
+
+**Priority 2 (High):**
+• Pilsner Batch 2024-003 - Due: Nov 15, 2025, Status: Scheduled
+
+**Priority 3 (Medium):**
+• Stout Batch 2024-005 - Due: Nov 15, 2025, Status: Scheduled
+
+**Priority 4 (Low):**
+• Wheat Beer 2024-008 - Due: Nov 15, 2025, Status: In Progress
+
+**Priority 5 (Lowest):**
+• Lager Batch 2024-012 - Due: Nov 15, 2025, Status: Scheduled
+
+Would you like to see operations for any specific job?
 ```
-⚠️ **Error Status:** true
 
 ---
 
@@ -159,15 +187,31 @@ Failed to retrieve job information: column "scheduled_start" does not exist
 
 **Actual Response:**
 ```
-Failed to retrieve job information: column "scheduled_start" does not exist
+**5 active jobs with details:**
+
+**Priority 1 (Highest):**
+• IPA Batch 2024-001 - Due: Nov 15, 2025, Status: In Progress
+
+**Priority 2 (High):**
+• Pilsner Batch 2024-003 - Due: Nov 15, 2025, Status: Scheduled
+
+**Priority 3 (Medium):**
+• Stout Batch 2024-005 - Due: Nov 15, 2025, Status: Scheduled
+
+**Priority 4 (Low):**
+• Wheat Beer 2024-008 - Due: Nov 15, 2025, Status: In Progress
+
+**Priority 5 (Lowest):**
+• Lager Batch 2024-012 - Due: Nov 15, 2025, Status: Scheduled
+
+Would you like to see operations for any specific job?
 ```
-⚠️ **Error Status:** true
 
 ---
 
 ## Test Summary
 
 - Total queries tested: 15
-- Test completed at: 11/3/2025, 10:36:02 PM
+- Test completed at: 11/3/2025, 10:41:04 PM
 - Agent: ProductionSchedulingAgentService
 - User context: patti (ID: 4)
