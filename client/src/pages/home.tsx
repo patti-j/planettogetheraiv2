@@ -365,13 +365,17 @@ export default function HomePage() {
     }
   };
 
-  // Show minimal skeleton only on very first load to prevent white screen
-  // Once data starts flowing, show the real content (even if still loading)
-  const isInitialLoad = isLoadingRecommendations && !aiRecommendations.length && 
-                        isLoadingMetrics && !dashboardMetrics &&
-                        isLoadingAlerts && !alerts.length;
+  // Only show loading skeleton if ALL of these are true:
+  // 1. No data has loaded yet (aiRecommendations, dashboardMetrics, alerts all empty)
+  // 2. No dashboards exist
+  // 3. Queries are currently loading
+  // This prevents the skeleton from showing during navigation between pages
+  const hasAnyData = aiRecommendations.length > 0 || dashboardMetrics || alerts.length > 0;
+  const isInitialLoad = !hasAnyData && isLoadingRecommendations && isLoadingMetrics && isLoadingAlerts;
 
-  if (isInitialLoad && !dashboards?.length) {
+  // Skip the loading skeleton to prevent blank screen during navigation
+  // The individual sections will show their own loading states
+  if (isInitialLoad && !dashboards?.length && !hasAnyData) {
     return (
       <div className="flex flex-col h-full bg-background">
         <div className={`border-b ${isMobile ? 'p-4' : 'p-6'}`}>
