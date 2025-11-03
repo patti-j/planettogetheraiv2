@@ -3376,10 +3376,15 @@
                                 console.log('Zoom to fit applied after ' + algorithm + ' scheduling');
                                 
                                 // Save the optimized schedule to database and create version history
-                                await saveSchedule();
+                                console.log('📝 Saving optimized schedule to database...');
+                                const saveResult = await window.saveSchedule();
+                                if (!saveResult) {
+                                    console.error('Failed to save schedule to database');
+                                }
                                 
                                 // Create version history entry for the optimization
                                 try {
+                                    console.log('📝 Creating version history entry...');
                                     const authToken = getAuthToken();
                                     const versionData = {
                                         scheduleName: 'Main Schedule',
@@ -3389,7 +3394,7 @@
                                         userId: 5 // Hardcoded for now, should ideally get from auth context
                                     };
                                     
-                                    await fetch('/api/schedules/1/versions', {
+                                    const versionResponse = await fetch('/api/schedules/1/versions', {
                                         method: 'POST',
                                         headers: {
                                             'Content-Type': 'application/json',
@@ -3397,6 +3402,12 @@
                                         },
                                         body: JSON.stringify(versionData)
                                     });
+                                    
+                                    if (versionResponse.ok) {
+                                        console.log('✅ Version history entry created successfully');
+                                    } else {
+                                        console.error('Failed to create version history entry:', await versionResponse.text());
+                                    }
                                     console.log('📚 Version history entry created for optimization');
                                 } catch (error) {
                                     console.error('Failed to create version history entry:', error);
@@ -3444,8 +3455,8 @@
                     });
                 });
                 
-                // Save schedule to database
-                async function saveSchedule() {
+                // Save schedule to database - make it globally available
+                window.saveSchedule = async function() {
                     try {
                         const events = [...scheduler.eventStore.records].filter(e => e.resourceId !== 'unscheduled');
                         const operations = events.map(event => ({
@@ -3474,12 +3485,24 @@
                         
                         const result = await response.json();
                         console.log(`✅ Schedule saved: ${result.updated}/${result.total} operations updated`);
+                        
+                        // Notify parent window that schedule was updated
+                        if (window.parent !== window) {
+                            window.parent.postMessage({
+                                type: 'SCHEDULE_UPDATED',
+                                data: { savedOperations: result.updated, totalOperations: result.total }
+                            }, '*');
+                        }
+                        
                         return true;
                     } catch (error) {
                         console.error('❌ Failed to save schedule:', error);
                         return false;
                     }
                 }
+                
+                // Alias for backwards compatibility
+                const saveSchedule = window.saveSchedule;
 
                 // Shared helper functions for job extraction and sorting
                 function getJobKey(ev) {

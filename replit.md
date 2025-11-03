@@ -43,7 +43,8 @@ Note on concurrent work:
   - Production Scheduling Agent now properly executes ASAP/ALAP algorithms via client bridge
   - Server-side agent delegates to client-side Bryntum Scheduler Pro for actual optimization
   - Bidirectional communication via postMessage between server agent and client scheduler
-  - Algorithms actually optimize the schedule (not just pass-through as before)
+  - Algorithms actually optimize the schedule and save to database with version history
+  - Fixed saveSchedule function to be globally available for agent-triggered executions
 
 ## System Architecture
 The system prioritizes user experience, data integrity, performance, accessibility, and consistency, with a focus on quality assurance.
