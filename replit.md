@@ -24,6 +24,7 @@ Note on concurrent work:
 - **Cleaned Up Non-Working Algorithms**: Removed stubs for Resource Leveling and Critical Path - only ASAP and ALAP are functional
 - **Fixed Database Column Names**: Corrected `cycle_duration_hours` to `cycle_hrs` in Max AI service queries
 - **Navigation Fix**: Fixed critical navigation issue where /home route was blanking screen due to hard redirect
+- **Theory of Constraints Page Fix**: Fixed blank page issue by adding `/theory-of-constraints` route to publicPaths list in App.tsx
 - **AI Agent Training Enhancement**: Production Scheduling Agent now recognizes natural language optimization requests:
   - ASAP Algorithm triggers: "optimize schedule", "minimize lead times", "speed up production"
   - ALAP Algorithm triggers: "JIT optimization", "minimize inventory", "reduce WIP"
