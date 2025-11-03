@@ -66,6 +66,16 @@ export function SplitScreenProvider({ children }: SplitScreenProviderProps) {
         }
       }
       
+      // CRITICAL FIX: Certain pages should always exit split mode and navigate normally
+      // These are typically dashboard/home pages that should be full-screen
+      const fullScreenPages = ['/home', '/dashboard', '/mobile-home', '/'];
+      if (fullScreenPages.includes(path)) {
+        // Exit split mode and navigate
+        setSplitMode('none');
+        setLocation(path);
+        return;
+      }
+      
       if (splitMode !== 'none') {
         // Check if this path is already displayed in either pane
         if (path === primaryPage || path === secondaryPage) {
