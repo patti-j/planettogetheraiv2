@@ -73,7 +73,6 @@ export default function PaginatedReports() {
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
   const [selectedColumns, setSelectedColumns] = useState<string[]>([]);
   const [columnFilters, setColumnFilters] = useState<Record<string, string>>({});
-  const [manualTableName, setManualTableName] = useState("");
 
   // Power BI authentication
   const { isAuthenticated, authenticateAuto } = usePowerBIAuth();
@@ -215,7 +214,6 @@ export default function PaginatedReports() {
     }
     setSelectedDatasetId("");
     setSelectedPowerBITable("");
-    setManualTableName("");
     setSelectedTable(null);
     setCurrentPage(1);
   };
@@ -609,88 +607,36 @@ export default function PaginatedReports() {
                   <Select
                     value={selectedPowerBITable}
                     onValueChange={(value) => {
-                      if (value !== 'manual-entry') {
-                        setSelectedPowerBITable(value);
-                        setCurrentPage(1);
-                        setSearchTerm("");
-                        setColumnFilters({});
-                      }
+                      setSelectedPowerBITable(value);
+                      setCurrentPage(1);
+                      setSearchTerm("");
+                      setColumnFilters({});
                     }}
                     disabled={loadingDatasetTables}
                   >
                     <SelectTrigger id="powerbi-table-select" data-testid="select-powerbi-table">
-                      <SelectValue placeholder={loadingDatasetTables ? "Discovering tables..." : "Select or enter a table name..."} />
+                      <SelectValue placeholder={loadingDatasetTables ? "Discovering tables..." : "Select a table..."} />
                     </SelectTrigger>
                     <SelectContent>
                       {datasetTables && datasetTables.length > 0 ? (
-                        <>
-                          {datasetTables.filter((table: any) => 
-                            // Filter out any error/placeholder tables
-                            table.name && !table.name.includes('Unable to auto-discover')
-                          ).map((table: any) => (
-                            <SelectItem key={table.name} value={table.name}>
-                              {table.name} {table.columns?.length ? `(${table.columns.length} columns)` : ''}
-                            </SelectItem>
-                          ))}
-                          <SelectItem value="manual-entry">
-                            <span className="text-muted-foreground">Enter table name manually...</span>
+                        datasetTables.filter((table: any) => 
+                          // Filter out any error/placeholder tables
+                          table.name && !table.name.includes('Unable to auto-discover')
+                        ).map((table: any) => (
+                          <SelectItem key={table.name} value={table.name}>
+                            {table.name} {table.columns?.length ? `(${table.columns.length} columns)` : ''}
                           </SelectItem>
-                        </>
+                        ))
                       ) : (
-                        <>
-                          <SelectItem value="manual-entry">
-                            Enter table name manually
-                          </SelectItem>
-                          {!loadingDatasetTables && (
-                            <div className="px-2 py-1 text-xs text-muted-foreground">
-                              Auto-discovery unavailable. Enter table name below.
-                            </div>
-                          )}
-                        </>
+                        !loadingDatasetTables && (
+                          <div className="px-2 py-1 text-xs text-muted-foreground">
+                            No tables discovered. Ensure you have a Premium workspace with proper XMLA permissions.
+                          </div>
+                        )
                       )}
                     </SelectContent>
                   </Select>
                 </div>
-                
-                {/* Manual table name entry */}
-                {(selectedPowerBITable === 'manual-entry' || 
-                  (!loadingDatasetTables && (!datasetTables || datasetTables.length === 0 || 
-                    datasetTables.filter((t: any) => t.name && !t.name.includes('Unable to auto-discover')).length === 0))) && (
-                  <div className="max-w-md">
-                    <Label htmlFor="manual-table-name">Enter Table Name</Label>
-                    <div className="flex gap-2">
-                      <Input
-                        id="manual-table-name"
-                        placeholder="e.g., Sales, Orders, Customers"
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter' && e.currentTarget.value) {
-                            setSelectedPowerBITable(e.currentTarget.value);
-                            setCurrentPage(1);
-                            setSearchTerm("");
-                            setColumnFilters({});
-                          }
-                        }}
-                      />
-                      <Button
-                        size="sm"
-                        onClick={(e) => {
-                          const input = document.getElementById('manual-table-name') as HTMLInputElement;
-                          if (input?.value) {
-                            setSelectedPowerBITable(input.value);
-                            setCurrentPage(1);
-                            setSearchTerm("");
-                            setColumnFilters({});
-                          }
-                        }}
-                      >
-                        Use Table
-                      </Button>
-                    </div>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Common table names: Sales, Orders, Customers, Products, Date
-                    </p>
-                  </div>
-                )}
               </div>
             </CardContent>
           </Card>
