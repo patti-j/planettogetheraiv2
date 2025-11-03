@@ -365,6 +365,39 @@ export default function HomePage() {
     }
   };
 
+  // Only show loading skeleton if ALL of these are true:
+  // 1. No data has loaded yet (aiRecommendations, dashboardMetrics, alerts all empty)
+  // 2. No dashboards exist
+  // 3. Queries are currently loading
+  // This prevents the skeleton from showing during navigation between pages
+  const hasAnyData = aiRecommendations.length > 0 || dashboardMetrics || alerts.length > 0;
+  const isInitialLoad = !hasAnyData && isLoadingRecommendations && isLoadingMetrics && isLoadingAlerts;
+
+  // Skip the loading skeleton to prevent blank screen during navigation
+  // The individual sections will show their own loading states
+  if (isInitialLoad && !dashboards?.length && !hasAnyData) {
+    return (
+      <div className="flex flex-col h-full bg-background">
+        <div className={`border-b ${isMobile ? 'p-4' : 'p-6'}`}>
+          <div className="flex items-center gap-3 animate-pulse">
+            <div className="h-5 bg-gray-200 dark:bg-gray-700 rounded w-24"></div>
+            <div className="h-10 bg-gray-200 dark:bg-gray-700 rounded flex-1 max-w-xs"></div>
+          </div>
+        </div>
+        <div className={`flex-1 ${isMobile ? 'p-4' : 'p-6'}`}>
+          <div className="space-y-4 animate-pulse">
+            <div className="h-40 bg-gray-100 dark:bg-gray-800 rounded"></div>
+            <div className="h-12 bg-gray-100 dark:bg-gray-800 rounded"></div>
+            <div className="space-y-3">
+              <div className="h-24 bg-gray-100 dark:bg-gray-800 rounded"></div>
+              <div className="h-24 bg-gray-100 dark:bg-gray-800 rounded"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col h-full bg-background">
       {/* Header */}

@@ -1,6 +1,7 @@
-import { sql } from "drizzle-orm";
+import { sql, eq, desc } from "drizzle-orm";
 import { db } from "../db";
 import OpenAI from "openai";
+import { agentRecommendations, aiAgentTeam } from "../../shared/schema";
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -32,6 +33,75 @@ interface AIRecommendation {
 }
 
 export class AISchedulingRecommendationsService {
+  private static lastAnalysisTimestamp: Date | null = null;
+  
+  /**
+   * Get last analysis timestamp
+   */
+  static getLastAnalysisTime(): Date | null {
+    return this.lastAnalysisTimestamp;
+  }
+  
+  /**
+   * Get or create agent ID by name
+   */
+  private async getAgentId(agentName: string): Promise<number> {
+    // For now, use a simple mapping - all scheduling recommendations come from agent ID 1
+    // In the future, this can query the database for the specific agent
+    // Map AI agent names to agent type
+    const agentTypeMap: Record<string, string> = {
+      'Production Optimizer': 'scheduling_optimizer',
+      'Risk Monitor': 'scheduling_optimizer',
+      'Capacity Planner': 'scheduling_optimizer',
+      'Efficiency Optimizer': 'scheduling_optimizer',
+      'System Monitor': 'general_assistant'
+    };
+    
+    // Return a default agent ID for now
+    // In production, you would query: SELECT id FROM ai_agent_team WHERE agent_type = ...
+    return 1;
+  }
+
+  /**
+   * Store recommendation in database
+   */
+  private async storeRecommendation(recommendation: AIRecommendation, userId: number = 1): Promise<number> {
+    try {
+      const agentId = await this.getAgentId(recommendation.aiAgent);
+      
+      // Map priority to numeric value
+      const priorityMap: Record<string, number> = {
+        'high': 90,
+        'medium': 50,
+        'low': 20
+      };
+      
+      const [stored] = await db.insert(agentRecommendations).values({
+        agentId,
+        userId,
+        title: recommendation.title,
+        description: recommendation.description,
+        priority: priorityMap[recommendation.priority] || 50,
+        category: recommendation.category,
+        impact: recommendation.estimatedImpact,
+        confidence: recommendation.confidence,
+        recommendedAction: {
+          actionType: recommendation.actionType,
+          suggestedActions: recommendation.suggestedActions,
+          affectedEntities: recommendation.affectedEntities
+        },
+        reasoning: `AI-generated recommendation based on production schedule analysis`,
+        dataSupport: recommendation.metadata || {},
+        status: 'pending'
+      }).returning();
+      
+      return stored.id;
+    } catch (error) {
+      console.error('Error storing recommendation:', error);
+      throw error;
+    }
+  }
+
   /**
    * Analyze current production schedule for issues and opportunities
    */
@@ -444,10 +514,65 @@ export class AISchedulingRecommendationsService {
   /**
    * Get all recommendations with optional filtering
    */
-  async getAllRecommendations(): Promise<AIRecommendation[]> {
+  async getAllRecommendations(userId: number = 1, forceAnalyze: boolean = false): Promise<AIRecommendation[]> {
     try {
+      // Check for recent recommendations (within last 15 minutes) unless forced
+      if (!forceAnalyze) {
+        const recentQuery = sql`
+          SELECT * FROM ${agentRecommendations}
+          WHERE ${agentRecommendations.userId} = ${userId}
+            AND ${agentRecommendations.status} = 'pending'
+            AND ${agentRecommendations.createdAt} > NOW() - INTERVAL '15 minutes'
+          ORDER BY ${agentRecommendations.priority} DESC, ${agentRecommendations.confidence} DESC
+          LIMIT 20
+        `;
+        
+        const recentResult = await db.execute(recentQuery);
+        const recentRecommendations = recentResult.rows;
+        
+        if (recentRecommendations.length > 0) {
+          console.log(`✅ Returning ${recentRecommendations.length} cached recommendations`);
+          
+          // Convert to AIRecommendation format
+          return recentRecommendations.map((r: any) => ({
+            id: r.id.toString(),
+            title: r.title,
+            description: r.description,
+            priority: r.priority >= 80 ? 'high' : r.priority >= 50 ? 'medium' : 'low',
+            category: r.category || 'General',
+            confidence: r.confidence || 85,
+            estimatedImpact: r.impact || 'Improvement',
+            actionType: r.recommended_action?.actionType || 'optimize',
+            affectedEntities: r.recommended_action?.affectedEntities || [],
+            suggestedActions: r.recommended_action?.suggestedActions || [],
+            createdAt: r.created_at || new Date().toISOString(),
+            aiAgent: 'Production Scheduling Agent',
+            metadata: r.data_support || {}
+          }));
+        }
+      }
+      
       // First, analyze the current schedule
       console.log('🔍 Analyzing production schedule...');
+      
+      // Track agent activity - mark as active
+      try {
+        const { db } = await import('../db');
+        const { sql } = await import('drizzle-orm');
+        await db.execute(sql`
+          INSERT INTO agent_activity_tracking (agent_name, last_activity_time, status, activity_count, last_action, updated_at)
+          VALUES ('Production Scheduling Agent', NOW(), 'active', 1, 'Analyzing Schedule', NOW())
+          ON CONFLICT (agent_name) 
+          DO UPDATE SET 
+            last_activity_time = NOW(),
+            status = 'active',
+            last_action = 'Analyzing Schedule',
+            updated_at = NOW()
+        `);
+      } catch (error) {
+        console.error('Failed to track agent activity:', error);
+      }
+      
       const analysis = await this.analyzeSchedule();
       
       console.log(`📊 Analysis complete:
@@ -464,6 +589,16 @@ export class AISchedulingRecommendationsService {
       
       console.log(`✅ Generated ${recommendations.length} recommendations`);
       
+      // Store recommendations in database
+      console.log('💾 Storing recommendations in database...');
+      for (const recommendation of recommendations) {
+        try {
+          await this.storeRecommendation(recommendation, userId);
+        } catch (error) {
+          console.error(`Failed to store recommendation ${recommendation.id}:`, error);
+        }
+      }
+      
       // Sort by priority and confidence
       recommendations.sort((a, b) => {
         const priorityOrder = { high: 3, medium: 2, low: 1 };
@@ -471,6 +606,29 @@ export class AISchedulingRecommendationsService {
         if (priorityDiff !== 0) return priorityDiff;
         return b.confidence - a.confidence;
       });
+      
+      // Update last analysis timestamp after successful analysis
+      AISchedulingRecommendationsService.lastAnalysisTimestamp = new Date();
+      console.log('✅ Last analysis timestamp updated');
+      
+      // Track agent activity
+      try {
+        const { db } = await import('../db');
+        const { sql } = await import('drizzle-orm');
+        await db.execute(sql`
+          INSERT INTO agent_activity_tracking (agent_name, last_activity_time, status, activity_count, last_action, updated_at)
+          VALUES ('Production Scheduling Agent', NOW(), 'idle', 1, 'Schedule Analysis Complete', NOW())
+          ON CONFLICT (agent_name) 
+          DO UPDATE SET 
+            last_activity_time = NOW(),
+            status = 'idle',
+            activity_count = agent_activity_tracking.activity_count + 1,
+            last_action = 'Schedule Analysis Complete',
+            updated_at = NOW()
+        `);
+      } catch (error) {
+        console.error('Failed to track agent activity:', error);
+      }
 
       return recommendations;
     } catch (error) {

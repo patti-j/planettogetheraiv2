@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useLocation } from 'wouter';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -34,7 +34,7 @@ interface SplitScreenProviderProps {
 }
 
 export function SplitScreenProvider({ children }: SplitScreenProviderProps) {
-  const [, setLocation] = useLocation();
+  const [location, setLocation] = useLocation();
   const [splitMode, setSplitMode] = useState<SplitMode>('none');
   const [primaryPage, setPrimaryPage] = useState('/dashboard');
   const [secondaryPage, setSecondaryPage] = useState('/analytics');
@@ -45,30 +45,45 @@ export function SplitScreenProvider({ children }: SplitScreenProviderProps) {
   const [showPaneSelector, setShowPaneSelector] = useState(false);
   const [pendingNavigation, setPendingNavigation] = useState<{ path: string; label: string } | null>(null);
 
+  // CRITICAL FIX: Sync primaryPage with current location when route changes
+  // This prevents blank screens when navigating out of split-mode pages
+  useEffect(() => {
+    if (location !== primaryPage && location !== secondaryPage) {
+      // Location changed to a page not in either pane - update primaryPage
+      setPrimaryPage(location);
+    }
+  }, [location, primaryPage, secondaryPage]);
+
   // New method for handling navigation that might trigger pane selection
   const handleNavigation = (path: string, label: string) => {
-    // Save current page before navigating to agent pages (for back button)
-    const agentPages = ['/canvas', '/playbooks', '/agent-history', '/ai-insights'];
-    if (agentPages.includes(path)) {
-      const currentPath = window.location.pathname;
-      if (!agentPages.includes(currentPath)) {
-        sessionStorage.setItem('previousPage', currentPath);
-      }
-    }
-    
-    if (splitMode !== 'none') {
-      // Check if this path is already displayed in either pane
-      if (path === primaryPage || path === secondaryPage) {
-        // Already displayed, just navigate normally using React router
-        setLocation(path);
-        return;
+    try {
+      // Save current page before navigating to agent pages (for back button)
+      const agentPages = ['/canvas', '/playbooks', '/agent-history', '/ai-insights'];
+      if (agentPages.includes(path)) {
+        const currentPath = window.location.pathname;
+        if (!agentPages.includes(currentPath)) {
+          sessionStorage.setItem('previousPage', currentPath);
+        }
       }
       
-      // New page in split mode - show pane selector WITHOUT navigating
-      setPendingNavigation({ path, label });
-      setShowPaneSelector(true);
-    } else {
-      // Single pane mode - navigate normally using React router
+      if (splitMode !== 'none') {
+        // Check if this path is already displayed in either pane
+        if (path === primaryPage || path === secondaryPage) {
+          // Already displayed, just navigate normally using React router
+          setLocation(path);
+          return;
+        }
+        
+        // New page in split mode - show pane selector WITHOUT navigating
+        setPendingNavigation({ path, label });
+        setShowPaneSelector(true);
+      } else {
+        // Single pane mode - navigate normally using React router
+        setLocation(path);
+      }
+    } catch (error) {
+      console.error('Navigation error:', error);
+      // If navigation fails, try simple setLocation as fallback
       setLocation(path);
     }
   };

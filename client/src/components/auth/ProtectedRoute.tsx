@@ -31,8 +31,10 @@ export function ProtectedRoute({
     userExists: !!user
   });
 
-  // If auth is still loading, show a loading state instead of access denied
-  if (isLoading) {
+  // Only show loading state on TRUE initial load when there's no user data
+  // Don't show loading during refetches when we already have cached user data
+  // This prevents blank screens during navigation
+  if (isLoading && !user) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gray-50">
         <div className="text-center">
@@ -44,10 +46,25 @@ export function ProtectedRoute({
   }
 
   // If user is not authenticated at all, they shouldn't see "Access Denied" but should be redirected to login
-  if (!user) {
-    // This should be handled by the auth system, but for safety:
-    window.location.href = '/login';
-    return null;
+  // BUT: Only redirect if we're sure auth has finished loading and there's genuinely no user
+  if (!user && !isLoading) {
+    // Check if there's a token in localStorage - if yes, don't redirect (auth might be reloading)
+    const hasToken = localStorage.getItem('auth_token');
+    if (!hasToken) {
+      // No token and no user - genuinely not authenticated
+      window.location.href = '/login';
+      return null;
+    } else {
+      // Has token but user not loaded yet - wait for auth to complete
+      return (
+        <div className="flex items-center justify-center min-h-screen bg-gray-50">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+            <p className="mt-4 text-gray-600">Verifying authentication...</p>
+          </div>
+        </div>
+      );
+    }
   }
 
   if (role) {

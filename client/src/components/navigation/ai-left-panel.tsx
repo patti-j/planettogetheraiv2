@@ -1662,7 +1662,7 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
               <TabsTrigger value="chat" className="px-2" title="Chat">
                 <MessageSquare className="w-4 h-4" />
               </TabsTrigger>
-              <TabsTrigger value="simulations" className="px-2" title="Simulations">
+              <TabsTrigger value="simulations" className="px-2" title="Active Agents">
                 <Activity className="w-4 h-4" />
               </TabsTrigger>
               <TabsTrigger value="settings" className="px-2" title="Settings">
@@ -1880,122 +1880,9 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
               </div>
             </TabsContent>
 
-            {/* Simulations Tab */}
+            {/* Active Agents Tab */}
             <TabsContent value="simulations" className="flex-1 overflow-hidden mt-2 data-[state=inactive]:hidden">
-              <ScrollArea className="h-full px-4">
-                <div className="space-y-3 pt-2 pb-4">
-                  {/* Active Agents */}
-                  <div className="space-y-2">
-                    <h3 className="text-sm font-medium text-muted-foreground px-1">Active Agents</h3>
-                    {ALL_AGENTS.map((agent) => {
-                      const isActive = agent.status === 'active';
-                      
-                      // Map icon names to Lucide icons
-                      const getAgentIcon = () => {
-                        switch (agent.icon) {
-                          case 'Sparkles': return <Sparkles className="w-5 h-5 text-white" />;
-                          case 'Calendar': return <Calendar className="w-5 h-5 text-white" />;
-                          case 'Factory': return <Factory className="w-5 h-5 text-white" />;
-                          case 'Shield': return <Shield className="w-5 h-5 text-white" />;
-                          case 'TrendingUp': return <TrendingUp className="w-5 h-5 text-white" />;
-                          case 'Package': return <Package className="w-5 h-5 text-white" />;
-                          case 'Layers': return <Layers className="w-5 h-5 text-white" />;
-                          case 'Target': return <Target className="w-5 h-5 text-white" />;
-                          case 'Wrench': return <Wrench className="w-5 h-5 text-white" />;
-                          case 'Truck': return <Truck className="w-5 h-5 text-white" />;
-                          case 'User': return <User className="w-5 h-5 text-white" />;
-                          case 'DollarSign': return <DollarSign className="w-5 h-5 text-white" />;
-                          case 'Monitor': return <Monitor className="w-5 h-5 text-white" />;
-                          default: return <Lightbulb className="w-5 h-5 text-white" />;
-                        }
-                      };
-                      
-                      return (
-                        <Card 
-                          key={agent.id} 
-                          className={cn(
-                            "cursor-pointer transition-all hover:shadow-md",
-                            !isActive && "opacity-60"
-                          )}
-                          onClick={() => {
-                            // Chat functionality moved to floating bubble
-                          }}
-                        >
-                          <CardHeader className="pb-2">
-                            <div className="flex items-start justify-between">
-                              <div className="flex items-start gap-3">
-                                <div 
-                                  className="w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0"
-                                  style={{ backgroundColor: agent.color || '#6B7280' }}
-                                >
-                                  {getAgentIcon()}
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                  <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                                    {agent.displayName}
-                                    <ChevronRight className="w-3 h-3 text-muted-foreground" />
-                                  </CardTitle>
-                                  <p className="text-xs text-muted-foreground mt-0.5">
-                                    {agent.specialties?.[0] || 'Agent'}
-                                  </p>
-                                </div>
-                              </div>
-                              <Settings className="w-4 h-4 text-muted-foreground cursor-pointer hover:text-foreground" />
-                            </div>
-                          </CardHeader>
-                          <CardContent className="pt-2 pb-3">
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                                <span className="flex items-center gap-1">
-                                  <div className="w-1.5 h-1.5 bg-orange-500 rounded-full" />
-                                  {Math.floor(Math.random() * 10 + 1)} actions
-                                </span>
-                                <span className="flex items-center gap-1">
-                                  <MessageCircle className="w-3 h-3" />
-                                  {Math.floor(Math.random() * 5)}
-                                </span>
-                              </div>
-                              <div className={cn(
-                                "text-xs px-2 py-0.5 rounded-full font-medium",
-                                isActive 
-                                  ? "bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-400" 
-                                  : "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400"
-                              )}>
-                                {isActive ? 'Active' : 'Idle'}
-                              </div>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      );
-                    })}
-                  </div>
-
-                {displayInsights
-                  .filter(i => i.type === 'simulation')
-                  .map(insight => (
-                    <Card key={insight.id} className="cursor-pointer hover:bg-muted/50 transition-colors">
-                      <CardHeader className="pb-3">
-                        <div className="flex items-center gap-2">
-                          <Activity className="w-4 h-4 text-primary" />
-                          <CardTitle className="text-sm">{insight.title}</CardTitle>
-                        </div>
-                      </CardHeader>
-                      <CardContent className="pt-0">
-                        <p className="text-xs text-muted-foreground mb-2">{insight.description}</p>
-                        {insight.impact && (
-                          <div className="text-xs bg-muted p-2 rounded mb-2">
-                            {insight.impact}
-                          </div>
-                        )}
-                        <Button size="sm" variant="outline" className="w-full">
-                          View Results
-                        </Button>
-                        <div className="text-xs text-muted-foreground mt-2">{insight.timestamp}</div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              </ScrollArea>
+              <AgentActivityCards />
             </TabsContent>
 
             {/* Settings Tab */}
@@ -2512,6 +2399,305 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
           </Card>
         </div>
       )}
+    </div>
+  );
+}
+
+// Agent Activity Cards Component - Shows agent cards with integrated real-time status
+function AgentActivityCards() {
+  const { toast } = useToast();
+  
+  // Fetch all agent activity
+  const { data: agentActivities = [], isFetching } = useQuery<any[]>({
+    queryKey: ['/api/ai/agents/activity'],
+    refetchInterval: 5000, // Refresh every 5 seconds
+  });
+  
+  // Manual refresh mutation
+  const manualRefresh = useMutation({
+    mutationFn: async () => {
+      // Use apiRequest which handles authentication
+      return apiRequest('GET', '/api/ai/recommendations?forceAnalyze=true');
+    },
+    onSuccess: () => {
+      toast({
+        title: "Analysis Complete",
+        description: "Fresh recommendations generated successfully.",
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/ai/recommendations'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/ai/agents/activity'] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Analysis Failed",
+        description: error.message || "Failed to generate new recommendations.",
+        variant: "destructive",
+      });
+    },
+  });
+  
+  // Helper to format time ago
+  const getTimeAgo = (timestamp: string | null) => {
+    if (!timestamp) return 'Never';
+    
+    const now = new Date();
+    const then = new Date(timestamp);
+    const diff = now.getTime() - then.getTime();
+    const minutes = Math.floor(diff / 60000);
+    const seconds = Math.floor((diff % 60000) / 1000);
+    
+    if (minutes === 0) {
+      return `${seconds}s ago`;
+    } else if (minutes < 60) {
+      return `${minutes}m ago`;
+    } else {
+      const hours = Math.floor(minutes / 60);
+      return `${hours}h ago`;
+    }
+  };
+  
+  // Create a map for quick agent activity lookup
+  const activityMap = new Map(
+    agentActivities.map(a => [a.agent_name, a])
+  );
+  
+  const isAnalyzing = isFetching || manualRefresh.isPending;
+  const activeCount = agentActivities.filter(a => a.status === 'active').length;
+  
+  // Map icon names to Lucide icons
+  const getAgentIcon = (iconName: string) => {
+    switch (iconName) {
+      case 'Sparkles': return <Sparkles className="w-5 h-5 text-white" />;
+      case 'Calendar': return <Calendar className="w-5 h-5 text-white" />;
+      case 'Factory': return <Factory className="w-5 h-5 text-white" />;
+      case 'Shield': return <Shield className="w-5 h-5 text-white" />;
+      case 'TrendingUp': return <TrendingUp className="w-5 h-5 text-white" />;
+      case 'Package': return <Package className="w-5 h-5 text-white" />;
+      case 'Layers': return <Layers className="w-5 h-5 text-white" />;
+      case 'Target': return <Target className="w-5 h-5 text-white" />;
+      case 'Wrench': return <Wrench className="w-5 h-5 text-white" />;
+      case 'Truck': return <Truck className="w-5 h-5 text-white" />;
+      case 'User': return <User className="w-5 h-5 text-white" />;
+      case 'DollarSign': return <DollarSign className="w-5 h-5 text-white" />;
+      case 'Monitor': return <Monitor className="w-5 h-5 text-white" />;
+      default: return <Lightbulb className="w-5 h-5 text-white" />;
+    }
+  };
+  
+  return (
+    <div className="flex flex-col h-full">
+      {/* Header with refresh button */}
+      <div className="px-4 py-3 border-b bg-muted/30">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Activity className="h-4 w-4 text-muted-foreground" />
+            <div>
+              <p className="text-xs font-medium">Active Agents</p>
+              <p className="text-xs text-muted-foreground">{activeCount} of {agentActivities.length} active</p>
+            </div>
+          </div>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => manualRefresh.mutate()}
+            disabled={isAnalyzing}
+            className="h-8 text-xs"
+            title="Run new analysis"
+          >
+            <RefreshCw className={cn("h-3 w-3 mr-1", isAnalyzing && "animate-spin")} />
+            Analyze
+          </Button>
+        </div>
+      </div>
+      
+      {/* Agent cards with integrated status */}
+      <ScrollArea className="flex-1 px-4">
+        <div className="space-y-3 pt-3 pb-4">
+          {ALL_AGENTS.map((agent) => {
+            // Get real-time activity data for this agent
+            const activity = activityMap.get(agent.displayName);
+            const isActive = activity?.status === 'active';
+            
+            return (
+              <Card 
+                key={agent.id} 
+                className={cn(
+                  "cursor-pointer transition-all hover:shadow-md",
+                  !isActive && "opacity-70"
+                )}
+                onClick={() => {
+                  // Chat functionality moved to floating bubble
+                }}
+              >
+                <CardHeader className="pb-2">
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-start gap-3 flex-1 min-w-0">
+                      <div 
+                        className="w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0"
+                        style={{ backgroundColor: agent.color || '#6B7280' }}
+                      >
+                        {getAgentIcon(agent.icon)}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <CardTitle className="text-sm font-semibold">
+                            {agent.displayName}
+                          </CardTitle>
+                          <div className={cn(
+                            "w-2 h-2 rounded-full",
+                            isActive ? "bg-green-500 animate-pulse" : "bg-gray-400"
+                          )} />
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-0.5 truncate">
+                          {agent.specialties?.[0] || 'Agent'}
+                        </p>
+                      </div>
+                    </div>
+                    <Settings className="w-4 h-4 text-muted-foreground cursor-pointer hover:text-foreground flex-shrink-0" />
+                  </div>
+                </CardHeader>
+                <CardContent className="pt-2 pb-3">
+                  {activity ? (
+                    <div className="space-y-2">
+                      {/* Status badge and last activity time */}
+                      <div className="flex items-center justify-between">
+                        <div className={cn(
+                          "text-xs px-2 py-0.5 rounded-full font-medium",
+                          isActive 
+                            ? "bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-400" 
+                            : "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400"
+                        )}>
+                          {isActive ? 'Active' : 'Idle'}
+                        </div>
+                        <span className="text-xs text-muted-foreground">
+                          {getTimeAgo(activity.last_activity_time)}
+                        </span>
+                      </div>
+                      
+                      {/* Last action and activity count */}
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="text-muted-foreground truncate flex-1">
+                          {activity.last_action || 'No recent activity'}
+                        </span>
+                        <Badge variant="outline" className="ml-2 flex-shrink-0">
+                          {activity.activity_count || 0} actions
+                        </Badge>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs text-muted-foreground">No activity tracked</span>
+                      <div className="text-xs px-2 py-0.5 rounded-full font-medium bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400">
+                        Idle
+                      </div>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+      </ScrollArea>
+    </div>
+  );
+}
+
+// AI Analysis Status Component - Shows activity for all agents
+function AIAnalysisStatus() {
+  const { toast } = useToast();
+  
+  // Fetch all agent activity
+  const { data: agentActivities = [], isFetching } = useQuery<any[]>({
+    queryKey: ['/api/ai/agents/activity'],
+    refetchInterval: 5000, // Refresh every 5 seconds
+  });
+  
+  // Manual refresh mutation
+  const manualRefresh = useMutation({
+    mutationFn: async () => {
+      // Use apiRequest which handles authentication
+      return apiRequest('GET', '/api/ai/recommendations?forceAnalyze=true');
+    },
+    onSuccess: () => {
+      toast({
+        title: "Analysis Complete",
+        description: "Fresh recommendations generated successfully.",
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/ai/recommendations'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/ai/agents/activity'] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Analysis Failed",
+        description: error.message || "Failed to generate new recommendations.",
+        variant: "destructive",
+      });
+    },
+  });
+  
+  // Helper to format time ago
+  const getTimeAgo = (timestamp: string | null) => {
+    if (!timestamp) return 'Never';
+    
+    const now = new Date();
+    const then = new Date(timestamp);
+    const diff = now.getTime() - then.getTime();
+    const minutes = Math.floor(diff / 60000);
+    const seconds = Math.floor((diff % 60000) / 1000);
+    
+    if (minutes === 0) {
+      return `${seconds}s ago`;
+    } else if (minutes < 60) {
+      return `${minutes}m ago`;
+    } else {
+      const hours = Math.floor(minutes / 60);
+      return `${hours}h ago`;
+    }
+  };
+  
+  const isAnalyzing = isFetching || manualRefresh.isPending;
+  const activeCount = agentActivities.filter(a => a.status === 'active').length;
+  
+  return (
+    <div className="px-4 py-3 border-b bg-muted/30">
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-2">
+          <Activity className="h-4 w-4 text-muted-foreground" />
+          <div>
+            <p className="text-xs font-medium">Agent Activity Monitor</p>
+            <p className="text-xs text-muted-foreground">{activeCount} of {agentActivities.length} active</p>
+          </div>
+        </div>
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={() => manualRefresh.mutate()}
+          disabled={isAnalyzing}
+          className="h-8 text-xs"
+          title="Run new analysis"
+        >
+          <RefreshCw className={cn("h-3 w-3 mr-1", isAnalyzing && "animate-spin")} />
+          Analyze
+        </Button>
+      </div>
+      
+      {/* Agent status list */}
+      <div className="space-y-2">
+        {agentActivities.map((agent: any) => (
+          <div key={agent.agent_name} className="flex items-center justify-between text-xs">
+            <div className="flex items-center gap-2 flex-1">
+              <div className={cn(
+                "w-1.5 h-1.5 rounded-full",
+                agent.status === 'active' ? "bg-green-500" : "bg-gray-400"
+              )} />
+              <span className="font-medium truncate">{agent.agent_name}</span>
+            </div>
+            <span className="text-muted-foreground ml-2">
+              {getTimeAgo(agent.last_activity_time)}
+            </span>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

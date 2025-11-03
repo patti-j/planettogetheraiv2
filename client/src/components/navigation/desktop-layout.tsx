@@ -1325,7 +1325,7 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
                 </TooltipProvider>
 
                 {/* Input Field - wrapped in flex-1 div to allow proper text wrapping */}
-                <div className="flex-1 min-w-[180px]">
+                <div className="flex-1 min-w-[200px]">
                   <textarea
                     ref={floatingInputRef as any}
                     placeholder={isFloatingRecording ? "Speak now - text appears instantly..." : selectedFloatingAgent === 'unified' ? "Ask anything..." : `Ask ${activeAgents.find(a => a.id === selectedFloatingAgent)?.displayName || 'agent'}...`}
@@ -1337,10 +1337,10 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
                         handleFloatingSend();
                       }
                     }}
-                    className={`border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 outline-none focus:outline-none text-sm placeholder:text-muted-foreground w-full resize-none overflow-hidden pl-1 ${isFloatingRecording ? 'text-green-600' : ''}`}
+                    className={`border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 outline-none focus:outline-none text-sm placeholder:text-muted-foreground w-full resize-none overflow-y-auto pl-1 pr-2 ${isFloatingRecording ? 'text-green-600' : ''}`}
                     disabled={isFloatingSending}
                     rows={1}
-                    style={{ minHeight: '24px', maxHeight: '120px' }}
+                    style={{ minHeight: '24px', maxHeight: '120px', whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}
                     onInput={(e) => {
                       const target = e.target as HTMLTextAreaElement;
                       target.style.height = 'auto';

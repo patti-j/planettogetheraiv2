@@ -307,8 +307,9 @@ router.post("/api/auth/login", async (req, res) => {
         id: user.id,
         username: user.username,
         email: user.email,
-        firstName: user.firstName,
-        lastName: user.lastName,
+        firstName: (user as any).first_name || user.firstName,
+        lastName: (user as any).last_name || user.lastName,
+        avatar: (user as any).avatar,
         roles: roles,
         permissions: allPermissions
       },
@@ -323,8 +324,9 @@ router.post("/api/auth/login", async (req, res) => {
         id: user.id,
         username: user.username,
         email: user.email,
-        firstName: user.firstName,
-        lastName: user.lastName,
+        firstName: (user as any).first_name || user.firstName,
+        lastName: (user as any).last_name || user.lastName,
+        avatar: (user as any).avatar,
         roles: roles,
         permissions: allPermissions
       },
@@ -3068,8 +3070,10 @@ router.get("/schedulerpro.stockholm.css", (req, res) => {
   }
 });
 
-// Serve Bryntum Production Scheduler HTML  
-router.get("/api/production-scheduler", requireAuth, (req, res) => {
+// Serve Bryntum Production Scheduler HTML
+// Note: No requireAuth here because iframes can't send auth headers via src attribute
+// The HTML file is public, but the data APIs it calls are still protected
+router.get("/api/production-scheduler", (req, res) => {
   try {
     console.log('Serving production scheduler HTML...');
     const htmlPath = path.join(process.cwd(), 'public', 'production-scheduler.html');
@@ -3350,14 +3354,71 @@ router.get("/api/ai/recommendations", requireAuth, async (req, res) => {
   try {
     console.log('📊 Fetching AI recommendations based on production schedule...');
     
+    const userId = req.user?.id || 1;
+    const forceAnalyze = req.query.forceAnalyze === 'true';
+    
     // Get recommendations from the AI service that analyzes real production data
-    const recommendations = await aiSchedulingService.getAllRecommendations();
+    const recommendations = await aiSchedulingService.getAllRecommendations(userId, forceAnalyze);
     
     console.log(`✅ Returning ${recommendations.length} AI recommendations`);
     res.json(recommendations);
   } catch (error: any) {
     console.error('❌ Error fetching AI recommendations:', error);
     res.status(500).json({ error: 'Failed to fetch AI recommendations' });
+  }
+});
+
+// Get all agent activity status
+router.get("/api/ai/agents/activity", requireAuth, async (req, res) => {
+  try {
+    const result = await db.execute(sql`
+      SELECT agent_name, last_activity_time, status, activity_count, last_action, updated_at
+      FROM agent_activity_tracking
+      ORDER BY agent_name
+    `);
+    
+    res.json(result.rows || []);
+  } catch (error: any) {
+    console.error('Error fetching agent activity:', error);
+    res.status(500).json({ error: 'Failed to fetch agent activity' });
+  }
+});
+
+// Update agent activity (called when agent is used)
+router.post("/api/ai/agents/activity/:agentName", requireAuth, async (req, res) => {
+  try {
+    const { agentName } = req.params;
+    const { action, status = 'active' } = req.body;
+    
+    await db.execute(sql`
+      INSERT INTO agent_activity_tracking (agent_name, last_activity_time, status, activity_count, last_action, updated_at)
+      VALUES (${agentName}, NOW(), ${status}, 1, ${action || 'Activity'}, NOW())
+      ON CONFLICT (agent_name) 
+      DO UPDATE SET 
+        last_activity_time = NOW(),
+        status = ${status},
+        activity_count = agent_activity_tracking.activity_count + 1,
+        last_action = ${action || 'Activity'},
+        updated_at = NOW()
+    `);
+    
+    res.json({ success: true });
+  } catch (error: any) {
+    console.error('Error updating agent activity:', error);
+    res.status(500).json({ error: 'Failed to update agent activity' });
+  }
+});
+
+// Get last analysis timestamp (for backward compatibility)
+router.get("/api/ai/recommendations/status", requireAuth, async (req, res) => {
+  try {
+    const lastAnalysisTime = (aiSchedulingService.constructor as any).getLastAnalysisTime();
+    res.json({ 
+      lastAnalysisTime: lastAnalysisTime ? lastAnalysisTime.toISOString() : null 
+    });
+  } catch (error: any) {
+    console.error('Error fetching analysis status:', error);
+    res.status(500).json({ error: 'Failed to fetch analysis status' });
   }
 });
 
@@ -7547,6 +7608,23 @@ router.post("/api/max-ai/chat", async (req, res) => {
       conversationHistory: context?.conversationHistory
     });
     console.log(`[Max AI Chat] Response received:`, response);
+    
+    // Track agent activity
+    try {
+      await db.execute(sql`
+        INSERT INTO agent_activity_tracking (agent_name, last_activity_time, status, activity_count, last_action, updated_at)
+        VALUES ('Max AI', NOW(), 'idle', 1, 'Chat Response', NOW())
+        ON CONFLICT (agent_name) 
+        DO UPDATE SET 
+          last_activity_time = NOW(),
+          status = 'idle',
+          activity_count = agent_activity_tracking.activity_count + 1,
+          last_action = 'Chat Response',
+          updated_at = NOW()
+      `);
+    } catch (error) {
+      console.error('Failed to track Max AI activity:', error);
+    }
 
     res.json(response);
   } catch (error) {
@@ -7597,6 +7675,34 @@ router.post("/api/ai-agent/chat", async (req, res) => {
     });
     
     console.log(`[AI Agent Chat] Response generated for agent: ${agentId || 'max'}`);
+    
+    // Track agent activity based on agent type
+    try {
+      const agentNameMap: Record<string, string> = {
+        'max': 'Max AI',
+        'quality': 'Quality Agent',
+        'planner': 'Planner Agent',
+        'risk': 'Risk Monitor',
+        'capacity': 'Capacity Planner',
+        'efficiency': 'Efficiency Optimizer'
+      };
+      
+      const agentName = agentNameMap[agentId] || 'Max AI';
+      
+      await db.execute(sql`
+        INSERT INTO agent_activity_tracking (agent_name, last_activity_time, status, activity_count, last_action, updated_at)
+        VALUES (${agentName}, NOW(), 'idle', 1, 'Chat Response', NOW())
+        ON CONFLICT (agent_name) 
+        DO UPDATE SET 
+          last_activity_time = NOW(),
+          status = 'idle',
+          activity_count = agent_activity_tracking.activity_count + 1,
+          last_action = 'Chat Response',
+          updated_at = NOW()
+      `);
+    } catch (error) {
+      console.error('Failed to track agent activity:', error);
+    }
 
     // Return response with agent ID for proper attribution
     res.json({
@@ -13306,6 +13412,447 @@ router.get("/api/ddmrp/metrics", requireAuth, async (req, res) => {
   } catch (error: any) {
     console.error("Error fetching DDMRP metrics:", error);
     res.status(500).json({ error: "Failed to fetch DDMRP metrics" });
+  }
+});
+
+// ============================================
+// Onboarding Document Management API Routes
+// ============================================
+
+// Configure multer for onboarding document uploads
+const onboardingStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const uploadDir = './uploads/onboarding';
+    const fs = require('fs');
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
+    }
+    cb(null, uploadDir);
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1E9)}`;
+    cb(null, `${uniqueSuffix}-${file.originalname}`);
+  }
+});
+
+const onboardingUpload = multer({
+  storage: onboardingStorage,
+  limits: { fileSize: 50 * 1024 * 1024 }, // 50MB limit
+  fileFilter: (req, file, cb) => {
+    // Accept documents, images, PDFs, Excel, etc.
+    const allowedMimes = [
+      'application/pdf',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'application/vnd.ms-excel',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'image/png',
+      'image/jpeg',
+      'image/jpg',
+      'image/gif',
+      'image/svg+xml',
+      'text/plain',
+      'text/csv',
+      'application/json'
+    ];
+    
+    if (allowedMimes.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error('Invalid file type. Accepted: PDF, Word, Excel, Images, Text, CSV, JSON'));
+    }
+  }
+});
+
+// Upload onboarding document
+router.post("/api/onboarding/documents", requireAuth, onboardingUpload.single('document'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'No file uploaded' });
+    }
+
+    const userId = req.session?.user?.id || 1;
+    const { category, description, tags } = req.body;
+
+    // Insert document record
+    const result = await db.execute(sql`
+      INSERT INTO onboarding_documents (
+        user_id, document_name, document_type, file_path, file_size, 
+        mime_type, category, description, tags
+      ) VALUES (
+        ${userId},
+        ${req.file.originalname},
+        ${req.file.mimetype},
+        ${req.file.path},
+        ${req.file.size},
+        ${req.file.mimetype},
+        ${category || 'general'},
+        ${description || ''},
+        ${tags ? sql`ARRAY[${tags.split(',').map((t: string) => t.trim())}]::TEXT[]` : sql`ARRAY[]::TEXT[]`}
+      )
+      RETURNING *
+    `);
+
+    const document = result.rows[0];
+
+    // Track agent activity for document analysis
+    try {
+      await db.execute(sql`
+        INSERT INTO agent_activity_tracking (agent_name, last_activity_time, status, activity_count, last_action, updated_at)
+        VALUES ('Max AI', NOW(), 'idle', 1, 'Document Uploaded for Analysis', NOW())
+        ON CONFLICT (agent_name) 
+        DO UPDATE SET 
+          last_activity_time = NOW(),
+          status = 'idle',
+          activity_count = agent_activity_tracking.activity_count + 1,
+          last_action = 'Document Uploaded for Analysis',
+          updated_at = NOW()
+      `);
+    } catch (error) {
+      console.error('Failed to track agent activity:', error);
+    }
+
+    res.json({
+      success: true,
+      document: {
+        id: document.id,
+        name: document.document_name,
+        type: document.document_type,
+        category: document.category,
+        description: document.description,
+        tags: document.tags,
+        size: document.file_size,
+        uploadDate: document.upload_date,
+        aiAnalysisStatus: document.ai_analysis_status
+      }
+    });
+  } catch (error: any) {
+    console.error('Error uploading onboarding document:', error);
+    res.status(500).json({ error: 'Failed to upload document' });
+  }
+});
+
+// Get all onboarding documents
+router.get("/api/onboarding/documents", requireAuth, async (req, res) => {
+  try {
+    const userId = req.session?.user?.id || 1;
+    const { category, includeArchived } = req.query;
+
+    let query = sql`
+      SELECT 
+        id, user_id, document_name, document_type, file_path, file_size,
+        mime_type, category, description, tags, ai_analysis_status,
+        ai_analysis_summary, ai_extracted_insights, upload_date,
+        last_analyzed_at, is_archived
+      FROM onboarding_documents
+      WHERE user_id = ${userId}
+    `;
+
+    if (category) {
+      query = sql`${query} AND category = ${category as string}`;
+    }
+
+    if (includeArchived !== 'true') {
+      query = sql`${query} AND is_archived = FALSE`;
+    }
+
+    query = sql`${query} ORDER BY upload_date DESC`;
+
+    const result = await db.execute(query);
+
+    const documents = result.rows.map((doc: any) => ({
+      id: doc.id,
+      name: doc.document_name,
+      type: doc.document_type,
+      category: doc.category,
+      description: doc.description,
+      tags: doc.tags || [],
+      size: doc.file_size,
+      uploadDate: doc.upload_date,
+      aiAnalysisStatus: doc.ai_analysis_status,
+      aiAnalysisSummary: doc.ai_analysis_summary,
+      aiExtractedInsights: doc.ai_extracted_insights,
+      lastAnalyzedAt: doc.last_analyzed_at,
+      isArchived: doc.is_archived
+    }));
+
+    res.json(documents);
+  } catch (error: any) {
+    console.error('Error fetching onboarding documents:', error);
+    res.status(500).json({ error: 'Failed to fetch documents' });
+  }
+});
+
+// Delete onboarding document
+router.delete("/api/onboarding/documents/:id", requireAuth, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userId = req.session?.user?.id || 1;
+
+    // Get document to delete file
+    const docResult = await db.execute(sql`
+      SELECT file_path FROM onboarding_documents
+      WHERE id = ${parseInt(id)} AND user_id = ${userId}
+    `);
+
+    if (!docResult.rows || docResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Document not found' });
+    }
+
+    const filePath = docResult.rows[0].file_path;
+
+    // Delete from database
+    await db.execute(sql`
+      DELETE FROM onboarding_documents
+      WHERE id = ${parseInt(id)} AND user_id = ${userId}
+    `);
+
+    // Delete physical file
+    try {
+      const fs = require('fs');
+      if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath);
+      }
+    } catch (error) {
+      console.error('Error deleting file:', error);
+    }
+
+    res.json({ success: true, message: 'Document deleted successfully' });
+  } catch (error: any) {
+    console.error('Error deleting onboarding document:', error);
+    res.status(500).json({ error: 'Failed to delete document' });
+  }
+});
+
+// Trigger AI analysis on document
+router.post("/api/onboarding/documents/:id/analyze", requireAuth, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userId = req.session?.user?.id || 1;
+
+    // Get document
+    const docResult = await db.execute(sql`
+      SELECT * FROM onboarding_documents
+      WHERE id = ${parseInt(id)} AND user_id = ${userId}
+    `);
+
+    if (!docResult.rows || docResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Document not found' });
+    }
+
+    const document = docResult.rows[0];
+
+    // Update status to analyzing
+    await db.execute(sql`
+      UPDATE onboarding_documents
+      SET ai_analysis_status = 'analyzing'
+      WHERE id = ${parseInt(id)}
+    `);
+
+    // Track agent activity
+    try {
+      await db.execute(sql`
+        INSERT INTO agent_activity_tracking (agent_name, last_activity_time, status, activity_count, last_action, updated_at)
+        VALUES ('Max AI', NOW(), 'active', 1, 'Analyzing Onboarding Document', NOW())
+        ON CONFLICT (agent_name) 
+        DO UPDATE SET 
+          last_activity_time = NOW(),
+          status = 'active',
+          activity_count = agent_activity_tracking.activity_count + 1,
+          last_action = 'Analyzing Onboarding Document',
+          updated_at = NOW()
+      `);
+    } catch (error) {
+      console.error('Failed to track agent activity:', error);
+    }
+
+    // Perform AI analysis (simplified - you'd integrate with your AI service)
+    const analysisPrompt = `
+      Analyze this ${document.category} document: ${document.document_name}
+      
+      Document Type: ${document.document_type}
+      Category: ${document.category}
+      Description: ${document.description || 'No description provided'}
+      
+      Please provide:
+      1. A brief summary of the document's purpose and content
+      2. Key insights relevant to manufacturing system implementation
+      3. Important requirements or constraints identified
+      4. Recommendations for how to use this information during onboarding
+    `;
+
+    try {
+      const analysisResponse = await openai.chat.completions.create({
+        model: "gpt-4o",
+        messages: [{
+          role: "system",
+          content: "You are an expert implementation consultant helping onboard a new manufacturing system. Analyze documents to extract key insights and requirements."
+        }, {
+          role: "user",
+          content: analysisPrompt
+        }],
+        max_tokens: 1000,
+        temperature: 0.7,
+      });
+
+      const analysis = analysisResponse.choices[0]?.message?.content || "Analysis completed";
+
+      // Extract structured insights
+      const insights = {
+        documentType: document.category,
+        fileType: document.document_type,
+        analyzedAt: new Date().toISOString(),
+        keyRequirements: [],
+        recommendedActions: [],
+        potentialChallenges: []
+      };
+
+      // Update document with analysis results
+      await db.execute(sql`
+        UPDATE onboarding_documents
+        SET 
+          ai_analysis_status = 'completed',
+          ai_analysis_summary = ${analysis},
+          ai_extracted_insights = ${JSON.stringify(insights)},
+          last_analyzed_at = NOW()
+        WHERE id = ${parseInt(id)}
+      `);
+
+      // Track agent completion
+      try {
+        await db.execute(sql`
+          INSERT INTO agent_activity_tracking (agent_name, last_activity_time, status, activity_count, last_action, updated_at)
+          VALUES ('Max AI', NOW(), 'idle', 1, 'Document Analysis Complete', NOW())
+          ON CONFLICT (agent_name) 
+          DO UPDATE SET 
+            last_activity_time = NOW(),
+            status = 'idle',
+            last_action = 'Document Analysis Complete',
+            updated_at = NOW()
+        `);
+      } catch (error) {
+        console.error('Failed to track agent activity:', error);
+      }
+
+      res.json({
+        success: true,
+        summary: analysis,
+        insights
+      });
+    } catch (aiError: any) {
+      console.error('AI analysis error:', aiError);
+      
+      // Mark as failed
+      await db.execute(sql`
+        UPDATE onboarding_documents
+        SET ai_analysis_status = 'failed'
+        WHERE id = ${parseInt(id)}
+      `);
+
+      res.status(500).json({ error: 'AI analysis failed', details: aiError.message });
+    }
+  } catch (error: any) {
+    console.error('Error analyzing document:', error);
+    res.status(500).json({ error: 'Failed to analyze document' });
+  }
+});
+
+// Get document categories stats
+router.get("/api/onboarding/documents/stats", requireAuth, async (req, res) => {
+  try {
+    const userId = req.session?.user?.id || 1;
+
+    const result = await db.execute(sql`
+      SELECT 
+        category,
+        COUNT(*) as count,
+        SUM(file_size) as total_size,
+        COUNT(CASE WHEN ai_analysis_status = 'completed' THEN 1 END) as analyzed_count
+      FROM onboarding_documents
+      WHERE user_id = ${userId} AND is_archived = FALSE
+      GROUP BY category
+      ORDER BY count DESC
+    `);
+
+    res.json(result.rows || []);
+  } catch (error: any) {
+    console.error('Error fetching document stats:', error);
+    res.status(500).json({ error: 'Failed to fetch stats' });
+  }
+});
+
+// Playbooks API
+router.get("/api/playbooks", requireAuth, async (req, res) => {
+  try {
+    const result = await db.execute(sql`
+      SELECT 
+        id,
+        title,
+        description,
+        content,
+        agent_id,
+        category,
+        tags,
+        is_active,
+        created_by,
+        created_at,
+        updated_at
+      FROM playbooks
+      WHERE is_active = true
+      ORDER BY created_at DESC
+    `);
+
+    res.json(result.rows || []);
+  } catch (error: any) {
+    console.error('Error fetching playbooks:', error);
+    res.status(500).json({ error: 'Failed to fetch playbooks' });
+  }
+});
+
+router.post("/api/playbooks", requireAuth, async (req, res) => {
+  try {
+    const { title, description, content, agentId, category, tags } = req.body;
+    const userId = req.session?.user?.id || 1;
+
+    const result = await db.execute(sql`
+      INSERT INTO playbooks (title, description, content, agent_id, category, tags, created_by, is_active, created_at, updated_at)
+      VALUES (${title}, ${description}, ${content}, ${agentId}, ${category}, ${JSON.stringify(tags || [])}, ${userId}, true, NOW(), NOW())
+      RETURNING id, title, description, content, agent_id, category, tags, is_active, created_by, created_at, updated_at
+    `);
+
+    res.status(201).json(result.rows[0]);
+  } catch (error: any) {
+    console.error('Error creating playbook:', error);
+    res.status(500).json({ error: 'Failed to create playbook' });
+  }
+});
+
+router.patch("/api/playbooks/:id", requireAuth, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { title, description, content, agentId, category } = req.body;
+
+    const result = await db.execute(sql`
+      UPDATE playbooks
+      SET 
+        title = ${title},
+        description = ${description},
+        content = ${content},
+        agent_id = ${agentId},
+        category = ${category},
+        updated_at = NOW()
+      WHERE id = ${parseInt(id)}
+      RETURNING id, title, description, content, agent_id, category, tags, is_active, created_by, created_at, updated_at
+    `);
+
+    if (!result.rows || result.rows.length === 0) {
+      return res.status(404).json({ error: 'Playbook not found' });
+    }
+
+    res.json(result.rows[0]);
+  } catch (error: any) {
+    console.error('Error updating playbook:', error);
+    res.status(500).json({ error: 'Failed to update playbook' });
   }
 });
 

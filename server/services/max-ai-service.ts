@@ -528,7 +528,7 @@ Format as: "Based on what I remember about you: [relevant info]" or return empty
         const resourcesResult = await db.execute(sql`
           SELECT COUNT(*) as count 
           FROM ptResources 
-          WHERE instance_id = 'BREW-SIM-001' AND active = true
+          WHERE (instance_id = 'BREW-SIM-001' OR instance_id IS NULL) AND active = true
         `);
         const activeResources = Number(resourcesResult.rows[0]?.count || 0);
         
@@ -1719,6 +1719,19 @@ Rules:
     }
   ): Promise<MaxResponse> {
     try {
+        // Try to analyze internal data FIRST for quick responses
+        console.log(`[Max AI] Checking internal data query for: "${query}"`);
+        const internalDataResponse = await this.analyzeInternalDataQuery(query, context);
+        if (internalDataResponse) {
+          console.log(`[Max AI] ✅ Using internal data response (fast path)`);
+          return {
+            content: internalDataResponse,
+            error: false,
+            confidence: 0.9
+          };
+        }
+        console.log(`[Max AI] No internal data match, using AI-based response`);
+        
         // Search for relevant playbooks FIRST to guide AI thinking
         const playbooks = await this.searchRelevantPlaybooks(query, context);
         
@@ -2924,13 +2937,15 @@ Focus on the most relevant data type that would answer the user's question.`
         if (mapping && typeof (storage as any)[mapping.method] === 'function') {
           // Dynamically call the appropriate storage method
           try {
+            console.log(`[Max AI] 📊 Calling storage.${mapping.method}() for endpoint: ${endpoint}`);
             data = await (storage as any)[mapping.method]();
+            console.log(`[Max AI] ✅ Fetched ${data.length} records from ${mapping.method}()`);
           } catch (error) {
-            console.error(`Error calling ${mapping.method}:`, error);
+            console.error(`[Max AI] ❌ Error calling ${mapping.method}:`, error);
             data = [];
           }
         } else {
-          console.warn(`No mapping found for endpoint: ${endpoint}`);
+          console.warn(`[Max AI] ⚠️  No mapping found for endpoint: ${endpoint}, mapping:`, mapping, 'method type:', typeof (storage as any)[mapping?.method]);
           data = [];
         }
         
@@ -3628,61 +3643,217 @@ Respond with JSON format:
       // Determine which algorithm to apply - check both action_type and reasoning for algorithm name
       const searchText = `${algorithmType} ${reasoning}`.toLowerCase();
       let algorithmName = '';
+      let algorithmApiName = '';
       let algorithmDescription = '';
-      let executionSteps = '';
       
-      if (searchText.includes('asap')) {
+      // Map user intent to actual algorithm API names
+      if (searchText.includes('asap') || searchText.includes('optimize') || searchText.includes('forward')) {
         algorithmName = 'ASAP (As Soon As Possible)';
+        algorithmApiName = 'forward-scheduling'; // ASAP is implemented as forward-scheduling
         algorithmDescription = 'This will schedule all operations to start as early as possible from the current time, minimizing lead times.';
-        executionSteps = '1. Click the "Optimize" button in the toolbar\n2. Select "ASAP Algorithm" from the dropdown\n3. Click "Apply" to run the algorithm\n4. Review the updated schedule';
-      } else if (searchText.includes('alap')) {
+      } else if (searchText.includes('alap') || searchText.includes('backward')) {
         algorithmName = 'ALAP (As Late As Possible)';
+        algorithmApiName = 'backward-scheduling';
         algorithmDescription = 'This will schedule operations as late as possible while still meeting due dates, reducing work-in-process inventory.';
-        executionSteps = '1. Click the "Optimize" button in the toolbar\n2. Select "ALAP Algorithm" from the dropdown\n3. Click "Apply" to run the algorithm\n4. Review the updated schedule';
       } else if (searchText.includes('critical_path') || searchText.includes('critical path')) {
         algorithmName = 'Critical Path Method';
-        algorithmDescription = 'This will identify and highlight operations that directly impact the completion time (shown in red).';
-        executionSteps = '1. Click the "Optimize" button in the toolbar\n2. Select "Critical Path" from the dropdown\n3. Click "Analyze" to identify critical operations\n4. Critical operations will be highlighted in red';
+        algorithmApiName = 'critical-path';
+        algorithmDescription = 'This will identify and highlight operations that directly impact the completion time.';
       } else if (searchText.includes('resource_level') || searchText.includes('leveling')) {
         algorithmName = 'Resource Leveling';
+        algorithmApiName = 'resource-leveling';
         algorithmDescription = 'This will redistribute operations to balance resource utilization and reduce overloads.';
-        executionSteps = '1. Click the "Optimize" button in the toolbar\n2. Select "Resource Leveling" from the dropdown\n3. Set target utilization percentage (e.g., 85%)\n4. Click "Apply" to balance the schedule';
-      } else if (searchText.includes('drum') || searchText.includes('toc') || searchText.includes('theory of constraints')) {
+      } else if (searchText.includes('drum') || searchText.includes('toc') || searchText.includes('theory of constraints') || searchText.includes('bottleneck')) {
         algorithmName = 'Drum/TOC (Theory of Constraints)';
+        algorithmApiName = 'bottleneck-optimizer';
         algorithmDescription = 'This will schedule operations around the bottleneck resource to maximize throughput.';
-        executionSteps = '1. Click the "Optimize" button in the toolbar\n2. Select "Drum/TOC" from the dropdown\n3. Identify the constraint resource (usually highest utilization)\n4. Click "Apply" to optimize around the constraint';
       } else {
-        algorithmName = 'Schedule Optimization';
-        algorithmDescription = 'This will optimize the schedule based on your specific requirements.';
-        executionSteps = '1. Click the "Optimize" button in the toolbar\n2. Select your preferred algorithm\n3. Configure parameters if needed\n4. Click "Apply" to run the optimization';
+        // Default to ASAP for general optimization requests
+        algorithmName = 'ASAP Schedule Optimization';
+        algorithmApiName = 'forward-scheduling';
+        algorithmDescription = 'This will optimize the schedule by scheduling all operations as soon as possible.';
       }
       
-      // Determine the algorithm direction value for Bryntum
-      let algorithmDirection = '';
-      if (algorithmName.includes('ALAP')) {
-        algorithmDirection = 'Backward';
-      } else if (algorithmName.includes('ASAP')) {
-        algorithmDirection = 'Forward';
-      }
+      console.log(`[Max AI] Algorithm selected: ${algorithmName} (API: ${algorithmApiName})`);
       
-      // Return action to apply the algorithm via PostMessage
-      return {
-        content: `✅ Applying the **${algorithmName}** algorithm to your schedule.\n\n${algorithmDescription}\n\nThe algorithm is being applied and will automatically recalculate all operations based on your constraints and dependencies. The schedule will refresh once complete.`,
-        action: {
-          type: 'apply_algorithm',
-          data: {
-            algorithm: algorithmName,
-            direction: algorithmDirection,
-            description: algorithmDescription
-          }
-        },
-        error: false
+      // Fetch current schedule data from the database
+      console.log('[Max AI] Fetching current schedule data...');
+      
+      // Get operations with their resource assignments
+      const operationsResult = await db.execute(sql`
+        SELECT 
+          jo.id,
+          jo.operation_id as externalId,
+          jo.name,
+          jo.description,
+          jo.job_id as jobId,
+          jo.sequence_number as sequenceNumber,
+          jo.scheduled_start as startTime,
+          jo.scheduled_end as endTime,
+          jo.duration_hours as duration,
+          jo.setup_hours as setupTime,
+          jo.teardown_hours as teardownTime,
+          jo.manually_scheduled as manuallyScheduled,
+          jr.default_resource_id as resourceId,
+          j.priority as jobPriority,
+          j.need_date_time as jobDueDate
+        FROM ptjoboperations jo
+        LEFT JOIN ptjobresources jr ON jo.id = jr.operation_id
+        LEFT JOIN ptjobs j ON jo.job_id = j.id
+        WHERE j.scheduled_status != 'Completed'
+        ORDER BY jo.scheduled_start
+      `);
+      
+      // Get resources
+      const resourcesResult = await db.execute(sql`
+        SELECT 
+          r.id,
+          r.external_id as externalId,
+          r.name,
+          r.description,
+          r.active as isActive,
+          r.bottleneck as isBottleneck,
+          r.buffer_hours as bufferHours,
+          r.hourly_cost as hourlyCost
+        FROM ptresources r
+        WHERE r.active = true
+          AND (r.instance_id = 'BREW-SIM-001' OR r.instance_id IS NULL)
+      `);
+      
+      // Get jobs
+      const jobsResult = await db.execute(sql`
+        SELECT 
+          j.id,
+          j.external_id as externalId,
+          j.name,
+          j.description,
+          j.priority,
+          j.need_date_time as dueDate,
+          j.manufacturing_release_date as releaseDate,
+          j.scheduled_status as status
+        FROM ptjobs j
+        WHERE j.scheduled_status != 'Completed'
+      `);
+      
+      // Format the schedule data for the algorithm API
+      const scheduleData = {
+        operations: operationsResult.rows.map((op: any) => ({
+          id: op.id,
+          externalId: op.externalid || `OP-${op.id}`,
+          name: op.name || '',
+          description: op.description || '',
+          jobId: op.jobid,
+          sequenceNumber: op.sequencenumber || 0,
+          startTime: op.starttime ? new Date(op.starttime).toISOString() : null,
+          endTime: op.endtime ? new Date(op.endtime).toISOString() : null,
+          duration: Number(op.duration) || 8,
+          setupTime: Number(op.setuptime) || 0,
+          teardownTime: Number(op.teardowntime) || 0,
+          resourceId: op.resourceid,
+          manuallyScheduled: op.manuallyscheduled || false,
+          jobPriority: op.jobpriority || 3,
+          jobDueDate: op.jobduedate ? new Date(op.jobduedate).toISOString() : null
+        })),
+        resources: resourcesResult.rows.map((res: any) => ({
+          id: res.id,
+          externalId: res.externalid || `RES-${res.id}`,
+          name: res.name || '',
+          description: res.description || '',
+          isActive: res.isactive !== false,
+          isBottleneck: res.isbottleneck === true,
+          bufferHours: Number(res.bufferhours) || 0,
+          hourlyCost: Number(res.hourlycost) || 0
+        })),
+        jobs: jobsResult.rows.map((job: any) => ({
+          id: job.id,
+          externalId: job.externalid || `JOB-${job.id}`,
+          name: job.name || '',
+          description: job.description || '',
+          priority: job.priority || 3,
+          dueDate: job.duedate ? new Date(job.duedate).toISOString() : null,
+          releaseDate: job.releasedate ? new Date(job.releasedate).toISOString() : null,
+          status: job.status || 'Scheduled'
+        }))
       };
+      
+      console.log(`[Max AI] Schedule data prepared: ${scheduleData.operations.length} operations, ${scheduleData.resources.length} resources, ${scheduleData.jobs.length} jobs`);
+      
+      // Call the optimization API endpoint
+      try {
+        console.log(`[Max AI] Calling optimization API: /api/optimization/algorithms/${algorithmApiName}/run`);
+        
+        // Use fetch to call the internal API
+        const response = await fetch(`http://localhost:5000/api/optimization/algorithms/${algorithmApiName}/run`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(scheduleData)
+        });
+        
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Algorithm execution failed');
+        }
+        
+        const result = await response.json();
+        console.log(`[Max AI] Algorithm executed successfully:`, result.runId);
+        
+        // Update the database with the optimized schedule
+        if (result.status === 'success' && result.optimizedSchedule?.operations) {
+          console.log(`[Max AI] Applying optimized schedule to database...`);
+          
+          let updatedCount = 0;
+          for (const op of result.optimizedSchedule.operations) {
+            if (op.startTime && op.endTime) {
+              // Update the operation's scheduled times
+              await db.execute(sql`
+                UPDATE ptjoboperations
+                SET 
+                  scheduled_start = ${new Date(op.startTime)},
+                  scheduled_end = ${new Date(op.endTime)}
+                WHERE id = ${op.id}
+              `);
+              updatedCount++;
+            }
+          }
+          
+          console.log(`[Max AI] Updated ${updatedCount} operations with new schedule times`);
+          
+          return {
+            content: `✅ **${algorithmName}** has been successfully applied!\n\n${algorithmDescription}\n\n📊 **Results:**\n- Optimized ${updatedCount} operations\n- Makespan: ${result.metrics?.makespan?.toFixed(1) || 'N/A'} hours\n- Resource Utilization: ${result.metrics?.resourceUtilization?.toFixed(1) || 'N/A'}%\n\nThe schedule has been updated and saved. Navigate to the Production Scheduler to see the optimized schedule.`,
+            action: {
+              type: 'navigate',
+              target: '/production-scheduler'
+            },
+            error: false
+          };
+        } else {
+          throw new Error('Algorithm did not return an optimized schedule');
+        }
+        
+      } catch (apiError: any) {
+        console.error(`[Max AI] Algorithm API error:`, apiError);
+        
+        // Fallback to returning instructions for manual application
+        return {
+          content: `I couldn't execute the ${algorithmName} algorithm automatically. Here's how you can apply it manually:\n\n${algorithmDescription}\n\n**Steps:**\n1. Navigate to the Production Scheduler\n2. Click the "Optimize" button in the toolbar\n3. Select "${algorithmName}" from the dropdown\n4. Click "Apply" to run the algorithm\n5. Review and save the updated schedule`,
+          action: {
+            type: 'navigate',
+            target: '/production-scheduler'
+          },
+          error: false
+        };
+      }
       
     } catch (error) {
       console.error('[Max AI] Error executing scheduling algorithm:', error);
       return {
-        content: 'I encountered an error while preparing the algorithm execution. Please try applying the algorithm manually using the Optimize button in the toolbar.',
+        content: 'I encountered an error while preparing the algorithm execution. Please try applying the algorithm manually using the Optimize button in the Production Scheduler.',
+        action: {
+          type: 'navigate',
+          target: '/production-scheduler'
+        },
         error: true
       };
     }

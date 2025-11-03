@@ -34,8 +34,9 @@ The system prioritizes user experience, data integrity, performance, accessibili
 -   **Framework**: Express.js with TypeScript.
 -   **Database**: PostgreSQL with Drizzle ORM.
 -   **API Design**: RESTful API with JSON responses, role-based authentication.
--   **Authentication System**: Unified role-based permissions system with JWT authentication; auto-login respects explicit logouts in development.
--   **AI Integration**: OpenAI GPT-4o for NLP, intelligent data generation, custom metric calculation, AI-powered modifications, and dynamic content creation.
+-   **Authentication System**: Unified role-based permissions system with JWT authentication. **Development Mode Enhancement (10/29/2025)**: Auto-login respects explicit logouts - when users log out in development, they stay logged out until manually logging in again, allowing testing with different users. Fresh preview starts continue to auto-login with the most recent user.
+-   **AI Integration**: OpenAI GPT-4o for NLP, intelligent data generation, custom metric calculation, AI-powered modifications, and dynamic content creation. **AI Sample Data Generation Fix (10/31/2025)**: Migrated from unreliable `response_format: { type: "json_object" }` to OpenAI structured outputs with Zod schemas. Implemented retry logic with exponential backoff (3 attempts: 1s, 2s, 4s delays) to handle transient failures. Uses strict JSON schema validation in `server/services/ai-sample-data-schema.ts` to prevent "string did not match expected pattern" errors. Provides user-friendly error messages for timeout, schema validation, and rate limit issues, with fallback to minimal dataset only after all retries fail. **Concise AI Responses (10/31/2025)**: Updated agent training documents for ultra-brief responses - Max AI and Production Scheduling Agent now provide 1-2 sentence initial responses with "Need details?" prompts, expanding only on explicit request.
+-   **Hint System Service**: Intelligent contextual hints with user interaction tracking.
 
 ### Core System Design & Features
 -   **Navigation**: Unified layout system with consistent header/navigation.

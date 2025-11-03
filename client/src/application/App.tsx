@@ -84,6 +84,7 @@ import TableFieldViewer from "@/pages/table-field-viewer";
 import TechnologyStack from "@/pages/technology-stack";
 import TenantAdmin from "@/pages/tenant-admin";
 import Training from "@/pages/training";
+import GuidedTourPage from "@/pages/guided-tour-page";
 import UserAccessManagement from "@/pages/user-access-management";
 import VisualFactory from "@/pages/visual-factory";
 import AIScenarioCreator from "@/pages/ai-scenario-creator";
@@ -179,19 +180,13 @@ export default function ApplicationApp() {
     return null;
   }
 
-  const Layout = isMobile ? MobileLayout : DesktopLayout;
-
-  return (
-    <AuthAdapterProvider>
-      <ThemeAdapterProvider>
-        <TooltipProvider>
-          <AgentAdapterProvider>
-            <NavigationAdapterProvider>
-          <Layout>
-            <HintSystem />
-            <SplitScreenLayout>
-              <OnboardingGate>
-              <Switch>
+  // Define the app content once to prevent remounting
+  const appContent = (
+    <>
+      <HintSystem />
+      <SplitScreenLayout>
+        <OnboardingGate>
+          <Switch>
               {/* Demo and Test Pages */}
               {/* <Route path="/demo" component={DemoPage} /> */}
               <Route path="/onboarding" component={Onboarding} />
@@ -433,6 +428,7 @@ export default function ApplicationApp() {
               
               {/* Training & Support Routes */}
               <Route path="/training" component={Training} />
+              <Route path="/guided-tour" component={GuidedTourPage} />
               <Route path="/help" component={Help} />
               <Route path="/industry-templates" component={IndustryTemplates} />
               <Route path="/presentation-system" component={PresentationSystem} />
@@ -594,10 +590,23 @@ export default function ApplicationApp() {
                 }}
               </Route>
               */}
-              </Switch>
-              </OnboardingGate>
-            </SplitScreenLayout>
-          </Layout>
+          </Switch>
+        </OnboardingGate>
+      </SplitScreenLayout>
+    </>
+  );
+
+  return (
+    <AuthAdapterProvider>
+      <ThemeAdapterProvider>
+        <TooltipProvider>
+          <AgentAdapterProvider>
+            <NavigationAdapterProvider>
+              {isMobile ? (
+                <MobileLayout key="app-layout">{appContent}</MobileLayout>
+              ) : (
+                <DesktopLayout key="app-layout">{appContent}</DesktopLayout>
+              )}
             </NavigationAdapterProvider>
           </AgentAdapterProvider>
           <Toaster />

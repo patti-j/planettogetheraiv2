@@ -755,8 +755,8 @@ export default function OperatorDashboard() {
                     <div className="flex items-center gap-2 mb-2">
                       <div className={`w-3 h-3 rounded-full ${getPriorityColor(operation.priority)}`}></div>
                       <h3 className="font-semibold text-lg">{operation.name}</h3>
-                      <Badge className={getStatusColor(operation.status)}>
-                        {operation.status.replace("_", " ")}
+                      <Badge className={getStatusColor(operation.status || "pending")}>
+                        {(operation.status || "pending").replace("_", " ")}
                       </Badge>
                     </div>
                     <p className="text-gray-600 mb-1">{operation.jobName}</p>
@@ -787,9 +787,9 @@ export default function OperatorDashboard() {
                   <div>
                     <p className="text-sm text-gray-500">Progress</p>
                     <div className="flex items-center gap-2">
-                      <Progress value={operation.status === "completed" ? 100 : operation.status === "in_progress" ? 50 : 0} className="flex-1" />
+                      <Progress value={(operation.status || "pending") === "completed" ? 100 : (operation.status || "pending") === "in_progress" ? 50 : 0} className="flex-1" />
                       <span className="text-sm">
-                        {operation.status === "completed" ? "100%" : operation.status === "in_progress" ? "50%" : "0%"}
+                        {(operation.status || "pending") === "completed" ? "100%" : (operation.status || "pending") === "in_progress" ? "50%" : "0%"}
                       </span>
                     </div>
                   </div>
