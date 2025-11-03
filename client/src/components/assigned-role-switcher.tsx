@@ -44,7 +44,7 @@ export function AssignedRoleSwitcher({ userId, currentRole }: AssignedRoleSwitch
   });
 
   // Get current role
-  const { data: currentRoleData } = useQuery({
+  const { data: currentRoleData } = useQuery<Role>({
     queryKey: [`/api/users/${userId}/current-role`],
     enabled: !!userId,
   });
@@ -108,10 +108,13 @@ export function AssignedRoleSwitcher({ userId, currentRole }: AssignedRoleSwitch
       // Immediately invalidate all role and user-related queries to refresh UI
       await queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
       await queryClient.invalidateQueries({ 
-        predicate: query => 
-          query.queryKey[0]?.toString().includes("assigned-roles") ||
-          query.queryKey[0]?.toString().includes("current-role") ||
-          query.queryKey[0]?.toString().includes("users")
+        predicate: query => {
+          const firstKey = query.queryKey[0];
+          if (typeof firstKey !== 'string') return false;
+          return firstKey.includes("assigned-roles") ||
+            firstKey.includes("current-role") ||
+            firstKey.includes("users");
+        }
       });
       
       // Immediately refetch user data to update UI state
