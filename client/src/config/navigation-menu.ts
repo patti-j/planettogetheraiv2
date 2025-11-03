@@ -38,44 +38,68 @@ export const navigationGroups: NavigationGroup[] = [
     ]
   },
   {
-    title: "Planning & Scheduling",
+    title: "Demand Planning",
+    priority: "high",
+    color: "indigo",
+    bgColor: "bg-indigo-50 dark:bg-indigo-950/20",
+    borderColor: "border-indigo-200 dark:border-indigo-800",
+    features: [
+      { icon: Workflow, label: "Planning Process Guide", href: "/planning-overview", feature: "schedule", action: "view", color: "bg-gradient-to-r from-blue-500 to-purple-600" },
+      { icon: Sparkles, label: "Demand Planning", href: "/demand-planning", feature: "demand-planning", action: "view", color: "bg-indigo-500" },
+      { icon: Sparkles, label: "Demand Forecasting", href: "/demand-forecasting", feature: "analytics", action: "view", color: "bg-purple-500" },
+      { icon: Target, label: "Demand Management", href: "/demand-management", feature: "demand-planning", action: "view", color: "bg-teal-600" },
+      { icon: Target, label: "Demand/Supply Alignment", href: "/demand-supply-alignment", feature: "analytics", action: "view", color: "bg-blue-700" }
+    ]
+  },
+  {
+    title: "Supply Planning",
+    priority: "high",
+    color: "green",
+    bgColor: "bg-green-50 dark:bg-green-950/20",
+    borderColor: "border-green-200 dark:border-green-800",
+    features: [
+      { icon: Briefcase, label: "Capacity Planning", href: "/capacity-planning", feature: "capacity-planning", action: "view", color: "bg-purple-500" },
+      { icon: Package, label: "Inventory Optimization", href: "/inventory-optimization", feature: "analytics", action: "view", color: "bg-emerald-500" },
+      { icon: FileSearch, label: "Material Requirements Planning", href: "/mrp", feature: "schedule", action: "view", color: "bg-violet-600" },
+      { icon: Sparkles, label: "Demand-Driven MRP (DDMRP)", href: "/ddmrp", feature: "schedule", action: "view", color: "bg-gradient-to-r from-blue-500 to-green-600" },
+      { icon: BarChart3, label: "Master Production Schedule", href: "/master-production-schedule", feature: "schedule", action: "view", color: "bg-blue-600" },
+      { icon: Target, label: "Production Planning", href: "/production-planning", feature: "schedule", action: "view", color: "bg-green-500" },
+      { icon: Package, label: "ATP/CTP", href: "/atp-ctp", feature: "schedule", action: "view", color: "bg-teal-500" }
+    ]
+  },
+  {
+    title: "Scheduling",
     priority: "high",
     color: "blue",
     bgColor: "bg-blue-50 dark:bg-blue-950/20",
     borderColor: "border-blue-200 dark:border-blue-800",
     features: [
-      // 1. Start with overview and process guidance
-      { icon: Workflow, label: "Planning Process Guide", href: "/planning-overview", feature: "schedule", action: "view", color: "bg-gradient-to-r from-blue-500 to-purple-600" },
-      
-      // 2. Demand analysis and forecasting
-      { icon: Sparkles, label: "Demand Planning", href: "/demand-planning", feature: "demand-planning", action: "view", color: "bg-indigo-500" },
-      { icon: Sparkles, label: "Demand Forecasting", href: "/demand-forecasting", feature: "analytics", action: "view", color: "bg-purple-500" },
-      { icon: Target, label: "Demand/Supply Alignment", href: "/demand-supply-alignment", feature: "analytics", action: "view", color: "bg-blue-700" },
-      
-      // 3. Capacity and resource planning
-      { icon: Briefcase, label: "Capacity Planning", href: "/capacity-planning", feature: "capacity-planning", action: "view", color: "bg-purple-500" },
-      { icon: Package, label: "Inventory Optimization", href: "/inventory-optimization", feature: "analytics", action: "view", color: "bg-emerald-500" },
-      
-      // 4. Material and production requirements
-      { icon: FileSearch, label: "Material Requirements Planning", href: "/mrp", feature: "schedule", action: "view", color: "bg-violet-600" },
-      { icon: Sparkles, label: "Demand-Driven MRP (DDMRP)", href: "/ddmrp", feature: "schedule", action: "view", color: "bg-gradient-to-r from-blue-500 to-green-600" },
-      { icon: BarChart3, label: "Master Production Schedule", href: "/master-production-schedule", feature: "schedule", action: "view", color: "bg-blue-600" },
-      { icon: Target, label: "Production Planning", href: "/production-planning", feature: "schedule", action: "view", color: "bg-green-500" },
-      
-      // 5. Scheduling and execution
-      { icon: Package, label: "ATP/CTP", href: "/atp-ctp", feature: "schedule", action: "view", color: "bg-teal-500" },
       { icon: Calendar, label: "Production Scheduler", href: "/production-scheduler", feature: "schedule", action: "view", color: "bg-indigo-600" },
+      { icon: Sparkles, label: "Scheduling Optimizer", href: "/scheduling-optimizer", feature: "scheduling-optimizer", action: "view", color: "bg-purple-600" },
+      { icon: Sparkles, label: "Order Optimization", href: "/order-optimization", feature: "scheduling-optimizer", action: "view", color: "bg-amber-500" },
+      { icon: Settings, label: "Schedule Management", href: "/schedule-management", feature: "schedule", action: "view", color: "bg-gray-600" },
       { icon: Disc, label: "Product Wheels", href: "/product-wheels", feature: "schedule", action: "view", color: "bg-gradient-to-r from-purple-500 to-blue-600" },
       { icon: ArrowUpDown, label: "Schedule Sequences", href: "/schedule-sequences", feature: "schedule", action: "view", color: "bg-purple-500" },
       { icon: Clock, label: "Shift Management", href: "/shift-management", feature: "schedule", action: "view", color: "bg-cyan-500" },
-      
-      // 6. Constraints and optimization
       { icon: AlertCircle, label: "Constraints Management", href: "/constraints", feature: "schedule", action: "view", color: "bg-orange-600" },
-      { icon: Sparkles, label: "Order Optimization", href: "/order-optimization", feature: "scheduling-optimizer", action: "view", color: "bg-amber-500" },
-      { icon: Sparkles, label: "Scheduling Optimizer", href: "/scheduling-optimizer", feature: "scheduling-optimizer", action: "view", color: "bg-purple-600" },
-      { icon: Settings, label: "Schedule Management", href: "/schedule-management", feature: "schedule", action: "view", color: "bg-gray-600" },
-      { icon: Target, label: "Theory of Constraints", href: "/theory-of-constraints", feature: "schedule", action: "view", color: "bg-blue-700" },
-      { icon: Target, label: "Demand Management", href: "/demand-management", feature: "demand-planning", action: "view", color: "bg-teal-600" }
+      { icon: Target, label: "Theory of Constraints", href: "/theory-of-constraints", feature: "schedule", action: "view", color: "bg-blue-700" }
+    ]
+  },
+  {
+    title: "Shop Floor",
+    priority: "high",
+    color: "orange",
+    bgColor: "bg-orange-50 dark:bg-orange-950/20",
+    borderColor: "border-orange-200 dark:border-orange-800",
+    features: [
+      { icon: Smartphone, label: "Shop Floor", href: "/shop-floor", feature: "shop-floor", action: "view", color: "bg-orange-500" },
+      { icon: Settings, label: "Operator Dashboard", href: "/operator-dashboard", feature: "operator-dashboard", action: "view", color: "bg-gray-500" },
+      { icon: Users, label: "Labor Management", href: "/labor-planning", feature: "schedule", action: "view", color: "bg-indigo-500" },
+      { icon: Clock, label: "Time Tracking", href: "/time-tracking", feature: "schedule", action: "view", color: "bg-purple-600" },
+      { icon: Truck, label: "Forklift Driver", href: "/forklift-driver", feature: "shop-floor", action: "view", color: "bg-yellow-500" },
+      { icon: Wrench, label: "Maintenance", href: "/maintenance", feature: "maintenance-planning", action: "view", color: "bg-red-500" },
+      { icon: AlertTriangle, label: "Disruption Management", href: "/disruption-management", feature: "schedule", action: "view", color: "bg-red-600" },
+      { icon: AlertCircle, label: "Alerts & Notifications", href: "/alerts", feature: "analytics", action: "view", color: "bg-red-500" }
     ]
   },
   {
@@ -123,23 +147,6 @@ export const navigationGroups: NavigationGroup[] = [
       { icon: Code, label: "API Integrations", href: "/api-integrations", feature: "systems-management", action: "view", color: "bg-violet-600" },
       { icon: Network, label: "Integrations", href: "/integrations", feature: "systems-management", action: "view", color: "bg-blue-700" },
       { icon: Upload, label: "ERP Import", href: "/erp-import", feature: "data-import", action: "view", color: "bg-green-700" }
-    ]
-  },
-  {
-    title: "Shop Floor Operations",
-    priority: "medium", 
-    color: "orange",
-    bgColor: "bg-orange-50 dark:bg-orange-950/20",
-    borderColor: "border-orange-200 dark:border-orange-800",
-    features: [
-      { icon: Smartphone, label: "Shop Floor", href: "/shop-floor", feature: "shop-floor", action: "view", color: "bg-orange-500" },
-      { icon: Users, label: "Labor Management", href: "/labor-planning", feature: "schedule", action: "view", color: "bg-indigo-500" },
-      { icon: Clock, label: "Time Tracking", href: "/time-tracking", feature: "schedule", action: "view", color: "bg-purple-600" },
-      { icon: Settings, label: "Operator Dashboard", href: "/operator-dashboard", feature: "operator-dashboard", action: "view", color: "bg-gray-500" },
-      { icon: Truck, label: "Forklift Driver", href: "/forklift-driver", feature: "shop-floor", action: "view", color: "bg-yellow-500" },
-      { icon: Wrench, label: "Maintenance", href: "/maintenance", feature: "maintenance-planning", action: "view", color: "bg-red-500" },
-      { icon: AlertTriangle, label: "Disruption Management", href: "/disruption-management", feature: "schedule", action: "view", color: "bg-red-600" },
-      { icon: AlertCircle, label: "Alerts & Notifications", href: "/alerts", feature: "analytics", action: "view", color: "bg-red-500" }
     ]
   },
   {

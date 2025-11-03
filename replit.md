@@ -39,7 +39,7 @@ The system prioritizes user experience, data integrity, performance, accessibili
 -   **Hint System Service**: Intelligent contextual hints with user interaction tracking.
 
 ### Core System Design & Features
--   **Navigation**: Unified layout system with consistent header/navigation.
+-   **Navigation**: Unified layout system with consistent header/navigation. Navigation menu organized into 11 groups: Business Management, Demand Planning (5 items), Supply Planning (7 items), Scheduling (9 items), Shop Floor (8 items), AI & Analytics, Data Management, Management & Administration, Training & Support, and Communication & Collaboration.
 -   **Data Model**: Comprehensive database schema using PT (PlanetTogether) tables for manufacturing data, including SAP-compliant production version architecture.
 -   **Inventory Management**: Stock-centric system tracking specific records.
 -   **Master Data Management**: Unified interface with AI-powered modification and validation.
