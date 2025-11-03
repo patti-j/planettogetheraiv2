@@ -5562,81 +5562,56 @@ router.get("/api/saved-schedules/:id", requireAuth, async (req, res) => {
 router.post("/api/schedules/:id/versions", async (req, res) => {
   try {
     const scheduleId = parseInt(req.params.id);
-    const { scheduleName, changeType, changeDescription, comment, userId } = req.body;
+    const { scheduleName, changeType, changeDescription, comment, userId, snapshotData, operationSnapshots, resourceAllocations } = req.body;
     
-    // Create a new version entry with current timestamp
-    const newVersion = {
-      id: Date.now(),
-      scheduleId: scheduleId,
-      versionNumber: Date.now(),
-      checksum: Math.random().toString(36).substring(7),
-      createdAt: new Date().toISOString(),
-      createdBy: userId || 1,
-      parentVersionId: null,
-      changeType: changeType || "MANUAL_EDIT",
+    // Create version history entry using storage
+    const newVersion = await storage.createScheduleVersion({
+      scheduleId,
+      source: changeType || 'manual',
       comment: comment || changeDescription || "No description provided",
-      tag: changeType === 'optimization' ? 'optimized' : 'manual',
-      snapshotData: {}
-    };
+      createdBy: userId || 1,
+      versionTag: changeType === 'optimization' ? 'optimized' : (changeType === 'manual_save' ? 'manual' : null),
+      snapshotData: snapshotData || {},
+      operationSnapshots: operationSnapshots || {},
+      resourceAllocations: resourceAllocations || null,
+      parentVersionId: null, // Could be enhanced to track parent versions
+      metrics: null // Could be enhanced to track performance metrics
+    });
     
-    // In a real implementation, this would save to database
-    // For now, just return the created version
+    console.log('✅ Created version history entry:', newVersion);
     res.json({ success: true, version: newVersion });
   } catch (error) {
     console.error("Error creating version history:", error);
-    res.status(500).json({ message: "Failed to create version history entry" });
+    res.status(500).json({ message: "Failed to create version history entry", error: error.message });
   }
 });
 
-// Get version history for a schedule (mock data for now)
+// Get version history for a schedule (from database)
 router.get("/api/schedules/:id/versions", async (req, res) => {
   try {
     const scheduleId = parseInt(req.params.id);
     
-    // Return mock version history data
-    const mockVersions = [
-      {
-        id: 3,
-        scheduleId: scheduleId,
-        versionNumber: 3,
-        checksum: "abc123",
-        createdAt: new Date(Date.now() - 3600000).toISOString(), // 1 hour ago
-        createdBy: 1,
-        parentVersionId: 2,
-        changeType: "OPTIMIZATION_APPLIED",
-        comment: "Applied ASAP optimization to minimize lead times",
-        tag: "optimized",
-        snapshotData: {}
-      },
-      {
-        id: 2,
-        scheduleId: scheduleId,
-        versionNumber: 2,
-        checksum: "def456",
-        createdAt: new Date(Date.now() - 7200000).toISOString(), // 2 hours ago
-        createdBy: 1,
-        parentVersionId: 1,
-        changeType: "MANUAL_EDIT",
-        comment: "Adjusted operation durations based on actual floor data",
-        tag: null,
-        snapshotData: {}
-      },
-      {
-        id: 1,
-        scheduleId: scheduleId,
-        versionNumber: 1,
-        checksum: "ghi789",
-        createdAt: new Date(Date.now() - 86400000).toISOString(), // 1 day ago
-        createdBy: 1,
-        parentVersionId: null,
-        changeType: "AUTO_SAVE",
-        comment: "Initial schedule creation",
-        tag: "baseline",
-        snapshotData: {}
-      }
-    ];
+    // Fetch real version history from database
+    const versions = await storage.getScheduleVersions(scheduleId);
     
-    res.json(mockVersions);
+    // Transform data to match frontend expectations
+    const transformedVersions = versions.map(v => ({
+      id: v.id,
+      scheduleId: v.scheduleId,
+      versionNumber: v.versionNumber,
+      checksum: v.checksum,
+      createdAt: v.createdAt,
+      createdBy: v.createdBy,
+      parentVersionId: v.parentVersionId,
+      changeType: v.source === 'optimization' ? 'OPTIMIZATION_APPLIED' : 
+                   v.source === 'manual' ? 'MANUAL_EDIT' : 
+                   v.source === 'auto-save' ? 'AUTO_SAVE' : v.source.toUpperCase(),
+      comment: v.comment,
+      tag: v.versionTag,
+      snapshotData: v.snapshotData || {}
+    }));
+    
+    res.json(transformedVersions);
   } catch (error) {
     console.error("Error fetching schedule versions:", error);
     res.status(500).json({ message: "Failed to fetch schedule versions" });

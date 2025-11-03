@@ -4,6 +4,7 @@ import {
   ptPlants, ptResources, ptJobs, ptJobOperations, ptManufacturingOrders,
   ptResourceCapabilities,
   schedulingConversations, schedulingMessages, savedSchedules,
+  scheduleVersions, operationVersions,
   widgets,
   agentConnections, agentActions, agentMetricsHourly, agentPolicies, agentAlerts,
   ptProductWheels, ptProductWheelSegments, ptProductWheelSchedule, ptProductWheelPerformance,
@@ -25,6 +26,8 @@ import {
   type SchedulingConversation, type InsertSchedulingConversation,
   type SchedulingMessage, type InsertSchedulingMessage,
   type SavedSchedule, type InsertSavedSchedule,
+  type ScheduleVersion, type InsertScheduleVersion,
+  type OperationVersion, type InsertOperationVersion,
   type Widget, type InsertWidget,
   type PtProductWheel, type InsertPtProductWheel,
   type PtProductWheelSegment, type InsertPtProductWheelSegment,
@@ -132,6 +135,13 @@ export interface IStorage {
   addSchedulingMessage(data: InsertSchedulingMessage): Promise<SchedulingMessage>;
   getSchedulingMessages(conversationId: number): Promise<SchedulingMessage[]>;
   deleteSchedulingConversation(id: number): Promise<boolean>;
+
+  // Version History Management
+  createScheduleVersion(data: any): Promise<any>;
+  getScheduleVersions(scheduleId: number): Promise<any[]>;
+  getScheduleVersion(id: number): Promise<any | undefined>;
+  createOperationVersion(data: any): Promise<any>;
+  getOperationVersions(versionId: number): Promise<any[]>;
 
   // Basic PT Table Access
   getPlants(): Promise<PtPlant[]>;
@@ -742,6 +752,99 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error('Error deleting scheduling conversation:', error);
       return false;
+    }
+  }
+
+  // Version History Management
+  async createScheduleVersion(data: any): Promise<any> {
+    try {
+      // Generate next version number
+      const existingVersions = await db.select()
+        .from(scheduleVersions)
+        .where(eq(scheduleVersions.scheduleId, data.scheduleId))
+        .orderBy(desc(scheduleVersions.versionNumber));
+      
+      const nextVersionNumber = existingVersions.length > 0 
+        ? existingVersions[0].versionNumber + 1 
+        : 1;
+      
+      // Generate checksum from schedule data
+      const checksum = require('crypto')
+        .createHash('sha256')
+        .update(JSON.stringify(data.snapshotData || {}))
+        .digest('hex');
+      
+      const versionData = {
+        ...data,
+        versionNumber: nextVersionNumber,
+        checksum,
+        createdAt: new Date(),
+        status: 'active',
+        branchName: data.branchName || 'main',
+        isMerged: false,
+        isBaseline: false
+      };
+      
+      const [newVersion] = await db.insert(scheduleVersions)
+        .values(versionData)
+        .returning();
+      
+      return newVersion;
+    } catch (error) {
+      console.error('Error creating schedule version:', error);
+      throw error;
+    }
+  }
+
+  async getScheduleVersions(scheduleId: number): Promise<any[]> {
+    try {
+      return await db.select()
+        .from(scheduleVersions)
+        .where(eq(scheduleVersions.scheduleId, scheduleId))
+        .orderBy(desc(scheduleVersions.createdAt));
+    } catch (error) {
+      console.error('Error fetching schedule versions:', error);
+      return [];
+    }
+  }
+
+  async getScheduleVersion(id: number): Promise<any | undefined> {
+    try {
+      const [version] = await db.select()
+        .from(scheduleVersions)
+        .where(eq(scheduleVersions.id, id));
+      return version || undefined;
+    } catch (error) {
+      console.error('Error fetching schedule version:', error);
+      return undefined;
+    }
+  }
+
+  async createOperationVersion(data: any): Promise<any> {
+    try {
+      const [newOperationVersion] = await db.insert(operationVersions)
+        .values({
+          ...data,
+          createdAt: new Date()
+        })
+        .returning();
+      
+      return newOperationVersion;
+    } catch (error) {
+      console.error('Error creating operation version:', error);
+      throw error;
+    }
+  }
+
+  async getOperationVersions(versionId: number): Promise<any[]> {
+    try {
+      return await db.select()
+        .from(operationVersions)
+        .where(eq(operationVersions.versionId, versionId))
+        .orderBy(desc(operationVersions.createdAt));
+    } catch (error) {
+      console.error('Error fetching operation versions:', error);
+      return [];
     }
   }
 
