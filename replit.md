@@ -19,6 +19,9 @@ Note on concurrent work:
 - If continuing previous work, briefly mention what was done before
 
 ## Recent Updates (November 3, 2025)
+- **Algorithm Execution Fix**: Fixed Production Scheduling Agent algorithm execution by updating API endpoint to check AlgorithmRegistry first instead of requiring database entries
+- **Cleaned Up Non-Working Algorithms**: Removed stubs for Resource Leveling and Critical Path - only ASAP and ALAP are functional
+- **Fixed Database Column Names**: Corrected `cycle_duration_hours` to `cycle_hrs` in Max AI service queries
 - **Navigation Fix**: Fixed critical navigation issue where /home route was blanking screen due to hard redirect
 - **AI Agent Training Enhancement**: Production Scheduling Agent now recognizes natural language optimization requests:
   - ASAP Algorithm triggers: "optimize schedule", "minimize lead times", "speed up production"

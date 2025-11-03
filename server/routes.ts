@@ -11071,23 +11071,32 @@ router.post("/api/optimization/algorithms/:name/run", async (req, res) => {
   try {
     const algorithmName = req.params.name;
     
-    // Find the algorithm by name in the database
-    const algorithms = await storage.getOptimizationAlgorithms();
-    const algorithmMetadata = algorithms.find((a: any) => a.name === algorithmName);
+    // First check if algorithm exists in the registry (our code-based algorithms)
+    const algorithmRegistry = AlgorithmRegistry.getInstance();
+    const hasAlgorithm = algorithmRegistry.hasAlgorithm(algorithmName);
     
-    if (!algorithmMetadata) {
-      return res.status(404).json({ error: "Algorithm not found" });
+    // If not in registry and not a known fallback, return error
+    if (!hasAlgorithm && algorithmName !== 'forward-scheduling' && algorithmName !== 'backward-scheduling') {
+      // Try to find in database for custom algorithms
+      const algorithms = await storage.getOptimizationAlgorithms();
+      const algorithmMetadata = algorithms.find((a: any) => a.name === algorithmName);
+      
+      if (!algorithmMetadata) {
+        return res.status(404).json({ error: "Algorithm not found" });
+      }
+      
+      // Check if algorithm is approved for production use
+      if (algorithmMetadata.status !== 'approved') {
+        return res.status(403).json({ 
+          error: "Algorithm not approved for production use",
+          status: algorithmMetadata.status 
+        });
+      }
+      
+      console.log(`✅ Algorithm validation passed from database: ${algorithmMetadata.displayName} (${algorithmName})`);
+    } else {
+      console.log(`✅ Algorithm found in registry: ${algorithmName}`);
     }
-    
-    // Check if algorithm is approved for production use
-    if (algorithmMetadata.status !== 'approved') {
-      return res.status(403).json({ 
-        error: "Algorithm not approved for production use",
-        status: algorithmMetadata.status 
-      });
-    }
-    
-    console.log(`✅ Algorithm validation passed: ${algorithmMetadata.displayName} (${algorithmName})`);
     
     // Validate request body contains schedule data
     const scheduleDataValidation = scheduleDataPayloadSchema.safeParse(req.body);
@@ -11098,8 +11107,7 @@ router.post("/api/optimization/algorithms/:name/run", async (req, res) => {
       });
     }
     
-    // Get the algorithm implementation from the registry
-    const algorithmRegistry = AlgorithmRegistry.getInstance();
+    // Check algorithm implementation in registry again for fallback
     if (!algorithmRegistry.hasAlgorithm(algorithmName)) {
       console.warn(`Algorithm ${algorithmName} not found in registry, falling back to ASAP`);
       // Fallback to ASAP if algorithm not yet implemented
