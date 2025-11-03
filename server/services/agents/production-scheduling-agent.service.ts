@@ -401,9 +401,12 @@ export class ProductionSchedulingAgent extends BaseAgent {
       
       // Check for operations query
       if (lowerMessage.includes('operation')) {
-        const jobMatch = message.match(/operations?\s+(?:in|for|of)\s+(?:job\s+)?([A-Za-z0-9-]+)/i);
+        // Improved regex to capture multi-word job names
+        const jobMatch = message.match(/operations?\s+(?:in|for|of)\s+(?:job\s+)?(.+?)(?:\s*$|\?)/i);
         if (jobMatch) {
-          return await this.getJobOperations(jobMatch[1], context);
+          // Clean up the captured job name
+          const jobName = jobMatch[1].trim().replace(/\bjob\b/i, '').trim();
+          return await this.getJobOperations(jobName, context);
         }
       }
       
@@ -413,9 +416,12 @@ export class ProductionSchedulingAgent extends BaseAgent {
       }
       
       // Check for specific job query by name/ID
-      const specificJobMatch = message.match(/(?:what is|tell me about|show me|details? (?:of|for|about)?)\s+(?:job\s+)?([A-Za-z0-9-]+)/i);
+      // Improved to capture multi-word job names
+      const specificJobMatch = message.match(/(?:what is|tell me about|show me|show details of|details? (?:of|for|about)?)\s+(?:job\s+)?(.+?)(?:\s*$|\?)/i);
       if (specificJobMatch) {
-        return await this.getJobDetails(specificJobMatch[1], context);
+        // Clean up the captured job name
+        const jobName = specificJobMatch[1].trim().replace(/\bjob\b/i, '').replace(/\bbatch\b/i, '').trim();
+        return await this.getJobDetails(jobName, context);
       }
       
       // Check for late/overdue jobs
@@ -695,15 +701,33 @@ export class ProductionSchedulingAgent extends BaseAgent {
   
   private async getJobOperations(jobId: string, context: AgentContext): Promise<AgentResponse> {
     try {
-      // First get the job
-      const job = await db.execute(sql`
+      // First try exact match
+      let job = await db.execute(sql`
         SELECT id, name FROM ptjobs
         WHERE name = ${jobId} OR external_id = ${jobId} OR id::text = ${jobId}
         LIMIT 1
       `);
       
+      // If no exact match found, try partial matching
       if (!job.rows || job.rows.length === 0) {
-        return { content: `Job ${jobId} not found.`, error: false };
+        const searchPattern = `%${jobId}%`;
+        job = await db.execute(sql`
+          SELECT id, name FROM ptjobs
+          WHERE LOWER(name) LIKE LOWER(${searchPattern})
+             OR LOWER(external_id) LIKE LOWER(${searchPattern})
+          ORDER BY 
+            CASE 
+              WHEN LOWER(name) LIKE LOWER(${jobId + '%'}) THEN 1
+              WHEN LOWER(name) LIKE LOWER(${'%' + jobId}) THEN 2
+              ELSE 3
+            END,
+            name
+          LIMIT 1
+        `);
+      }
+      
+      if (!job.rows || job.rows.length === 0) {
+        return { content: `Job "${jobId}" not found. Please check the job name and try again.`, error: false };
       }
       
       const jobData = job.rows[0];
@@ -733,15 +757,35 @@ export class ProductionSchedulingAgent extends BaseAgent {
   
   private async getJobDetails(jobId: string, context: AgentContext): Promise<AgentResponse> {
     try {
-      const job = await db.execute(sql`
+      // First try exact match, then partial match
+      let job = await db.execute(sql`
         SELECT id, name, external_id, priority, need_date_time, scheduled_status
         FROM ptjobs
         WHERE name = ${jobId} OR external_id = ${jobId} OR id::text = ${jobId}
         LIMIT 1
       `);
       
+      // If no exact match found, try partial matching with ILIKE
       if (!job.rows || job.rows.length === 0) {
-        return { content: `Job ${jobId} not found.`, error: false };
+        const searchPattern = `%${jobId}%`;
+        job = await db.execute(sql`
+          SELECT id, name, external_id, priority, need_date_time, scheduled_status
+          FROM ptjobs
+          WHERE LOWER(name) LIKE LOWER(${searchPattern})
+             OR LOWER(external_id) LIKE LOWER(${searchPattern})
+          ORDER BY 
+            CASE 
+              WHEN LOWER(name) LIKE LOWER(${jobId + '%'}) THEN 1
+              WHEN LOWER(name) LIKE LOWER(${'%' + jobId}) THEN 2
+              ELSE 3
+            END,
+            name
+          LIMIT 1
+        `);
+      }
+      
+      if (!job.rows || job.rows.length === 0) {
+        return { content: `Job "${jobId}" not found. Please check the job name and try again.`, error: false };
       }
       
       const jobData = job.rows[0];
