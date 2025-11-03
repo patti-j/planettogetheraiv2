@@ -118,9 +118,10 @@ export function SplitScreenLayout({ children }: SplitScreenLayoutProps) {
     }
   }, [location, splitMode, primaryPage, setPrimaryPage]);
 
-  // If not in split mode, wrap in DesktopLayout to preserve menu and panels
+  // If not in split mode, just render children normally
+  // DesktopLayout is already applied at the App.tsx level
   if (splitMode === 'none') {
-    return <DesktopLayout>{children}</DesktopLayout>;
+    return <>{children}</>;
   }
 
   const handleMouseDown = (e: React.MouseEvent) => {
