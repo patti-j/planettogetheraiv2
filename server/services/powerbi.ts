@@ -79,6 +79,35 @@ export interface RefreshEstimate {
 }
 
 export class PowerBIService {
+  // Known business tables from PlanetTogether system
+  // These are checked as a fallback when XMLA/DMV discovery fails
+  private readonly KNOWN_BUSINESS_TABLES = [
+    'Capacity Plan',
+    'CapacityPlan',
+    'Customers',
+    'DetailedTransmissionLog',
+    'Dispatch List',
+    'DispatchList',
+    'Dispatch',
+    'InstanceLog',
+    'Inventories',
+    'Jobs',
+    'Materials',
+    'PackageLog',
+    'Planning',
+    'PublishInformation',
+    'Publish Information',
+    'Purchase Orders',
+    'PurchaseOrders',
+    'Resource Cost',
+    'ResourceCost',
+    'Resources',
+    'Sales Orders',
+    'SalesOrders',
+    'Templates',
+    'HistoricalKPIs',
+    'Historical KPIs'
+  ];
   // Hardcoded dataset storage mode mappings - edit this to set your dataset storage modes
   private readonly HARDCODED_STORAGE_MODES: Record<string, "Import" | "Direct Query" | "LiveConnection" | "Composite"> = {
     // Direct Query datasets
@@ -625,8 +654,15 @@ export class PowerBIService {
       console.log('DISCOVER_TABLES error:', error);
     }
     
-    // No more fallback methods - return empty array if all proper discovery methods fail
-    console.log('⚠️ All XMLA/DMV discovery methods failed. Ensure you have a Premium workspace with proper permissions.');
+    // Fallback: Try known business tables from PlanetTogether system
+    console.log('Method 4: Trying known business tables as fallback...');
+    const knownTables = await this.checkKnownBusinessTables(accessToken, workspaceId, datasetId);
+    if (knownTables.length > 0) {
+      console.log(`✅ Found ${knownTables.length} known business tables`);
+      return knownTables;
+    }
+    
+    console.log('⚠️ All discovery methods failed. Ensure you have a Premium workspace with proper permissions.');
     return [];
   }
 
@@ -685,6 +721,68 @@ export class PowerBIService {
     return this.getTableColumns(accessToken, workspaceId, datasetId, tableName);
   }
 
+
+  // Check for known business tables as a fallback
+  private async checkKnownBusinessTables(accessToken: string, workspaceId: string, datasetId: string): Promise<any[]> {
+    const queryUrl = `https://api.powerbi.com/v1.0/myorg/groups/${workspaceId}/datasets/${datasetId}/executeQueries`;
+    const discoveredTables: Array<{ name: string; columns: any[]; rows: number }> = [];
+    
+    console.log(`Checking ${this.KNOWN_BUSINESS_TABLES.length} known business tables...`);
+    
+    for (const tableName of this.KNOWN_BUSINESS_TABLES) {
+      try {
+        // Try a simple query to verify table exists
+        const daxQuery = `EVALUATE TOPN(1, '${tableName}')`;
+        
+        const response = await fetch(queryUrl, {
+          method: 'POST',
+          headers: {
+            "Authorization": `Bearer ${accessToken}`,
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            queries: [{ query: daxQuery }],
+            serializerSettings: { includeNulls: true }
+          })
+        });
+
+        if (response.ok) {
+          const result = await response.json();
+          if (result.results && result.results[0] && result.results[0].tables && result.results[0].tables[0]) {
+            const tableData = result.results[0].tables[0];
+            
+            // Get columns from the returned data
+            const columns = tableData.rows && tableData.rows.length > 0 
+              ? Object.keys(tableData.rows[0]).map(col => ({
+                  name: col.replace(/^\[|\]$/g, '').replace(/^.*\[|\]$/g, ''),
+                  dataType: 'Auto'
+                }))
+              : [];
+            
+            // Only add if not already discovered (avoid duplicates from variations)
+            const alreadyFound = discoveredTables.some(t => 
+              t.name.toLowerCase() === tableName.toLowerCase() ||
+              t.name.replace(/\s+/g, '').toLowerCase() === tableName.replace(/\s+/g, '').toLowerCase()
+            );
+            
+            if (!alreadyFound) {
+              discoveredTables.push({
+                name: tableName,
+                columns: columns,
+                rows: 0
+              });
+              console.log(`✓ Found known table: ${tableName}`);
+            }
+          }
+        }
+      } catch (error) {
+        // Table doesn't exist with this name variation, continue
+        continue;
+      }
+    }
+    
+    return discoveredTables;
+  }
 
   // Get columns for a specific table
   private async getTableColumns(accessToken: string, workspaceId: string, datasetId: string, tableName: string): Promise<any[]> {
