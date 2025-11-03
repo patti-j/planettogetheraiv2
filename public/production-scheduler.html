@@ -3027,9 +3027,8 @@
                 }
                 
                 // Function to run scheduler algorithms from quick actions
-                function runSchedulerAlgorithm(algorithm) {
+                async function runSchedulerAlgorithm(algorithm) {
                     const algorithmDropdown = document.getElementById('schedulingAlgorithm');
-                    const applyButton = document.getElementById('applyScheduling');
                     
                     // Map algorithm names to dropdown values
                     const algorithmMap = {
@@ -3040,17 +3039,19 @@
                         'DRUM_TOC': 'drum'
                     };
                     
-                    // Set the dropdown value and trigger the algorithm
+                    // Use the shared applySelectedAlgorithm function directly
                     if (algorithmMap[algorithm]) {
                         algorithmDropdown.value = algorithmMap[algorithm];
-                        applyButton.click();
                         
-                        // Max AI feedback removed - handled by main app's AI panel
-                        // const aiMsg = document.createElement('div');
-                        // aiMsg.className = 'max-ai-message assistant';
-                        // aiMsg.textContent = `✅ ${algorithm.replace(/_/g, ' ')} algorithm applied successfully!`;
-                        // maxMessages.appendChild(aiMsg);
-                        // maxMessages.scrollTop = maxMessages.scrollHeight;
+                        // Call the shared function directly instead of clicking the button
+                        console.log(`🤖 Agent triggering ${algorithm} algorithm...`);
+                        const success = await window.applySelectedAlgorithm(algorithmMap[algorithm]);
+                        
+                        if (success) {
+                            console.log(`✅ ${algorithm} algorithm applied successfully by agent!`);
+                        } else {
+                            console.error(`❌ Failed to apply ${algorithm} algorithm`);
+                        }
                     }
                 }
                 
@@ -3312,147 +3313,138 @@
                     console.log('Zoom to fit applied with 50px margins');
                 });
                 
-                // Apply Scheduling Algorithm button
-                document.getElementById('applyScheduling').addEventListener('click', () => {
-                    const algorithm = document.getElementById('schedulingAlgorithm').value;
+                // Shared function to apply selected algorithm - can be called by both button and agent
+                async function applySelectedAlgorithm(algorithmName) {
+                    const algorithm = algorithmName || document.getElementById('schedulingAlgorithm').value;
                     document.getElementById('loadingOverlay').style.display = 'flex';
                     
-                    // Store current view settings to maintain consistent timeline
-                    const currentZoomLevel = scheduler.zoomLevel;
-                    const currentStartDate = scheduler.startDate;
-                    const currentEndDate = scheduler.endDate;
-                    
-                    requestAnimationFrame(() => {
-                        setTimeout(async () => {
-                            try {
-                                const project = scheduler.project;
-                                let message = '';
-                                let color = 'green';
+                    try {
+                        const project = scheduler.project;
+                        let message = '';
+                        let color = 'green';
+                        
+                        console.log(`🚀 Applying ${algorithm} algorithm...`);
+                        
+                        switch(algorithm) {
+                            case 'asap':
+                                // ASAP - As Soon As Possible (Forward Scheduling)
+                                await asapScheduling();
+                                message = 'ASAP scheduling applied - operations scheduled as early as possible!';
+                                break;
                                 
-                                switch(algorithm) {
-                                    case 'asap':
-                                        // ASAP - As Soon As Possible (Forward Scheduling)
-                                        await asapScheduling();
-                                        message = 'ASAP scheduling applied - operations scheduled as early as possible!';
-                                        break;
-                                        
-                                    case 'alap':
-                                        // ALAP - As Late As Possible (Backward Scheduling)
-                                        await alapScheduling();
-                                        message = 'ALAP scheduling applied - operations scheduled as late as possible!';
-                                        color = 'blue';
-                                        break;
-                                        
-                                    case 'criticalPath':
-                                        // Critical Path Method
-                                        await criticalPathScheduling();
-                                        message = 'Critical Path identified and optimized!';
-                                        color = 'orange';
-                                        break;
-                                        
-                                    case 'levelResources':
-                                        // Resource Leveling
-                                        await levelResourcesScheduling();
-                                        message = 'Resources leveled - workload balanced across resources!';
-                                        color = 'purple';
-                                        break;
-                                        
-                                    case 'drum':
-                                        // Drum (Theory of Constraints)
-                                        await drumScheduling();
-                                        message = 'Drum scheduling applied - optimized around bottleneck!';
-                                        color = 'brown';
-                                        break;
-                                }
+                            case 'alap':
+                                // ALAP - As Late As Possible (Backward Scheduling)
+                                await alapScheduling();
+                                message = 'ALAP scheduling applied - operations scheduled as late as possible!';
+                                color = 'blue';
+                                break;
                                 
-                                // Refresh the scheduler
-                                scheduler.refresh();
+                            case 'criticalPath':
+                                // Critical Path Method
+                                await criticalPathScheduling();
+                                message = 'Critical Path identified and optimized!';
+                                color = 'orange';
+                                break;
                                 
-                                // Apply zoom to fit after algorithm is applied
-                                scheduler.zoomToFit({
-                                    leftMargin: 50,   // Margin in pixels between first event start and first visible date
-                                    rightMargin: 50   // Margin in pixels between last event end and last visible date
-                                });
-                                console.log('Zoom to fit applied after ' + algorithm + ' scheduling');
+                            case 'levelResources':
+                                // Resource Leveling
+                                await levelResourcesScheduling();
+                                message = 'Resources leveled - workload balanced across resources!';
+                                color = 'purple';
+                                break;
                                 
-                                // Save the optimized schedule to database and create version history
-                                console.log('📝 Saving optimized schedule to database...');
-                                const saveResult = await window.saveSchedule();
-                                if (!saveResult) {
-                                    console.error('Failed to save schedule to database');
-                                }
+                            case 'drum':
+                                // Drum (Theory of Constraints)
+                                await drumScheduling();
+                                message = 'Drum scheduling applied - optimized around bottleneck!';
+                                color = 'brown';
+                                break;
                                 
-                                // Create version history entry for the optimization
-                                try {
-                                    console.log('📝 Creating version history entry...');
-                                    const authToken = getAuthToken();
-                                    const versionData = {
-                                        scheduleName: 'Main Schedule',
-                                        changeType: 'optimization',
-                                        changeDescription: `${message}`,
-                                        comment: `Algorithm: ${algorithm.toUpperCase()}`,
-                                        userId: 5 // Hardcoded for now, should ideally get from auth context
-                                    };
-                                    
-                                    const versionResponse = await fetch('/api/schedules/1/versions', {
-                                        method: 'POST',
-                                        headers: {
-                                            'Content-Type': 'application/json',
-                                            'Authorization': authToken ? `Bearer ${authToken}` : ''
-                                        },
-                                        body: JSON.stringify(versionData)
-                                    });
-                                    
-                                    if (versionResponse.ok) {
-                                        console.log('✅ Version history entry created successfully');
-                                    } else {
-                                        console.error('Failed to create version history entry:', await versionResponse.text());
-                                    }
-                                    console.log('📚 Version history entry created for optimization');
-                                } catch (error) {
-                                    console.error('Failed to create version history entry:', error);
-                                }
-                                
-                                // Notify parent window that schedule has been updated
-                                if (window.parent && window.parent !== window) {
-                                    window.parent.postMessage({
-                                        type: 'SCHEDULE_UPDATED',
-                                        algorithm: algorithm,
-                                        message: message,
-                                        timestamp: new Date().toISOString()
-                                    }, '*');
-                                    console.log('📬 Notified parent window of schedule update');
-                                }
-                                
-                                // Hide loading and show success message
-                                document.getElementById('loadingOverlay').style.display = 'none';
-                                updateStatus();
-                                
-                                // Show message in status bar
-                                const statusElement = document.getElementById('operationCount');
-                                const originalText = statusElement.textContent;
-                                statusElement.innerHTML = `<span style="color: ${color}; font-weight: bold;">${message}</span>`;
-                                
-                                setTimeout(() => {
-                                    statusElement.textContent = originalText;
-                                    updateStatus();
-                                }, 3000);
-                                
-                            } catch (error) {
-                                console.error('Scheduling error:', error);
-                                document.getElementById('loadingOverlay').style.display = 'none';
-                                
-                                const statusElement = document.getElementById('operationCount');
-                                const originalText = statusElement.textContent;
-                                statusElement.innerHTML = `<span style="color: red;">Scheduling failed - ${error.message}</span>`;
-                                
-                                setTimeout(() => {
-                                    statusElement.textContent = originalText;
-                                    updateStatus();
-                                }, 3000);
+                            default:
+                                console.warn('Unknown algorithm:', algorithm);
+                                return false;
+                        }
+                        
+                        console.log('✅ Algorithm execution complete, committing changes...');
+                        
+                        // Commit the project changes
+                        await scheduler.project.commitAsync();
+                        
+                        console.log('✅ Changes committed, refreshing view...');
+                        
+                        // Refresh scheduler view
+                        scheduler.refresh();
+                        
+                        // Apply zoom to fit after algorithm is applied
+                        scheduler.zoomToFit({
+                            leftMargin: 50,   // Margin in pixels between first event start and first visible date
+                            rightMargin: 50   // Margin in pixels between last event end and last visible date
+                        });
+                        console.log('Zoom to fit applied after ' + algorithm + ' scheduling');
+                        
+                        // Save the optimized schedule to database
+                        console.log('📝 Saving optimized schedule to database...');
+                        const saveResult = await window.saveSchedule();
+                        if (!saveResult) {
+                            console.error('Failed to save schedule to database');
+                        }
+                        
+                        // Create version history entry for the optimization
+                        try {
+                            console.log('📝 Creating version history entry...');
+                            const authToken = getAuthToken();
+                            const versionData = {
+                                scheduleName: 'Main Schedule',
+                                changeType: 'optimization',
+                                changeDescription: `${message}`,
+                                comment: `Algorithm: ${algorithm.toUpperCase()}`,
+                                userId: 5 // Hardcoded for now, should ideally get from auth context
+                            };
+                            
+                            const versionResponse = await fetch('/api/schedules/1/versions', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'Authorization': authToken ? `Bearer ${authToken}` : ''
+                                },
+                                body: JSON.stringify(versionData)
+                            });
+                            
+                            if (versionResponse.ok) {
+                                console.log('✅ Version history entry created successfully');
+                            } else {
+                                console.error('Failed to create version history entry:', await versionResponse.text());
                             }
-                        }, 300);
-                    });
+                        } catch (error) {
+                            console.error('Failed to create version history entry:', error);
+                        }
+                        
+                        // Show success message with appropriate color
+                        showAlgorithmSuccess(message, color);
+                        
+                        // Notify parent that algorithm completed
+                        if (window.parent !== window) {
+                            window.parent.postMessage({
+                                type: 'ALGORITHM_COMPLETE',
+                                data: { algorithm, message }
+                            }, '*');
+                        }
+                        
+                        return true;
+                    } catch (error) {
+                        console.error('Algorithm error:', error);
+                        return false;
+                    } finally {
+                        document.getElementById('loadingOverlay').style.display = 'none';
+                    }
+                }
+                
+                // Make the function globally available
+                window.applySelectedAlgorithm = applySelectedAlgorithm;
+                
+                // Apply Scheduling Algorithm button - just calls the shared function
+                document.getElementById('applyScheduling').addEventListener('click', async () => {
+                    await applySelectedAlgorithm();
                 });
                 
                 // Save schedule to database - make it globally available

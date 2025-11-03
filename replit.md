@@ -18,7 +18,7 @@ Note on concurrent work:
 - Best practice: Start each request with your name/initials for clarity
 - If continuing previous work, briefly mention what was done before
 
-## Recent Updates (November 3, 2025)
+## Recent Updates (November 3, 2025 - Evening)
 - **Version History Component Fix**: Fixed TypeError when accessing version history by adding null checks for changeType property and creating mock API endpoints for version data
 - **Algorithm Execution Fix**: Fixed Production Scheduling Agent algorithm execution by updating API endpoint to check AlgorithmRegistry first instead of requiring database entries
 - **Cleaned Up Non-Working Algorithms**: Removed stubs for Resource Leveling and Critical Path - only ASAP and ALAP are functional
@@ -39,12 +39,14 @@ Note on concurrent work:
   - Optional description support
   - List all saved schedules
   - Load previously saved schedules
-- **Algorithm Execution Bridge (Fixed November 3, 2025)**: 
+- **Algorithm Execution Bridge (Fixed November 3, 2025 - Evening)**: 
   - Production Scheduling Agent now properly executes ASAP/ALAP algorithms via client bridge
   - Server-side agent delegates to client-side Bryntum Scheduler Pro for actual optimization
   - Bidirectional communication via postMessage between server agent and client scheduler
-  - Algorithms actually optimize the schedule and save to database with version history
-  - Fixed saveSchedule function to be globally available for agent-triggered executions
+  - **Critical Fix**: Refactored to use shared `applySelectedAlgorithm` function instead of synthetic button clicks
+  - **Root Cause Resolved**: Synthetic clicks were blocked by Bryntum's `event.isTrusted` check
+  - Agent now directly calls algorithm functions, ensuring save to database and version history creation
+  - Both manual UI clicks and agent-triggered executions now use same code path
 
 ## System Architecture
 The system prioritizes user experience, data integrity, performance, accessibility, and consistency, with a focus on quality assurance.
