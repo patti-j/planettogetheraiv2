@@ -49,6 +49,7 @@ export const navigationGroups: NavigationGroup[] = [
       
       // 2. Demand analysis and forecasting
       { icon: Sparkles, label: "Demand Planning", href: "/demand-planning", feature: "demand-planning", action: "view", color: "bg-indigo-500" },
+      { icon: Sparkles, label: "Demand Forecasting", href: "/demand-forecasting", feature: "analytics", action: "view", color: "bg-purple-500" },
       { icon: Target, label: "Demand/Supply Alignment", href: "/demand-supply-alignment", feature: "analytics", action: "view", color: "bg-blue-700" },
       
       // 3. Capacity and resource planning
@@ -88,7 +89,6 @@ export const navigationGroups: NavigationGroup[] = [
       { icon: Sparkles, label: "AI Workflow Automation", href: "/workflows", feature: "workflows", action: "view", color: "bg-gradient-to-r from-purple-500 to-indigo-600" },
       { icon: GraduationCap, label: "Onboarding Assistant", href: "/onboarding-assistant", feature: "systems-management", action: "view", color: "bg-gradient-to-r from-purple-600 to-pink-500" },
       { icon: Sparkles, label: "Autonomous Optimization", href: "/autonomous-optimization", feature: "analytics", action: "view", color: "bg-gradient-to-r from-blue-500 to-purple-600" },
-      { icon: Sparkles, label: "Demand Forecasting", href: "/demand-forecasting", feature: "analytics", action: "view", color: "bg-purple-500" },
       { icon: BarChart3, label: "Analytics", href: "/analytics", feature: "analytics", action: "view", color: "bg-teal-500" },
       { icon: TrendingUp, label: "AI Insights", href: "/ai-insights", feature: "analytics", action: "view", color: "bg-gradient-to-r from-purple-500 to-pink-600" },
       { icon: FileText, label: "Reports", href: "/reports", feature: "reports", action: "view", color: "bg-blue-600" },
