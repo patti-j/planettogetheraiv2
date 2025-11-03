@@ -4,6 +4,7 @@ import { useLocation, Switch, Route } from 'wouter';
 import { Button } from '@/components/ui/button';
 import { X, GripVertical, GripHorizontal } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { DesktopLayout } from '@/components/navigation/desktop-layout';
 
 // Dynamic page rendering - no need to import every page
 
@@ -117,9 +118,9 @@ export function SplitScreenLayout({ children }: SplitScreenLayoutProps) {
     }
   }, [location, splitMode, primaryPage, setPrimaryPage]);
 
-  // If not in split mode, just render children normally
+  // If not in split mode, wrap in DesktopLayout to preserve menu and panels
   if (splitMode === 'none') {
-    return <>{children}</>;
+    return <DesktopLayout>{children}</DesktopLayout>;
   }
 
   const handleMouseDown = (e: React.MouseEvent) => {
