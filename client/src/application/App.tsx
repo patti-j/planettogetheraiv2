@@ -133,7 +133,7 @@ import PaginatedReports from "@/pages/paginated-reports";
 // Import other application-specific components  
 import { useAuth, usePermissions } from "@/hooks/useAuth";
 import { useQuery } from "@tanstack/react-query";
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect } from "react";
 
 export default function ApplicationApp() {
   const { isAuthenticated, user, isLoading, loginError } = useAuth();
@@ -160,9 +160,6 @@ export default function ApplicationApp() {
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
-
-  // Use useMemo to prevent layout from remounting on route changes - MUST be before early returns
-  const LayoutComponent = useMemo(() => (isMobile ? MobileLayout : DesktopLayout), [isMobile]);
 
   if (isLoading) {
     return (
@@ -605,7 +602,11 @@ export default function ApplicationApp() {
         <TooltipProvider>
           <AgentAdapterProvider>
             <NavigationAdapterProvider>
-              <LayoutComponent>{appContent}</LayoutComponent>
+              {isMobile ? (
+                <MobileLayout key="app-layout">{appContent}</MobileLayout>
+              ) : (
+                <DesktopLayout key="app-layout">{appContent}</DesktopLayout>
+              )}
             </NavigationAdapterProvider>
           </AgentAdapterProvider>
           <Toaster />
