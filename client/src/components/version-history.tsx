@@ -95,16 +95,22 @@ export function VersionHistory({ scheduleId, currentVersionId }: VersionHistoryP
   const [rollbackReason, setRollbackReason] = useState('');
 
   // Fetch version history
-  const { data: versions, isLoading } = useQuery({
+  const { data: versionsData, isLoading } = useQuery({
     queryKey: ['/api/schedules', scheduleId, 'versions'],
     enabled: !!scheduleId
   });
+  
+  // Ensure versions is always an array
+  const versions: Version[] = Array.isArray(versionsData) ? versionsData : [];
 
   // Fetch version comparison
-  const { data: comparison, isLoading: isLoadingComparison } = useQuery({
-    queryKey: ['/api/schedules', scheduleId, 'versions', compareVersions.base, 'compare', compareVersions.compare],
+  const { data: comparisonData, isLoading: isLoadingComparison } = useQuery({
+    queryKey: ['/api/schedules', scheduleId, 'versions', compareVersions.base, 'compare', compareVersions.compare'],
     enabled: !!compareVersions.base && !!compareVersions.compare
   });
+  
+  // Ensure comparison has the expected structure
+  const comparison: VersionComparison | null = comparisonData || null;
 
   // Rollback mutation
   const rollbackMutation = useMutation({
@@ -134,7 +140,7 @@ export function VersionHistory({ scheduleId, currentVersionId }: VersionHistoryP
     }
   });
 
-  const getChangeTypeColor = (changeType: string) => {
+  const getChangeTypeColor = (changeType: string | null | undefined) => {
     switch (changeType) {
       case 'OPTIMIZATION_STARTED':
       case 'OPTIMIZATION_APPLIED':
@@ -150,7 +156,7 @@ export function VersionHistory({ scheduleId, currentVersionId }: VersionHistoryP
     }
   };
 
-  const getChangeTypeIcon = (changeType: string) => {
+  const getChangeTypeIcon = (changeType: string | null | undefined) => {
     switch (changeType) {
       case 'OPTIMIZATION_STARTED':
       case 'OPTIMIZATION_APPLIED':
@@ -297,7 +303,7 @@ export function VersionHistory({ scheduleId, currentVersionId }: VersionHistoryP
                             variant="secondary"
                             className={`${getChangeTypeColor(version.changeType)} text-white`}
                           >
-                            {version.changeType.replace(/_/g, ' ')}
+                            {(version.changeType || 'manual').replace(/_/g, ' ')}
                           </Badge>
                         </div>
                       </CardHeader>

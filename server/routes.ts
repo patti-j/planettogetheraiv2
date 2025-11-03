@@ -5558,6 +5558,121 @@ router.get("/api/saved-schedules/:id", requireAuth, async (req, res) => {
   }
 });
 
+// Get version history for a schedule (mock data for now)
+router.get("/api/schedules/:id/versions", async (req, res) => {
+  try {
+    const scheduleId = parseInt(req.params.id);
+    
+    // Return mock version history data
+    const mockVersions = [
+      {
+        id: 3,
+        scheduleId: scheduleId,
+        versionNumber: 3,
+        checksum: "abc123",
+        createdAt: new Date(Date.now() - 3600000).toISOString(), // 1 hour ago
+        createdBy: 1,
+        parentVersionId: 2,
+        changeType: "OPTIMIZATION_APPLIED",
+        comment: "Applied ASAP optimization to minimize lead times",
+        tag: "optimized",
+        snapshotData: {}
+      },
+      {
+        id: 2,
+        scheduleId: scheduleId,
+        versionNumber: 2,
+        checksum: "def456",
+        createdAt: new Date(Date.now() - 7200000).toISOString(), // 2 hours ago
+        createdBy: 1,
+        parentVersionId: 1,
+        changeType: "MANUAL_EDIT",
+        comment: "Adjusted operation durations based on actual floor data",
+        tag: null,
+        snapshotData: {}
+      },
+      {
+        id: 1,
+        scheduleId: scheduleId,
+        versionNumber: 1,
+        checksum: "ghi789",
+        createdAt: new Date(Date.now() - 86400000).toISOString(), // 1 day ago
+        createdBy: 1,
+        parentVersionId: null,
+        changeType: "AUTO_SAVE",
+        comment: "Initial schedule creation",
+        tag: "baseline",
+        snapshotData: {}
+      }
+    ];
+    
+    res.json(mockVersions);
+  } catch (error) {
+    console.error("Error fetching schedule versions:", error);
+    res.status(500).json({ message: "Failed to fetch schedule versions" });
+  }
+});
+
+// Get version comparison for a schedule (mock data for now)
+router.get("/api/schedules/:id/versions/:baseId/compare/:compareId", async (req, res) => {
+  try {
+    const scheduleId = parseInt(req.params.id);
+    const baseId = parseInt(req.params.baseId);
+    const compareId = parseInt(req.params.compareId);
+    
+    // Return mock comparison data
+    const mockComparison = {
+      baseVersion: {
+        id: baseId,
+        scheduleId: scheduleId,
+        versionNumber: 1,
+        checksum: "ghi789",
+        createdAt: new Date(Date.now() - 86400000).toISOString(),
+        createdBy: 1,
+        parentVersionId: null,
+        changeType: "AUTO_SAVE",
+        comment: "Initial schedule creation",
+        tag: "baseline",
+        snapshotData: {}
+      },
+      compareVersion: {
+        id: compareId,
+        scheduleId: scheduleId,
+        versionNumber: 2,
+        checksum: "def456",
+        createdAt: new Date(Date.now() - 7200000).toISOString(),
+        createdBy: 1,
+        parentVersionId: 1,
+        changeType: "MANUAL_EDIT",
+        comment: "Adjusted operation durations",
+        tag: null,
+        snapshotData: {}
+      },
+      differences: {
+        added: [
+          { id: "OP-004", operation: "Quality Check", field: "duration", after: 30 }
+        ],
+        modified: [
+          { id: "OP-001", field: "duration", before: 60, after: 45 },
+          { id: "OP-002", field: "startTime", before: "08:00", after: "07:30" }
+        ],
+        removed: [],
+        statistics: {
+          totalChanges: 3,
+          operationsAdded: 1,
+          operationsModified: 2,
+          operationsRemoved: 0
+        }
+      }
+    };
+    
+    res.json(mockComparison);
+  } catch (error) {
+    console.error("Error fetching version comparison:", error);
+    res.status(500).json({ message: "Failed to fetch version comparison" });
+  }
+});
+
 // Create a new saved schedule
 router.post("/api/saved-schedules", requireAuth, async (req, res) => {
   try {
