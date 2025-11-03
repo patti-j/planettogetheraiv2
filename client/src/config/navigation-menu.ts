@@ -161,7 +161,6 @@ export const navigationGroups: NavigationGroup[] = [
       { icon: Shield, label: "User & Access Management", href: "/user-access-management", feature: "user-management", action: "view", color: "bg-amber-600" },
       { icon: Code, label: "Extension Studio", href: "/extension-studio", feature: "systems-management", action: "view", color: "bg-violet-500" },
       { icon: FileSearch, label: "Logs", href: "/error-logs", feature: "systems-management", action: "view", color: "bg-red-500" },
-      { icon: AlertTriangle, label: "Constraints Management", href: "/constraints", feature: "systems-management", action: "view", color: "bg-orange-600" },
       { icon: Settings, label: "Tenant Administration", href: "/tenant-admin", feature: "systems-management", action: "view", color: "bg-purple-600" },
       { icon: Shield, label: "Role Management", href: "/role-management", feature: "user-management", action: "view", color: "bg-indigo-600" },
       { icon: UserCheck, label: "User Role Assignments", href: "/user-role-assignments", feature: "user-management", action: "view", color: "bg-teal-600" },
