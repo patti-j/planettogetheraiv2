@@ -423,7 +423,7 @@ export class ProductionSchedulingAgent extends BaseAgent {
         return { content: 'No active jobs found.', error: false };
       }
       
-      let response = `**${jobs.rows.length} active jobs. Filter needed?**\n\n`;
+      let response = `**${jobs.rows.length} active jobs**\n\n`;
       
       // Group by priority
       const byPriority: any = {};
@@ -433,17 +433,17 @@ export class ProductionSchedulingAgent extends BaseAgent {
         byPriority[p].push(job);
       }
       
-      // Show summary
+      // Show summary with bullet points
       for (const priority of Object.keys(byPriority).sort()) {
         const count = byPriority[priority].length;
         const label = priority === '1' ? 'highest' : 
                      priority === '2' ? 'high' :
                      priority === '3' ? 'medium' :
                      priority === '4' ? 'low' : 'lowest';
-        response += `Priority ${priority} (${label}): ${count} jobs\n`;
+        response += `• Priority ${priority} (${label}): ${count} jobs\n`;
       }
       
-      return { content: response + '\nWant details?', error: false };
+      return { content: response + '\nWould you like more detailed information?', error: false };
     } catch (error: any) {
       throw error;
     }
@@ -468,7 +468,7 @@ export class ProductionSchedulingAgent extends BaseAgent {
         const dueDate = job.need_date_time ? new Date(job.need_date_time).toLocaleDateString() : 'No due date';
         response += `• ${job.name} (P${job.priority}, due ${dueDate})\n`;
       }
-      response += '\nNeed details?';
+      response += '\nWould you like additional information about these jobs?';
       
       return { content: response, error: false };
     } catch (error: any) {
@@ -498,7 +498,7 @@ export class ProductionSchedulingAgent extends BaseAgent {
         `, due ${new Date(jobData.need_date_time).toLocaleDateString()}` : '';
       
       return {
-        content: `Priority ${jobData.priority} (${priorityLabel})${dueDate}. More info?`,
+        content: `Priority ${jobData.priority} (${priorityLabel})${dueDate}.\nWould you like to see the job operations or additional details?`,
         error: false
       };
     } catch (error: any) {
@@ -535,10 +535,11 @@ export class ProductionSchedulingAgent extends BaseAgent {
         byDay[day].push(job);
       }
       
+      // Use bullet points for the list
       for (const day in byDay) {
-        response += `${day}: ${byDay[day].length} jobs\n`;
+        response += `• ${day}: ${byDay[day].length} jobs\n`;
       }
-      response += '\nDetails?';
+      response += '\nWould you like to see specific job details?';
       
       return { content: response, error: false };
     } catch (error: any) {
@@ -570,7 +571,7 @@ export class ProductionSchedulingAgent extends BaseAgent {
       for (const job of jobs.rows) {
         response += `• ${job.name} (Priority ${job.priority})\n`;
       }
-      response += '\nNeed details?';
+      response += '\nWould you like to see the operations for any of these jobs?';
       
       return { content: response, error: false };
     } catch (error: any) {
@@ -605,10 +606,10 @@ export class ProductionSchedulingAgent extends BaseAgent {
         return { content: `No operations found for job ${jobData.name}.`, error: false };
       }
       
-      let response = `**${operations.rows.length} ops:**\n`;
-      const opNames = operations.rows.map(op => op.name).join('→');
+      let response = `**${operations.rows.length} operations:**\n\n`;
+      const opNames = operations.rows.map(op => op.name).join(' → ');
       response += opNames;
-      response += '. Timelines?';
+      response += '\n\nWould you like to see the scheduled timelines for these operations?';
       
       return { content: response, error: false };
     } catch (error: any) {
