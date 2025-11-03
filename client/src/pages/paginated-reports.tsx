@@ -130,10 +130,11 @@ export default function PaginatedReports() {
     })(),
     queryFn: async () => {
       if (sourceType === 'sql' && selectedTable) {
-        // Default query for SQL
-        const response = await fetch(`/api/sql-tables/${selectedTable.schemaName}/${selectedTable.tableName}/schema`);
-        if (!response.ok) throw new Error('Failed to fetch schema');
-        return response.json();
+        // Use apiRequest to include authentication headers for SQL
+        const { apiRequest } = await import('@/lib/queryClient');
+        return apiRequest(`/api/sql-tables/${selectedTable.schemaName}/${selectedTable.tableName}/schema`, {
+          method: 'GET',
+        });
       } else if (sourceType === 'powerbi' && selectedPowerBITable && datasetTables) {
         // For Power BI, transform columns to match SQL schema format
         const table = datasetTables.find((t: any) => t.name === selectedPowerBITable);
