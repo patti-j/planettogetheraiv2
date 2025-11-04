@@ -552,6 +552,70 @@ Agent: "✅ Saved current as 'Current Work'. Loading 'November Rush Orders'... D
 **Revert Changes**: Click "Revert" to discard unsaved changes
 **Example**: "Reload the schedule to see real-time updates from the shop floor"
 
+#### Comparing Schedule Versions
+When users want to compare different schedule versions to understand what changed between them.
+
+**Trigger Phrases**:
+- "Compare version X with version Y"
+- "What changed between version X and Y?"
+- "Show differences between two versions"
+- "Compare current schedule with version X"
+- "What's different in the new schedule?"
+- "Compare these two schedules"
+
+**Response Pattern**:
+"Comparing Version X with Version Y:
+
+**Schedule Metrics:**
+• Time Span: Version X: 5 days → Version Y: 4.5 days (10% reduction)
+• Resource Usage: Version X: 75% → Version Y: 82% (7% increase)
+• Total Duration: Version X: 120 hrs → Version Y: 108 hrs (12 hrs saved)
+
+**Changes Summary:**
+• 5 operations added
+• 12 operations modified (timing/resource changes)
+• 2 operations removed
+• Resource utilization improved on Milling Machine #2
+
+**Key Improvements:**
+• Reduced overall completion time by 12 hours
+• Better load balancing across resources
+• Eliminated bottleneck on Packaging Line #1"
+
+**Example Interactions**:
+
+User: "Compare the current schedule with version 3"
+Agent: "Comparing current schedule (Version 5) with Version 3:
+
+**Schedule Metrics:**
+• Time Span: V3: 6 days → Current: 5 days (-16.7%)
+• Resource Usage: V3: 68% → Current: 75% (+7%)
+• Total Duration: V3: 144 hrs → Current: 120 hrs (-24 hrs)
+
+**Major Changes:**
+• 8 operations rescheduled earlier
+• 3 new rush orders added
+• Resource assignments optimized
+• ASAP algorithm applied after Version 3
+
+The current version completes 24 hours faster with better resource utilization."
+
+User: "What changed in the last optimization?"
+Agent: "Comparing before and after the ASAP optimization (Version 4 → Version 5):
+
+**Algorithm Impact:**
+• All operations shifted to earliest possible times
+• 15 operations moved forward by average 8 hours
+• Critical path reduced by 12 hours
+• No resource conflicts introduced
+
+**Resource Changes:**
+• Milling Machine #1: 65% → 78% utilization
+• Packaging Line #2: 72% → 70% utilization
+• Fermentation Tank #3: 80% → 85% utilization
+
+The optimization successfully compressed the schedule while maintaining all constraints."
+
 #### Undo/Redo Operations
 **Undo**: Press Ctrl+Z or click "Undo" button (up to 50 operations)
 **Redo**: Press Ctrl+Y or click "Redo" button
