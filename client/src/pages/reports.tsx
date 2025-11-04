@@ -123,6 +123,7 @@ export default function Dashboard() {
   const [filterPaneVisible, setFilterPaneVisible] = useState(false);
   const [showMobileFilterDrawer, setShowMobileFilterDrawer] = useState(false);
   const [settingsDropdownOpen, setSettingsDropdownOpen] = useState(false);
+  const [favoriteReports, setFavoriteReports] = useState<{reportId: string, workspaceId: string, addedAt: Date}[]>([]);
 
   // Refs to track timeouts and prevent race conditions
   const embedTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -211,6 +212,9 @@ export default function Dashboard() {
     };
     await report.setFilters([filter]); // or updateFilters(...)
   }
+  
+  // Get current user from auth
+  const { user } = useAuth();
   
   // Authentication hooks
   const { isAuthenticated, isAuthenticating, authenticateAuto } = usePowerBIAuth();
