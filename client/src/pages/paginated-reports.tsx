@@ -1451,7 +1451,20 @@ export default function PaginatedReports() {
                     <>
                       <span>•</span>
                       <span>
-                        ~{Math.ceil(filteredData.length / (selectedColumns.length > 6 ? 25 : 35))} page{Math.ceil(filteredData.length / (selectedColumns.length > 6 ? 25 : 35)) !== 1 ? 's' : ''}
+                        {(() => {
+                          // Accurate page estimation based on actual PDF rows per page
+                          const cols = selectedColumns.length;
+                          const rows = filteredData.length;
+                          
+                          // PDF typically fits about 10-12 rows per page with headers
+                          // Landscape orientation (>6 columns) fits fewer rows
+                          const rowsPerPage = cols > 6 ? 10 : 12;
+                          
+                          // Calculate pages needed for the rows
+                          const estimatedPages = Math.ceil(rows / rowsPerPage);
+                          
+                          return `~${estimatedPages} page${estimatedPages !== 1 ? 's' : ''}`;
+                        })()}
                       </span>
                     </>
                   )}
