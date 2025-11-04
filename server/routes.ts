@@ -67,7 +67,7 @@ import {
   goalActions,
   goalKpis
 } from "@shared/schema";
-import { insertUserSchema, insertCompanyOnboardingSchema, insertUserPreferencesSchema, insertSchedulingMessageSchema, widgets } from "@shared/schema";
+import { insertUserSchema, insertCompanyOnboardingSchema, insertUserPreferencesSchema, insertSchedulingMessageSchema, widgets, scheduleVersions } from "@shared/schema";
 import { systemMonitoringAgent } from "./monitoring-agent";
 import { schedulingAI } from "./services/scheduling-ai";
 import { log } from "./vite";
