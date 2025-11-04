@@ -2803,6 +2803,12 @@
                             // Load new events into scheduler
                             scheduler.eventStore.add(events);
                             
+                            // Force scheduler to refresh its view
+                            scheduler.refresh();
+                            
+                            // Update status display
+                            window.updateStatus();
+                            
                             // Update gantt chart if it exists
                             if (window.gantt) {
                                 await loadGanttData();
@@ -2813,6 +2819,11 @@
                             
                             // Update version history
                             loadVersionHistory();
+                            
+                            // Also refresh saved schedules dropdown if it exists
+                            if (typeof loadSavedSchedulesDropdown === 'function') {
+                                loadSavedSchedulesDropdown();
+                            }
                         } else {
                             console.error('Failed to refresh schedule data');
                             showNotification('Failed to refresh schedule', 'error');
@@ -2825,13 +2836,17 @@
                 
                 // Listen for messages from parent window (main app's Max AI panel)
                 window.addEventListener('message', (event) => {
+                    console.log('[Scheduler] Received message:', event.data);
+                    
                     // Handle algorithm run requests from parent
                     if (event.data && event.data.type === 'RUN_ALGORITHM') {
+                        console.log('[Scheduler] Running algorithm:', event.data.algorithm);
                         runSchedulerAlgorithm(event.data.algorithm);
                     }
                     // Handle refresh requests after agent updates database
                     else if (event.data && (event.data.type === 'REFRESH_SCHEDULE' || 
                                            event.data.type === 'REFRESH_VIEW')) {
+                        console.log('[Scheduler] Refreshing schedule data...');
                         refreshScheduleData();
                     }
                 });
