@@ -61,7 +61,13 @@ export class ProductionSchedulingAgent extends BaseAgent {
     'high priority',
     'due this week',
     'due today',
-    'operations'
+    'operations',
+    'delete version',
+    'delete versions',
+    'remove version',
+    'remove versions',
+    'clear versions',
+    'clean up versions'
   ];
   requiredPermission = 'scheduling.execute';
 
@@ -97,6 +103,11 @@ export class ProductionSchedulingAgent extends BaseAgent {
       // Check for version comparison requests
       if (this.isVersionComparisonRequest(lowerMessage)) {
         return await this.handleVersionComparison(lowerMessage, context);
+      }
+      
+      // Check for version deletion requests
+      if (this.isVersionDeletionRequest(lowerMessage)) {
+        return await this.handleVersionDeletion(lowerMessage, context);
       }
       
       // Default response
@@ -150,6 +161,14 @@ export class ProductionSchedulingAgent extends BaseAgent {
     return scheduleKeywords.some(keyword => message.includes(keyword));
   }
   
+  private isVersionDeletionRequest(message: string): boolean {
+    const triggers = [
+      'delete version', 'delete versions', 'remove version', 'remove versions',
+      'clear version', 'clear versions', 'clean up version', 'clean version'
+    ];
+    return triggers.some(trigger => message.includes(trigger));
+  }
+  
   private isVersionComparisonRequest(message: string): boolean {
     const triggers = [
       'compare version', 'compare schedule', 'what changed', 
@@ -157,6 +176,102 @@ export class ProductionSchedulingAgent extends BaseAgent {
       'schedule comparison', 'compare current'
     ];
     return triggers.some(trigger => message.includes(trigger));
+  }
+  
+  private async handleVersionDeletion(message: string, context: AgentContext): Promise<AgentResponse> {
+    try {
+      // Parse version numbers from message
+      // Support formats like:
+      // - "delete version 5"
+      // - "delete versions 1 to 10"
+      // - "delete versions 1 through 10"
+      // - "delete versions 1, 2, 3"
+      // - "delete versions 1-10"
+      
+      const versionNumbers: number[] = [];
+      
+      // Check for range patterns (e.g., 1 to 10, 1 through 10, 1-10)
+      const rangePattern = /(?:version[s]?\s+)?(\d+)\s*(?:to|through|thru|-)\s*(\d+)/i;
+      const rangeMatch = message.match(rangePattern);
+      
+      if (rangeMatch) {
+        const start = parseInt(rangeMatch[1]);
+        const end = parseInt(rangeMatch[2]);
+        for (let i = start; i <= end; i++) {
+          versionNumbers.push(i);
+        }
+      } else {
+        // Check for single or comma-separated list
+        const numberPattern = /\d+/g;
+        const matches = message.match(numberPattern);
+        if (matches) {
+          matches.forEach(num => versionNumbers.push(parseInt(num)));
+        }
+      }
+      
+      if (versionNumbers.length === 0) {
+        return {
+          content: '**To delete schedule versions:**\n\n' +
+                   'Please specify which versions to delete. Examples:\n' +
+                   '• "Delete version 5"\n' +
+                   '• "Delete versions 1 to 10"\n' +
+                   '• "Delete versions 1, 3, 5"\n\n' +
+                   '⚠️ **Warning:** This action cannot be undone!',
+          error: false
+        };
+      }
+      
+      // Get current versions to verify they exist
+      const existingVersions = await db.execute(sql`
+        SELECT id, version_number, created_at, source, comment 
+        FROM schedule_versions 
+        WHERE schedule_id = 1 
+          AND version_number = ANY(${versionNumbers})
+        ORDER BY version_number
+      `);
+      
+      if (!existingVersions.rows || existingVersions.rows.length === 0) {
+        return {
+          content: `⚠️ No versions found with numbers: ${versionNumbers.join(', ')}\n\n` +
+                   'Please check the version numbers and try again.',
+          error: true
+        };
+      }
+      
+      // Confirm deletion details
+      const toDelete = existingVersions.rows.map((v: any) => 
+        `• Version ${v.version_number} (${v.source}, created ${new Date(v.created_at).toLocaleDateString()})`
+      ).join('\n');
+      
+      // Delete the versions
+      const deleteResult = await db.execute(sql`
+        DELETE FROM schedule_versions 
+        WHERE schedule_id = 1 
+          AND version_number = ANY(${versionNumbers})
+      `);
+      
+      const deletedCount = existingVersions.rows.length;
+      
+      // Log the deletion
+      this.log(`Deleted ${deletedCount} schedule versions: ${versionNumbers.join(', ')}`);
+      
+      return {
+        content: `✅ **Successfully deleted ${deletedCount} schedule version${deletedCount > 1 ? 's' : ''}:**\n\n${toDelete}\n\n` +
+                 'The version history has been updated.',
+        action: {
+          type: 'refresh',
+          target: 'schedule_versions'
+        },
+        error: false
+      };
+      
+    } catch (error: any) {
+      this.error('Error deleting schedule versions', error);
+      return {
+        content: `Failed to delete versions: ${error.message}`,
+        error: true
+      };
+    }
   }
   
   private async handleVersionComparison(message: string, context: AgentContext): Promise<AgentResponse> {

@@ -120,6 +120,8 @@ The Production Scheduling Agent (`production-scheduling-agent.service.ts`) can:
 - Execute ASAP and ALAP scheduling algorithms
 - Manage resources and capabilities
 - Create and load schedule versions
+- Compare schedule versions with metrics and differences
+- Delete schedule versions (single, range, or list)
 - Uses professional language with bullet points for lists
 
 ## External Dependencies

@@ -631,6 +631,64 @@ Agent: "Comparing before and after the ASAP optimization (Version 4 → Version 
 
 The optimization successfully compressed the schedule while maintaining all constraints."
 
+#### Deleting Schedule Versions
+When users want to clean up old or unwanted schedule versions.
+
+**CAPABILITY**: The agent can now delete schedule versions by number or range!
+
+**Trigger Phrases**:
+- "Delete version X"
+- "Delete versions X to Y"
+- "Delete versions X through Y"
+- "Remove version X"
+- "Remove versions X, Y, Z"
+- "Clear versions X-Y"
+- "Clean up versions"
+
+**Process**:
+1. Parse version numbers from request
+2. Verify versions exist in database
+3. Show details of what will be deleted
+4. Delete the specified versions
+5. Confirm deletion success
+
+**Examples**:
+
+User: "Delete version 5"
+Agent: "✅ **Successfully deleted 1 schedule version:**
+• Version 5 (ASAP, created 11/4/2024)
+
+The version history has been updated."
+
+User: "Delete versions 1 to 10"
+Agent: "✅ **Successfully deleted 10 schedule versions:**
+• Version 1 (manual, created 10/28/2024)
+• Version 2 (ASAP, created 10/29/2024)
+• Version 3 (manual, created 10/30/2024)
+...
+• Version 10 (ALAP, created 11/2/2024)
+
+The version history has been updated."
+
+User: "Delete versions 2, 5, 8"
+Agent: "✅ **Successfully deleted 3 schedule versions:**
+• Version 2 (ASAP, created 10/29/2024)
+• Version 5 (manual, created 10/31/2024)
+• Version 8 (ALAP, created 11/1/2024)
+
+The version history has been updated."
+
+**Warning Response**:
+If no version numbers specified:
+"**To delete schedule versions:**
+
+Please specify which versions to delete. Examples:
+• 'Delete version 5'
+• 'Delete versions 1 to 10'
+• 'Delete versions 1, 3, 5'
+
+⚠️ **Warning:** This action cannot be undone!"
+
 #### Undo/Redo Operations
 **Undo**: Press Ctrl+Z or click "Undo" button (up to 50 operations)
 **Redo**: Press Ctrl+Y or click "Redo" button
