@@ -1051,49 +1051,67 @@ export class ProductionSchedulingAgent extends BaseAgent {
       const timePart = timestamp.toLocaleTimeString('en-US', { hour12: false }).replace(/:/g, '');
       const saveName = `Auto-save - ${timestamp.toLocaleDateString()}, ${timestamp.toLocaleTimeString()} (${algorithm.toUpperCase()})`;
       
-      // Insert the saved schedule
-      await db.execute(sql`
+      // Insert the saved schedule and get the ID back
+      const savedScheduleResult = await db.execute(sql`
         INSERT INTO saved_schedules (user_id, name, description, schedule_data, metadata, is_active)
         VALUES (${context.userId}, ${saveName}, ${'Automatically saved after ' + algorithm.toUpperCase() + ' algorithm execution'}, 
                 ${JSON.stringify(scheduleData)}, ${JSON.stringify({ algorithm: algorithm })}, true)
+        RETURNING id
       `);
       
-      // Also create a version in schedule_versions for version history
-      const existingVersions = await db.execute(sql`
-        SELECT version_number
-        FROM schedule_versions
-        WHERE schedule_id = 1
-        ORDER BY version_number DESC
-        LIMIT 1
-      `);
+      const savedScheduleId = savedScheduleResult.rows[0]?.id;
+      this.log(`Created saved_schedule with ID: ${savedScheduleId}`);
       
-      const nextVersionNumber = existingVersions.rows && existingVersions.rows.length > 0 
-        ? (existingVersions.rows[0].version_number as number) + 1 
-        : 1;
-      
-      // Generate checksum
-      const crypto = require('crypto');
-      const checksum = crypto
-        .createHash('sha256')
-        .update(JSON.stringify(scheduleData))
-        .digest('hex');
-      
-      // Create version entry
-      await db.execute(sql`
-        INSERT INTO schedule_versions (
-          schedule_id, version_number, version_tag, created_by, created_at,
-          source, comment, snapshot_data, operation_snapshots, checksum,
-          status, branch_name, is_merged, is_baseline
-        )
-        VALUES (
-          1, ${nextVersionNumber}, ${'OPTIMIZATION APPLIED'}, ${context.userId}, ${new Date()},
-          ${'algorithm_' + algorithm}, ${'Optimization requested: ' + algorithm.toUpperCase()}, 
-          ${JSON.stringify(scheduleData)}, ${JSON.stringify(operations.rows)}, ${checksum},
-          ${'active'}, ${'main'}, false, false
-        )
-      `);
-      
-      this.log(`Created auto-save: ${saveName} and Version ${nextVersionNumber}`);
+      // Try to create a version entry - don't let this fail the auto-save
+      try {
+        // Use the saved schedule ID as the schedule_id (or fallback to 1 for backward compatibility)
+        const scheduleIdToUse = savedScheduleId || 1;
+        
+        // Get existing versions for this schedule
+        const existingVersions = await db.execute(sql`
+          SELECT version_number
+          FROM schedule_versions
+          WHERE schedule_id = ${scheduleIdToUse}
+          ORDER BY version_number DESC
+          LIMIT 1
+        `);
+        
+        const nextVersionNumber = existingVersions.rows && existingVersions.rows.length > 0 
+          ? (existingVersions.rows[0].version_number as number) + 1 
+          : 1;
+        
+        // Generate checksum
+        const crypto = require('crypto');
+        const checksum = crypto
+          .createHash('sha256')
+          .update(JSON.stringify(scheduleData))
+          .digest('hex');
+        
+        // Create version entry
+        const versionResult = await db.execute(sql`
+          INSERT INTO schedule_versions (
+            schedule_id, version_number, version_tag, created_by, created_at,
+            source, comment, snapshot_data, operation_snapshots, checksum,
+            status, branch_name, is_merged, is_baseline
+          )
+          VALUES (
+            ${scheduleIdToUse}, ${nextVersionNumber}, ${'OPTIMIZATION APPLIED'}, ${context.userId}, ${new Date()},
+            ${'algorithm_' + algorithm}, ${'Optimization requested: ' + algorithm.toUpperCase()}, 
+            ${JSON.stringify(scheduleData)}, ${JSON.stringify(operations.rows)}, ${checksum},
+            ${'active'}, ${'main'}, false, false
+          )
+          RETURNING id, version_number
+        `);
+        
+        const versionId = versionResult.rows[0]?.id;
+        const versionNum = versionResult.rows[0]?.version_number;
+        this.log(`Created schedule_version with ID: ${versionId}, Version Number: ${versionNum}`);
+        this.log(`Auto-save complete: ${saveName} (Schedule ID: ${savedScheduleId}, Version: ${versionNum})`);
+      } catch (versionError: any) {
+        // Log the error but don't fail the auto-save
+        this.error(`Failed to create schedule_version (but saved_schedule succeeded): ${versionError.message}`, versionError);
+        this.log(`Auto-save partially complete: ${saveName} (saved_schedules entry created, but version history failed)`);
+      }
     } catch (error: any) {
       this.error(`Failed to create auto-save: ${error.message}`, error);
       // Don't throw - allow algorithm to complete even if save fails
