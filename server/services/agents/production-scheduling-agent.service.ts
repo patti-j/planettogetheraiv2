@@ -690,6 +690,30 @@ export class ProductionSchedulingAgent extends BaseAgent {
     }
   }
 
+  private async getCurrentOptimizationState(): Promise<string | null> {
+    try {
+      // Get the latest schedule version to see what algorithm was last applied
+      const latestVersion = await db.execute(sql`
+        SELECT source, comment 
+        FROM schedule_versions 
+        WHERE schedule_id = 1 
+        ORDER BY version_number DESC 
+        LIMIT 1
+      `);
+      
+      if (latestVersion.rows && latestVersion.rows.length > 0) {
+        const source = String(latestVersion.rows[0].source || '').toLowerCase();
+        if (source.includes('asap')) return 'asap';
+        if (source.includes('alap') || source.includes('jit')) return 'alap';
+      }
+      
+      return null; // No optimization applied yet
+    } catch (error) {
+      this.log(`Error getting current optimization state: ${error}`);
+      return null;
+    }
+  }
+
   private async executeAlgorithm(message: string, context: AgentContext): Promise<AgentResponse> {
     // Check if user is asking for insights or other options
     const askingForInsights = message.includes('insight') || message.includes('option') || 
@@ -697,24 +721,76 @@ export class ProductionSchedulingAgent extends BaseAgent {
                              message.includes('else') || message.includes('suggest');
     
     if (askingForInsights) {
+      // Get current optimization state
+      const currentOptimization = await this.getCurrentOptimizationState();
+      
+      let response = '**📊 Optimization Algorithm Options:**\n\n' +
+                    '**ASAP (As Soon As Possible):**\n' +
+                    '• Schedules all operations at their earliest possible start times\n' +
+                    '• ✅ Benefits: Minimizes lead times, faster delivery, early problem detection\n' +
+                    '• ⚠️ Drawbacks: Higher WIP (work-in-progress), more storage needed\n' +
+                    '• Best for: Rush orders, prototypes, time-critical production\n\n' +
+                    '**ALAP (As Late As Possible):**\n' +
+                    '• Schedules operations backward from due dates\n' +
+                    '• ✅ Benefits: Reduces inventory costs, minimizes WIP, just-in-time delivery\n' +
+                    '• ⚠️ Drawbacks: Less buffer for delays, requires precise timing\n' +
+                    '• Best for: Standard production, cost optimization, lean manufacturing\n\n';
+      
+      // Add interactive prompts based on current state
+      if (currentOptimization === 'asap') {
+        response += '**Current Schedule:** Optimized with ASAP algorithm\n\n' +
+                   '**Would you like to try ALAP optimization instead?** This will:\n' +
+                   '• Reduce inventory holding costs\n' +
+                   '• Minimize work-in-progress\n' +
+                   '• Schedule operations just-in-time\n\n' +
+                   'Say "run ALAP" to apply JIT optimization, or "compare algorithms" to see both side-by-side.';
+      } else if (currentOptimization === 'alap') {
+        response += '**Current Schedule:** Optimized with ALAP algorithm\n\n' +
+                   '**Would you like to try ASAP optimization instead?** This will:\n' +
+                   '• Minimize lead times\n' +
+                   '• Get orders completed faster\n' +
+                   '• Provide more buffer for delays\n\n' +
+                   'Say "run ASAP" to apply fast-track optimization, or "compare algorithms" to see both side-by-side.';
+      } else {
+        response += '**Current Schedule:** Not yet optimized\n\n' +
+                   '**Please choose an optimization strategy:**\n' +
+                   '• Say "run ASAP" to minimize lead times (recommended for rush orders)\n' +
+                   '• Say "run ALAP" to minimize inventory (recommended for standard production)\n' +
+                   '• Say "compare algorithms" to see detailed analysis';
+      }
+      
       return {
-        content: '**📊 Optimization Algorithm Options:**\n\n' +
-                 '**ASAP (As Soon As Possible):**\n' +
-                 '• Schedules all operations at their earliest possible start times\n' +
-                 '• ✅ Benefits: Minimizes lead times, faster delivery, early problem detection\n' +
-                 '• ⚠️ Drawbacks: Higher WIP (work-in-progress), more storage needed\n' +
-                 '• Best for: Rush orders, prototypes, time-critical production\n\n' +
-                 '**ALAP (As Late As Possible):**\n' +
-                 '• Schedules operations backward from due dates\n' +
-                 '• ✅ Benefits: Reduces inventory costs, minimizes WIP, just-in-time delivery\n' +
-                 '• ⚠️ Drawbacks: Less buffer for delays, requires precise timing\n' +
-                 '• Best for: Standard production, cost optimization, lean manufacturing\n\n' +
-                 '**Would you like to:**\n' +
-                 '• Run ASAP optimization (minimize lead times)\n' +
-                 '• Run ALAP optimization (minimize inventory)\n' +
-                 '• Compare current schedule with both algorithms',
+        content: response,
         error: false
       };
+    }
+    
+    // Check if generic optimization request without specific algorithm
+    const isGenericOptimize = message.includes('optimize') && 
+                             !message.includes('asap') && 
+                             !message.includes('alap') &&
+                             !message.includes('jit');
+    
+    if (isGenericOptimize) {
+      // Get current state to provide smart suggestions
+      const currentOptimization = await this.getCurrentOptimizationState();
+      
+      if (!currentOptimization) {
+        // No optimization applied yet - ask user to choose
+        return {
+          content: '**Schedule needs optimization. Please choose a strategy:**\n\n' +
+                   '**Option 1: ASAP (Fast-track)**\n' +
+                   '• Minimizes lead times\n' +
+                   '• Gets orders completed fastest\n' +
+                   '• Say "run ASAP" to apply\n\n' +
+                   '**Option 2: ALAP (Just-in-time)**\n' +
+                   '• Reduces inventory costs\n' +
+                   '• Minimizes work-in-progress\n' +
+                   '• Say "run ALAP" to apply\n\n' +
+                   '💡 Not sure? Say "optimization insights" for detailed comparison.',
+          error: false
+        };
+      }
     }
     
     // Determine which algorithm to run
@@ -723,6 +799,9 @@ export class ProductionSchedulingAgent extends BaseAgent {
     this.log(`Executing ${algorithm} algorithm directly in agent service`);
     
     try {
+      // Get current optimization state before running new algorithm
+      const currentOptimization = await this.getCurrentOptimizationState();
+      
       // Run the algorithm directly
       let result;
       if (algorithm === 'asap') {
@@ -744,11 +823,20 @@ export class ProductionSchedulingAgent extends BaseAgent {
       // Add a small delay to ensure database transaction is fully committed
       await new Promise(resolve => setTimeout(resolve, 500));
       
-      // Enhance the result message with insights
+      // Enhance the result message with context-aware suggestions
       let enhancedMessage = result.message;
-      if (algorithm === 'asap' && message.includes('optimize')) {
-        enhancedMessage += '\n\n💡 **Alternative:** Consider ALAP optimization for reducing inventory costs. ' +
-                          'Ask me for "optimization insights" to learn more about each algorithm.';
+      
+      // Add suggestions based on what was just applied
+      if (algorithm === 'asap') {
+        enhancedMessage += '\n\n**Next Options:**\n' +
+                          '• Say "run ALAP" to try just-in-time optimization instead\n' +
+                          '• Say "optimization insights" to understand the differences\n' +
+                          '• Say "compare versions" to see what changed';
+      } else if (algorithm === 'alap') {
+        enhancedMessage += '\n\n**Next Options:**\n' +
+                          '• Say "run ASAP" to try fast-track optimization instead\n' +
+                          '• Say "optimization insights" to understand the differences\n' +
+                          '• Say "compare versions" to see what changed';
       }
       
       // Return success response with results and the saved schedule ID
@@ -762,13 +850,8 @@ export class ProductionSchedulingAgent extends BaseAgent {
           scheduleId: savedScheduleId // Include the schedule ID
         },
         action: {
-          type: 'scheduler_action',
-          target: '/production-scheduler',
-          schedulerCommand: {
-            type: 'REFRESH_VIEW',
-            scheduleId: savedScheduleId || undefined, // Include the saved schedule ID for the refresh
-            refreshType: 'full' // Ensure a full refresh happens
-          }
+          type: 'refresh',
+          target: 'schedule'
         },
         error: false
       };
