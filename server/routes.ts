@@ -855,6 +855,12 @@ router.get("/api/favorite-reports/:userId", async (req, res) => {
     
     // Return empty array if no preferences or no favorites
     const favoriteReports = preferences?.uiSettings?.favoriteReports || [];
+    
+    // Prevent caching to ensure fresh data
+    res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+    res.set('Pragma', 'no-cache');
+    res.set('Expires', '0');
+    
     res.json(favoriteReports);
   } catch (error) {
     console.error("Error fetching favorite reports:", error);

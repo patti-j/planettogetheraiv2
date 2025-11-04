@@ -224,18 +224,27 @@ export default function Dashboard() {
   const { data: workspaces, isLoading: loadingWorkspaces, error: workspacesError } = usePowerBIWorkspaces(isAuthenticated);
   const { data: allReports, isLoading: loadingReports, error: reportsError } = usePowerBIReports(isAuthenticated, selectedWorkspaceId);
   
+  // Function to fetch favorites from backend
+  const fetchFavorites = async () => {
+    if (!user?.id) return;
+    try {
+      const res = await fetch(`/api/favorite-reports/${user.id}`, {
+        headers: {
+          'Cache-Control': 'no-cache',
+        }
+      });
+      const data = await res.json();
+      if (Array.isArray(data)) {
+        setFavoriteReports(data);
+      }
+    } catch (err) {
+      console.error('Failed to load favorites:', err);
+    }
+  };
+
   // Load favorite reports when user is available
   useEffect(() => {
-    if (user?.id) {
-      fetch(`/api/favorite-reports/${user.id}`)
-        .then(res => res.json())
-        .then(data => {
-          if (Array.isArray(data)) {
-            setFavoriteReports(data);
-          }
-        })
-        .catch(err => console.error('Failed to load favorites:', err));
-    }
+    fetchFavorites();
   }, [user?.id]);
   
   // Toggle favorite status for a report
@@ -256,6 +265,8 @@ export default function Dashboard() {
         if (res.ok) {
           const data = await res.json();
           setFavoriteReports(data.favorites || []);
+          // Also refetch to ensure consistency
+          await fetchFavorites();
           toast({
             title: "Removed from favorites",
             description: "Report has been removed from your favorites.",
@@ -271,6 +282,8 @@ export default function Dashboard() {
         if (res.ok) {
           const data = await res.json();
           setFavoriteReports(data.favorites || []);
+          // Also refetch to ensure consistency
+          await fetchFavorites();
           toast({
             title: "Added to favorites",
             description: "Report has been added to your favorites.",
