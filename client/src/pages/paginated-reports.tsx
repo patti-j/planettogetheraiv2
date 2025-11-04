@@ -376,9 +376,12 @@ export default function PaginatedReports() {
     };
 
     // Convert to desired format
+    const tableName = exportContent.tableName?.replace(/[^a-zA-Z0-9]/g, '_') || 'report';
+    const dateStamp = new Date().toISOString().split('T')[0];
+    
     if (exportFormat === 'csv') {
       const csv = convertToCSV(exportContent);
-      const fileName = `${exportContent.tableName?.replace(/[^a-zA-Z0-9]/g, '_') || 'report'}_${new Date().toISOString().split('T')[0]}.csv`;
+      const fileName = `${tableName}_${dateStamp}.csv`;
       downloadFile(csv, fileName, 'text/csv');
       toast({
         title: "Export Successful",
@@ -386,19 +389,9 @@ export default function PaginatedReports() {
         variant: "default"
       });
     } else if (exportFormat === 'excel') {
-      // For Excel, we'd need to import xlsx library
-      toast({
-        title: "Coming Soon",
-        description: "Excel export will be available in a future update.",
-        variant: "default"
-      });
+      await exportToExcel(exportContent, `${tableName}_${dateStamp}.xlsx`);
     } else if (exportFormat === 'pdf') {
-      // For PDF, we'd need to implement with jsPDF
-      toast({
-        title: "Coming Soon",
-        description: "PDF export will be available in a future update.",
-        variant: "default"
-      });
+      await exportToPDF(exportContent, `${tableName}_${dateStamp}.pdf`);
     }
     
     setShowExportDialog(false);
@@ -456,6 +449,180 @@ export default function PaginatedReports() {
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
+  };
+
+  // Excel Export Function
+  const exportToExcel = async (exportContent: any, filename: string) => {
+    try {
+      const { utils, writeFile } = await import('xlsx');
+      
+      // Prepare worksheet data
+      const worksheetData: any[][] = [];
+      
+      // Add header if provided
+      if (exportContent.header) {
+        worksheetData.push([exportContent.header]);
+        worksheetData.push([]); // Empty row
+      }
+      
+      // Add timestamp and table info if enabled
+      if (exportContent.timestamp) {
+        worksheetData.push([`Generated: ${exportContent.timestamp}`]);
+        worksheetData.push([`Table: ${exportContent.tableName}`]);
+        worksheetData.push([]); // Empty row
+      }
+      
+      // Add column headers
+      worksheetData.push(exportContent.columns);
+      
+      // Add data rows
+      exportContent.data.forEach((row: any) => {
+        worksheetData.push(exportContent.columns.map((col: string) => row[col] ?? ''));
+      });
+      
+      // Add footer if provided
+      if (exportContent.footer) {
+        worksheetData.push([]); // Empty row
+        worksheetData.push([exportContent.footer]);
+      }
+      
+      // Create workbook and worksheet
+      const wb = utils.book_new();
+      const ws = utils.aoa_to_sheet(worksheetData);
+      
+      // Auto-size columns
+      const colWidths = exportContent.columns.map((col: string) => ({
+        wch: Math.max(
+          col.length,
+          ...exportContent.data.map((row: any) => 
+            String(row[col] ?? '').length
+          ).slice(0, 100)
+        ) + 2
+      }));
+      ws['!cols'] = colWidths;
+      
+      // Add worksheet to workbook
+      utils.book_append_sheet(wb, ws, "Report");
+      
+      // Save file
+      writeFile(wb, filename);
+      
+      toast({
+        title: "Export Successful",
+        description: `Your report has been exported as Excel`,
+        variant: "default"
+      });
+    } catch (error) {
+      console.error('Excel export error:', error);
+      toast({
+        title: "Export Failed",
+        description: "Failed to export Excel file",
+        variant: "destructive"
+      });
+    }
+  };
+
+  // PDF Export Function
+  const exportToPDF = async (exportContent: any, filename: string) => {
+    try {
+      const { default: jsPDF } = await import('jspdf');
+      await import('jspdf-autotable');
+      
+      // Create PDF with landscape orientation if many columns
+      const doc = new jsPDF({ 
+        orientation: exportContent.columns.length > 5 ? 'landscape' : 'portrait' 
+      });
+      
+      let yPosition = 20;
+      
+      // Add header if provided
+      if (exportContent.header) {
+        doc.setFontSize(14);
+        doc.setFont('helvetica', 'bold');
+        doc.text(exportContent.header, 14, yPosition);
+        yPosition += 10;
+      }
+      
+      // Add timestamp and table info if enabled
+      if (exportContent.timestamp) {
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'normal');
+        doc.text(`Generated: ${exportContent.timestamp}`, 14, yPosition);
+        yPosition += 6;
+        doc.text(`Table: ${exportContent.tableName}`, 14, yPosition);
+        yPosition += 10;
+      }
+      
+      // Prepare table data
+      const tableData = exportContent.data.map((row: any) => 
+        exportContent.columns.map((col: string) => {
+          const value = row[col];
+          if (value === null || value === undefined) return '';
+          // Truncate long strings for PDF
+          const strValue = String(value);
+          return strValue.length > 50 ? strValue.substring(0, 47) + '...' : strValue;
+        })
+      );
+      
+      // Add table
+      (doc as any).autoTable({
+        head: [exportContent.columns],
+        body: tableData,
+        startY: yPosition,
+        theme: 'grid',
+        styles: {
+          fontSize: 9,
+          cellPadding: 2,
+          overflow: 'linebreak',
+          cellWidth: 'wrap'
+        },
+        headStyles: {
+          fillColor: [59, 130, 246], // Blue color
+          textColor: [255, 255, 255],
+          fontStyle: 'bold'
+        },
+        alternateRowStyles: {
+          fillColor: [245, 247, 250]
+        },
+        margin: { left: 14, right: 14 },
+        didDrawPage: function(data: any) {
+          // Add page numbers
+          doc.setFontSize(8);
+          doc.text(
+            `Page ${data.pageNumber}`,
+            doc.internal.pageSize.width / 2,
+            doc.internal.pageSize.height - 10,
+            { align: 'center' }
+          );
+        }
+      });
+      
+      // Add footer if provided
+      if (exportContent.footer) {
+        const finalY = (doc as any).lastAutoTable.finalY || yPosition + 50;
+        if (finalY < doc.internal.pageSize.height - 30) {
+          doc.setFontSize(10);
+          doc.setFont('helvetica', 'italic');
+          doc.text(exportContent.footer, 14, finalY + 10);
+        }
+      }
+      
+      // Save the PDF
+      doc.save(filename);
+      
+      toast({
+        title: "Export Successful",
+        description: `Your report has been exported as PDF`,
+        variant: "default"
+      });
+    } catch (error) {
+      console.error('PDF export error:', error);
+      toast({
+        title: "Export Failed",
+        description: "Failed to export PDF file",
+        variant: "destructive"
+      });
+    }
   };
 
   const handleSearch = (value: string) => {
