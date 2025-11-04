@@ -852,8 +852,13 @@ export class ProductionSchedulingAgent extends BaseAgent {
           scheduleId: savedScheduleId // Include the schedule ID
         },
         action: {
-          type: 'refresh',
-          target: 'schedule'
+          type: 'scheduler_action',
+          target: '/production-scheduler',
+          schedulerCommand: {
+            type: 'REFRESH_VIEW',
+            scheduleId: savedScheduleId || undefined,
+            refreshType: 'full'
+          }
         },
         error: false
       };
