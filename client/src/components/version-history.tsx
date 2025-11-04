@@ -93,6 +93,7 @@ export function VersionHistory({ scheduleId, currentVersionId }: VersionHistoryP
   });
   const [showRollbackDialog, setShowRollbackDialog] = useState(false);
   const [rollbackReason, setRollbackReason] = useState('');
+  const [triggerComparison, setTriggerComparison] = useState(false);
 
   // Fetch version history
   const { data: versionsData, isLoading } = useQuery({
@@ -104,9 +105,9 @@ export function VersionHistory({ scheduleId, currentVersionId }: VersionHistoryP
   const versions: Version[] = Array.isArray(versionsData) ? versionsData : [];
 
   // Fetch version comparison
-  const { data: comparisonData, isLoading: isLoadingComparison } = useQuery({
+  const { data: comparisonData, isLoading: isLoadingComparison, refetch: refetchComparison } = useQuery({
     queryKey: ['/api/schedules', scheduleId, 'versions', compareVersions.base, 'compare', compareVersions.compare],
-    enabled: !!compareVersions.base && !!compareVersions.compare
+    enabled: !!compareVersions.base && !!compareVersions.compare && triggerComparison
   });
   
   // Ensure comparison has the expected structure
@@ -348,7 +349,10 @@ export function VersionHistory({ scheduleId, currentVersionId }: VersionHistoryP
                 <select
                   className="w-full mt-1 rounded-md border border-input bg-background px-3 py-2"
                   value={compareVersions.base || ''}
-                  onChange={(e) => setCompareVersions({ ...compareVersions, base: Number(e.target.value) })}
+                  onChange={(e) => {
+                    setCompareVersions({ ...compareVersions, base: Number(e.target.value) });
+                    setTriggerComparison(false);
+                  }}
                   data-testid="select-base-version"
                 >
                   <option value="">Select version</option>
@@ -364,7 +368,10 @@ export function VersionHistory({ scheduleId, currentVersionId }: VersionHistoryP
                 <select
                   className="w-full mt-1 rounded-md border border-input bg-background px-3 py-2"
                   value={compareVersions.compare || ''}
-                  onChange={(e) => setCompareVersions({ ...compareVersions, compare: Number(e.target.value) })}
+                  onChange={(e) => {
+                    setCompareVersions({ ...compareVersions, compare: Number(e.target.value) });
+                    setTriggerComparison(false);
+                  }}
                   data-testid="select-compare-version"
                 >
                   <option value="">Select version</option>
@@ -377,7 +384,38 @@ export function VersionHistory({ scheduleId, currentVersionId }: VersionHistoryP
               </div>
             </div>
 
-            {comparison && (
+            <div className="flex justify-center">
+              <Button
+                onClick={() => {
+                  if (compareVersions.base && compareVersions.compare) {
+                    setTriggerComparison(true);
+                    refetchComparison();
+                  } else {
+                    toast({
+                      title: 'Select Versions',
+                      description: 'Please select both base and compare versions',
+                      variant: 'destructive',
+                    });
+                  }
+                }}
+                disabled={!compareVersions.base || !compareVersions.compare || isLoadingComparison}
+                data-testid="button-execute-comparison"
+              >
+                {isLoadingComparison ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    Comparing...
+                  </>
+                ) : (
+                  <>
+                    <GitCompare className="h-4 w-4 mr-2" />
+                    Compare Versions
+                  </>
+                )}
+              </Button>
+            </div>
+
+            {comparison && triggerComparison && (
               <ScrollArea className="h-[450px] w-full pr-4">
                 <Card>
                   <CardHeader>
