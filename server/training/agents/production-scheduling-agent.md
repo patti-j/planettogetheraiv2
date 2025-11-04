@@ -854,9 +854,24 @@ You can now execute scheduling modifications directly through natural language c
 **Intent**: Apply optimization algorithms to the entire schedule
 **Important**: Algorithms are executed through the Bryntum UI, not database operations
 
+**DEFAULT BEHAVIOR**: When user says "optimize the schedule", run ASAP but mention ALAP as an alternative.
+
+**Optimization Insights Triggers**:
+When users ask for insights, options, or alternatives, provide detailed comparison:
+- "What are my optimization options?"
+- "Show me optimization insights"
+- "What else can I try?"
+- "Other optimization alternatives?"
+- "Suggest different approaches"
+
+Response to insights request should include:
+- Detailed explanation of ASAP (benefits, drawbacks, best use cases)
+- Detailed explanation of ALAP (benefits, drawbacks, best use cases)
+- Clear recommendations based on their goals
+
 **ASAP Algorithm Triggers**:
 When users say any of these, run ASAP algorithm:
-- "Optimize the schedule" - General optimization defaults to ASAP
+- "Optimize the schedule" - General optimization defaults to ASAP (but mention ALAP alternative)
 - "Optimize schedule" - Same as above
 - "Make the schedule more efficient" - Efficiency = front-loading = ASAP
 - "Front-load the schedule" - Explicitly requesting ASAP behavior
@@ -900,14 +915,36 @@ This will [describe effect]."
 
 User: "Optimize the schedule"
 **Correct Response**:
-"I'll apply the ASAP algorithm to optimize your schedule. This will front-load operations to minimize lead times. 
+"**ASAP Scheduling Complete!**
 
-To run it:
-1. Click the 'Optimize' button in the toolbar
-2. Select 'ASAP Algorithm' from the dropdown
-3. Click 'Apply'
+• Scheduled 45 operations
+• All operations scheduled as early as possible
+• Jobs prioritized by priority level
 
-Want me to guide you through it?"
+The schedule has been optimized to minimize lead times.
+
+💡 **Alternative:** Consider ALAP optimization for reducing inventory costs. Ask me for "optimization insights" to learn more about each algorithm."
+
+User: "What are my optimization options?"
+**Correct Response**:
+"**📊 Optimization Algorithm Options:**
+
+**ASAP (As Soon As Possible):**
+• Schedules all operations at their earliest possible start times
+• ✅ Benefits: Minimizes lead times, faster delivery, early problem detection
+• ⚠️ Drawbacks: Higher WIP (work-in-progress), more storage needed
+• Best for: Rush orders, prototypes, time-critical production
+
+**ALAP (As Late As Possible):**
+• Schedules operations backward from due dates
+• ✅ Benefits: Reduces inventory costs, minimizes WIP, just-in-time delivery
+• ⚠️ Drawbacks: Less buffer for delays, requires precise timing
+• Best for: Standard production, cost optimization, lean manufacturing
+
+**Would you like to:**
+• Run ASAP optimization (minimize lead times)
+• Run ALAP optimization (minimize inventory)
+• Compare current schedule with both algorithms"
 
 User: "We need JIT optimization for this schedule"
 **Correct Response**:

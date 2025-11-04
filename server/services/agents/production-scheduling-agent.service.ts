@@ -691,6 +691,32 @@ export class ProductionSchedulingAgent extends BaseAgent {
   }
 
   private async executeAlgorithm(message: string, context: AgentContext): Promise<AgentResponse> {
+    // Check if user is asking for insights or other options
+    const askingForInsights = message.includes('insight') || message.includes('option') || 
+                             message.includes('alternative') || message.includes('other') ||
+                             message.includes('else') || message.includes('suggest');
+    
+    if (askingForInsights) {
+      return {
+        content: '**📊 Optimization Algorithm Options:**\n\n' +
+                 '**ASAP (As Soon As Possible):**\n' +
+                 '• Schedules all operations at their earliest possible start times\n' +
+                 '• ✅ Benefits: Minimizes lead times, faster delivery, early problem detection\n' +
+                 '• ⚠️ Drawbacks: Higher WIP (work-in-progress), more storage needed\n' +
+                 '• Best for: Rush orders, prototypes, time-critical production\n\n' +
+                 '**ALAP (As Late As Possible):**\n' +
+                 '• Schedules operations backward from due dates\n' +
+                 '• ✅ Benefits: Reduces inventory costs, minimizes WIP, just-in-time delivery\n' +
+                 '• ⚠️ Drawbacks: Less buffer for delays, requires precise timing\n' +
+                 '• Best for: Standard production, cost optimization, lean manufacturing\n\n' +
+                 '**Would you like to:**\n' +
+                 '• Run ASAP optimization (minimize lead times)\n' +
+                 '• Run ALAP optimization (minimize inventory)\n' +
+                 '• Compare current schedule with both algorithms',
+        error: false
+      };
+    }
+    
     // Determine which algorithm to run
     const algorithm = this.determineAlgorithm(message);
     
@@ -718,9 +744,16 @@ export class ProductionSchedulingAgent extends BaseAgent {
       // Add a small delay to ensure database transaction is fully committed
       await new Promise(resolve => setTimeout(resolve, 500));
       
+      // Enhance the result message with insights
+      let enhancedMessage = result.message;
+      if (algorithm === 'asap' && message.includes('optimize')) {
+        enhancedMessage += '\n\n💡 **Alternative:** Consider ALAP optimization for reducing inventory costs. ' +
+                          'Ask me for "optimization insights" to learn more about each algorithm.';
+      }
+      
       // Return success response with results and the saved schedule ID
       return {
-        content: result.message,
+        content: enhancedMessage,
         requiresClientAction: true,
         clientActionType: 'REFRESH_SCHEDULE',
         clientActionData: {
