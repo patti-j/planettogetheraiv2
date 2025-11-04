@@ -393,36 +393,120 @@ export function VersionHistory({ scheduleId, currentVersionId }: VersionHistoryP
             </div>
 
             {comparison && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">Comparison Results</CardTitle>
-                  <CardDescription>
-                    Changes from Version {comparison.baseVersion.versionNumber} to Version {comparison.compareVersion.versionNumber}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-4 gap-4 mb-4">
-                    <div className="text-center">
-                      <div className="text-2xl font-bold">{comparison.differences.statistics.totalChanges}</div>
-                      <div className="text-xs text-muted-foreground">Total Changes</div>
+              <ScrollArea className="h-[450px] w-full pr-4">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg">Comparison Results</CardTitle>
+                    <CardDescription>
+                      Changes from Version {comparison.baseVersion.versionNumber} to Version {comparison.compareVersion.versionNumber}
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    {/* Key Metrics Comparison */}
+                    <div>
+                      <h4 className="text-sm font-semibold mb-3">Schedule Metrics</h4>
+                      <div className="grid grid-cols-3 gap-4 p-4 bg-muted/50 rounded-lg">
+                        <div>
+                          <div className="text-xs text-muted-foreground mb-1">Time Span</div>
+                          <div className="space-y-1">
+                            <div className="text-sm">
+                              <span className="text-muted-foreground">Base:</span> {comparison.differences.metrics?.base?.timeSpan || 'N/A'}
+                            </div>
+                            <div className="text-sm">
+                              <span className="text-muted-foreground">Compare:</span> {comparison.differences.metrics?.compare?.timeSpan || 'N/A'}
+                            </div>
+                          </div>
+                        </div>
+                        <div>
+                          <div className="text-xs text-muted-foreground mb-1">Resource Usage</div>
+                          <div className="space-y-1">
+                            <div className="text-sm">
+                              <span className="text-muted-foreground">Base:</span> {comparison.differences.metrics?.base?.resourceUsage || '0'}%
+                            </div>
+                            <div className="text-sm">
+                              <span className="text-muted-foreground">Compare:</span> {comparison.differences.metrics?.compare?.resourceUsage || '0'}%
+                            </div>
+                          </div>
+                        </div>
+                        <div>
+                          <div className="text-xs text-muted-foreground mb-1">Total Duration</div>
+                          <div className="space-y-1">
+                            <div className="text-sm">
+                              <span className="text-muted-foreground">Base:</span> {comparison.differences.metrics?.base?.totalDuration || '0'} hrs
+                            </div>
+                            <div className="text-sm">
+                              <span className="text-muted-foreground">Compare:</span> {comparison.differences.metrics?.compare?.totalDuration || '0'} hrs
+                            </div>
+                          </div>
+                        </div>
+                      </div>
                     </div>
-                    <div className="text-center">
-                      <div className="text-2xl font-bold text-green-600">{comparison.differences.statistics.operationsAdded}</div>
-                      <div className="text-xs text-muted-foreground">Added</div>
+
+                    <Separator />
+
+                    {/* Change Statistics */}
+                    <div>
+                      <h4 className="text-sm font-semibold mb-3">Change Statistics</h4>
+                      <div className="grid grid-cols-4 gap-4">
+                        <div className="text-center p-3 bg-muted/50 rounded">
+                          <div className="text-2xl font-bold">{comparison.differences.statistics.totalChanges}</div>
+                          <div className="text-xs text-muted-foreground">Total Changes</div>
+                        </div>
+                        <div className="text-center p-3 bg-green-50 dark:bg-green-950/20 rounded">
+                          <div className="text-2xl font-bold text-green-600">{comparison.differences.statistics.operationsAdded}</div>
+                          <div className="text-xs text-muted-foreground">Added</div>
+                        </div>
+                        <div className="text-center p-3 bg-blue-50 dark:bg-blue-950/20 rounded">
+                          <div className="text-2xl font-bold text-blue-600">{comparison.differences.statistics.operationsModified}</div>
+                          <div className="text-xs text-muted-foreground">Modified</div>
+                        </div>
+                        <div className="text-center p-3 bg-red-50 dark:bg-red-950/20 rounded">
+                          <div className="text-2xl font-bold text-red-600">{comparison.differences.statistics.operationsRemoved}</div>
+                          <div className="text-xs text-muted-foreground">Removed</div>
+                        </div>
+                      </div>
                     </div>
-                    <div className="text-center">
-                      <div className="text-2xl font-bold text-blue-600">{comparison.differences.statistics.operationsModified}</div>
-                      <div className="text-xs text-muted-foreground">Modified</div>
+
+                    <Separator />
+
+                    {/* Resource Utilization Comparison */}
+                    {comparison.differences.resourceUtilization && (
+                      <>
+                        <div>
+                          <h4 className="text-sm font-semibold mb-3">Resource Utilization</h4>
+                          <div className="space-y-2">
+                            {Object.entries(comparison.differences.resourceUtilization).map(([resourceId, data]: [string, any]) => (
+                              <div key={resourceId} className="flex items-center justify-between p-2 bg-muted/30 rounded">
+                                <span className="text-sm font-medium">{data.name}</span>
+                                <div className="flex space-x-4">
+                                  <span className="text-sm">
+                                    Base: <strong>{data.base?.utilization || 0}%</strong>
+                                  </span>
+                                  <span className="text-sm">
+                                    Compare: <strong>{data.compare?.utilization || 0}%</strong>
+                                  </span>
+                                  {data.change !== 0 && (
+                                    <span className={`text-sm font-bold ${data.change > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                      {data.change > 0 ? '+' : ''}{data.change}%
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                        <Separator />
+                      </>
+                    )}
+
+                    {/* Detailed Changes */}
+                    <div>
+                      <h4 className="text-sm font-semibold mb-3">Detailed Changes</h4>
+                      {formatDifference(comparison.differences)}
                     </div>
-                    <div className="text-center">
-                      <div className="text-2xl font-bold text-red-600">{comparison.differences.statistics.operationsRemoved}</div>
-                      <div className="text-xs text-muted-foreground">Removed</div>
-                    </div>
-                  </div>
-                  <Separator className="my-4" />
-                  {formatDifference(comparison.differences)}
-                </CardContent>
-              </Card>
+                  </CardContent>
+                </Card>
+              </ScrollArea>
             )}
           </TabsContent>
         </Tabs>
