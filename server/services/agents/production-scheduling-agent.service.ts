@@ -1073,8 +1073,9 @@ export class ProductionSchedulingAgent extends BaseAgent {
       
       // Try to create a version entry - don't let this fail the auto-save
       try {
-        // Use the saved schedule ID as the schedule_id (or fallback to 1 for backward compatibility)
-        const scheduleIdToUse = savedScheduleId || 1;
+        // Always use schedule_id = 1 for the main schedule versions
+        // This matches what the UI expects when querying /api/schedules/1/versions
+        const scheduleIdToUse = 1;
         
         // Get existing versions for this schedule
         const existingVersions = await db.execute(sql`
