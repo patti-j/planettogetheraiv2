@@ -117,7 +117,9 @@ The system uses a modular agent architecture designed for role-based access cont
 The Production Scheduling Agent (`production-scheduling-agent.service.ts`) can:
 - Query all job data from `ptjobs` table with detailed information
 - Show jobs by priority, status, due dates, completion
-- Execute ASAP and ALAP scheduling algorithms
+- Execute ASAP and ALAP scheduling algorithms with intelligent suggestions
+- Interactive optimization: detects current state and suggests opposite algorithm
+- Provides detailed algorithm insights when asked
 - Manage resources and capabilities
 - Create and load schedule versions
 - Compare schedule versions with metrics and differences
