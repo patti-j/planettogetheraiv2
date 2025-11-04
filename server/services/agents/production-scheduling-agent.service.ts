@@ -216,8 +216,49 @@ export class ProductionSchedulingAgent extends BaseAgent {
         }
         
         // Calculate metrics from the snapshot data
-        const baseSnapshot = JSON.parse(baseVersionData.rows[0].snapshot_data as string || '{"operations":[]}');
-        const compareSnapshot = JSON.parse(compareVersionData.rows[0].snapshot_data as string || '{"operations":[]}');
+        // Handle potentially corrupted data or invalid JSON
+        let baseSnapshot: any = { operations: [] };
+        let compareSnapshot: any = { operations: [] };
+        
+        try {
+          const baseData = baseVersionData.rows[0].snapshot_data as string;
+          if (baseData && baseData !== '[object Object]' && baseData.startsWith('{')) {
+            baseSnapshot = JSON.parse(baseData);
+          } else {
+            return {
+              content: `⚠️ Version ${baseVersion} has corrupted data and cannot be compared.\n\n` +
+                      `This version was likely created before a data format fix was applied.\n` +
+                      `Please create new versions using ASAP or ALAP algorithms and compare those instead.`,
+              error: true
+            };
+          }
+        } catch (e) {
+          return {
+            content: `⚠️ Version ${baseVersion} has invalid data format.\n\n` +
+                    `Please use newer versions that were created after the system update.`,
+            error: true
+          };
+        }
+        
+        try {
+          const compareData = compareVersionData.rows[0].snapshot_data as string;
+          if (compareData && compareData !== '[object Object]' && compareData.startsWith('{')) {
+            compareSnapshot = JSON.parse(compareData);
+          } else {
+            return {
+              content: `⚠️ Version ${compareVersion} has corrupted data and cannot be compared.\n\n` +
+                      `This version was likely created before a data format fix was applied.\n` +
+                      `Please create new versions using ASAP or ALAP algorithms and compare those instead.`,
+              error: true
+            };
+          }
+        } catch (e) {
+          return {
+            content: `⚠️ Version ${compareVersion} has invalid data format.\n\n` +
+                    `Please use newer versions that were created after the system update.`,
+            error: true
+          };
+        }
         
         // Calculate time span (earliest start to latest end)
         const calculateTimeSpan = (operations: any[]) => {
