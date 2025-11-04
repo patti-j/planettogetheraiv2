@@ -316,21 +316,6 @@ export function VersionHistory({ scheduleId, currentVersionId }: VersionHistoryP
                             By User #{version.createdBy}
                           </span>
                           <div className="flex space-x-2">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setCompareVersions({
-                                  base: version.parentVersionId || version.id - 1,
-                                  compare: version.id
-                                });
-                              }}
-                              data-testid={`button-compare-version-${version.id}`}
-                            >
-                              <GitCompare className="h-3 w-3 mr-1" />
-                              Compare
-                            </Button>
                             {version.id !== currentVersionId && (
                               <Button
                                 variant="ghost"
