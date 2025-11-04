@@ -166,31 +166,147 @@ export class ProductionSchedulingAgent extends BaseAgent {
       const matches = Array.from(message.matchAll(versionPattern));
       const versionNumbers = matches.map(m => parseInt(m[1]));
       
-      // Build response guiding users to the Compare tab
-      let response = '**To compare schedules/versions:**\n\n';
-      
+      // If we have two version numbers, perform the comparison
       if (versionNumbers.length >= 2) {
-        response += `To compare Schedule ${versionNumbers[0]} and Schedule ${versionNumbers[1]}, please:\n\n`;
-      } else if (versionNumbers.length === 1) {
-        response += `To compare with Schedule/Version ${versionNumbers[0]}, please:\n\n`;
-      } else {
-        response += 'To compare schedule versions, please:\n\n';
+        const baseVersion = versionNumbers[0];
+        const compareVersion = versionNumbers[1];
+        
+        // Get the schedule ID (assuming schedule 1 for now - in production this would be dynamic)
+        const scheduleId = 1;
+        
+        // Query the versions from the database
+        const baseVersionData = await db.execute(sql`
+          SELECT id, version_number, snapshot_data, created_at, change_type, change_description
+          FROM schedule_versions
+          WHERE schedule_id = ${scheduleId} AND version_number = ${baseVersion}
+          LIMIT 1
+        `);
+        
+        const compareVersionData = await db.execute(sql`
+          SELECT id, version_number, snapshot_data, created_at, change_type, change_description
+          FROM schedule_versions  
+          WHERE schedule_id = ${scheduleId} AND version_number = ${compareVersion}
+          LIMIT 1
+        `);
+        
+        if (!baseVersionData.rows[0] || !compareVersionData.rows[0]) {
+          return {
+            content: `Could not find one or both versions. Please verify that versions ${baseVersion} and ${compareVersion} exist.`,
+            error: false
+          };
+        }
+        
+        // Calculate metrics from the snapshot data
+        const baseSnapshot = JSON.parse(baseVersionData.rows[0].snapshot_data as string || '{"operations":[]}');
+        const compareSnapshot = JSON.parse(compareVersionData.rows[0].snapshot_data as string || '{"operations":[]}');
+        
+        // Calculate time span (earliest start to latest end)
+        const calculateTimeSpan = (operations: any[]) => {
+          if (!operations || operations.length === 0) return 0;
+          const starts = operations.map(op => new Date(op.scheduled_start).getTime()).filter(t => !isNaN(t));
+          const ends = operations.map(op => new Date(op.scheduled_end).getTime()).filter(t => !isNaN(t));
+          if (starts.length === 0 || ends.length === 0) return 0;
+          const earliest = Math.min(...starts);
+          const latest = Math.max(...ends);
+          return (latest - earliest) / (1000 * 60 * 60); // Convert to hours
+        };
+        
+        // Calculate resource usage
+        const calculateResourceUsage = (operations: any[]) => {
+          if (!operations || operations.length === 0) return 0;
+          const resourceMap = new Map<string, number>();
+          operations.forEach(op => {
+            const resource = op.resource_name || 'Unknown';
+            const duration = parseFloat(op.cycle_hrs || '0') + parseFloat(op.setup_hours || '0');
+            resourceMap.set(resource, (resourceMap.get(resource) || 0) + duration);
+          });
+          const totalHours = Array.from(resourceMap.values()).reduce((sum, hours) => sum + hours, 0);
+          const resourceCount = resourceMap.size || 1;
+          const availableHours = resourceCount * 24 * 5; // Assume 5-day work week
+          return Math.min((totalHours / availableHours) * 100, 100);
+        };
+        
+        // Calculate total duration
+        const calculateTotalDuration = (operations: any[]) => {
+          if (!operations || operations.length === 0) return 0;
+          return operations.reduce((total, op) => 
+            total + parseFloat(op.cycle_hrs || '0') + parseFloat(op.setup_hours || '0'), 0);
+        };
+        
+        const baseTimeSpan = calculateTimeSpan(baseSnapshot.operations);
+        const compareTimeSpan = calculateTimeSpan(compareSnapshot.operations);
+        const baseResourceUsage = calculateResourceUsage(baseSnapshot.operations);
+        const compareResourceUsage = calculateResourceUsage(compareSnapshot.operations);
+        const baseTotalDuration = calculateTotalDuration(baseSnapshot.operations);
+        const compareTotalDuration = calculateTotalDuration(compareSnapshot.operations);
+        
+        // Calculate operation differences
+        const baseOpIds = new Set(baseSnapshot.operations?.map((op: any) => op.id) || []);
+        const compareOpIds = new Set(compareSnapshot.operations?.map((op: any) => op.id) || []);
+        const added = compareSnapshot.operations?.filter((op: any) => !baseOpIds.has(op.id)).length || 0;
+        const removed = baseSnapshot.operations?.filter((op: any) => !compareOpIds.has(op.id)).length || 0;
+        const common = baseSnapshot.operations?.filter((op: any) => compareOpIds.has(op.id)).length || 0;
+        
+        // Build the response
+        let response = `**Comparing Schedule ${baseVersion} with Schedule ${compareVersion}**\n\n`;
+        
+        response += `**📊 Schedule Metrics:**\n`;
+        response += `• **Time Span:** ${baseTimeSpan.toFixed(1)} hrs → ${compareTimeSpan.toFixed(1)} hrs (`;
+        const timeSpanDelta = compareTimeSpan - baseTimeSpan;
+        if (timeSpanDelta < 0) {
+          response += `✅ ${Math.abs(timeSpanDelta).toFixed(1)} hrs faster`;
+        } else if (timeSpanDelta > 0) {
+          response += `⚠️ ${timeSpanDelta.toFixed(1)} hrs longer`;
+        } else {
+          response += `no change`;
+        }
+        response += `)\n`;
+        
+        response += `• **Resource Usage:** ${baseResourceUsage.toFixed(1)}% → ${compareResourceUsage.toFixed(1)}% (`;
+        const resourceDelta = compareResourceUsage - baseResourceUsage;
+        if (resourceDelta > 0) {
+          response += `${resourceDelta > 0 ? '+' : ''}${resourceDelta.toFixed(1)}%`;
+        } else {
+          response += `${resourceDelta.toFixed(1)}%`;
+        }
+        response += `)\n`;
+        
+        response += `• **Total Duration:** ${baseTotalDuration.toFixed(1)} hrs → ${compareTotalDuration.toFixed(1)} hrs (`;
+        const durationDelta = compareTotalDuration - baseTotalDuration;
+        if (durationDelta < 0) {
+          response += `✅ ${Math.abs(durationDelta).toFixed(1)} hrs saved`;
+        } else if (durationDelta > 0) {
+          response += `⚠️ ${durationDelta.toFixed(1)} hrs added`;
+        } else {
+          response += `no change`;
+        }
+        response += `)\n\n`;
+        
+        response += `**🔄 Operation Changes:**\n`;
+        if (added > 0) response += `• ➕ ${added} operations added\n`;
+        if (removed > 0) response += `• ➖ ${removed} operations removed\n`;
+        if (common > 0) response += `• ✏️ ${common} operations unchanged\n`;
+        response += `\n`;
+        
+        response += `**📝 Version Details:**\n`;
+        response += `• **Version ${baseVersion}:** ${baseVersionData.rows[0].change_type || 'Manual'} - ${baseVersionData.rows[0].change_description || 'No description'}\n`;
+        response += `• **Version ${compareVersion}:** ${compareVersionData.rows[0].change_type || 'Manual'} - ${compareVersionData.rows[0].change_description || 'No description'}\n\n`;
+        
+        response += `💡 For a visual comparison, you can also use the Version History Compare tab in the toolbar.`;
+        
+        return {
+          content: response,
+          error: false
+        };
       }
       
-      // Provide step-by-step instructions
-      response += '1. Click the **Version History** icon (🕐) in the toolbar\n';
-      response += '2. Go to the **"Compare"** tab\n';
-      response += '3. Select your **Base Version** from the first dropdown\n';
-      response += '4. Select the version to **Compare To** from the second dropdown\n';
-      response += '5. Click the **"Compare Versions"** button\n\n';
-      
-      response += 'This will show you:\n';
-      response += '• Time span changes\n';
-      response += '• Resource utilization differences\n';
-      response += '• Total duration metrics with delta values\n';
-      response += '• Operations added/modified/removed\n\n';
-      
-      response += 'Would you like help with anything else?';
+      // If we don't have enough version numbers, provide instructions
+      let response = '**To compare schedules:**\n\n';
+      response += 'Please specify two version numbers. For example:\n';
+      response += '• "Compare version 3 with version 5"\n';
+      response += '• "Compare schedule 11 and schedule 12"\n';
+      response += '• "What changed between version 2 and 4?"\n\n';
+      response += 'I\'ll analyze the differences and show you the metrics and changes.';
       
       return {
         content: response,

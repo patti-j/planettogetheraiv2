@@ -555,68 +555,67 @@ Agent: "✅ Saved current as 'Current Work'. Loading 'November Rush Orders'... D
 #### Comparing Schedule Versions
 When users want to compare different schedule versions to understand what changed between them.
 
-**IMPORTANT WORKFLOW**: Schedule comparison is done through the Version History Compare tab:
-1. Open Version History (clock icon in toolbar)
-2. Click the "Compare" tab
-3. Select Base Version from first dropdown
-4. Select Compare To version from second dropdown
-5. Click the "Compare Versions" button
-6. View the detailed comparison results
+**CAPABILITY**: The agent can now directly run comparisons and show results in chat! It queries the database, calculates metrics, and returns real comparison data.
 
 **Trigger Phrases**:
 - "Compare schedule X and schedule Y"
-- "Compare version X with version Y"
+- "Compare version X with version Y"  
 - "What changed between version X and Y?"
 - "Show differences between two versions"
 - "Compare current schedule with version X"
 - "What's different in the new schedule?"
 - "Compare these two schedules"
 
-**CRITICAL RESPONSE PATTERN**:
-When users ask to compare schedules, ALWAYS guide them to use the Version History Compare tab:
-
-User: "Compare Schedule 11 and Schedule 12"
-Agent: "To compare Schedule 11 and 12, please:
-1. Click the Version History icon (🕐) in the toolbar
-2. Go to the 'Compare' tab
-3. Select Schedule 11 as Base Version
-4. Select Schedule 12 as Compare To
-5. Click 'Compare Versions' button
-
-This will show you:
-• Time span changes
-• Resource utilization differences
-• Total duration metrics
-• Operations added/modified/removed"
-
-**What the Comparison Shows**:
-• **Schedule Metrics**: Time Span, Resource Usage %, Total Duration (with delta values)
-• **Operation Changes**: Added, Modified, Removed operations
-• **Resource Changes**: Resource reassignments and utilization shifts
-• **Timeline Changes**: Start/end time adjustments
+**Direct Comparison Response Pattern**:
+When users ask to compare schedules with specific version numbers, the agent will:
+1. Query the actual schedule versions from the database
+2. Calculate real metrics (time span, resource usage, total duration)
+3. Show operation changes (added, removed, unchanged)
+4. Display version details and change types
+5. Return comprehensive comparison results directly in chat
 
 **Example Interactions**:
 
-User: "Compare the current schedule with version 3"
-Agent: "To compare the current schedule with Version 3:
-1. Open Version History (🕐 icon in toolbar)
-2. Navigate to 'Compare' tab
-3. Select current version as Base
-4. Select Version 3 as Compare To
-5. Click 'Compare Versions'
+User: "Compare Schedule 11 and Schedule 12"
+Agent: "**Comparing Schedule 11 with Schedule 12**
 
-You'll see detailed metrics showing time span, resource usage, and all operation changes between the versions."
+**📊 Schedule Metrics:**
+• **Time Span:** 120.5 hrs → 108.3 hrs (✅ 12.2 hrs faster)
+• **Resource Usage:** 72.3% → 78.5% (+6.2%)
+• **Total Duration:** 180.0 hrs → 165.0 hrs (✅ 15.0 hrs saved)
 
-User: "What changed in the last optimization?"
-Agent: "To see what changed in the last optimization:
-1. Go to Version History → Compare tab
-2. Select the version before optimization as Base
-3. Select the post-optimization version as Compare To
-4. Click 'Compare Versions'
+**🔄 Operation Changes:**
+• ➕ 3 operations added
+• ➖ 1 operation removed
+• ✏️ 31 operations unchanged
 
-The comparison will show schedule improvements from the optimization."
+**📝 Version Details:**
+• **Version 11:** ASAP - Optimized with ASAP algorithm
+• **Version 12:** Manual Edit - Priority adjustments for rush orders
 
-User: "Show me differences between yesterday's and today's schedule"
+💡 For a visual comparison, you can also use the Version History Compare tab in the toolbar."
+
+User: "What changed between version 5 and 7?"
+Agent: [Runs actual database query and returns real comparison metrics]
+
+**Fallback Pattern**:
+If version numbers are not specified or versions don't exist:
+
+User: "Compare schedules"
+Agent: "**To compare schedules:**
+
+Please specify two version numbers. For example:
+• 'Compare version 3 with version 5'
+• 'Compare schedule 11 and schedule 12'
+• 'What changed between version 2 and 4?'
+
+I'll analyze the differences and show you the metrics and changes."
+
+**Visual Comparison Option**:
+The agent also mentions that users can use the Version History Compare tab for a visual comparison interface:
+- Click Version History icon (🕐) in toolbar
+- Go to "Compare" tab
+- Select versions and click "Compare Versions" button
 Agent: "Comparing before and after the ASAP optimization (Version 4 → Version 5):
 
 **Algorithm Impact:**
