@@ -9,13 +9,14 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { usePowerBIDataset, type PowerBIDataset } from "@/hooks/use-powerbi-api";
-import { Database, Loader2, AlertTriangle, ChartBar, BadgeCheck, Wand2, ChevronDown, ArrowLeft } from "lucide-react";
+import { Database, Loader2, AlertTriangle, ChartBar, BadgeCheck, Wand2, ChevronDown, ArrowLeft, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
 
 interface PowerBIEmbedProps {
   className?: string;
   reportName?: string;
+  reportId?: string;
   workspaceId?: string;
   datasetId?: string;
   isAuthenticated?: boolean;
@@ -25,11 +26,14 @@ interface PowerBIEmbedProps {
   onPageChange?: (pageId: string) => void;
   showMobileBackButton?: boolean;
   onMobileBackClick?: () => void;
+  isFavorite?: boolean;
+  onFavoriteToggle?: () => void;
 }
 
 export function PowerBIEmbed({ 
   className, 
-  reportName, 
+  reportName,
+  reportId, 
   workspaceId, 
   datasetId,
   isAuthenticated = false,
@@ -38,7 +42,9 @@ export function PowerBIEmbed({
   currentPageId = null,
   onPageChange,
   showMobileBackButton = false,
-  onMobileBackClick
+  onMobileBackClick,
+  isFavorite = false,
+  onFavoriteToggle
 }: PowerBIEmbedProps) {
   // Mobile detection state for responsive container sizing
   const [isMobile, setIsMobile] = useState(false);
@@ -255,6 +261,31 @@ export function PowerBIEmbed({
                       </h3>
                     )}
                   </div>
+                  
+                  {/* Favorite Star Button */}
+                  {reportId && workspaceId && (
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 hover:bg-accent"
+                          onClick={onFavoriteToggle}
+                          data-testid="button-favorite"
+                        >
+                          <Star 
+                            className={`w-5 h-5 ${isFavorite ? 'fill-yellow-500 text-yellow-500' : 'text-muted-foreground'}`}
+                          />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent className="bg-white border border-border">
+                        <p className="text-sm text-black">
+                          {isFavorite ? 'Remove from favorites' : 'Add to favorites'}
+                        </p>
+                      </TooltipContent>
+                    </Tooltip>
+                  )}
+                  
                   {/* Warning icon for standard reports in edit mode */}
                   {viewMode === "edit" && isStandardReport && (
                     <Tooltip>

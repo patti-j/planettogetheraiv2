@@ -274,6 +274,13 @@ export default function Dashboard() {
     }
   };
 
+  // Handle favorite toggle from PowerBIEmbed component
+  const handleFavoriteToggle = () => {
+    if (selectedReportId && selectedWorkspaceId) {
+      toggleFavorite(selectedReportId, selectedWorkspaceId);
+    }
+  };
+
   // Filter reports based on selected filter type
   const reports = allReports?.filter(report => {
     if (reportTypeFilter === "all") return true;
@@ -927,6 +934,7 @@ export default function Dashboard() {
               <PowerBIEmbed
                 className="w-full h-full"
                 reportName={allReports?.find(r => r.id === selectedReportId)?.name}
+                reportId={selectedReportId}
                 workspaceId={selectedWorkspaceId}
                 datasetId={allReports?.find(r => r.id === selectedReportId)?.datasetId}
                 isAuthenticated={isAuthenticated}
@@ -934,6 +942,10 @@ export default function Dashboard() {
                 pages={pages}
                 currentPageId={currentPageId}
                 onPageChange={switchToPage}
+                isFavorite={favoriteReports.some(fav => 
+                  fav.reportId === selectedReportId && fav.workspaceId === selectedWorkspaceId
+                )}
+                onFavoriteToggle={handleFavoriteToggle}
                 showMobileBackButton={(() => {
                   const isMobile = typeof window !== 'undefined' && window.matchMedia && window.matchMedia("(max-width: 768px)").matches;
                   return isMobile && !!selectedReportId && !!selectedWorkspace;
