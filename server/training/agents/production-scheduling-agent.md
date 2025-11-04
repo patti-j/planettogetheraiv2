@@ -401,12 +401,18 @@ The production schedule consists of three main components that work together:
 - Saves to `ptjoboperations` and `ptjobresources` tables
 - No user confirmation needed
 
-**2. Manual Save**:
+**2. Algorithm Auto-Save**:
+- Automatically triggered after ASAP/ALAP algorithm execution
+- Creates entry in `saved_schedules` table with algorithm name
+- Named format: "Auto-save - {date}, {time} (ASAP/ALAP)"
+- Preserves complete schedule state after optimization
+
+**3. Manual Save**:
 - User clicks "Save" or presses Ctrl+S
 - Creates snapshot in `saved_schedules` table
 - Provides confirmation message
 
-**3. Save as Version**:
+**4. Save as Version**:
 - User names the schedule version (e.g., "Optimized_v2")
 - Stores complete schedule state
 - Enables rollback to previous versions
