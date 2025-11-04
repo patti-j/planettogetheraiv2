@@ -2,6 +2,7 @@ import { BaseAgent, AgentContext, AgentResponse } from './base-agent.interface';
 import { sql } from 'drizzle-orm';
 import { Database } from '../../../shared/types';
 import { db } from '../../db';
+import * as crypto from 'crypto';
 
 /**
  * Production Scheduling Agent Service
@@ -1089,7 +1090,6 @@ export class ProductionSchedulingAgent extends BaseAgent {
           : 1;
         
         // Generate checksum
-        const crypto = require('crypto');
         const checksum = crypto
           .createHash('sha256')
           .update(JSON.stringify(scheduleData))
