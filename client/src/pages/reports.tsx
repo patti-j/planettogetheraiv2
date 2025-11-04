@@ -256,6 +256,10 @@ export default function Dashboard() {
         if (res.ok) {
           const data = await res.json();
           setFavoriteReports(data.favorites || []);
+          toast({
+            title: "Removed from favorites",
+            description: "Report has been removed from your favorites.",
+          });
         }
       } else {
         // Add to favorites
@@ -267,10 +271,19 @@ export default function Dashboard() {
         if (res.ok) {
           const data = await res.json();
           setFavoriteReports(data.favorites || []);
+          toast({
+            title: "Added to favorites",
+            description: "Report has been added to your favorites.",
+          });
         }
       }
     } catch (err) {
       console.error('Failed to toggle favorite:', err);
+      toast({
+        title: "Error",
+        description: "Failed to update favorites. Please try again.",
+        variant: "destructive",
+      });
     }
   };
 
