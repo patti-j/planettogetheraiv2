@@ -522,104 +522,140 @@ export default function PaginatedReports() {
     }
   };
 
-  // PDF Export Function
+  // PDF Export Function - Simplified approach
   const exportToPDF = async (exportContent: any, filename: string) => {
     try {
-      const { default: jsPDF } = await import('jspdf');
+      // Dynamic import of jsPDF
+      const jsPDFModule = await import('jspdf');
+      const jsPDF = jsPDFModule.default || jsPDFModule.jsPDF;
+      
+      // Import autoTable plugin
       await import('jspdf-autotable');
       
-      // Create PDF with landscape orientation if many columns
-      const doc = new jsPDF({ 
-        orientation: exportContent.columns.length > 5 ? 'landscape' : 'portrait' 
+      // Create new PDF document
+      const doc = new jsPDF({
+        orientation: exportContent.columns.length > 6 ? 'landscape' : 'portrait',
+        unit: 'mm',
+        format: 'a4'
       });
       
-      let yPosition = 20;
+      let yPosition = 15;
       
       // Add header if provided
       if (exportContent.header) {
         doc.setFontSize(14);
-        doc.setFont('helvetica', 'bold');
         doc.text(exportContent.header, 14, yPosition);
         yPosition += 10;
       }
       
-      // Add timestamp and table info if enabled
+      // Add metadata
       if (exportContent.timestamp) {
         doc.setFontSize(10);
-        doc.setFont('helvetica', 'normal');
         doc.text(`Generated: ${exportContent.timestamp}`, 14, yPosition);
         yPosition += 6;
-        doc.text(`Table: ${exportContent.tableName}`, 14, yPosition);
-        yPosition += 10;
+        if (exportContent.tableName) {
+          doc.text(`Table: ${exportContent.tableName}`, 14, yPosition);
+          yPosition += 8;
+        }
       }
       
-      // Prepare table data
-      const tableData = exportContent.data.map((row: any) => 
+      // Prepare table data - handle all data types properly
+      const tableHeaders = exportContent.columns;
+      const tableRows = exportContent.data.map((row: any) => 
         exportContent.columns.map((col: string) => {
           const value = row[col];
-          if (value === null || value === undefined) return '';
-          // Truncate long strings for PDF
+          if (value === null || value === undefined) {
+            return '';
+          }
+          // Convert to string and handle long values
           const strValue = String(value);
-          return strValue.length > 50 ? strValue.substring(0, 47) + '...' : strValue;
+          if (strValue.length > 60) {
+            return strValue.substring(0, 57) + '...';
+          }
+          return strValue;
         })
       );
       
-      // Add table
-      (doc as any).autoTable({
-        head: [exportContent.columns],
-        body: tableData,
-        startY: yPosition,
-        theme: 'grid',
-        styles: {
-          fontSize: 9,
-          cellPadding: 2,
-          overflow: 'linebreak',
-          cellWidth: 'wrap'
-        },
-        headStyles: {
-          fillColor: [59, 130, 246], // Blue color
-          textColor: [255, 255, 255],
-          fontStyle: 'bold'
-        },
-        alternateRowStyles: {
-          fillColor: [245, 247, 250]
-        },
-        margin: { left: 14, right: 14 },
-        didDrawPage: function(data: any) {
-          // Add page numbers
-          doc.setFontSize(8);
-          doc.text(
-            `Page ${data.pageNumber}`,
-            doc.internal.pageSize.width / 2,
-            doc.internal.pageSize.height - 10,
-            { align: 'center' }
-          );
+      // Use autoTable if available
+      if ((doc as any).autoTable) {
+        (doc as any).autoTable({
+          head: [tableHeaders],
+          body: tableRows,
+          startY: yPosition,
+          theme: 'grid',
+          styles: {
+            fontSize: 9,
+            cellPadding: 2,
+            overflow: 'linebreak',
+            halign: 'left'
+          },
+          headStyles: {
+            fillColor: [41, 98, 255],
+            textColor: 255,
+            fontStyle: 'bold',
+            halign: 'center'
+          },
+          alternateRowStyles: {
+            fillColor: [245, 245, 245]
+          },
+          margin: { left: 14, right: 14, top: yPosition }
+        });
+        
+        // Add footer if provided
+        if (exportContent.footer) {
+          const finalY = (doc as any).lastAutoTable?.finalY || doc.internal.pageSize.height - 30;
+          if (finalY < doc.internal.pageSize.height - 20) {
+            doc.setFontSize(10);
+            doc.text(exportContent.footer, 14, finalY + 10);
+          }
         }
-      });
-      
-      // Add footer if provided
-      if (exportContent.footer) {
-        const finalY = (doc as any).lastAutoTable.finalY || yPosition + 50;
-        if (finalY < doc.internal.pageSize.height - 30) {
-          doc.setFontSize(10);
-          doc.setFont('helvetica', 'italic');
-          doc.text(exportContent.footer, 14, finalY + 10);
+      } else {
+        // Fallback: Simple text-based table if autoTable is not available
+        doc.setFontSize(9);
+        
+        // Add headers
+        const headerText = tableHeaders.join(' | ');
+        doc.text(headerText, 14, yPosition);
+        yPosition += 6;
+        
+        // Add separator
+        doc.text('-'.repeat(80), 14, yPosition);
+        yPosition += 6;
+        
+        // Add rows (limited to prevent overflow)
+        const maxRows = Math.min(tableRows.length, 40);
+        for (let i = 0; i < maxRows; i++) {
+          if (yPosition > 270) { // Check page boundary
+            doc.addPage();
+            yPosition = 20;
+          }
+          const rowText = tableRows[i].join(' | ');
+          doc.text(rowText.substring(0, 180), 14, yPosition);
+          yPosition += 6;
+        }
+        
+        if (tableRows.length > maxRows) {
+          yPosition += 6;
+          doc.text(`... and ${tableRows.length - maxRows} more rows`, 14, yPosition);
         }
       }
       
-      // Save the PDF
+      // Save the PDF file
       doc.save(filename);
       
       toast({
         title: "Export Successful",
-        description: `Your report has been exported as PDF`,
+        description: `Report exported as ${filename}`,
         variant: "default"
       });
-    } catch (error) {
-      console.error('PDF export error:', error);
+    } catch (error: any) {
+      console.error('PDF export error details:', error);
+      
+      // More specific error message
+      const errorMessage = error?.message || 'Unknown error occurred';
       toast({
-        title: "Export Failed",
-        description: "Failed to export PDF file",
+        title: "PDF Export Failed",
+        description: `Unable to generate PDF: ${errorMessage}. Try CSV or Excel format instead.`,
         variant: "destructive"
       });
     }
