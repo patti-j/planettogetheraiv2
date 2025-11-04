@@ -853,8 +853,23 @@ router.get("/api/favorite-reports/:userId", async (req, res) => {
     const userId = Number(req.params.userId);
     const preferences = await storage.getUserPreferences(userId);
     
+    console.log('GET favorites - preferences:', preferences);
+    console.log('GET favorites - uiSettings:', preferences?.uiSettings);
+    
+    // Parse uiSettings if it's a string
+    let uiSettings = preferences?.uiSettings;
+    if (typeof uiSettings === 'string') {
+      try {
+        uiSettings = JSON.parse(uiSettings);
+      } catch (e) {
+        console.error('Failed to parse uiSettings:', e);
+      }
+    }
+    
     // Return empty array if no preferences or no favorites
-    const favoriteReports = preferences?.uiSettings?.favoriteReports || [];
+    const favoriteReports = uiSettings?.favoriteReports || [];
+    
+    console.log('GET favorites - favoriteReports:', favoriteReports);
     
     // Prevent caching to ensure fresh data
     res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
@@ -914,21 +929,42 @@ router.delete("/api/favorite-reports/:userId/:reportId", async (req, res) => {
     
     const existing = await storage.getUserPreferences(userId);
     
-    if (existing?.uiSettings?.favoriteReports) {
-      const updatedFavorites = existing.uiSettings.favoriteReports.filter((fav: any) => 
+    // Parse uiSettings if it's a string
+    let uiSettings = existing?.uiSettings;
+    if (typeof uiSettings === 'string') {
+      try {
+        uiSettings = JSON.parse(uiSettings);
+      } catch (e) {
+        console.error('Failed to parse uiSettings:', e);
+      }
+    }
+    
+    if (uiSettings?.favoriteReports) {
+      const updatedFavorites = uiSettings.favoriteReports.filter((fav: any) => 
         !(fav.reportId === reportId && fav.workspaceId === workspaceId)
       );
       
       const updatedPreferences = {
         ...existing,
         uiSettings: {
-          ...existing?.uiSettings,
+          ...uiSettings,
           favoriteReports: updatedFavorites
         }
       };
       
       const result = await storage.updateUserPreferences(userId, updatedPreferences);
-      res.json({ success: true, favorites: result?.uiSettings?.favoriteReports || [] });
+      
+      // Parse result's uiSettings if needed
+      let resultUiSettings = result?.uiSettings;
+      if (typeof resultUiSettings === 'string') {
+        try {
+          resultUiSettings = JSON.parse(resultUiSettings);
+        } catch (e) {
+          console.error('Failed to parse result uiSettings:', e);
+        }
+      }
+      
+      res.json({ success: true, favorites: resultUiSettings?.favoriteReports || [] });
     } else {
       res.json({ success: true, favorites: [] });
     }
