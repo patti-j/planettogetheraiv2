@@ -170,7 +170,11 @@ export class ProductionSchedulingAgent extends BaseAgent {
       'delete schedule version', 'delete schedules version', 'delete schedule versions', 
       'remove schedule version', 'remove schedules version', 'remove schedule versions'
     ];
-    return triggers.some(trigger => message.includes(trigger));
+    
+    // Also check for "delete schedules" or "delete schedule" followed by numbers
+    const deleteSchedulePattern = /(?:delete|remove|clear)\s+schedules?\s+\d+/i;
+    
+    return triggers.some(trigger => message.includes(trigger)) || deleteSchedulePattern.test(message);
   }
   
   private isVersionComparisonRequest(message: string): boolean {
