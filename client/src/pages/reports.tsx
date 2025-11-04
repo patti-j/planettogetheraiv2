@@ -45,7 +45,8 @@ import {
   Wand2,
   FileDown,
   ArrowLeft,
-  X
+  X,
+  Star
 } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
@@ -53,7 +54,7 @@ import * as models from "powerbi-models";
 import { useLocation } from "wouter";
 
 // Report Type Helper Component
-function ReportTypeMark({ type, showLabel = true }: { type: 'all' | 'standard' | 'custom' | 'paginated', showLabel?: boolean }) {
+function ReportTypeMark({ type, showLabel = true }: { type: 'all' | 'standard' | 'custom' | 'paginated' | 'favorites', showLabel?: boolean }) {
   const getIcon = () => {
     switch (type) {
       case 'all':
@@ -64,6 +65,8 @@ function ReportTypeMark({ type, showLabel = true }: { type: 'all' | 'standard' |
         return Wand2;
       case 'paginated':
         return FileDown;
+      case 'favorites':
+        return Star;
     }
   };
 
@@ -77,6 +80,8 @@ function ReportTypeMark({ type, showLabel = true }: { type: 'all' | 'standard' |
         return "text-yellow-600 dark:text-yellow-300";
       case 'paginated':
         return "text-blue-600 dark:text-blue-300";
+      case 'favorites':
+        return "text-amber-500 dark:text-amber-400";
     }
   };
 
@@ -90,6 +95,8 @@ function ReportTypeMark({ type, showLabel = true }: { type: 'all' | 'standard' |
         return "Custom";
       case 'paginated':
         return "Paginated";
+      case 'favorites':
+        return "Favorites";
     }
   };
 
@@ -111,7 +118,7 @@ export default function Dashboard() {
   const [embedConfig, setEmbedConfig] = useState<ReportEmbedConfig | null>(null);
   const [showEmbed, setShowEmbed] = useState(false);
   const [sidebarMinimized, setSidebarMinimized] = useState(false);
-  const [reportTypeFilter, setReportTypeFilter] = useState<"all" | "standard" | "custom" | "paginated">("all");
+  const [reportTypeFilter, setReportTypeFilter] = useState<"all" | "standard" | "custom" | "paginated" | "favorites">("all");
   const [showMobileSidebar, setShowMobileSidebar] = useState(false);
   const [filterPaneVisible, setFilterPaneVisible] = useState(false);
   const [showMobileFilterDrawer, setShowMobileFilterDrawer] = useState(false);
