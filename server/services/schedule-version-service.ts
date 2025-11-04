@@ -120,12 +120,12 @@ export class ScheduleVersionService {
           createdBy: userId,
           source,
           comment,
-          snapshotData,
-          operationSnapshots: snapshotData.operations,
-          resourceAllocations: snapshotData.resources,
+          snapshotData: JSON.stringify(snapshotData),
+          operationSnapshots: JSON.stringify(snapshotData.operations),
+          resourceAllocations: JSON.stringify(snapshotData.resources),
           parentVersionId: parentVersion?.id,
           checksum,
-          metrics,
+          metrics: JSON.stringify(metrics),
           status: 'active'
         })
         .returning();
