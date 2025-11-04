@@ -748,7 +748,15 @@ export default function IntegratedAIAssistant() {
               
               // Send the appropriate message based on command type
               if (data.action.schedulerCommand.type === 'REFRESH_VIEW') {
-                iframe.contentWindow.postMessage({ type: 'REFRESH_SCHEDULE' }, '*');
+                // Include scheduleId and refreshType if provided
+                const refreshMessage = {
+                  type: 'REFRESH_SCHEDULE',
+                  scheduleId: data.action.schedulerCommand.scheduleId,
+                  refreshType: data.action.schedulerCommand.refreshType || 'full'
+                };
+                
+                console.log('[AI Assistant] Sending REFRESH_SCHEDULE message with:', refreshMessage);
+                iframe.contentWindow.postMessage(refreshMessage, '*');
                 
                 // Show a toast notification
                 toast({
