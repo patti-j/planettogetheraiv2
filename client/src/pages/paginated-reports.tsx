@@ -1123,123 +1123,128 @@ export default function PaginatedReports() {
 
       {/* Export Dialog */}
       <Dialog open={showExportDialog} onOpenChange={setShowExportDialog}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>Export Report</DialogTitle>
             <DialogDescription>
-              Configure your export settings including headers, footers, and column order
+              Choose your export settings including format, headers, and metadata
             </DialogDescription>
           </DialogHeader>
           
-          <div className="space-y-6 py-4">
+          <div className="space-y-4 py-4">
             {/* Export Format */}
-            <div className="space-y-2">
-              <Label>Export Format</Label>
-              <RadioGroup 
-                value={exportFormat} 
-                onValueChange={(value: 'csv' | 'excel' | 'pdf') => setExportFormat(value)}
-                className="space-y-2"
-              >
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="csv" id="export-csv" />
-                  <Label htmlFor="export-csv" className="font-normal cursor-pointer">
-                    CSV (Comma Separated Values)
-                  </Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="excel" id="export-excel" />
-                  <Label htmlFor="export-excel" className="font-normal cursor-pointer">
-                    Excel Spreadsheet (.xlsx)
-                  </Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="pdf" id="export-pdf" />
-                  <Label htmlFor="export-pdf" className="font-normal cursor-pointer">
-                    PDF Document
-                  </Label>
-                </div>
-              </RadioGroup>
+            <div className="space-y-3">
+              <Label className="text-sm font-medium">Export Format</Label>
+              <div className="grid gap-2">
+                <button
+                  type="button"
+                  onClick={() => setExportFormat('csv')}
+                  className={`flex items-center gap-3 px-3 py-2 rounded-lg border text-left transition-colors ${
+                    exportFormat === 'csv' 
+                      ? 'border-primary bg-primary/5 text-primary' 
+                      : 'border-border hover:bg-accent'
+                  }`}
+                >
+                  <FileText className="w-4 h-4" />
+                  <div className="flex-1">
+                    <div className="text-sm font-medium">CSV</div>
+                    <div className="text-xs text-muted-foreground">Comma Separated Values</div>
+                  </div>
+                  {exportFormat === 'csv' && <Check className="w-4 h-4" />}
+                </button>
+                
+                <button
+                  type="button"
+                  onClick={() => setExportFormat('excel')}
+                  className={`flex items-center gap-3 px-3 py-2 rounded-lg border text-left transition-colors ${
+                    exportFormat === 'excel' 
+                      ? 'border-primary bg-primary/5 text-primary' 
+                      : 'border-border hover:bg-accent'
+                  }`}
+                >
+                  <FileText className="w-4 h-4" />
+                  <div className="flex-1">
+                    <div className="text-sm font-medium">Excel</div>
+                    <div className="text-xs text-muted-foreground">Microsoft Excel (.xlsx)</div>
+                  </div>
+                  {exportFormat === 'excel' && <Check className="w-4 h-4" />}
+                </button>
+                
+                <button
+                  type="button"
+                  onClick={() => setExportFormat('pdf')}
+                  className={`flex items-center gap-3 px-3 py-2 rounded-lg border text-left transition-colors ${
+                    exportFormat === 'pdf' 
+                      ? 'border-primary bg-primary/5 text-primary' 
+                      : 'border-border hover:bg-accent'
+                  }`}
+                >
+                  <FileText className="w-4 h-4" />
+                  <div className="flex-1">
+                    <div className="text-sm font-medium">PDF</div>
+                    <div className="text-xs text-muted-foreground">Portable Document Format</div>
+                  </div>
+                  {exportFormat === 'pdf' && <Check className="w-4 h-4" />}
+                </button>
+              </div>
             </div>
 
-            {/* Header Text */}
+            {/* Report Header (Compact) */}
             <div className="space-y-2">
-              <Label htmlFor="export-header">
-                <FileInput className="w-4 h-4 inline mr-2" />
+              <Label htmlFor="export-header" className="text-sm">
                 Report Header (Optional)
               </Label>
-              <Textarea
+              <Input
                 id="export-header"
                 value={exportHeader}
                 onChange={(e) => setExportHeader(e.target.value)}
-                placeholder="Enter a custom header for your report (e.g., company name, report title)"
-                className="resize-none"
-                rows={3}
+                placeholder="e.g., Monthly Sales Report"
+                className="h-9"
               />
             </div>
 
-            {/* Footer Text */}
+            {/* Report Footer (Compact) */}
             <div className="space-y-2">
-              <Label htmlFor="export-footer">
-                <FileOutput className="w-4 h-4 inline mr-2" />
+              <Label htmlFor="export-footer" className="text-sm">
                 Report Footer (Optional)
               </Label>
-              <Textarea
+              <Input
                 id="export-footer"
                 value={exportFooter}
                 onChange={(e) => setExportFooter(e.target.value)}
-                placeholder="Enter a custom footer for your report (e.g., confidentiality notice, contact info)"
-                className="resize-none"
-                rows={3}
+                placeholder="e.g., Confidential - Internal Use Only"
+                className="h-9"
               />
             </div>
 
-            {/* Include Timestamp */}
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label htmlFor="include-timestamp">Include Timestamp</Label>
-                <p className="text-sm text-muted-foreground">Add generation date/time to the export</p>
+            {/* Include Options */}
+            <div className="space-y-3">
+              <Label className="text-sm font-medium">Include in Export</Label>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="include-timestamp" className="text-sm font-normal cursor-pointer">
+                    Timestamp
+                  </Label>
+                  <Switch
+                    id="include-timestamp"
+                    checked={includeTimestamp}
+                    onCheckedChange={setIncludeTimestamp}
+                  />
+                </div>
               </div>
-              <Switch
-                id="include-timestamp"
-                checked={includeTimestamp}
-                onCheckedChange={setIncludeTimestamp}
-              />
             </div>
 
-            {/* Column Order */}
-            <div className="space-y-2">
-              <Label>Column Order (Drag to reorder)</Label>
-              <div className="border rounded-lg p-3 max-h-60 overflow-y-auto">
-                {columnOrder.filter(col => selectedColumns.includes(col)).map((column, index) => (
-                  <div
-                    key={column}
-                    className="flex items-center gap-2 p-2 hover:bg-accent rounded-md cursor-move"
-                    draggable
-                    onDragStart={(e) => {
-                      setIsDraggingColumn(column);
-                      e.dataTransfer.effectAllowed = "move";
-                    }}
-                    onDragEnd={() => setIsDraggingColumn(null)}
-                    onDragOver={(e) => {
-                      e.preventDefault();
-                      e.dataTransfer.dropEffect = "move";
-                    }}
-                    onDrop={(e) => {
-                      e.preventDefault();
-                      if (isDraggingColumn) {
-                        const dragIndex = columnOrder.indexOf(isDraggingColumn);
-                        const dropIndex = index;
-                        if (dragIndex !== dropIndex) {
-                          moveColumn(dragIndex, dropIndex);
-                        }
-                      }
-                    }}
-                  >
-                    <GripVertical className="w-4 h-4 text-muted-foreground" />
-                    <span className="flex-1">{column}</span>
-                  </div>
-                ))}
+            {/* Export Info */}
+            <div className="rounded-lg bg-muted/50 p-3 text-xs text-muted-foreground">
+              <div className="flex items-center gap-2 mb-1">
+                <AlertCircle className="w-3 h-3" />
+                <span className="font-medium">Export Information</span>
               </div>
+              <ul className="space-y-1 ml-5 list-disc">
+                <li>Exporting {selectedColumns.length} columns</li>
+                <li>Current data includes {filteredData.length} records</li>
+                {includeTimestamp && <li>Timestamp will be added to the file</li>}
+              </ul>
             </div>
           </div>
 
@@ -1247,9 +1252,9 @@ export default function PaginatedReports() {
             <Button variant="outline" onClick={() => setShowExportDialog(false)}>
               Cancel
             </Button>
-            <Button onClick={handleExport}>
+            <Button onClick={handleExport} disabled={!exportFormat}>
               <Download className="w-4 h-4 mr-2" />
-              Export Report
+              Export
             </Button>
           </DialogFooter>
         </DialogContent>
