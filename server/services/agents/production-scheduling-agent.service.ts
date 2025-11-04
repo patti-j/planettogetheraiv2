@@ -195,14 +195,14 @@ export class ProductionSchedulingAgent extends BaseAgent {
         
         // Query the versions from the database
         const baseVersionData = await db.execute(sql`
-          SELECT id, version_number, snapshot_data, created_at, change_type, change_description
+          SELECT id, version_number, snapshot_data, created_at, source, comment
           FROM schedule_versions
           WHERE schedule_id = ${scheduleId} AND version_number = ${baseVersion}
           LIMIT 1
         `);
         
         const compareVersionData = await db.execute(sql`
-          SELECT id, version_number, snapshot_data, created_at, change_type, change_description
+          SELECT id, version_number, snapshot_data, created_at, source, comment
           FROM schedule_versions  
           WHERE schedule_id = ${scheduleId} AND version_number = ${compareVersion}
           LIMIT 1
@@ -308,8 +308,8 @@ export class ProductionSchedulingAgent extends BaseAgent {
         response += `\n`;
         
         response += `**📝 Version Details:**\n`;
-        response += `• **Version ${baseVersion}:** ${baseVersionData.rows[0].change_type || 'Manual'} - ${baseVersionData.rows[0].change_description || 'No description'}\n`;
-        response += `• **Version ${compareVersion}:** ${compareVersionData.rows[0].change_type || 'Manual'} - ${compareVersionData.rows[0].change_description || 'No description'}\n\n`;
+        response += `• **Version ${baseVersion}:** ${baseVersionData.rows[0].source || 'manual'} - ${baseVersionData.rows[0].comment || 'No description'}\n`;
+        response += `• **Version ${compareVersion}:** ${compareVersionData.rows[0].source || 'manual'} - ${compareVersionData.rows[0].comment || 'No description'}\n\n`;
         
         response += `💡 For a visual comparison, you can also use the Version History Compare tab in the toolbar.`;
         
