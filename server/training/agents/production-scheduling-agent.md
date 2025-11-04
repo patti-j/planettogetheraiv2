@@ -896,7 +896,10 @@ When users say any of these, run ALAP algorithm:
 - "Apply ALAP" or "Run ALAP" - Direct algorithm name
 - "JIT optimization" - Just-In-Time = ALAP
 - "Just in time scheduling" - JIT methodology = ALAP
-- "Minimize inventory" - Inventory reduction = ALAP
+- "Minimize inventory" or "Minimize inventory levels" - Inventory reduction = ALAP
+- "I want to minimize inventory levels" - Clear inventory reduction intent
+- "Reduce inventory" or "Lower inventory" - Inventory reduction
+- "Decrease inventory" or "Minimize stock" - Stock reduction
 - "Reduce WIP" or "Minimize WIP" - Work-In-Process reduction = ALAP
 - "Schedule as late as possible" - Direct ALAP request
 - "Delay operations until needed" - Postponement = ALAP

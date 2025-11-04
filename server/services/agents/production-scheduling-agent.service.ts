@@ -141,7 +141,9 @@ export class ProductionSchedulingAgent extends BaseAgent {
   private isAlgorithmRequest(message: string): boolean {
     const algorithmKeywords = [
       'optimize', 'asap', 'alap', 'algorithm', 'scheduling',
-      'minimize lead', 'speed up', 'just in time', 'jit', 'reduce wip'
+      'minimize lead', 'speed up', 'just in time', 'jit', 'reduce wip',
+      'inventory', 'minimize inventory', 'reduce inventory', 'inventory level',
+      'lower inventory', 'decrease inventory', 'minimize stock', 'reduce stock'
     ];
     return algorithmKeywords.some(keyword => message.includes(keyword));
   }
@@ -874,7 +876,9 @@ export class ProductionSchedulingAgent extends BaseAgent {
     // ALAP triggers  
     const alapTriggers = [
       'alap', 'as late as possible', 'backward schedul',
-      'just in time', 'jit', 'minimize inventory', 'reduce wip', 'latest'
+      'just in time', 'jit', 'minimize inventory', 'reduce wip', 'latest',
+      'reduce inventory', 'inventory level', 'lower inventory', 
+      'decrease inventory', 'minimize stock', 'reduce stock'
     ];
     
     for (const trigger of alapTriggers) {
