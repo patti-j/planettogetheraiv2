@@ -222,10 +222,67 @@ export default function Dashboard() {
   // Power BI API hooks
   const { data: workspaces, isLoading: loadingWorkspaces, error: workspacesError } = usePowerBIWorkspaces(isAuthenticated);
   const { data: allReports, isLoading: loadingReports, error: reportsError } = usePowerBIReports(isAuthenticated, selectedWorkspaceId);
+  
+  // Load favorite reports when user is available
+  useEffect(() => {
+    if (user?.id) {
+      fetch(`/api/favorite-reports/${user.id}`)
+        .then(res => res.json())
+        .then(data => {
+          if (Array.isArray(data)) {
+            setFavoriteReports(data);
+          }
+        })
+        .catch(err => console.error('Failed to load favorites:', err));
+    }
+  }, [user?.id]);
+  
+  // Toggle favorite status for a report
+  const toggleFavorite = async (reportId: string, workspaceId: string, event?: React.MouseEvent) => {
+    event?.stopPropagation();
+    if (!user?.id) return;
+    
+    const isFavorite = favoriteReports.some(fav => 
+      fav.reportId === reportId && fav.workspaceId === workspaceId
+    );
+    
+    try {
+      if (isFavorite) {
+        // Remove from favorites
+        const res = await fetch(`/api/favorite-reports/${user.id}/${reportId}?workspaceId=${workspaceId}`, {
+          method: 'DELETE',
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setFavoriteReports(data.favorites || []);
+        }
+      } else {
+        // Add to favorites
+        const res = await fetch(`/api/favorite-reports/${user.id}/${reportId}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ workspaceId })
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setFavoriteReports(data.favorites || []);
+        }
+      }
+    } catch (err) {
+      console.error('Failed to toggle favorite:', err);
+    }
+  };
 
   // Filter reports based on selected filter type
   const reports = allReports?.filter(report => {
     if (reportTypeFilter === "all") return true;
+    
+    // Filter by favorites
+    if (reportTypeFilter === "favorites") {
+      return favoriteReports.some(fav => 
+        fav.reportId === report.id && fav.workspaceId === selectedWorkspaceId
+      );
+    }
     
     // Check if this is a paginated report
     const isPaginatedReport = report.reportType === "PaginatedReport";
@@ -677,7 +734,7 @@ export default function Dashboard() {
                           value={reportTypeFilter}
                           onValueChange={(value) => {
                             // Ensure we always have a valid filter value
-                            const newValue = (value as "all" | "standard" | "custom" | "paginated") || "all";
+                            const newValue = (value as "all" | "standard" | "custom" | "paginated" | "favorites") || "all";
                             if (newValue !== reportTypeFilter) {
                               setReportTypeFilter(newValue);
                               // Reset selected report when filter changes
@@ -690,7 +747,7 @@ export default function Dashboard() {
                           }}
                           className="w-full"
                         >
-                          <TabsList className="grid w-full grid-cols-4 h-auto p-0 bg-transparent">
+                          <TabsList className="grid w-full grid-cols-5 h-auto p-0 bg-transparent">
                             <Tooltip>
                               <TooltipTrigger asChild>
                                 <TabsTrigger
@@ -761,6 +818,24 @@ export default function Dashboard() {
                               </TooltipTrigger>
                               <TooltipContent className="bg-white border border-gray-200 text-black shadow-md">
                                 <p>{allReports.filter(r => r.reportType === "PaginatedReport").length}</p>
+                              </TooltipContent>
+                            </Tooltip>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <TabsTrigger
+                                  value="favorites"
+                                  className="flex flex-col items-center justify-center gap-1 text-xs font-medium data-[state=active]:bg-transparent data-[state=active]:shadow-none rounded-none pb-2 pt-1 min-h-12 transition-all duration-200"
+                                  style={{
+                                    borderBottom: reportTypeFilter === "favorites" ? "2px solid black" : "2px solid transparent"
+                                  }}
+                                  data-testid="button-filter-favorites"
+                                >
+                                  <ReportTypeMark type="favorites" showLabel={false} />
+                                  <span className="text-[10px]">Favorites</span>
+                                </TabsTrigger>
+                              </TooltipTrigger>
+                              <TooltipContent className="bg-white border border-gray-200 text-black shadow-md">
+                                <p>{favoriteReports.filter(fav => fav.workspaceId === selectedWorkspaceId).length}</p>
                               </TooltipContent>
                             </Tooltip>
                           </TabsList>
