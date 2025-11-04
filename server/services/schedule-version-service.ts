@@ -30,6 +30,7 @@ export interface VersionMetrics {
   totalSetupTime: number;
   totalChangeovers: number;
   constraintViolations: number;
+  totalWorkingHours?: number;
 }
 
 export interface ConcurrencyCheckResult {
@@ -379,27 +380,58 @@ export class ScheduleVersionService {
     // Calculate makespan (total schedule duration)
     let earliestStart = Infinity;
     let latestEnd = -Infinity;
+    
+    // Calculate total working hours and resource utilization
+    let totalWorkingHours = 0;
+    const resourceUsageMap = new Map<string, number>();
 
     operations.forEach(op => {
-      if (op.scheduledStart) {
+      if (op.scheduledStart && op.scheduledEnd) {
         const start = new Date(op.scheduledStart).getTime();
         const end = new Date(op.scheduledEnd).getTime();
         earliestStart = Math.min(earliestStart, start);
         latestEnd = Math.max(latestEnd, end);
+        
+        // Calculate working hours for this operation
+        const operationHours = (end - start) / (1000 * 60 * 60);
+        totalWorkingHours += operationHours;
+        
+        // Track resource usage if resource is assigned
+        if (op.resourceId) {
+          const currentUsage = resourceUsageMap.get(op.resourceId) || 0;
+          resourceUsageMap.set(op.resourceId, currentUsage + operationHours);
+        }
       }
     });
 
     const makespan = earliestStart === Infinity ? 0 : 
       (latestEnd - earliestStart) / (1000 * 60 * 60); // Convert to hours
+    
+    // Calculate resource utilization
+    // For ASAP: operations are packed tightly at the beginning, higher utilization
+    // For ALAP: operations are spread out near due dates, potentially lower utilization
+    let resourceUtilization = 0;
+    if (makespan > 0) {
+      // Calculate average utilization across all resources
+      const numResources = resourceUsageMap.size || 1; // Assume at least 1 resource
+      const totalAvailableHours = makespan * numResources; // Total capacity across all resources
+      
+      if (totalAvailableHours > 0) {
+        resourceUtilization = (totalWorkingHours / totalAvailableHours) * 100;
+        // Cap at 100% (can't exceed available capacity)
+        resourceUtilization = Math.min(100, resourceUtilization);
+      }
+    }
 
     return {
       makespan,
-      resourceUtilization: 85, // Placeholder - would calculate actual utilization
+      resourceUtilization: Math.round(resourceUtilization * 10) / 10, // Round to 1 decimal
       totalSetupTime: operations.reduce((sum, op) => 
         sum + (parseFloat(op.setupHours) || 0), 0),
-      totalChangeovers: 0, // Would calculate based on resource switches
+      totalChangeovers: 0, // Would calculate based on resource switches  
       constraintViolations: operations.filter(op => 
-        op.constraintType && op.constraintDate).length
+        op.constraintType && op.constraintDate).length,
+      totalWorkingHours: Math.round(totalWorkingHours * 10) / 10 // Add total working hours
     };
   }
 
