@@ -82,7 +82,7 @@ function ReportTypeMark({ type, showLabel = true }: { type: 'all' | 'standard' |
       case 'paginated':
         return "text-blue-600 dark:text-blue-300";
       case 'favorites':
-        return "text-amber-500 dark:text-amber-400 fill-amber-500 dark:fill-amber-400";
+        return "text-amber-500 dark:text-amber-400";
     }
   };
 
@@ -102,10 +102,15 @@ function ReportTypeMark({ type, showLabel = true }: { type: 'all' | 'standard' |
   };
 
   const Icon = getIcon();
+  
+  // Special handling for favorites to ensure filled star
+  const iconClassName = type === 'favorites' 
+    ? "w-4 h-4 fill-amber-500 dark:fill-amber-400" 
+    : "w-4 h-4";
 
   return (
     <div className={`inline-flex items-center gap-1 leading-none ${getColorClasses()}`}>
-      <Icon className="w-4 h-4" />
+      <Icon className={iconClassName} />
       {showLabel && <span>{getLabel()}</span>}
     </div>
   );
@@ -341,28 +346,8 @@ export default function Dashboard() {
     return true;
   }) || [];
 
-  // Clear selected report if it doesn't match current filter
-  useEffect(() => {
-    if (selectedReportId && allReports && allReports.length > 0) {
-      const selectedReport = allReports.find(r => r.id === selectedReportId);
-      if (selectedReport) {
-        const isPaginatedReport = selectedReport.reportType === "PaginatedReport";
-        const isStandardReport = !isPaginatedReport && selectedReport.name.trim().toLowerCase() === selectedReport.datasetName?.trim().toLowerCase();
-        
-        const shouldClearSelection = 
-          (reportTypeFilter === "standard" && !isStandardReport) ||
-          (reportTypeFilter === "custom" && isStandardReport) ||
-          (reportTypeFilter === "custom" && isPaginatedReport) ||
-          (reportTypeFilter === "paginated" && !isPaginatedReport);
-          
-        if (shouldClearSelection) {
-          setSelectedReportId("");
-          setShowEmbed(false);
-          setEmbedConfig(null);
-        }
-      }
-    }
-  }, [reportTypeFilter, selectedReportId, allReports]);
+  // Removed the logic that cleared selected report when filter doesn't match
+  // This allows the report to stay loaded when switching between filter tabs
   
   const { 
     embedReport, 
