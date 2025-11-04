@@ -505,7 +505,7 @@ export class ProductionSchedulingAgent extends BaseAgent {
    */
   private async runASAPAlgorithm(): Promise<{message: string, operationsScheduled: number}> {
     try {
-      // Get all active jobs and their operations
+      // Get all active jobs and their operations - reschedule even if already scheduled
       const operations = await db.execute(sql`
         SELECT 
           jo.id,
@@ -519,12 +519,13 @@ export class ProductionSchedulingAgent extends BaseAgent {
         FROM ptjoboperations jo
         INNER JOIN ptjobs j ON jo.job_id = j.id
         WHERE j.scheduled_status NOT IN ('Completed', 'Shipped', 'Delivered')
+           OR j.scheduled_status IS NULL
         ORDER BY j.priority ASC, jo.sequence_number ASC
       `);
 
       if (!operations.rows || operations.rows.length === 0) {
         return {
-          message: 'No operations to schedule.',
+          message: 'No active operations found to schedule.',
           operationsScheduled: 0
         };
       }
@@ -599,7 +600,7 @@ export class ProductionSchedulingAgent extends BaseAgent {
    */
   private async runALAPAlgorithm(): Promise<{message: string, operationsScheduled: number}> {
     try {
-      // Get all active jobs with their operations
+      // Get all active jobs with their operations - reschedule even if already scheduled
       const jobs = await db.execute(sql`
         SELECT DISTINCT
           j.id,
@@ -608,14 +609,15 @@ export class ProductionSchedulingAgent extends BaseAgent {
           j.need_date_time
         FROM ptjobs j
         INNER JOIN ptjoboperations jo ON jo.job_id = j.id
-        WHERE j.scheduled_status NOT IN ('Completed', 'Shipped', 'Delivered')
+        WHERE (j.scheduled_status NOT IN ('Completed', 'Shipped', 'Delivered')
+               OR j.scheduled_status IS NULL)
           AND j.need_date_time IS NOT NULL
         ORDER BY j.priority ASC
       `);
 
       if (!jobs.rows || jobs.rows.length === 0) {
         return {
-          message: 'No jobs with due dates to schedule.',
+          message: 'No active jobs with due dates found to schedule.',
           operationsScheduled: 0
         };
       }
