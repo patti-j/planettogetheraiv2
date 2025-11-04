@@ -598,7 +598,24 @@ export default function PaginatedReports() {
           alternateRowStyles: {
             fillColor: [245, 245, 245]
           },
-          margin: { left: 14, right: 14, top: yPosition }
+          margin: { left: 14, right: 14, top: yPosition },
+          didDrawPage: function(data: any) {
+            // Footer with page numbers
+            const pageCount = (doc as any).internal.getNumberOfPages ? 
+                             (doc as any).internal.getNumberOfPages() : 
+                             (doc as any).getNumberOfPages ? 
+                             (doc as any).getNumberOfPages() : 
+                             '?';
+            doc.setFontSize(8);
+            doc.setTextColor(100);
+            const pageString = `Page ${data.pageNumber} of ${pageCount}`;
+            doc.text(
+              pageString,
+              doc.internal.pageSize.width / 2,
+              doc.internal.pageSize.height - 10,
+              { align: 'center' }
+            );
+          }
         });
         
         // Add footer if provided
@@ -1430,6 +1447,14 @@ export default function PaginatedReports() {
                   <span>{selectedColumns.length} columns</span>
                   <span>•</span>
                   <span>{filteredData.length} rows</span>
+                  {exportFormat === 'pdf' && (
+                    <>
+                      <span>•</span>
+                      <span>
+                        ~{Math.ceil(filteredData.length / (selectedColumns.length > 6 ? 25 : 35))} page{Math.ceil(filteredData.length / (selectedColumns.length > 6 ? 25 : 35)) !== 1 ? 's' : ''}
+                      </span>
+                    </>
+                  )}
                   <span>•</span>
                   <span>{exportFormat.toUpperCase()} format</span>
                 </div>
