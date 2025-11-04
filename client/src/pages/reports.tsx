@@ -82,7 +82,7 @@ function ReportTypeMark({ type, showLabel = true }: { type: 'all' | 'standard' |
       case 'paginated':
         return "text-blue-600 dark:text-blue-300";
       case 'favorites':
-        return "text-amber-500 dark:text-amber-400";
+        return "text-amber-500 dark:text-amber-400 fill-amber-500 dark:fill-amber-400";
     }
   };
 
@@ -778,12 +778,7 @@ export default function Dashboard() {
                             const newValue = (value as "all" | "standard" | "custom" | "paginated" | "favorites") || "all";
                             if (newValue !== reportTypeFilter) {
                               setReportTypeFilter(newValue);
-                              // Reset selected report when filter changes
-                              if (selectedReportId) {
-                                setSelectedReportId("");
-                                setShowEmbed(false);
-                                setEmbedConfig(null);
-                              }
+                              // Don't reset the selected report - keep it loaded
                             }
                           }}
                           className="w-full"
