@@ -166,7 +166,9 @@ export class ProductionSchedulingAgent extends BaseAgent {
   private isVersionDeletionRequest(message: string): boolean {
     const triggers = [
       'delete version', 'delete versions', 'remove version', 'remove versions',
-      'clear version', 'clear versions', 'clean up version', 'clean version'
+      'clear version', 'clear versions', 'clean up version', 'clean version',
+      'delete schedule version', 'delete schedules version', 'delete schedule versions', 
+      'remove schedule version', 'remove schedules version', 'remove schedule versions'
     ];
     return triggers.some(trigger => message.includes(trigger));
   }
