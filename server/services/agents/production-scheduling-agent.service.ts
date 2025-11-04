@@ -64,9 +64,16 @@ export class ProductionSchedulingAgent extends BaseAgent {
     'operations',
     'delete version',
     'delete versions',
+    'delete schedule version',
+    'delete schedule versions',
+    'delete schedules',
     'remove version',
     'remove versions',
+    'remove schedule version',
+    'remove schedule versions',
+    'remove schedules',
     'clear versions',
+    'clear schedule versions',
     'clean up versions'
   ];
   requiredPermission = 'scheduling.execute';
