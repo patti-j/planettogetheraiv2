@@ -884,22 +884,6 @@ export default function Dashboard() {
                             <div>Please check your connection and try again.</div>
                           </div>
                         )}
-                        {isAuthenticated && reports?.length === 0 && !loadingReports && !reportsError && (
-                          <div className="text-xs text-muted-foreground bg-muted/50 p-2 rounded-md">
-                            <div className="font-medium">
-                              {reportTypeFilter === "all" ? "No reports found" :
-                               reportTypeFilter === "standard" ? "No standard reports found" :
-                               reportTypeFilter === "custom" ? "No custom reports found" :
-                               "No paginated reports found"}
-                            </div>
-                            <div>
-                              {reportTypeFilter === "all" ? "This workspace doesn't contain any reports yet." :
-                               reportTypeFilter === "standard" ? "No reports match the dataset name in this workspace." :
-                               reportTypeFilter === "custom" ? "No reports with different names from their datasets found." :
-                               "No RDL paginated reports found in this workspace."}
-                            </div>
-                          </div>
-                        )}
                       </div>
                     )}
 
