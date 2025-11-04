@@ -342,7 +342,7 @@ export default function PaginatedReports() {
 
   // Export handler
   const handleExport = async () => {
-    if (!data?.items || data.items.length === 0) {
+    if (!data?.total || data.total === 0) {
       toast({
         title: "No Data",
         description: "There is no data to export.",
@@ -354,8 +354,51 @@ export default function PaginatedReports() {
 
     const columnsToExport = columnOrder.filter(col => selectedColumns.includes(col));
     
+    // Fetch ALL data for export (without pagination)
+    let allData: any[] = [];
+    
+    try {
+      // Build URL for fetching all data
+      let exportUrl = "";
+      if (sourceType === 'sql' && selectedTable) {
+        exportUrl = `/api/paginated-reports?schemaName=${encodeURIComponent(selectedTable.schemaName)}&tableName=${encodeURIComponent(selectedTable.tableName)}&page=1&pageSize=999999`; // Large pageSize to get all data
+      } else if (sourceType === 'powerbi' && selectedPowerBITable && selectedDatasetId) {
+        exportUrl = `/api/paginated-reports/powerbi?datasetId=${encodeURIComponent(selectedDatasetId)}&tableName=${encodeURIComponent(selectedPowerBITable)}&page=1&pageSize=999999`;
+      }
+      
+      if (exportUrl) {
+        // Fetch all data for export
+        const response = await fetch(exportUrl, {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          }
+        });
+        
+        if (!response.ok) {
+          throw new Error('Failed to fetch export data');
+        }
+        
+        const exportResult = await response.json() as PaginatedReportData;
+        allData = exportResult.items || [];
+      }
+    } catch (error) {
+      console.error('Failed to fetch all data for export:', error);
+      // Fall back to using current page data if fetch fails
+      allData = data?.items || [];
+    }
+    
+    // Apply column filters to the exported data
+    const filteredExportData = allData.filter(item => {
+      return Object.entries(columnFilters).every(([column, filterValue]) => {
+        if (!filterValue) return true;
+        const cellValue = item[column];
+        if (cellValue === null || cellValue === undefined) return false;
+        return String(cellValue).toLowerCase().includes(filterValue.toLowerCase());
+      });
+    });
+    
     // Prepare export data with ordered columns
-    const exportData = filteredData.map(row => {
+    const exportData = filteredExportData.map(row => {
       const orderedRow: any = {};
       columnsToExport.forEach(col => {
         orderedRow[col] = row[col];
@@ -1446,15 +1489,15 @@ export default function PaginatedReports() {
                 <div className="flex items-center justify-between">
                   <span>{selectedColumns.length} columns</span>
                   <span>•</span>
-                  <span>{filteredData.length} rows</span>
+                  <span>{data?.total || 0} rows</span>
                   {exportFormat === 'pdf' && (
                     <>
                       <span>•</span>
                       <span>
                         {(() => {
-                          // Accurate page estimation based on actual PDF rows per page
+                          // Accurate page estimation based on total rows in dataset
                           const cols = selectedColumns.length;
-                          const rows = filteredData.length;
+                          const rows = data?.total || 0;
                           
                           // PDF typically fits about 10-12 rows per page with headers
                           // Landscape orientation (>6 columns) fits fewer rows
