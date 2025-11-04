@@ -82,7 +82,7 @@ The system uses a modular agent architecture designed for role-based access cont
 -   **Inventory Management**: Stock-centric system tracking specific records.
 -   **Master Data Management**: Unified interface with AI-powered modification and validation.
 -   **Algorithm Requirements Management System**: Manages optimization algorithms, including functional/policy requirements, priorities, validation, and API for CRUD operations.
--   **Production Scheduling**: Visual Gantt chart with operation sequencer and algorithms (ASAP, ALAP, Drum/TOC). Includes auto-save, calendar management, theme switching, and version control with snapshots and rollback.
+-   **Production Scheduling**: Visual Gantt chart with operation sequencer and algorithms (ASAP, ALAP, Drum/TOC). Includes auto-save, calendar management, theme switching, and enhanced version control with snapshots, rollback, and comprehensive version comparison (metrics, resource usage, time span analysis).
 -   **Dashboarding & Analytics**: UI Design Studio for custom visualizations, AI-powered dashboard generation, and a drag-and-drop designer.
 -   **Role-Based Access Control**: Unified permission system with feature-action permissions.
 -   **AI Workflow Automation**: Natural language-powered workflow creation with template library, visual builder, and execution tracking.
