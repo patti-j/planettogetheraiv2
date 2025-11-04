@@ -296,6 +296,14 @@ export default function PaginatedReports() {
     setSearchTerm("");
   };
 
+  // Handle column reordering
+  const handleColumnReorder = (fromIndex: number, toIndex: number) => {
+    const newOrder = [...columnOrder];
+    const [movedColumn] = newOrder.splice(fromIndex, 1);
+    newOrder.splice(toIndex, 0, movedColumn);
+    setColumnOrder(newOrder);
+  };
+
   // Filter data locally based on column filters
   const filteredData = data?.items.filter(item => {
     return Object.entries(columnFilters).every(([column, filterValue]) => {
