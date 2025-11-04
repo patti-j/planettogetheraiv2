@@ -347,23 +347,31 @@ export class ProductionSchedulingAgent extends BaseAgent {
         };
       }
       
-      // Create an auto-save after algorithm execution
-      await this.createAutoSave(algorithm, context);
+      // Create an auto-save after algorithm execution and wait for it to complete
+      this.log(`Creating auto-save for ${algorithm} algorithm...`);
+      const savedScheduleId = await this.createAutoSave(algorithm, context);
+      this.log(`Auto-save completed with schedule ID: ${savedScheduleId}`);
       
-      // Return success response with results
+      // Add a small delay to ensure database transaction is fully committed
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      // Return success response with results and the saved schedule ID
       return {
         content: result.message,
         requiresClientAction: true,
         clientActionType: 'REFRESH_SCHEDULE',
         clientActionData: {
           algorithm: algorithm,
-          targetPage: 'production-scheduler'
+          targetPage: 'production-scheduler',
+          scheduleId: savedScheduleId // Include the schedule ID
         },
         action: {
           type: 'scheduler_action',
           target: '/production-scheduler',
           schedulerCommand: {
-            type: 'REFRESH_VIEW'
+            type: 'REFRESH_VIEW',
+            scheduleId: savedScheduleId || undefined, // Include the saved schedule ID for the refresh
+            refreshType: 'full' // Ensure a full refresh happens
           }
         },
         error: false
@@ -1024,7 +1032,7 @@ export class ProductionSchedulingAgent extends BaseAgent {
     }
   }
   
-  private async createAutoSave(algorithm: string, context: AgentContext): Promise<void> {
+  private async createAutoSave(algorithm: string, context: AgentContext): Promise<number | null> {
     try {
       // Get all current operations data for the save
       const operations = await db.execute(sql`
@@ -1059,7 +1067,7 @@ export class ProductionSchedulingAgent extends BaseAgent {
         RETURNING id
       `);
       
-      const savedScheduleId = savedScheduleResult.rows[0]?.id;
+      const savedScheduleId = savedScheduleResult.rows[0]?.id as number;
       this.log(`Created saved_schedule with ID: ${savedScheduleId}`);
       
       // Try to create a version entry - don't let this fail the auto-save
@@ -1112,9 +1120,12 @@ export class ProductionSchedulingAgent extends BaseAgent {
         this.error(`Failed to create schedule_version (but saved_schedule succeeded): ${versionError.message}`, versionError);
         this.log(`Auto-save partially complete: ${saveName} (saved_schedules entry created, but version history failed)`);
       }
+      
+      return savedScheduleId;
     } catch (error: any) {
       this.error(`Failed to create auto-save: ${error.message}`, error);
       // Don't throw - allow algorithm to complete even if save fails
+      return null;
     }
   }
   
