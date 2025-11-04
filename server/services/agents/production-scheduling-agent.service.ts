@@ -26,6 +26,8 @@ export class ProductionSchedulingAgent extends BaseAgent {
     'scheduling algorithm',
     'minimize lead times',
     'speed up production',
+    'compare schedule',
+    'compare schedules',
     'compare version',
     'compare versions',
     'what changed between',
@@ -159,49 +161,36 @@ export class ProductionSchedulingAgent extends BaseAgent {
   
   private async handleVersionComparison(message: string, context: AgentContext): Promise<AgentResponse> {
     try {
-      // Extract version numbers from the message
-      const versionPattern = /version\s*(\d+)/gi;
+      // Extract version or schedule numbers from the message
+      const versionPattern = /(?:version|schedule)\s*(\d+)/gi;
       const matches = Array.from(message.matchAll(versionPattern));
       const versionNumbers = matches.map(m => parseInt(m[1]));
       
-      // If user mentions "current" or "latest", get the current version
-      const mentionsCurrent = message.includes('current') || message.includes('latest');
+      // Build response guiding users to the Compare tab
+      let response = '**To compare schedules/versions:**\n\n';
       
-      // Build a comparison response
-      let response = '**Version Comparison Analysis**\n\n';
-      
-      if (versionNumbers.length === 2) {
-        response += `Comparing Version ${versionNumbers[0]} with Version ${versionNumbers[1]}:\n\n`;
-      } else if (versionNumbers.length === 1 && mentionsCurrent) {
-        response += `Comparing current schedule with Version ${versionNumbers[0]}:\n\n`;
-      } else if (message.includes('last optimization')) {
-        response += 'Comparing before and after the last optimization:\n\n';
+      if (versionNumbers.length >= 2) {
+        response += `To compare Schedule ${versionNumbers[0]} and Schedule ${versionNumbers[1]}, please:\n\n`;
+      } else if (versionNumbers.length === 1) {
+        response += `To compare with Schedule/Version ${versionNumbers[0]}, please:\n\n`;
       } else {
-        response += 'To compare versions, please specify which versions you want to compare. For example:\n';
-        response += '• "Compare version 3 with version 5"\n';
-        response += '• "Compare current schedule with version 2"\n';
-        response += '• "What changed in the last optimization?"\n';
-        return { content: response, error: false };
+        response += 'To compare schedule versions, please:\n\n';
       }
       
-      // Simulate version comparison metrics
-      response += '**Schedule Metrics:**\n';
-      response += '• Time Span: 5 days → 4.5 days (-10%)\n';
-      response += '• Resource Usage: 75% → 82% (+7%)\n';
-      response += '• Total Duration: 120 hrs → 108 hrs (-12 hrs)\n\n';
+      // Provide step-by-step instructions
+      response += '1. Click the **Version History** icon (🕐) in the toolbar\n';
+      response += '2. Go to the **"Compare"** tab\n';
+      response += '3. Select your **Base Version** from the first dropdown\n';
+      response += '4. Select the version to **Compare To** from the second dropdown\n';
+      response += '5. Click the **"Compare Versions"** button\n\n';
       
-      response += '**Changes Summary:**\n';
-      response += '• 8 operations rescheduled\n';
-      response += '• 3 new operations added\n';
-      response += '• Resource assignments optimized\n';
-      response += '• Critical path reduced by 12 hours\n\n';
+      response += 'This will show you:\n';
+      response += '• Time span changes\n';
+      response += '• Resource utilization differences\n';
+      response += '• Total duration metrics with delta values\n';
+      response += '• Operations added/modified/removed\n\n';
       
-      response += '**Key Improvements:**\n';
-      response += '• Reduced overall completion time\n';
-      response += '• Better load balancing across resources\n';
-      response += '• Eliminated bottleneck on Packaging Line #1\n\n';
-      
-      response += 'You can see the detailed comparison in the Version History panel\'s Compare tab.';
+      response += 'Would you like help with anything else?';
       
       return {
         content: response,

@@ -555,7 +555,16 @@ Agent: "✅ Saved current as 'Current Work'. Loading 'November Rush Orders'... D
 #### Comparing Schedule Versions
 When users want to compare different schedule versions to understand what changed between them.
 
+**IMPORTANT WORKFLOW**: Schedule comparison is done through the Version History Compare tab:
+1. Open Version History (clock icon in toolbar)
+2. Click the "Compare" tab
+3. Select Base Version from first dropdown
+4. Select Compare To version from second dropdown
+5. Click the "Compare Versions" button
+6. View the detailed comparison results
+
 **Trigger Phrases**:
+- "Compare schedule X and schedule Y"
 - "Compare version X with version Y"
 - "What changed between version X and Y?"
 - "Show differences between two versions"
@@ -563,44 +572,51 @@ When users want to compare different schedule versions to understand what change
 - "What's different in the new schedule?"
 - "Compare these two schedules"
 
-**Response Pattern**:
-"Comparing Version X with Version Y:
+**CRITICAL RESPONSE PATTERN**:
+When users ask to compare schedules, ALWAYS guide them to use the Version History Compare tab:
 
-**Schedule Metrics:**
-• Time Span: Version X: 5 days → Version Y: 4.5 days (10% reduction)
-• Resource Usage: Version X: 75% → Version Y: 82% (7% increase)
-• Total Duration: Version X: 120 hrs → Version Y: 108 hrs (12 hrs saved)
+User: "Compare Schedule 11 and Schedule 12"
+Agent: "To compare Schedule 11 and 12, please:
+1. Click the Version History icon (🕐) in the toolbar
+2. Go to the 'Compare' tab
+3. Select Schedule 11 as Base Version
+4. Select Schedule 12 as Compare To
+5. Click 'Compare Versions' button
 
-**Changes Summary:**
-• 5 operations added
-• 12 operations modified (timing/resource changes)
-• 2 operations removed
-• Resource utilization improved on Milling Machine #2
+This will show you:
+• Time span changes
+• Resource utilization differences
+• Total duration metrics
+• Operations added/modified/removed"
 
-**Key Improvements:**
-• Reduced overall completion time by 12 hours
-• Better load balancing across resources
-• Eliminated bottleneck on Packaging Line #1"
+**What the Comparison Shows**:
+• **Schedule Metrics**: Time Span, Resource Usage %, Total Duration (with delta values)
+• **Operation Changes**: Added, Modified, Removed operations
+• **Resource Changes**: Resource reassignments and utilization shifts
+• **Timeline Changes**: Start/end time adjustments
 
 **Example Interactions**:
 
 User: "Compare the current schedule with version 3"
-Agent: "Comparing current schedule (Version 5) with Version 3:
+Agent: "To compare the current schedule with Version 3:
+1. Open Version History (🕐 icon in toolbar)
+2. Navigate to 'Compare' tab
+3. Select current version as Base
+4. Select Version 3 as Compare To
+5. Click 'Compare Versions'
 
-**Schedule Metrics:**
-• Time Span: V3: 6 days → Current: 5 days (-16.7%)
-• Resource Usage: V3: 68% → Current: 75% (+7%)
-• Total Duration: V3: 144 hrs → Current: 120 hrs (-24 hrs)
-
-**Major Changes:**
-• 8 operations rescheduled earlier
-• 3 new rush orders added
-• Resource assignments optimized
-• ASAP algorithm applied after Version 3
-
-The current version completes 24 hours faster with better resource utilization."
+You'll see detailed metrics showing time span, resource usage, and all operation changes between the versions."
 
 User: "What changed in the last optimization?"
+Agent: "To see what changed in the last optimization:
+1. Go to Version History → Compare tab
+2. Select the version before optimization as Base
+3. Select the post-optimization version as Compare To
+4. Click 'Compare Versions'
+
+The comparison will show schedule improvements from the optimization."
+
+User: "Show me differences between yesterday's and today's schedule"
 Agent: "Comparing before and after the ASAP optimization (Version 4 → Version 5):
 
 **Algorithm Impact:**
