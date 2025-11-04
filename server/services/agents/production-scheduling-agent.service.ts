@@ -162,9 +162,28 @@ export class ProductionSchedulingAgent extends BaseAgent {
   private async handleVersionComparison(message: string, context: AgentContext): Promise<AgentResponse> {
     try {
       // Extract version or schedule numbers from the message
+      // First try to match "version X" or "schedule X" patterns
       const versionPattern = /(?:version|schedule)\s*(\d+)/gi;
       const matches = Array.from(message.matchAll(versionPattern));
-      const versionNumbers = matches.map(m => parseInt(m[1]));
+      let versionNumbers = matches.map(m => parseInt(m[1]));
+      
+      // If we only found one match, look for additional numbers after "and" or "with"
+      if (versionNumbers.length === 1) {
+        const additionalPattern = /(?:and|with|to|vs)\s*(?:schedule\s*)?(?:version\s*)?(\d+)/gi;
+        const additionalMatches = Array.from(message.matchAll(additionalPattern));
+        if (additionalMatches.length > 0) {
+          versionNumbers.push(...additionalMatches.map(m => parseInt(m[1])));
+        }
+      }
+      
+      // Also try a simpler pattern for "X and Y" where X and Y are numbers
+      if (versionNumbers.length < 2) {
+        const simplePattern = /(\d+)\s*(?:and|vs|with|to)\s*(\d+)/i;
+        const simpleMatch = message.match(simplePattern);
+        if (simpleMatch) {
+          versionNumbers = [parseInt(simpleMatch[1]), parseInt(simpleMatch[2])];
+        }
+      }
       
       // If we have two version numbers, perform the comparison
       if (versionNumbers.length >= 2) {
