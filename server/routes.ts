@@ -5811,8 +5811,13 @@ router.get("/api/schedules/:id/versions/:baseId/compare/:compareId", async (req,
     }
     
     // Calculate actual metrics from the snapshot data
-    const baseSnapshot = baseVersion.snapshotData || { operations: [] };
-    const compareSnapshot = compareVersion.snapshotData || { operations: [] };
+    // Parse the JSON string if it's a string, otherwise use as-is
+    const baseSnapshot = typeof baseVersion.snapshotData === 'string' 
+      ? JSON.parse(baseVersion.snapshotData) 
+      : (baseVersion.snapshotData || { operations: [] });
+    const compareSnapshot = typeof compareVersion.snapshotData === 'string'
+      ? JSON.parse(compareVersion.snapshotData)
+      : (compareVersion.snapshotData || { operations: [] });
     
     // Calculate time span (makespan)
     const calculateTimeSpan = (snapshot: any) => {
