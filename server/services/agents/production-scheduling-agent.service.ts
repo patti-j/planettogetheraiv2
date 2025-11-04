@@ -237,11 +237,12 @@ export class ProductionSchedulingAgent extends BaseAgent {
       }
       
       // Get current versions to verify they exist
+      // Use IN clause instead of ANY for array compatibility
       const existingVersions = await db.execute(sql`
         SELECT id, version_number, created_at, source, comment 
         FROM schedule_versions 
         WHERE schedule_id = 1 
-          AND version_number = ANY(${versionNumbers})
+          AND version_number IN (${sql.join(versionNumbers.map(n => sql`${n}`), sql`, `)})
         ORDER BY version_number
       `);
       
@@ -262,7 +263,7 @@ export class ProductionSchedulingAgent extends BaseAgent {
       const deleteResult = await db.execute(sql`
         DELETE FROM schedule_versions 
         WHERE schedule_id = 1 
-          AND version_number = ANY(${versionNumbers})
+          AND version_number IN (${sql.join(versionNumbers.map(n => sql`${n}`), sql`, `)})
       `);
       
       const deletedCount = existingVersions.rows.length;
