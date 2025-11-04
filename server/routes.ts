@@ -5618,60 +5618,191 @@ router.get("/api/schedules/:id/versions", async (req, res) => {
   }
 });
 
-// Get version comparison for a schedule (mock data for now)
+// Get version comparison for a schedule
 router.get("/api/schedules/:id/versions/:baseId/compare/:compareId", async (req, res) => {
   try {
     const scheduleId = parseInt(req.params.id);
     const baseId = parseInt(req.params.baseId);
     const compareId = parseInt(req.params.compareId);
     
-    // Return mock comparison data
-    const mockComparison = {
+    // Get actual version data from database
+    const baseVersionQuery = await db
+      .select()
+      .from(scheduleVersions)
+      .where(eq(scheduleVersions.id, baseId));
+    
+    const compareVersionQuery = await db
+      .select()
+      .from(scheduleVersions)
+      .where(eq(scheduleVersions.id, compareId));
+    
+    const baseVersion = baseVersionQuery[0];
+    const compareVersion = compareVersionQuery[0];
+    
+    if (!baseVersion || !compareVersion) {
+      return res.status(404).json({ message: "Version not found" });
+    }
+    
+    // Calculate actual metrics from the snapshot data
+    const baseSnapshot = baseVersion.snapshotData || { operations: [] };
+    const compareSnapshot = compareVersion.snapshotData || { operations: [] };
+    
+    // Calculate time span (makespan)
+    const calculateTimeSpan = (snapshot: any) => {
+      const operations = snapshot.operations || [];
+      if (operations.length === 0) return 0;
+      
+      let earliestStart = Infinity;
+      let latestEnd = -Infinity;
+      
+      operations.forEach((op: any) => {
+        if (op.scheduledStart && op.scheduledEnd) {
+          const start = new Date(op.scheduledStart).getTime();
+          const end = new Date(op.scheduledEnd).getTime();
+          earliestStart = Math.min(earliestStart, start);
+          latestEnd = Math.max(latestEnd, end);
+        }
+      });
+      
+      if (earliestStart === Infinity) return 0;
+      return (latestEnd - earliestStart) / (1000 * 60 * 60); // Convert to hours
+    };
+    
+    // Calculate resource usage
+    const calculateResourceUsage = (snapshot: any) => {
+      const operations = snapshot.operations || [];
+      const resourceUsage = new Map<string, number>();
+      
+      operations.forEach((op: any) => {
+        if (op.resourceId && op.scheduledStart && op.scheduledEnd) {
+          const duration = (new Date(op.scheduledEnd).getTime() - new Date(op.scheduledStart).getTime()) / (1000 * 60 * 60);
+          const current = resourceUsage.get(op.resourceId) || 0;
+          resourceUsage.set(op.resourceId, current + duration);
+        }
+      });
+      
+      // Calculate average utilization percentage
+      const totalCapacity = resourceUsage.size * 24; // Assuming 24 hours capacity per resource
+      const totalUsed = Array.from(resourceUsage.values()).reduce((sum, val) => sum + val, 0);
+      return totalCapacity > 0 ? (totalUsed / totalCapacity) * 100 : 0;
+    };
+    
+    // Calculate total duration
+    const calculateTotalDuration = (snapshot: any) => {
+      const operations = snapshot.operations || [];
+      return operations.reduce((sum: number, op: any) => {
+        if (op.scheduledStart && op.scheduledEnd) {
+          const duration = (new Date(op.scheduledEnd).getTime() - new Date(op.scheduledStart).getTime()) / (1000 * 60 * 60);
+          return sum + duration;
+        }
+        return sum;
+      }, 0);
+    };
+    
+    const baseTimeSpan = calculateTimeSpan(baseSnapshot);
+    const compareTimeSpan = calculateTimeSpan(compareSnapshot);
+    const baseResourceUsage = calculateResourceUsage(baseSnapshot);
+    const compareResourceUsage = calculateResourceUsage(compareSnapshot);
+    const baseTotalDuration = calculateTotalDuration(baseSnapshot);
+    const compareTotalDuration = calculateTotalDuration(compareSnapshot);
+    
+    // Calculate differences
+    const baseOps = baseSnapshot.operations || [];
+    const compareOps = compareSnapshot.operations || [];
+    const baseOpsMap = new Map(baseOps.map((op: any) => [op.id, op]));
+    const compareOpsMap = new Map(compareOps.map((op: any) => [op.id, op]));
+    
+    const added: any[] = [];
+    const modified: any[] = [];
+    const removed: any[] = [];
+    
+    // Find added and modified operations
+    compareOps.forEach((op: any) => {
+      const baseOp = baseOpsMap.get(op.id);
+      if (!baseOp) {
+        added.push({ id: op.id, operation: op.name, field: "operation", after: op });
+      } else if (JSON.stringify(baseOp) !== JSON.stringify(op)) {
+        // Find what changed
+        const changes: any[] = [];
+        if (baseOp.scheduledStart !== op.scheduledStart) {
+          changes.push({ field: "startTime", before: baseOp.scheduledStart, after: op.scheduledStart });
+        }
+        if (baseOp.scheduledEnd !== op.scheduledEnd) {
+          changes.push({ field: "endTime", before: baseOp.scheduledEnd, after: op.scheduledEnd });
+        }
+        if (baseOp.resourceId !== op.resourceId) {
+          changes.push({ field: "resource", before: baseOp.resourceId, after: op.resourceId });
+        }
+        if (changes.length > 0) {
+          modified.push({ id: op.id, operation: op.name, changes });
+        }
+      }
+    });
+    
+    // Find removed operations
+    baseOps.forEach((op: any) => {
+      if (!compareOpsMap.has(op.id)) {
+        removed.push({ id: op.id, operation: op.name, field: "operation", before: op });
+      }
+    });
+    
+    // Return enhanced comparison data
+    const comparison = {
       baseVersion: {
-        id: baseId,
-        scheduleId: scheduleId,
-        versionNumber: 1,
-        checksum: "ghi789",
-        createdAt: new Date(Date.now() - 86400000).toISOString(),
-        createdBy: 1,
-        parentVersionId: null,
-        changeType: "AUTO_SAVE",
-        comment: "Initial schedule creation",
-        tag: "baseline",
-        snapshotData: {}
+        id: baseVersion.id,
+        scheduleId: baseVersion.scheduleId,
+        versionNumber: baseVersion.versionNumber,
+        checksum: baseVersion.checksum,
+        createdAt: baseVersion.createdAt,
+        createdBy: baseVersion.createdBy,
+        parentVersionId: baseVersion.parentVersionId,
+        changeType: baseVersion.source || "AUTO_SAVE",
+        comment: baseVersion.comment,
+        tag: baseVersion.versionTag,
+        snapshotData: baseSnapshot,
+        metrics: {
+          timeSpan: baseTimeSpan,
+          resourceUsage: baseResourceUsage,
+          totalDuration: baseTotalDuration
+        }
       },
       compareVersion: {
-        id: compareId,
-        scheduleId: scheduleId,
-        versionNumber: 2,
-        checksum: "def456",
-        createdAt: new Date(Date.now() - 7200000).toISOString(),
-        createdBy: 1,
-        parentVersionId: 1,
-        changeType: "MANUAL_EDIT",
-        comment: "Adjusted operation durations",
-        tag: null,
-        snapshotData: {}
+        id: compareVersion.id,
+        scheduleId: compareVersion.scheduleId,
+        versionNumber: compareVersion.versionNumber,
+        checksum: compareVersion.checksum,
+        createdAt: compareVersion.createdAt,
+        createdBy: compareVersion.createdBy,
+        parentVersionId: compareVersion.parentVersionId,
+        changeType: compareVersion.source || "MANUAL_EDIT",
+        comment: compareVersion.comment,
+        tag: compareVersion.versionTag,
+        snapshotData: compareSnapshot,
+        metrics: {
+          timeSpan: compareTimeSpan,
+          resourceUsage: compareResourceUsage,
+          totalDuration: compareTotalDuration
+        }
       },
       differences: {
-        added: [
-          { id: "OP-004", operation: "Quality Check", field: "duration", after: 30 }
-        ],
-        modified: [
-          { id: "OP-001", field: "duration", before: 60, after: 45 },
-          { id: "OP-002", field: "startTime", before: "08:00", after: "07:30" }
-        ],
-        removed: [],
+        added,
+        modified,
+        removed,
         statistics: {
-          totalChanges: 3,
-          operationsAdded: 1,
-          operationsModified: 2,
-          operationsRemoved: 0
+          totalChanges: added.length + modified.length + removed.length,
+          operationsAdded: added.length,
+          operationsModified: modified.length,
+          operationsRemoved: removed.length
         }
+      },
+      metrics: {
+        timeSpanDelta: compareTimeSpan - baseTimeSpan,
+        resourceUsageDelta: compareResourceUsage - baseResourceUsage,
+        totalDurationDelta: compareTotalDuration - baseTotalDuration
       }
     };
     
-    res.json(mockComparison);
+    res.json(comparison);
   } catch (error) {
     console.error("Error fetching version comparison:", error);
     res.status(500).json({ message: "Failed to fetch version comparison" });
