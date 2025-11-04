@@ -851,7 +851,16 @@ router.patch("/api/user-preferences/:userId", async (req, res) => {
 router.get("/api/favorite-reports/:userId", async (req, res) => {
   try {
     const userId = Number(req.params.userId);
-    const preferences = await storage.getUserPreferences(userId);
+    let preferences = await storage.getUserPreferences(userId);
+    
+    // Create default preferences if they don't exist
+    if (!preferences) {
+      console.log('Creating default preferences for user:', userId);
+      preferences = await storage.createUserPreferences({
+        userId,
+        uiSettings: { favoriteReports: [] }
+      });
+    }
     
     console.log('GET favorites - preferences:', preferences);
     console.log('GET favorites - uiSettings:', preferences?.uiSettings);
@@ -889,10 +898,30 @@ router.post("/api/favorite-reports/:userId/:reportId", async (req, res) => {
     const reportId = req.params.reportId;
     const { workspaceId } = req.body;
     
-    const existing = await storage.getUserPreferences(userId);
+    let existing = await storage.getUserPreferences(userId);
+    
+    // Create preferences if they don't exist
+    if (!existing) {
+      console.log('Creating default preferences for user in POST:', userId);
+      existing = await storage.createUserPreferences({
+        userId,
+        uiSettings: { favoriteReports: [] }
+      });
+    }
+    
+    // Parse uiSettings if it's a string
+    let uiSettings = existing?.uiSettings;
+    if (typeof uiSettings === 'string') {
+      try {
+        uiSettings = JSON.parse(uiSettings);
+      } catch (e) {
+        console.error('Failed to parse uiSettings:', e);
+        uiSettings = { favoriteReports: [] };
+      }
+    }
     
     // Initialize favorites array if it doesn't exist
-    const currentFavorites = existing?.uiSettings?.favoriteReports || [];
+    const currentFavorites = uiSettings?.favoriteReports || [];
     
     // Check if already favorited
     const isAlreadyFavorite = currentFavorites.some((fav: any) => 
@@ -905,13 +934,24 @@ router.post("/api/favorite-reports/:userId/:reportId", async (req, res) => {
       const updatedPreferences = {
         ...existing,
         uiSettings: {
-          ...existing?.uiSettings,
+          ...uiSettings,
           favoriteReports: updatedFavorites
         }
       };
       
       const result = await storage.updateUserPreferences(userId, updatedPreferences);
-      res.json({ success: true, favorites: result?.uiSettings?.favoriteReports || [] });
+      
+      // Parse result's uiSettings if needed
+      let resultUiSettings = result?.uiSettings;
+      if (typeof resultUiSettings === 'string') {
+        try {
+          resultUiSettings = JSON.parse(resultUiSettings);
+        } catch (e) {
+          console.error('Failed to parse result uiSettings:', e);
+        }
+      }
+      
+      res.json({ success: true, favorites: resultUiSettings?.favoriteReports || [] });
     } else {
       res.json({ success: true, message: "Report already favorited", favorites: currentFavorites });
     }
