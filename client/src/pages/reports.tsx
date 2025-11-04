@@ -226,7 +226,12 @@ export default function Dashboard() {
   
   // Function to fetch favorites from backend
   const fetchFavorites = async () => {
-    if (!user?.id) return;
+    console.log('fetchFavorites called, user:', user);
+    if (!user?.id) {
+      console.log('No user ID, skipping favorites fetch');
+      return;
+    }
+    console.log('Fetching favorites for user:', user.id);
     try {
       const res = await fetch(`/api/favorite-reports/${user.id}`, {
         headers: {
@@ -234,6 +239,7 @@ export default function Dashboard() {
         }
       });
       const data = await res.json();
+      console.log('Favorites response:', data);
       if (Array.isArray(data)) {
         setFavoriteReports(data);
       }
@@ -244,6 +250,7 @@ export default function Dashboard() {
 
   // Load favorite reports when user is available
   useEffect(() => {
+    console.log('useEffect triggered, user:', user);
     fetchFavorites();
   }, [user?.id]);
   
