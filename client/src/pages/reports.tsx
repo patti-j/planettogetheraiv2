@@ -24,6 +24,7 @@ import { usePowerBIAuth, usePowerBIWorkspaces, usePowerBIReports } from "@/hooks
 import { usePowerBIExport } from "@/hooks/use-powerbi-export";
 import { type ReportEmbedConfig } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/useAuth";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { RefreshStopwatch, useRefreshNotifications } from "@/components/refresh-stopwatch";
 import { 
