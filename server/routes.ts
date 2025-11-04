@@ -5828,9 +5828,9 @@ router.get("/api/schedules/:id/versions/:baseId/compare/:compareId", async (req,
       let latestEnd = -Infinity;
       
       operations.forEach((op: any) => {
-        if (op.scheduledStart && op.scheduledEnd) {
-          const start = new Date(op.scheduledStart).getTime();
-          const end = new Date(op.scheduledEnd).getTime();
+        if (op.scheduled_start && op.scheduled_end) {
+          const start = new Date(op.scheduled_start).getTime();
+          const end = new Date(op.scheduled_end).getTime();
           earliestStart = Math.min(earliestStart, start);
           latestEnd = Math.max(latestEnd, end);
         }
@@ -5846,10 +5846,10 @@ router.get("/api/schedules/:id/versions/:baseId/compare/:compareId", async (req,
       const resourceUsage = new Map<string, number>();
       
       operations.forEach((op: any) => {
-        if (op.resourceId && op.scheduledStart && op.scheduledEnd) {
-          const duration = (new Date(op.scheduledEnd).getTime() - new Date(op.scheduledStart).getTime()) / (1000 * 60 * 60);
-          const current = resourceUsage.get(op.resourceId) || 0;
-          resourceUsage.set(op.resourceId, current + duration);
+        if (op.resource_id && op.scheduled_start && op.scheduled_end) {
+          const duration = (new Date(op.scheduled_end).getTime() - new Date(op.scheduled_start).getTime()) / (1000 * 60 * 60);
+          const current = resourceUsage.get(op.resource_id) || 0;
+          resourceUsage.set(op.resource_id, current + duration);
         }
       });
       
@@ -5863,8 +5863,8 @@ router.get("/api/schedules/:id/versions/:baseId/compare/:compareId", async (req,
     const calculateTotalDuration = (snapshot: any) => {
       const operations = snapshot.operations || [];
       return operations.reduce((sum: number, op: any) => {
-        if (op.scheduledStart && op.scheduledEnd) {
-          const duration = (new Date(op.scheduledEnd).getTime() - new Date(op.scheduledStart).getTime()) / (1000 * 60 * 60);
+        if (op.scheduled_start && op.scheduled_end) {
+          const duration = (new Date(op.scheduled_end).getTime() - new Date(op.scheduled_start).getTime()) / (1000 * 60 * 60);
           return sum + duration;
         }
         return sum;
@@ -5896,14 +5896,14 @@ router.get("/api/schedules/:id/versions/:baseId/compare/:compareId", async (req,
       } else if (JSON.stringify(baseOp) !== JSON.stringify(op)) {
         // Find what changed
         const changes: any[] = [];
-        if (baseOp.scheduledStart !== op.scheduledStart) {
-          changes.push({ field: "startTime", before: baseOp.scheduledStart, after: op.scheduledStart });
+        if (baseOp.scheduled_start !== op.scheduled_start) {
+          changes.push({ field: "startTime", before: baseOp.scheduled_start, after: op.scheduled_start });
         }
-        if (baseOp.scheduledEnd !== op.scheduledEnd) {
-          changes.push({ field: "endTime", before: baseOp.scheduledEnd, after: op.scheduledEnd });
+        if (baseOp.scheduled_end !== op.scheduled_end) {
+          changes.push({ field: "endTime", before: baseOp.scheduled_end, after: op.scheduled_end });
         }
-        if (baseOp.resourceId !== op.resourceId) {
-          changes.push({ field: "resource", before: baseOp.resourceId, after: op.resourceId });
+        if (baseOp.resource_id !== op.resource_id) {
+          changes.push({ field: "resource", before: baseOp.resource_id, after: op.resource_id });
         }
         if (changes.length > 0) {
           modified.push({ id: op.id, operation: op.name, changes });
