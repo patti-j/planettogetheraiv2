@@ -738,8 +738,8 @@ export default function IntegratedAIAssistant() {
         
         // Check if we're on the production scheduler page
         if (window.location.pathname === '/production-scheduler') {
-          // Find the scheduler iframe
-          const iframe = document.querySelector('iframe[src*="production-scheduler.html"]') as HTMLIFrameElement;
+          // Find the scheduler iframe - look for the API endpoint
+          const iframe = document.querySelector('iframe[src*="/api/production-scheduler"]') as HTMLIFrameElement;
           
           if (iframe && iframe.contentWindow) {
             // Send the command to the iframe
