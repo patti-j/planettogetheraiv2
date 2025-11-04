@@ -85,6 +85,13 @@ export default function PaginatedReports() {
   const [selectedColumns, setSelectedColumns] = useState<string[]>([]);
   const [columnFilters, setColumnFilters] = useState<Record<string, string>>({});
   
+  // Column Chooser Dialog
+  const [showColumnChooser, setShowColumnChooser] = useState(false);
+  const [hiddenColumnsSearch, setHiddenColumnsSearch] = useState("");
+  const [shownColumnsSearch, setShownColumnsSearch] = useState("");
+  const [selectedHiddenColumns, setSelectedHiddenColumns] = useState<string[]>([]);
+  const [selectedShownColumns, setSelectedShownColumns] = useState<string[]>([]);
+  
   // Export settings
   const [showExportDialog, setShowExportDialog] = useState(false);
   const [exportFormat, setExportFormat] = useState<"csv" | "excel" | "pdf">("excel");
@@ -931,62 +938,16 @@ export default function PaginatedReports() {
                   </div>
                   <div className="flex items-center gap-2">
                     {/* Column Selector */}
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <Button variant="outline" size="sm" disabled={!tableSchema} data-testid="button-column-selector">
-                          <Columns3 className="w-4 h-4 mr-2" />
-                          Columns ({selectedColumns.length}/{tableSchema?.length || 0})
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-80" align="end">
-                        <div className="space-y-4">
-                          <div className="flex items-center justify-between">
-                            <h4 className="font-medium text-sm">Select Columns</h4>
-                            <div className="flex gap-2">
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={handleSelectAllColumns}
-                                className="h-6 text-xs"
-                                data-testid="button-select-all-columns"
-                              >
-                                All
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={handleDeselectAllColumns}
-                                className="h-6 text-xs"
-                                data-testid="button-deselect-all-columns"
-                              >
-                                None
-                              </Button>
-                            </div>
-                          </div>
-                          <div className="max-h-80 overflow-y-auto space-y-2">
-                            {tableSchema?.map((col) => (
-                              <div key={col.columnName} className="flex items-center space-x-2">
-                                <Checkbox
-                                  id={`col-${col.columnName}`}
-                                  checked={selectedColumns.includes(col.columnName)}
-                                  onCheckedChange={() => handleColumnToggle(col.columnName)}
-                                  data-testid={`checkbox-column-${col.columnName}`}
-                                />
-                                <label
-                                  htmlFor={`col-${col.columnName}`}
-                                  className="text-sm flex-1 cursor-pointer"
-                                >
-                                  {col.columnName}
-                                  <span className="text-xs text-muted-foreground ml-2">
-                                    ({col.dataType})
-                                  </span>
-                                </label>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      </PopoverContent>
-                    </Popover>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      disabled={!tableSchema}
+                      onClick={() => setShowColumnChooser(true)}
+                      data-testid="button-column-selector"
+                    >
+                      <Columns3 className="w-4 h-4 mr-2" />
+                      Columns ({selectedColumns.length}/{tableSchema?.length || 0})
+                    </Button>
                   </div>
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <Calendar className="w-4 h-4" />
@@ -1289,6 +1250,219 @@ export default function PaginatedReports() {
             <Button onClick={handleExport}>
               <Download className="w-4 h-4 mr-2" />
               Export Report
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Column Chooser Dialog */}
+      <Dialog open={showColumnChooser} onOpenChange={setShowColumnChooser}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>Column Chooser</DialogTitle>
+            <DialogDescription>
+              Drag and drop columns between panels or double-click to move them. Use the arrow buttons to move selected columns.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="grid grid-cols-[1fr,auto,1fr] gap-4">
+            {/* Hidden Columns Panel */}
+            <div className="space-y-2">
+              <div className="font-medium text-sm">Hidden Columns:</div>
+              <Input
+                placeholder="Search Columns"
+                value={hiddenColumnsSearch}
+                onChange={(e) => setHiddenColumnsSearch(e.target.value)}
+                className="h-8"
+              />
+              <div 
+                className="border rounded-lg p-2 h-80 overflow-y-auto"
+                onDragOver={(e) => {
+                  e.preventDefault();
+                  e.dataTransfer.dropEffect = "move";
+                }}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  const columnName = e.dataTransfer.getData("text/plain");
+                  if (columnName && selectedColumns.includes(columnName)) {
+                    setSelectedColumns(prev => prev.filter(c => c !== columnName));
+                    setColumnOrder(prev => {
+                      // Move to end of hidden columns
+                      const newOrder = prev.filter(c => c !== columnName);
+                      newOrder.push(columnName);
+                      return newOrder;
+                    });
+                  }
+                }}
+              >
+                {columnOrder
+                  .filter(colName => !selectedColumns.includes(colName))
+                  .filter(colName => colName.toLowerCase().includes(hiddenColumnsSearch.toLowerCase()))
+                  .map(colName => {
+                    const col = tableSchema?.find(c => c.columnName === colName);
+                    if (!col) return null;
+                    return (
+                      <div
+                        key={col.columnName}
+                        className={`px-2 py-1.5 rounded cursor-pointer select-none transition-colors ${
+                          selectedHiddenColumns.includes(col.columnName) 
+                            ? 'bg-primary/10 text-primary' 
+                            : 'hover:bg-accent'
+                        }`}
+                        draggable
+                        onDragStart={(e) => {
+                          e.dataTransfer.effectAllowed = "move";
+                          e.dataTransfer.setData("text/plain", col.columnName);
+                          setIsDraggingColumn(col.columnName);
+                        }}
+                        onDragEnd={() => setIsDraggingColumn(null)}
+                        onClick={() => {
+                          setSelectedHiddenColumns(prev => 
+                            prev.includes(col.columnName)
+                              ? prev.filter(c => c !== col.columnName)
+                              : [...prev, col.columnName]
+                          );
+                          setSelectedShownColumns([]);
+                        }}
+                        onDoubleClick={() => {
+                          setSelectedColumns(prev => [...prev, col.columnName]);
+                          setSelectedHiddenColumns(prev => prev.filter(c => c !== col.columnName));
+                        }}
+                      >
+                        <div className="text-sm">{col.columnName}</div>
+                      </div>
+                    );
+                  })}
+              </div>
+            </div>
+
+            {/* Arrow Buttons */}
+            <div className="flex flex-col justify-center gap-2">
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => {
+                  // Move selected hidden columns to shown
+                  setSelectedColumns(prev => [...prev, ...selectedHiddenColumns]);
+                  setSelectedHiddenColumns([]);
+                }}
+                disabled={selectedHiddenColumns.length === 0}
+                className="h-8 w-8"
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => {
+                  // Move selected shown columns to hidden
+                  setSelectedColumns(prev => prev.filter(c => !selectedShownColumns.includes(c)));
+                  setSelectedShownColumns([]);
+                }}
+                disabled={selectedShownColumns.length === 0}
+                className="h-8 w-8"
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+            </div>
+
+            {/* Shown Columns Panel */}
+            <div className="space-y-2">
+              <div className="font-medium text-sm">Shown Columns:</div>
+              <Input
+                placeholder="Search Columns"
+                value={shownColumnsSearch}
+                onChange={(e) => setShownColumnsSearch(e.target.value)}
+                className="h-8"
+              />
+              <div 
+                className="border rounded-lg p-2 h-80 overflow-y-auto"
+                onDragOver={(e) => {
+                  e.preventDefault();
+                  e.dataTransfer.dropEffect = "move";
+                }}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  const columnName = e.dataTransfer.getData("text/plain");
+                  if (columnName && !selectedColumns.includes(columnName)) {
+                    setSelectedColumns(prev => [...prev, columnName]);
+                  }
+                }}
+              >
+                {columnOrder
+                  .filter(colName => selectedColumns.includes(colName))
+                  .filter(colName => colName.toLowerCase().includes(shownColumnsSearch.toLowerCase()))
+                  .map((colName, index) => {
+                    const col = tableSchema?.find(c => c.columnName === colName);
+                    if (!col) return null;
+                    return (
+                      <div
+                        key={col.columnName}
+                        className={`px-2 py-1.5 rounded cursor-pointer select-none transition-colors ${
+                          selectedShownColumns.includes(col.columnName) 
+                            ? 'bg-primary/10 text-primary' 
+                            : 'hover:bg-accent'
+                        }`}
+                        draggable
+                        onDragStart={(e) => {
+                          e.dataTransfer.effectAllowed = "move";
+                          e.dataTransfer.setData("text/plain", col.columnName);
+                          setIsDraggingColumn(col.columnName);
+                        }}
+                        onDragEnd={() => setIsDraggingColumn(null)}
+                        onDragOver={(e) => {
+                          e.preventDefault();
+                          e.dataTransfer.dropEffect = "move";
+                        }}
+                        onDrop={(e) => {
+                          e.preventDefault();
+                          const draggedColumn = e.dataTransfer.getData("text/plain");
+                          if (draggedColumn && draggedColumn !== col.columnName) {
+                            handleColumnReorder(
+                              columnOrder.indexOf(draggedColumn),
+                              columnOrder.indexOf(col.columnName)
+                            );
+                          }
+                        }}
+                        onClick={() => {
+                          setSelectedShownColumns(prev => 
+                            prev.includes(col.columnName)
+                              ? prev.filter(c => c !== col.columnName)
+                              : [...prev, col.columnName]
+                          );
+                          setSelectedHiddenColumns([]);
+                        }}
+                        onDoubleClick={() => {
+                          setSelectedColumns(prev => prev.filter(c => c !== col.columnName));
+                          setSelectedShownColumns(prev => prev.filter(c => c !== col.columnName));
+                        }}
+                      >
+                        <div className="text-sm">{col.columnName}</div>
+                      </div>
+                    );
+                  })}
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter className="mt-4">
+            <Button variant="outline" onClick={() => {
+              setShowColumnChooser(false);
+              setHiddenColumnsSearch("");
+              setShownColumnsSearch("");
+              setSelectedHiddenColumns([]);
+              setSelectedShownColumns([]);
+            }}>
+              Cancel
+            </Button>
+            <Button onClick={() => {
+              setShowColumnChooser(false);
+              setHiddenColumnsSearch("");
+              setShownColumnsSearch("");
+              setSelectedHiddenColumns([]);
+              setSelectedShownColumns([]);
+            }}>
+              Save And Close
             </Button>
           </DialogFooter>
         </DialogContent>
