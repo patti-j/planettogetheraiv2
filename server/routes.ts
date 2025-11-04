@@ -847,6 +847,91 @@ router.patch("/api/user-preferences/:userId", async (req, res) => {
   }
 });
 
+// Favorite Reports Routes
+router.get("/api/favorite-reports/:userId", async (req, res) => {
+  try {
+    const userId = Number(req.params.userId);
+    const preferences = await storage.getUserPreferences(userId);
+    
+    // Return empty array if no preferences or no favorites
+    const favoriteReports = preferences?.uiSettings?.favoriteReports || [];
+    res.json(favoriteReports);
+  } catch (error) {
+    console.error("Error fetching favorite reports:", error);
+    res.status(500).json({ message: "Failed to fetch favorite reports" });
+  }
+});
+
+router.post("/api/favorite-reports/:userId/:reportId", async (req, res) => {
+  try {
+    const userId = Number(req.params.userId);
+    const reportId = req.params.reportId;
+    const { workspaceId } = req.body;
+    
+    const existing = await storage.getUserPreferences(userId);
+    
+    // Initialize favorites array if it doesn't exist
+    const currentFavorites = existing?.uiSettings?.favoriteReports || [];
+    
+    // Check if already favorited
+    const isAlreadyFavorite = currentFavorites.some((fav: any) => 
+      fav.reportId === reportId && fav.workspaceId === workspaceId
+    );
+    
+    if (!isAlreadyFavorite) {
+      const updatedFavorites = [...currentFavorites, { reportId, workspaceId, addedAt: new Date() }];
+      
+      const updatedPreferences = {
+        ...existing,
+        uiSettings: {
+          ...existing?.uiSettings,
+          favoriteReports: updatedFavorites
+        }
+      };
+      
+      const result = await storage.updateUserPreferences(userId, updatedPreferences);
+      res.json({ success: true, favorites: result?.uiSettings?.favoriteReports || [] });
+    } else {
+      res.json({ success: true, message: "Report already favorited", favorites: currentFavorites });
+    }
+  } catch (error) {
+    console.error("Error adding favorite report:", error);
+    res.status(500).json({ message: "Failed to add favorite report" });
+  }
+});
+
+router.delete("/api/favorite-reports/:userId/:reportId", async (req, res) => {
+  try {
+    const userId = Number(req.params.userId);
+    const reportId = req.params.reportId;
+    const { workspaceId } = req.query;
+    
+    const existing = await storage.getUserPreferences(userId);
+    
+    if (existing?.uiSettings?.favoriteReports) {
+      const updatedFavorites = existing.uiSettings.favoriteReports.filter((fav: any) => 
+        !(fav.reportId === reportId && fav.workspaceId === workspaceId)
+      );
+      
+      const updatedPreferences = {
+        ...existing,
+        uiSettings: {
+          ...existing?.uiSettings,
+          favoriteReports: updatedFavorites
+        }
+      };
+      
+      const result = await storage.updateUserPreferences(userId, updatedPreferences);
+      res.json({ success: true, favorites: result?.uiSettings?.favoriteReports || [] });
+    } else {
+      res.json({ success: true, favorites: [] });
+    }
+  } catch (error) {
+    console.error("Error removing favorite report:", error);
+    res.status(500).json({ message: "Failed to remove favorite report" });
+  }
+});
+
 // Recent pages routes
 router.post("/api/recent-pages", async (req, res) => {
   try {
