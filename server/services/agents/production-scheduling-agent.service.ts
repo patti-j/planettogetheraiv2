@@ -347,6 +347,9 @@ export class ProductionSchedulingAgent extends BaseAgent {
         };
       }
       
+      // Create an auto-save after algorithm execution
+      await this.createAutoSave(algorithm, context);
+      
       // Return success response with results
       return {
         content: result.message,
@@ -1018,6 +1021,47 @@ export class ProductionSchedulingAgent extends BaseAgent {
       return { content: response, error: false };
     } catch (error: any) {
       throw error;
+    }
+  }
+  
+  private async createAutoSave(algorithm: string, context: AgentContext): Promise<void> {
+    try {
+      // Get all current operations data for the save
+      const operations = await db.execute(sql`
+        SELECT 
+          jo.*,
+          j.name as job_name,
+          j.external_id as job_external_id
+        FROM ptjoboperations jo
+        INNER JOIN ptjobs j ON jo.job_id = j.id
+        ORDER BY jo.job_id, jo.sequence_number
+      `);
+      
+      // Create the schedule data object
+      const scheduleData = {
+        operations: operations.rows,
+        algorithm: algorithm.toUpperCase(),
+        timestamp: new Date().toISOString(),
+        source: 'algorithm_execution'
+      };
+      
+      // Generate auto-save name with timestamp
+      const timestamp = new Date();
+      const datePart = timestamp.toLocaleDateString().replace(/\//g, '');
+      const timePart = timestamp.toLocaleTimeString('en-US', { hour12: false }).replace(/:/g, '');
+      const saveName = `Auto-save - ${timestamp.toLocaleDateString()}, ${timestamp.toLocaleTimeString()} (${algorithm.toUpperCase()})`;
+      
+      // Insert the saved schedule
+      await db.execute(sql`
+        INSERT INTO saved_schedules (user_id, name, description, schedule_data, metadata, is_active)
+        VALUES (${context.userId}, ${saveName}, ${'Automatically saved after ' + algorithm.toUpperCase() + ' algorithm execution'}, 
+                ${JSON.stringify(scheduleData)}, ${JSON.stringify({ algorithm: algorithm })}, true)
+      `);
+      
+      this.log(`Created auto-save: ${saveName}`);
+    } catch (error: any) {
+      this.error(`Failed to create auto-save: ${error.message}`, error);
+      // Don't throw - allow algorithm to complete even if save fails
     }
   }
   
