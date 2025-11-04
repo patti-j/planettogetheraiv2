@@ -2582,7 +2582,7 @@
                             eventRecord.constraintType = 'startnoearlierthan';
                             eventRecord.constraintDate = eventRecord.startDate;
                             console.log(`✅ Operation "${eventRecord.name}" scheduled to resource: ${targetResourceRecord.name}`);
-                            updateStatus(); // Update metrics
+                            window.updateStatus(); // Update metrics
                         } else if (!eventRecord.isUnscheduled && targetResourceRecord.id === 'unscheduled') {
                             // Mark as unscheduled if dragged back to unscheduled
                             eventRecord.isUnscheduled = true;
@@ -2590,7 +2590,7 @@
                             eventRecord.constraintType = null;
                             eventRecord.constraintDate = null;
                             console.log(`⚠️ Operation "${eventRecord.name}" moved to unscheduled`);
-                            updateStatus(); // Update metrics
+                            window.updateStatus(); // Update metrics
                         }
                     });
                 });
@@ -2650,7 +2650,8 @@
                 }
                 
                 // Enhanced status update function using real PT data
-                function updateStatus() {
+                // Make it globally accessible for loadSchedule and other functions
+                window.updateStatus = function() {
                     const operationCount = scheduler.eventStore.count || 0;
                     document.getElementById('operationCount').textContent = `${operationCount} operations scheduled`;
                     
@@ -5059,7 +5060,7 @@
                     
                     // Force a refresh to recalculate utilization
                     setTimeout(() => {
-                        updateStatus();
+                        window.updateStatus();
                     }, 100);
                 }
                 
@@ -5235,7 +5236,7 @@
                 }
                 
                 // Initialize status updates
-                updateStatus();
+                window.updateStatus();
                 
                 // CRITICAL: Helper function to wait for scheduler to be ready
                 // This eliminates the need for arbitrary timeouts
@@ -5330,7 +5331,7 @@
                         project.autoCalculate = wasAutoCalculate;
                         
                         console.log('✅ ASAP scheduling complete');
-                        updateStatus(); // Use updateStatus instead of updateSchedulerStatus
+                        window.updateStatus(); // Use updateStatus instead of updateSchedulerStatus
                     } catch (error) {
                         console.error('❌ ASAP scheduling error:', error);
                     } finally {
@@ -5372,7 +5373,7 @@
                         project.autoCalculate = wasAutoCalculate;
                         
                         console.log('✅ ALAP scheduling complete');
-                        updateStatus(); // Use updateStatus instead of updateSchedulerStatus
+                        window.updateStatus(); // Use updateStatus instead of updateSchedulerStatus
                     } catch (error) {
                         console.error('❌ ALAP scheduling error:', error);
                     } finally {
@@ -5386,7 +5387,7 @@
                     // Apply the selected algorithm
                     await applyAlgorithm(scheduler, algorithmId);
                     console.log(`✅ ${algorithmId} optimization complete`);
-                    updateStatus(); // Use updateStatus instead of updateSchedulerStatus
+                    window.updateStatus(); // Use updateStatus instead of updateSchedulerStatus
                 };
                 
                 console.log('[Scheduler] Helper function registered: window.waitForSchedulerReady(timeout)');
@@ -5561,7 +5562,7 @@
                     console.log(`✅ Loaded ${scheduler.eventStore.count} operations on ${scheduler.resourceStore.count} resources`);
                     
                     // Update status bar
-                    updateStatus();
+                    window.updateStatus();
                     
                     // Zoom to fit after loading
                     if (scheduler.zoomToFit) {
@@ -5618,7 +5619,7 @@
                 console.log('ℹ️ Scheduler loaded. Click "Apply" button to run ASAP scheduling.');
                 
                 // Periodic status refresh
-                setInterval(updateStatus, 30000); // Update every 30 seconds
+                setInterval(window.updateStatus, 30000); // Update every 30 seconds
                 
                 // Hide loading overlay
                 document.getElementById('loadingOverlay').style.display = 'none';
@@ -6751,7 +6752,7 @@
                     
                         // Update status
                         document.getElementById('lastUpdate').textContent = `Loaded: ${selectedSchedule.name}`;
-                        updateStatus();
+                        window.updateStatus();
                         
                         console.log('✅ Schedule loaded successfully:', selectedSchedule.name);
                     }
