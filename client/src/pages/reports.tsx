@@ -870,7 +870,9 @@ export default function Dashboard() {
                               (reportTypeFilter === "all" ? "No reports found in this workspace" :
                                reportTypeFilter === "standard" ? "No standard reports found" :
                                reportTypeFilter === "custom" ? "No custom reports found" :
-                               "No paginated reports found") :
+                               reportTypeFilter === "paginated" ? "No paginated reports found" :
+                               reportTypeFilter === "favorites" ? "No favorite reports" :
+                               "No reports found") :
                             "Search reports..."
                           }
                           searchPlaceholder="Type to search reports..."
