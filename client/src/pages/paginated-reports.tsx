@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { usePowerBIAuth, usePowerBIWorkspaces, usePowerBIDatasets, usePowerBIDataset, usePowerBIDatasetTables } from "@/hooks/use-powerbi-api";
+import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -71,6 +72,7 @@ interface PaginatedReportData {
 type SourceType = "sql" | "powerbi";
 
 export default function PaginatedReports() {
+  const { toast } = useToast();
   const [sourceType, setSourceType] = useState<SourceType | null>(null);
   const [workspaceName, setWorkspaceName] = useState("");
   const [workspaceId, setWorkspaceId] = useState("");
@@ -1123,137 +1125,113 @@ export default function PaginatedReports() {
 
       {/* Export Dialog */}
       <Dialog open={showExportDialog} onOpenChange={setShowExportDialog}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-md max-h-[90vh] flex flex-col">
           <DialogHeader>
             <DialogTitle>Export Report</DialogTitle>
             <DialogDescription>
-              Choose your export settings including format, headers, and metadata
+              Select format and configure export settings
             </DialogDescription>
           </DialogHeader>
           
-          <div className="space-y-4 py-4">
-            {/* Export Format */}
-            <div className="space-y-3">
-              <Label className="text-sm font-medium">Export Format</Label>
-              <div className="grid gap-2">
-                <button
-                  type="button"
-                  onClick={() => setExportFormat('csv')}
-                  className={`flex items-center gap-3 px-3 py-2 rounded-lg border text-left transition-colors ${
-                    exportFormat === 'csv' 
-                      ? 'border-primary bg-primary/5 text-primary' 
-                      : 'border-border hover:bg-accent'
-                  }`}
-                >
-                  <FileText className="w-4 h-4" />
-                  <div className="flex-1">
-                    <div className="text-sm font-medium">CSV</div>
-                    <div className="text-xs text-muted-foreground">Comma Separated Values</div>
-                  </div>
-                  {exportFormat === 'csv' && <Check className="w-4 h-4" />}
-                </button>
-                
-                <button
-                  type="button"
-                  onClick={() => setExportFormat('excel')}
-                  className={`flex items-center gap-3 px-3 py-2 rounded-lg border text-left transition-colors ${
-                    exportFormat === 'excel' 
-                      ? 'border-primary bg-primary/5 text-primary' 
-                      : 'border-border hover:bg-accent'
-                  }`}
-                >
-                  <FileText className="w-4 h-4" />
-                  <div className="flex-1">
-                    <div className="text-sm font-medium">Excel</div>
-                    <div className="text-xs text-muted-foreground">Microsoft Excel (.xlsx)</div>
-                  </div>
-                  {exportFormat === 'excel' && <Check className="w-4 h-4" />}
-                </button>
-                
-                <button
-                  type="button"
-                  onClick={() => setExportFormat('pdf')}
-                  className={`flex items-center gap-3 px-3 py-2 rounded-lg border text-left transition-colors ${
-                    exportFormat === 'pdf' 
-                      ? 'border-primary bg-primary/5 text-primary' 
-                      : 'border-border hover:bg-accent'
-                  }`}
-                >
-                  <FileText className="w-4 h-4" />
-                  <div className="flex-1">
-                    <div className="text-sm font-medium">PDF</div>
-                    <div className="text-xs text-muted-foreground">Portable Document Format</div>
-                  </div>
-                  {exportFormat === 'pdf' && <Check className="w-4 h-4" />}
-                </button>
-              </div>
-            </div>
-
-            {/* Report Header (Compact) */}
-            <div className="space-y-2">
-              <Label htmlFor="export-header" className="text-sm">
-                Report Header (Optional)
-              </Label>
-              <Input
-                id="export-header"
-                value={exportHeader}
-                onChange={(e) => setExportHeader(e.target.value)}
-                placeholder="e.g., Monthly Sales Report"
-                className="h-9"
-              />
-            </div>
-
-            {/* Report Footer (Compact) */}
-            <div className="space-y-2">
-              <Label htmlFor="export-footer" className="text-sm">
-                Report Footer (Optional)
-              </Label>
-              <Input
-                id="export-footer"
-                value={exportFooter}
-                onChange={(e) => setExportFooter(e.target.value)}
-                placeholder="e.g., Confidential - Internal Use Only"
-                className="h-9"
-              />
-            </div>
-
-            {/* Include Options */}
-            <div className="space-y-3">
-              <Label className="text-sm font-medium">Include in Export</Label>
+          <div className="flex-1 overflow-y-auto px-1">
+            <div className="space-y-3 py-2">
+              {/* Export Format - Compact Card Design */}
               <div className="space-y-2">
-                <div className="flex items-center justify-between">
+                <Label className="text-xs font-medium text-muted-foreground">FORMAT</Label>
+                <div className="grid grid-cols-3 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setExportFormat('csv')}
+                    className={`flex flex-col items-center gap-1 p-3 rounded-lg border text-center transition-colors ${
+                      exportFormat === 'csv' 
+                        ? 'border-primary bg-primary/10 text-primary' 
+                        : 'border-border hover:bg-accent'
+                    }`}
+                  >
+                    <FileText className="w-5 h-5" />
+                    <div className="text-xs font-medium">CSV</div>
+                  </button>
+                  
+                  <button
+                    type="button"
+                    onClick={() => setExportFormat('excel')}
+                    className={`flex flex-col items-center gap-1 p-3 rounded-lg border text-center transition-colors ${
+                      exportFormat === 'excel' 
+                        ? 'border-primary bg-primary/10 text-primary' 
+                        : 'border-border hover:bg-accent'
+                    }`}
+                  >
+                    <FileText className="w-5 h-5" />
+                    <div className="text-xs font-medium">Excel</div>
+                  </button>
+                  
+                  <button
+                    type="button"
+                    onClick={() => setExportFormat('pdf')}
+                    className={`flex flex-col items-center gap-1 p-3 rounded-lg border text-center transition-colors ${
+                      exportFormat === 'pdf' 
+                        ? 'border-primary bg-primary/10 text-primary' 
+                        : 'border-border hover:bg-accent'
+                    }`}
+                  >
+                    <FileText className="w-5 h-5" />
+                    <div className="text-xs font-medium">PDF</div>
+                  </button>
+                </div>
+              </div>
+
+              {/* Header & Footer - Single Row */}
+              <div className="space-y-2">
+                <Label className="text-xs font-medium text-muted-foreground">HEADER & FOOTER</Label>
+                <Input
+                  value={exportHeader}
+                  onChange={(e) => setExportHeader(e.target.value)}
+                  placeholder="Header text (optional)"
+                  className="h-8 text-sm"
+                />
+                <Input
+                  value={exportFooter}
+                  onChange={(e) => setExportFooter(e.target.value)}
+                  placeholder="Footer text (optional)"
+                  className="h-8 text-sm"
+                />
+              </div>
+
+              {/* Options */}
+              <div className="space-y-2">
+                <Label className="text-xs font-medium text-muted-foreground">OPTIONS</Label>
+                <div className="flex items-center justify-between py-1">
                   <Label htmlFor="include-timestamp" className="text-sm font-normal cursor-pointer">
-                    Timestamp
+                    Include timestamp
                   </Label>
                   <Switch
                     id="include-timestamp"
                     checked={includeTimestamp}
                     onCheckedChange={setIncludeTimestamp}
+                    className="scale-90"
                   />
                 </div>
               </div>
-            </div>
 
-            {/* Export Info */}
-            <div className="rounded-lg bg-muted/50 p-3 text-xs text-muted-foreground">
-              <div className="flex items-center gap-2 mb-1">
-                <AlertCircle className="w-3 h-3" />
-                <span className="font-medium">Export Information</span>
+              {/* Export Summary */}
+              <div className="rounded-md bg-muted/30 p-2 text-xs text-muted-foreground">
+                <div className="flex items-center justify-between">
+                  <span>{selectedColumns.length} columns</span>
+                  <span>•</span>
+                  <span>{filteredData.length} rows</span>
+                  <span>•</span>
+                  <span>{exportFormat.toUpperCase()} format</span>
+                </div>
               </div>
-              <ul className="space-y-1 ml-5 list-disc">
-                <li>Exporting {selectedColumns.length} columns</li>
-                <li>Current data includes {filteredData.length} records</li>
-                {includeTimestamp && <li>Timestamp will be added to the file</li>}
-              </ul>
             </div>
           </div>
 
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowExportDialog(false)}>
+          <DialogFooter className="mt-2">
+            <Button variant="outline" size="sm" onClick={() => setShowExportDialog(false)}>
               Cancel
             </Button>
-            <Button onClick={handleExport} disabled={!exportFormat}>
-              <Download className="w-4 h-4 mr-2" />
+            <Button size="sm" onClick={handleExport} disabled={!exportFormat}>
+              <Download className="w-4 h-4 mr-1" />
               Export
             </Button>
           </DialogFooter>
