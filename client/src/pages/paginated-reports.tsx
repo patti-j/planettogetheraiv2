@@ -7,6 +7,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+// Import jsPDF and autoTable at the top level
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
 import {
   Select,
   SelectContent,
@@ -631,13 +634,7 @@ export default function PaginatedReports() {
   // PDF Export Function - Simplified approach
   const exportToPDF = async (exportContent: any, filename: string) => {
     try {
-      // Dynamic import of jsPDF and autoTable plugin
-      const { jsPDF } = await import('jspdf');
-      
-      // Important: Import the autoTable plugin BEFORE creating the doc instance
-      await import('jspdf-autotable');
-      
-      // Create new PDF document - the autoTable plugin should now be available
+      // Create new PDF document - the autoTable plugin is already imported
       const doc = new jsPDF({
         orientation: exportContent.columns.length > 6 ? 'landscape' : 'portrait',
         unit: 'mm',
