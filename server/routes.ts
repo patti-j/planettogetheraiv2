@@ -1110,23 +1110,6 @@ router.get("/api/recent-pages", async (req, res) => {
 // Power BI API Routes for Paginated Reports
 // ========================================
 
-// Get Power BI access token (auto authentication)
-router.get("/api/auth/auto", async (req, res) => {
-  try {
-    const token = await powerBIService.getAccessToken();
-    res.json({ 
-      access_token: token,
-      token_type: 'Bearer',
-      expires_in: 3600
-    });
-  } catch (error) {
-    console.error('[PowerBI] Authentication error:', error);
-    res.status(401).json({ 
-      message: 'Power BI authentication failed. Please ensure POWER_BI_CLIENT_ID and POWER_BI_CLIENT_SECRET are configured.' 
-    });
-  }
-});
-
 // Get list of Power BI workspaces
 router.get("/api/powerbi/workspaces", async (req, res) => {
   try {
