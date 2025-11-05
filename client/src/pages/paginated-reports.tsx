@@ -619,37 +619,87 @@ export default function PaginatedReports() {
         })
       );
       
-      // Use autoTable if available
+      // Use autoTable if available for professional table rendering
       if ((doc as any).autoTable) {
+        // Determine column alignments based on data types
+        const columnAlignments = exportContent.columns.map((col: string) => {
+          // Check first non-null value to determine data type
+          const sampleValue = exportContent.data.find((row: any) => 
+            row[col] !== null && row[col] !== undefined
+          )?.[col];
+          
+          // Numbers and dates align right, text aligns left
+          if (typeof sampleValue === 'number') {
+            return 'right';
+          } else if (sampleValue instanceof Date || 
+                     (typeof sampleValue === 'string' && 
+                      !isNaN(Date.parse(sampleValue)) && 
+                      sampleValue.match(/\d{4}-\d{2}-\d{2}/))) {
+            return 'center';
+          }
+          return 'left';
+        });
+        
         (doc as any).autoTable({
           head: [tableHeaders],
           body: tableRows,
           startY: yPosition,
-          theme: 'grid',
+          theme: 'grid', // Professional table with full grid lines
           styles: {
             fontSize: 9,
-            cellPadding: 2,
+            cellPadding: 3,
             overflow: 'linebreak',
-            halign: 'left'
+            lineColor: [128, 128, 128], // Gray borders
+            lineWidth: 0.1,
+            valign: 'middle', // Vertical alignment
+            font: 'helvetica'
           },
           headStyles: {
-            fillColor: [41, 98, 255],
-            textColor: 255,
+            fillColor: [240, 240, 240], // Light gray header background
+            textColor: [0, 0, 0], // Black text
             fontStyle: 'bold',
-            halign: 'center'
+            halign: 'center',
+            lineColor: [128, 128, 128], // Gray borders for header
+            lineWidth: 0.1
           },
           alternateRowStyles: {
-            fillColor: [245, 245, 245]
+            fillColor: [250, 250, 250] // Very light gray for alternating rows
           },
-          margin: { left: 14, right: 14, top: yPosition },
+          columnStyles: exportContent.columns.reduce((acc: any, col: string, index: number) => {
+            acc[index] = {
+              halign: columnAlignments[index],
+              cellWidth: 'auto'
+            };
+            return acc;
+          }, {}),
+          margin: { left: 10, right: 10, top: yPosition },
+          showHead: 'everyPage', // Repeat headers on each page
+          tableLineColor: [128, 128, 128], // Gray table border
+          tableLineWidth: 0.1,
           didDrawPage: function(data: any) {
-            // Footer with page numbers
+            // Add page header on each page (after first)
+            if (data.pageNumber > 1) {
+              doc.setFontSize(10);
+              doc.setTextColor(100);
+              doc.text(`${exportContent.tableName || 'Report'} - Continued`, 10, 10);
+            }
+            
+            // Footer with page numbers on each page
             const pageCount = (doc as any).internal.getNumberOfPages ? 
                              (doc as any).internal.getNumberOfPages() : 
                              (doc as any).getNumberOfPages ? 
                              (doc as any).getNumberOfPages() : 
                              '?';
-            doc.setFontSize(8);
+            
+            // Draw footer line
+            doc.setDrawColor(200, 200, 200);
+            doc.setLineWidth(0.1);
+            doc.line(10, doc.internal.pageSize.height - 15, 
+                    doc.internal.pageSize.width - 10, 
+                    doc.internal.pageSize.height - 15);
+            
+            // Add page number
+            doc.setFontSize(9);
             doc.setTextColor(100);
             const pageString = `Page ${data.pageNumber} of ${pageCount}`;
             doc.text(
@@ -657,6 +707,23 @@ export default function PaginatedReports() {
               doc.internal.pageSize.width / 2,
               doc.internal.pageSize.height - 10,
               { align: 'center' }
+            );
+            
+            // Add timestamp on the left
+            doc.setFontSize(8);
+            doc.text(
+              new Date().toLocaleDateString(),
+              10,
+              doc.internal.pageSize.height - 10
+            );
+            
+            // Add report name on the right
+            const reportName = exportContent.tableName || 'Paginated Report';
+            doc.text(
+              reportName,
+              doc.internal.pageSize.width - 10,
+              doc.internal.pageSize.height - 10,
+              { align: 'right' }
             );
           }
         });
