@@ -267,7 +267,7 @@ export function VersionHistory({ scheduleId, currentVersionId }: VersionHistoryP
 
           <TabsContent value="timeline" className="space-y-4">
             <ScrollArea className="h-[500px] w-full pr-4">
-              <div className="relative">
+              <div className="relative pr-2">
                 {/* Timeline line */}
                 <div className="absolute left-6 top-0 bottom-0 w-0.5 bg-border"></div>
 
@@ -281,19 +281,19 @@ export function VersionHistory({ scheduleId, currentVersionId }: VersionHistoryP
                     ></div>
 
                     {/* Version card */}
-                    <Card className="ml-12 flex-1 cursor-pointer hover:shadow-md transition-shadow"
+                    <Card className="ml-12 flex-1 max-w-full overflow-hidden cursor-pointer hover:shadow-md transition-shadow"
                           onClick={() => setSelectedVersion(version)}>
                       <CardHeader className="pb-3">
-                        <div className="flex items-start justify-between">
-                          <div className="space-y-1">
-                            <div className="flex items-center space-x-2">
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="space-y-1 min-w-0 flex-1">
+                            <div className="flex items-center space-x-2 flex-wrap">
                               {getChangeTypeIcon(version.changeType)}
                               <span className="font-semibold">Version {version.versionNumber}</span>
                               {version.id === currentVersionId && (
                                 <Badge variant="default" className="ml-2">Current</Badge>
                               )}
                               {version.tag && (
-                                <Badge variant="outline" className="ml-2">{version.tag}</Badge>
+                                <Badge variant="outline" className="ml-2 truncate max-w-[120px]" title={version.tag}>{version.tag}</Badge>
                               )}
                             </div>
                             <p className="text-xs text-muted-foreground">
@@ -302,7 +302,7 @@ export function VersionHistory({ scheduleId, currentVersionId }: VersionHistoryP
                           </div>
                           <Badge 
                             variant="secondary"
-                            className={`${getChangeTypeColor(version.changeType)} text-white`}
+                            className={`${getChangeTypeColor(version.changeType)} text-white whitespace-nowrap flex-shrink-0`}
                           >
                             {(version.changeType || 'manual').replace(/_/g, ' ')}
                           </Badge>
@@ -310,13 +310,13 @@ export function VersionHistory({ scheduleId, currentVersionId }: VersionHistoryP
                       </CardHeader>
                       <CardContent className="pt-0">
                         {version.comment && (
-                          <p className="text-sm text-muted-foreground mb-2">{version.comment}</p>
+                          <p className="text-sm text-muted-foreground mb-2 break-words">{version.comment}</p>
                         )}
-                        <div className="flex items-center justify-between">
-                          <span className="text-xs text-muted-foreground">
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="text-xs text-muted-foreground flex-shrink-0">
                             By User #{version.createdBy}
                           </span>
-                          <div className="flex space-x-2">
+                          <div className="flex space-x-2 flex-shrink-0">
                             {version.id !== currentVersionId && (
                               <Button
                                 variant="ghost"
