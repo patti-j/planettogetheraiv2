@@ -11,6 +11,7 @@
     "db:push": "drizzle-kit push",
     "db:export": "tsx server/export-dev-data.ts",
     "db:seed:production": "NODE_ENV=production tsx server/seed-production.ts",
+    "check:production": "NODE_ENV=production tsx server/check-production.ts",
     "test": "jest",
     "test:unit": "jest --testPathPattern=server",
     "test:integration": "jest --testPathPattern=tests/integration",
