@@ -625,7 +625,10 @@ export class ScheduleVersionService {
       resourceUtilization: metrics2.resourceUtilization - metrics1.resourceUtilization,
       totalSetupTime: metrics2.totalSetupTime - metrics1.totalSetupTime,
       totalChangeovers: metrics2.totalChangeovers - metrics1.totalChangeovers,
-      constraintViolations: metrics2.constraintViolations - metrics1.constraintViolations
+      constraintViolations: metrics2.constraintViolations - metrics1.constraintViolations,
+      otif: (metrics2.otif || 0) - (metrics1.otif || 0),
+      thruput: (metrics2.thruput || 0) - (metrics1.thruput || 0),
+      costPerUnit: (metrics2.costPerUnit || 0) - (metrics1.costPerUnit || 0)
     };
   }
 
