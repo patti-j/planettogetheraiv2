@@ -370,6 +370,13 @@ export default function PaginatedReports() {
     // Fetch ALL data for export (without pagination)
     let allData: any[] = [];
     
+    console.log('Export initiated:', {
+      totalRows: data?.total,
+      currentPageSize: data?.items?.length,
+      selectedColumns: columnsToExport.length,
+      format: exportFormat
+    });
+    
     try {
       // Build URL for fetching all data
       let exportUrl = "";
@@ -378,6 +385,8 @@ export default function PaginatedReports() {
       } else if (sourceType === 'powerbi' && selectedPowerBITable && selectedDatasetId) {
         exportUrl = `/api/paginated-reports/powerbi?datasetId=${encodeURIComponent(selectedDatasetId)}&tableName=${encodeURIComponent(selectedPowerBITable)}&page=1&pageSize=999999`;
       }
+      
+      console.log('Fetching all data from:', exportUrl);
       
       if (exportUrl) {
         // Fetch all data for export
@@ -388,16 +397,31 @@ export default function PaginatedReports() {
         });
         
         if (!response.ok) {
-          throw new Error('Failed to fetch export data');
+          throw new Error(`Failed to fetch export data: ${response.status} ${response.statusText}`);
         }
         
         const exportResult = await response.json() as PaginatedReportData;
         allData = exportResult.items || [];
+        
+        console.log('Export data fetched:', {
+          totalRowsFetched: allData.length,
+          expectedRows: exportResult.total,
+          pagesReturned: Math.ceil(allData.length / 10)
+        });
+        
+        if (allData.length !== exportResult.total) {
+          console.warn(`Data mismatch: Expected ${exportResult.total} rows but got ${allData.length} rows`);
+        }
       }
     } catch (error) {
       console.error('Failed to fetch all data for export:', error);
       // Fall back to using current page data if fetch fails
       allData = data?.items || [];
+      toast({
+        title: "Export Warning",
+        description: "Could not fetch all data. Exporting current page only.",
+        variant: "destructive"
+      });
     }
     
     // Apply column filters to the exported data
@@ -631,6 +655,13 @@ export default function PaginatedReports() {
           return strValue;
         })
       );
+      
+      console.log('PDF Export Data:', {
+        headers: tableHeaders.length,
+        rows: tableRows.length,
+        firstRow: tableRows[0],
+        lastRow: tableRows[tableRows.length - 1]
+      });
       
       // Always use autoTable for professional table rendering
       if (true) { // Force usage of autoTable - it should always be available after import
