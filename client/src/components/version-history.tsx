@@ -276,7 +276,7 @@ export function VersionHistory({ scheduleId, currentVersionId }: VersionHistoryP
 
           <TabsContent value="timeline" className="space-y-4">
             <ScrollArea className="h-[500px] w-full pr-4">
-              <div className="relative pr-2">
+              <div className="relative pr-4">
                 {/* Timeline line */}
                 <div className="absolute left-6 top-0 bottom-0 w-0.5 bg-border"></div>
 
@@ -289,8 +289,9 @@ export function VersionHistory({ scheduleId, currentVersionId }: VersionHistoryP
                         ring-4 ring-background z-10`}
                     ></div>
 
-                    {/* Version card */}
-                    <Card className="ml-12 flex-1 max-w-full overflow-hidden cursor-pointer hover:shadow-md transition-shadow"
+                    {/* Version card - use calc to account for left margin */}
+                    <Card className="ml-12 overflow-hidden cursor-pointer hover:shadow-md transition-shadow"
+                          style={{ width: 'calc(100% - 3rem)' }}
                           onClick={() => setSelectedVersion(version)}>
                       <CardHeader className="pb-3">
                         <div className="flex items-start justify-between gap-2">
