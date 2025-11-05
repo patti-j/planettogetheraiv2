@@ -2,6 +2,7 @@ import { db } from './db';
 import * as schema from '@shared/schema';
 import * as bcrypt from 'bcryptjs';
 import { sql } from 'drizzle-orm';
+import crypto from 'crypto';
 
 /**
  * Production Database Seed Script
@@ -213,44 +214,171 @@ async function seedUsers(roles: any[]) {
 async function seedResources() {
   console.log('🏭 Checking resources...');
   
-  const existingResources = await db.select().from(schema.ptResources);
+  // Use raw SQL to check for existing resources to avoid schema mismatch
+  const existingResources = await db.execute(sql`SELECT COUNT(*) as count FROM ptresources`);
   
-  if (existingResources.length > 0) {
+  if (existingResources.rows[0].count > 0) {
     console.log('   ✅ Resources already exist');
     return;
   }
   
-  // Sample resources for a manufacturing facility
+  // Sample resources for a manufacturing facility (using actual database column names)
   const resources = [
     // Brewing Equipment
-    { name: 'Grain Mill', description: 'Grain milling equipment', capacityType: 'Units/Hour', active: true },
-    { name: 'Mash Tun 1', description: 'Mashing vessel', capacityType: 'Gallons', active: true },
-    { name: 'Lauter Tun', description: 'Lautering vessel', capacityType: 'Gallons', active: true },
-    { name: 'Brew Kettle', description: 'Boiling vessel', capacityType: 'Gallons', active: true },
-    { name: 'Fermenter Tank 1', description: 'Primary fermentation', capacityType: 'Gallons', active: true },
-    { name: 'Fermenter Tank 2', description: 'Primary fermentation', capacityType: 'Gallons', active: true },
-    { name: 'Fermenter Tank 3', description: 'Primary fermentation', capacityType: 'Gallons', active: true },
-    { name: 'Bright Tank 1', description: 'Conditioning tank', capacityType: 'Gallons', active: true },
-    { name: 'Bright Tank 2', description: 'Conditioning tank', capacityType: 'Gallons', active: true },
+    { 
+      name: 'Grain Mill', 
+      description: 'Grain milling equipment', 
+      capacity_type: 'Units/Hour', 
+      active: true,
+      plant_id: 1,
+      publish_date: new Date(),
+      instance_id: crypto.randomUUID()
+    },
+    { 
+      name: 'Mash Tun 1', 
+      description: 'Mashing vessel', 
+      capacity_type: 'Gallons', 
+      active: true,
+      plant_id: 1,
+      publish_date: new Date(),
+      instance_id: crypto.randomUUID()
+    },
+    { 
+      name: 'Lauter Tun', 
+      description: 'Lautering vessel', 
+      capacity_type: 'Gallons', 
+      active: true,
+      plant_id: 1,
+      publish_date: new Date(),
+      instance_id: crypto.randomUUID()
+    },
+    { 
+      name: 'Brew Kettle', 
+      description: 'Boiling vessel', 
+      capacity_type: 'Gallons', 
+      active: true,
+      plant_id: 1,
+      publish_date: new Date(),
+      instance_id: crypto.randomUUID()
+    },
+    { 
+      name: 'Fermenter Tank 1', 
+      description: 'Primary fermentation', 
+      capacity_type: 'Gallons', 
+      active: true,
+      tank: true,
+      plant_id: 1,
+      publish_date: new Date(),
+      instance_id: crypto.randomUUID()
+    },
+    { 
+      name: 'Fermenter Tank 2', 
+      description: 'Primary fermentation', 
+      capacity_type: 'Gallons', 
+      active: true,
+      tank: true,
+      plant_id: 1,
+      publish_date: new Date(),
+      instance_id: crypto.randomUUID()
+    },
+    { 
+      name: 'Fermenter Tank 3', 
+      description: 'Primary fermentation', 
+      capacity_type: 'Gallons', 
+      active: true,
+      tank: true,
+      plant_id: 1,
+      publish_date: new Date(),
+      instance_id: crypto.randomUUID()
+    },
+    { 
+      name: 'Bright Tank 1', 
+      description: 'Conditioning tank', 
+      capacity_type: 'Gallons', 
+      active: true,
+      tank: true,
+      plant_id: 1,
+      publish_date: new Date(),
+      instance_id: crypto.randomUUID()
+    },
+    { 
+      name: 'Bright Tank 2', 
+      description: 'Conditioning tank', 
+      capacity_type: 'Gallons', 
+      active: true,
+      tank: true,
+      plant_id: 1,
+      publish_date: new Date(),
+      instance_id: crypto.randomUUID()
+    },
     
     // Packaging Lines
-    { name: 'Bottle Filler Line', description: 'Bottle filling equipment', capacityType: 'Bottles/Hour', active: true },
-    { name: 'Can Filler Line', description: 'Can filling equipment', capacityType: 'Cans/Hour', active: true },
+    { 
+      name: 'Bottle Filler Line', 
+      description: 'Bottle filling equipment', 
+      capacity_type: 'Bottles/Hour', 
+      active: true,
+      plant_id: 1,
+      publish_date: new Date(),
+      instance_id: crypto.randomUUID()
+    },
+    { 
+      name: 'Can Filler Line', 
+      description: 'Can filling equipment', 
+      capacity_type: 'Cans/Hour', 
+      active: true,
+      plant_id: 1,
+      publish_date: new Date(),
+      instance_id: crypto.randomUUID()
+    },
     
     // Quality Control
-    { name: 'QC Lab', description: 'Quality control laboratory', capacityType: 'Samples/Day', active: true },
+    { 
+      name: 'QC Lab', 
+      description: 'Quality control laboratory', 
+      capacity_type: 'Samples/Day', 
+      active: true,
+      plant_id: 1,
+      publish_date: new Date(),
+      instance_id: crypto.randomUUID()
+    },
   ];
   
-  await db.insert(schema.ptResources).values(resources);
+  // Use raw SQL to insert resources with only the columns that exist in the database
+  for (const resource of resources) {
+    await db.execute(sql`
+      INSERT INTO ptresources (
+        name, 
+        description, 
+        capacity_type, 
+        active, 
+        tank,
+        plant_id, 
+        publish_date, 
+        instance_id
+      ) 
+      VALUES (
+        ${resource.name}, 
+        ${resource.description}, 
+        ${resource.capacity_type}, 
+        ${resource.active},
+        ${resource.tank || false},
+        ${resource.plant_id}, 
+        ${resource.publish_date}, 
+        ${resource.instance_id}
+      )
+    `);
+  }
   console.log(`   ✅ Created ${resources.length} resources`);
 }
 
 async function seedSampleJobs() {
   console.log('📦 Checking sample jobs...');
   
-  const existingJobs = await db.select().from(schema.ptJobs);
+  // Use raw SQL to check for existing jobs to avoid schema mismatch
+  const existingJobs = await db.execute(sql`SELECT COUNT(*) as count FROM ptjobs`);
   
-  if (existingJobs.length > 0) {
+  if (existingJobs.rows[0].count > 0) {
     console.log('   ✅ Jobs already exist');
     return;
   }
@@ -293,66 +421,88 @@ async function seedSampleJobs() {
   console.log(`   ✅ Created ${insertedJobs.length} sample jobs`);
   
   // Add operations for each job
-  const resources = await db.select().from(schema.ptResources);
-  const resourceMap = new Map(resources.map(r => [r.name, r.id]));
+  // Use raw SQL to select resources to avoid schema mismatch
+  const resourcesResult = await db.execute(sql`SELECT id, name FROM ptresources`);
+  const resourceMap = new Map(resourcesResult.rows.map(r => [r.name, r.id]));
   
   for (const job of insertedJobs) {
     const operations = [
       {
-        jobId: job.id,
+        job_id: job.id,
         name: `Milling - ${job.name}`,
-        sequenceNumber: 10,
-        duration: 2,
-        setupTime: 0.5,
-        resourceId: resourceMap.get('Grain Mill')?.toString()
+        description: 'Grain milling preparation',
+        sequence_number: 10,
+        cycle_hrs: 2,
+        setup_hours: 0.5,
+        scheduled_start: new Date(Date.now() + 1 * 24 * 60 * 60 * 1000),
+        scheduled_end: new Date(Date.now() + 1 * 24 * 60 * 60 * 1000 + 2.5 * 60 * 60 * 1000),
+        percent_finished: 0
       },
       {
-        jobId: job.id,
+        job_id: job.id,
         name: `Mashing - ${job.name}`,
-        sequenceNumber: 20,
-        duration: 3,
-        setupTime: 0.5,
-        resourceId: resourceMap.get('Mash Tun 1')?.toString()
+        description: 'Mashing process',
+        sequence_number: 20,
+        cycle_hrs: 3,
+        setup_hours: 0.5,
+        scheduled_start: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000),
+        scheduled_end: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000 + 3.5 * 60 * 60 * 1000),
+        percent_finished: 0
       },
       {
-        jobId: job.id,
+        job_id: job.id,
         name: `Lautering - ${job.name}`,
-        sequenceNumber: 30,
-        duration: 2,
-        setupTime: 0.25,
-        resourceId: resourceMap.get('Lauter Tun')?.toString()
+        description: 'Wort separation',
+        sequence_number: 30,
+        cycle_hrs: 2,
+        setup_hours: 0.25,
+        scheduled_start: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000 + 4 * 60 * 60 * 1000),
+        scheduled_end: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000 + 6.25 * 60 * 60 * 1000),
+        percent_finished: 0
       },
       {
-        jobId: job.id,
+        job_id: job.id,
         name: `Boiling - ${job.name}`,
-        sequenceNumber: 40,
-        duration: 2,
-        setupTime: 0.25,
-        resourceId: resourceMap.get('Brew Kettle')?.toString()
+        description: 'Wort boiling and hop addition',
+        sequence_number: 40,
+        cycle_hrs: 2,
+        setup_hours: 0.25,
+        scheduled_start: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000),
+        scheduled_end: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000 + 2.25 * 60 * 60 * 1000),
+        percent_finished: 0
       },
       {
-        jobId: job.id,
+        job_id: job.id,
         name: `Fermentation - ${job.name}`,
-        sequenceNumber: 50,
-        duration: 168, // 7 days
-        setupTime: 1,
-        resourceId: resourceMap.get('Fermenter Tank 1')?.toString()
+        description: 'Primary fermentation process',
+        sequence_number: 50,
+        cycle_hrs: 168, // 7 days
+        setup_hours: 1,
+        scheduled_start: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000 + 3 * 60 * 60 * 1000),
+        scheduled_end: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000 + 4 * 60 * 60 * 1000),
+        percent_finished: 0
       },
       {
-        jobId: job.id,
+        job_id: job.id,
         name: `Conditioning - ${job.name}`,
-        sequenceNumber: 60,
-        duration: 72, // 3 days
-        setupTime: 0.5,
-        resourceId: resourceMap.get('Bright Tank 1')?.toString()
+        description: 'Beer conditioning and clarification',
+        sequence_number: 60,
+        cycle_hrs: 72, // 3 days
+        setup_hours: 0.5,
+        scheduled_start: new Date(Date.now() + 11 * 24 * 60 * 60 * 1000),
+        scheduled_end: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000 + 0.5 * 60 * 60 * 1000),
+        percent_finished: 0
       },
       {
-        jobId: job.id,
+        job_id: job.id,
         name: `Packaging - ${job.name}`,
-        sequenceNumber: 70,
-        duration: 4,
-        setupTime: 1,
-        resourceId: resourceMap.get('Bottle Filler Line')?.toString()
+        description: 'Bottling and packaging',
+        sequence_number: 70,
+        cycle_hrs: 4,
+        setup_hours: 1,
+        scheduled_start: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000 + 1 * 60 * 60 * 1000),
+        scheduled_end: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000 + 6 * 60 * 60 * 1000),
+        percent_finished: 0
       }
     ];
     
