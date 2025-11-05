@@ -83,15 +83,15 @@ export class AISchedulingRecommendationsService {
         description: recommendation.description,
         priority: priorityMap[recommendation.priority] || 50,
         category: recommendation.category,
-        impact: recommendation.estimatedImpact,
+        estimatedImpact: recommendation.estimatedImpact,
         confidence: recommendation.confidence,
-        recommendedAction: {
-          actionType: recommendation.actionType,
+        actionType: recommendation.actionType,
+        actionData: {
           suggestedActions: recommendation.suggestedActions,
           affectedEntities: recommendation.affectedEntities
         },
         reasoning: `AI-generated recommendation based on production schedule analysis`,
-        dataSupport: recommendation.metadata || {},
+        dataPoints: recommendation.metadata || {},
         status: 'pending'
       }).returning();
       
