@@ -5753,37 +5753,8 @@ router.post("/api/schedules/:id/versions", async (req, res) => {
   }
 });
 
-// Get version history for a schedule (from database)
-router.get("/api/schedules/:id/versions", async (req, res) => {
-  try {
-    const scheduleId = parseInt(req.params.id);
-    
-    // Fetch real version history from database
-    const versions = await storage.getScheduleVersions(scheduleId);
-    
-    // Transform data to match frontend expectations
-    const transformedVersions = versions.map(v => ({
-      id: v.id,
-      scheduleId: v.scheduleId,
-      versionNumber: v.versionNumber,
-      checksum: v.checksum,
-      createdAt: v.createdAt,
-      createdBy: v.createdBy,
-      parentVersionId: v.parentVersionId,
-      changeType: v.source === 'optimization' ? 'OPTIMIZATION_APPLIED' : 
-                   v.source === 'manual' ? 'MANUAL_EDIT' : 
-                   v.source === 'auto-save' ? 'AUTO_SAVE' : v.source.toUpperCase(),
-      comment: v.comment,
-      tag: v.versionTag,
-      snapshotData: v.snapshotData || {}
-    }));
-    
-    res.json(transformedVersions);
-  } catch (error) {
-    console.error("Error fetching schedule versions:", error);
-    res.status(500).json({ message: "Failed to fetch schedule versions" });
-  }
-});
+// NOTE: Removed duplicate route - version history is now served by the route at line ~12344
+// which uses scheduleVersionService.getVersionHistory() and includes proper user data joins
 
 // Get version comparison for a schedule
 router.get("/api/schedules/:id/versions/:baseId/compare/:compareId", async (req, res) => {
@@ -12347,6 +12318,10 @@ router.get("/api/schedules/:scheduleId/versions", requireAuth, async (req, res) 
     const { scheduleVersionService } = await import('./services/schedule-version-service');
     
     const versions = await scheduleVersionService.getVersionHistory(parseInt(scheduleId));
+    console.log('📋 Version history sample:', versions.length > 0 ? {
+      firstVersion: versions[0],
+      fields: Object.keys(versions[0])
+    } : 'No versions found');
     res.json(versions);
   } catch (error: any) {
     console.error("Error fetching version history:", error);

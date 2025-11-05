@@ -173,7 +173,7 @@ export class ScheduleVersionService {
         checksum: scheduleVersions.checksum,
         createdAt: scheduleVersions.createdAt,
         createdBy: scheduleVersions.createdBy,
-        createdByName: sql<string>`CONCAT(${users.firstName}, ' ', ${users.lastName})`.as('created_by_name'),
+        createdByName: sql<string>`CONCAT(COALESCE(${users.firstName}, ''), ' ', COALESCE(${users.lastName}, ''))`,
         createdByUsername: users.username,
         parentVersionId: scheduleVersions.parentVersionId,
         changeType: scheduleVersions.source,
