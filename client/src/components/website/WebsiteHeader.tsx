@@ -12,7 +12,7 @@ const WebsiteHeader: React.FC = () => {
   const isAuthenticated = typeof window !== 'undefined' && !!localStorage.getItem('auth_token');
 
   const navigation = [
-    { name: "Home", href: "/" },
+    { name: "Home", href: "/home" },
     { name: "Features", href: "/whats-coming" },
     { name: "Solutions", href: "/solutions-comparison" },
     { name: "Technology", href: "/technology-stack" },
@@ -44,7 +44,7 @@ const WebsiteHeader: React.FC = () => {
           {/* Logo */}
           <div className="flex items-center">
             <button
-              onClick={() => setLocation("/")}
+              onClick={() => setLocation("/home")}
               className="flex items-center"
             >
               <Logo size="medium" showText={true} />
@@ -73,7 +73,7 @@ const WebsiteHeader: React.FC = () => {
                     localStorage.removeItem('auth_token');
                     localStorage.removeItem('user');
                     localStorage.removeItem('isDemo');
-                    window.location.href = '/';
+                    window.location.href = '/home';
                   }}
                   className="text-gray-600 hover:text-gray-900"
                 >
