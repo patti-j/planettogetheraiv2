@@ -2083,6 +2083,20 @@ export class PowerBIService {
         sortOrder = 'asc'
       } = params;
 
+      // If no columns specified, fetch all columns from the table schema
+      let effectiveColumns = columns;
+      if (columns.length === 0) {
+        console.log('[PowerBI] No columns specified, fetching table schema...');
+        try {
+          const tableColumns = await this.getTableColumns(accessToken, workspaceId, datasetId, tableName);
+          effectiveColumns = tableColumns.map((col: any) => col.name);
+          console.log(`[PowerBI] Found ${effectiveColumns.length} columns in table ${tableName}:`, effectiveColumns);
+        } catch (schemaError) {
+          console.warn('[PowerBI] Failed to fetch table schema, proceeding without column selection:', schemaError);
+          // Continue with empty columns array if schema fetch fails
+        }
+      }
+
       // Build DAX query
       let daxQuery = '';
       const skip = (page - 1) * pageSize;
@@ -2103,8 +2117,8 @@ export class PowerBIService {
         });
 
         // Add search term filter (searches across all string columns)
-        if (searchTerm && columns.length > 0) {
-          const searchConditions = columns
+        if (searchTerm && effectiveColumns.length > 0) {
+          const searchConditions = effectiveColumns
             .map(col => `SEARCH("${searchTerm}", '${tableName}'[${col}], 1, 0) > 0`)
             .join(' || ');
           
@@ -2131,9 +2145,10 @@ export class PowerBIService {
         daxQuery = `TOPN(${skip + pageSize}, ${daxQuery})`;
       }
 
-      // Select specific columns if requested
-      if (columns.length > 0) {
-        const columnSelections = columns.map(col => `"${col}", '${tableName}'[${col}]`).join(', ');
+      // Always use SELECTCOLUMNS when we have columns (either specified or fetched from schema)
+      // This ensures proper column selection even when columns were originally empty
+      if (effectiveColumns.length > 0) {
+        const columnSelections = effectiveColumns.map(col => `"${col}", '${tableName}'[${col}]`).join(', ');
         daxQuery = `SELECTCOLUMNS(${daxQuery}, ${columnSelections})`;
       }
 
