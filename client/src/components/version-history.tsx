@@ -303,7 +303,7 @@ export function VersionHistory({ scheduleId, currentVersionId }: VersionHistoryP
                                 <Badge variant="default" className="ml-2">Current</Badge>
                               )}
                               {version.tag && (
-                                <Badge variant="outline" className="ml-2 truncate max-w-[120px]" title={version.tag}>{version.tag}</Badge>
+                                <Badge variant="outline" className="ml-2 truncate max-w-[200px]" title={version.tag}>{version.tag}</Badge>
                               )}
                             </div>
                             <p className="text-xs text-muted-foreground">
