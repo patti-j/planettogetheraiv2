@@ -1588,9 +1588,11 @@ export class ProductionSchedulingAgent extends BaseAgent {
       const saveName = `Auto-save - ${timestamp.toLocaleDateString()}, ${timestamp.toLocaleTimeString()} (${algorithm.toUpperCase()})`;
       
       // Insert the saved schedule and get the ID back
+      // Use agent user ID (25) instead of context.userId for agent-created schedules
+      const agentUserId = 25; // AI_Agent user
       const savedScheduleResult = await db.execute(sql`
         INSERT INTO saved_schedules (user_id, name, description, schedule_data, metadata, is_active)
-        VALUES (${context.userId}, ${saveName}, ${'Automatically saved after ' + algorithm.toUpperCase() + ' algorithm execution'}, 
+        VALUES (${agentUserId}, ${saveName}, ${'Automatically saved after ' + algorithm.toUpperCase() + ' algorithm execution'}, 
                 ${JSON.stringify(scheduleData)}, ${JSON.stringify({ algorithm: algorithm })}, true)
         RETURNING id
       `);
@@ -1624,6 +1626,7 @@ export class ProductionSchedulingAgent extends BaseAgent {
           .digest('hex');
         
         // Create version entry
+        // Use agent user ID (25) for agent-created versions
         const versionResult = await db.execute(sql`
           INSERT INTO schedule_versions (
             schedule_id, version_number, version_tag, created_by, created_at,
@@ -1631,7 +1634,7 @@ export class ProductionSchedulingAgent extends BaseAgent {
             status, branch_name, is_merged, is_baseline
           )
           VALUES (
-            ${scheduleIdToUse}, ${nextVersionNumber}, ${'OPTIMIZATION APPLIED'}, ${context.userId}, ${new Date()},
+            ${scheduleIdToUse}, ${nextVersionNumber}, ${'OPTIMIZATION APPLIED'}, ${agentUserId}, ${new Date()},
             ${'algorithm_' + algorithm}, ${'Optimization requested: ' + algorithm.toUpperCase()}, 
             ${JSON.stringify(scheduleData)}, ${JSON.stringify(operations.rows)}, ${checksum},
             ${'active'}, ${'main'}, false, false
