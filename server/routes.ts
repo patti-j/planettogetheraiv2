@@ -11116,6 +11116,97 @@ router.get("/api/paginated-reports", enhancedAuth, async (req, res) => {
   }
 });
 
+// Get totals for the entire filtered dataset (ignoring pagination)
+router.get("/api/paginated-reports/totals", enhancedAuth, async (req, res) => {
+  try {
+    const schema = (req.query.schema as string) || 'dbo';
+    const table = req.query.table as string;
+    const searchTerm = (req.query.searchTerm as string) || "";
+    const filters = req.query.filters ? JSON.parse(req.query.filters as string) : {};
+    
+    if (!table || !schema) {
+      return res.status(400).json({ error: "Schema and table name are required" });
+    }
+
+    // Get the table schema to identify numeric columns
+    const tableSchema = await sqlServerService.getTableSchema(schema, table);
+    const numericColumns = tableSchema.filter(col => 
+      ['int', 'decimal', 'float', 'money', 'numeric', 'bigint', 'smallint', 'tinyint'].some(type =>
+        col.dataType.toLowerCase().includes(type)
+      )
+    );
+
+    // Build totals query with SUM aggregations for numeric columns
+    const totals = await sqlServerService.getTableTotals(
+      schema,
+      table,
+      numericColumns.map(col => col.columnName),
+      searchTerm,
+      filters
+    );
+
+    res.json(totals);
+  } catch (error) {
+    console.error("Error fetching report totals:", error);
+    res.status(500).json({ error: "Failed to fetch report totals" });
+  }
+});
+
+// Get grouped and aggregated data
+router.post("/api/paginated-reports/grouped", enhancedAuth, async (req, res) => {
+  try {
+    const {
+      schema = 'dbo',
+      table,
+      groupByColumns = [],
+      aggregations = {},
+      searchTerm = "",
+      filters = {},
+      sortBy = "",
+      sortOrder = "asc",
+      page = 1,
+      pageSize = 50
+    } = req.body;
+    
+    if (!table || !schema) {
+      return res.status(400).json({ error: "Schema and table name are required" });
+    }
+
+    if (!groupByColumns || groupByColumns.length === 0) {
+      return res.status(400).json({ error: "Group by columns are required" });
+    }
+
+    // Validate schema and table exist
+    const validTables = await sqlServerService.listTables();
+    const isValidTable = validTables.some(
+      t => t.schemaName === schema && t.tableName === table
+    );
+    
+    if (!isValidTable) {
+      return res.status(400).json({ error: "Invalid schema or table name" });
+    }
+
+    // Get grouped data with aggregations
+    const groupedData = await sqlServerService.getGroupedData(
+      schema,
+      table,
+      groupByColumns,
+      aggregations,
+      searchTerm,
+      filters,
+      sortBy,
+      sortOrder,
+      page,
+      pageSize
+    );
+
+    res.json(groupedData);
+  } catch (error) {
+    console.error("Error fetching grouped report data:", error);
+    res.status(500).json({ error: "Failed to fetch grouped report data" });
+  }
+});
+
 // ============================================
 // Optimization Studio Routes
 // ============================================

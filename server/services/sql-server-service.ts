@@ -216,6 +216,259 @@ class SQLServerService {
     }
   }
 
+  async getTableTotals(
+    schemaName: string, 
+    tableName: string, 
+    numericColumns: string[],
+    searchTerm: string = '',
+    filters: Record<string, string> = {}
+  ): Promise<Record<string, any>> {
+    try {
+      const pool = await this.getPool();
+      
+      // Validate schema and table names
+      const validatedSchema = this.validateIdentifier(schemaName);
+      const validatedTable = this.validateIdentifier(tableName);
+      
+      // Get table schema for building the WHERE clause
+      const schema = await this.getTableSchema(validatedSchema, validatedTable);
+      
+      // Build WHERE clause for search and filters
+      let whereConditions: string[] = [];
+      
+      if (searchTerm) {
+        const searchableColumns = schema
+          .filter(col => ['nvarchar', 'varchar', 'char', 'text'].some(type => 
+            col.dataType.toLowerCase().includes(type)
+          ))
+          .map(col => `[${col.columnName}] LIKE @searchTerm`);
+        
+        if (searchableColumns.length > 0) {
+          whereConditions.push(`(${searchableColumns.join(' OR ')})`);
+        }
+      }
+      
+      // Add filter conditions
+      Object.entries(filters).forEach(([column, value]) => {
+        if (value) {
+          whereConditions.push(`[${column}] = @filter_${column}`);
+        }
+      });
+      
+      const whereClause = whereConditions.length > 0 
+        ? 'WHERE ' + whereConditions.join(' AND ')
+        : '';
+      
+      // Build SELECT clause with SUM aggregations
+      const selectClauses = numericColumns.map(col => 
+        `SUM(CAST([${col}] AS FLOAT)) as [${col}]`
+      );
+      
+      if (selectClauses.length === 0) {
+        return {};
+      }
+      
+      const query = `
+        SELECT ${selectClauses.join(', ')}
+        FROM [${validatedSchema}].[${validatedTable}]
+        ${whereClause}
+      `;
+      
+      const request = pool.request();
+      
+      if (searchTerm) {
+        request.input('searchTerm', sql.NVarChar, `%${searchTerm}%`);
+      }
+      
+      Object.entries(filters).forEach(([column, value]) => {
+        if (value) {
+          request.input(`filter_${column}`, sql.NVarChar, value);
+        }
+      });
+      
+      const result = await request.query(query);
+      return result.recordset[0] || {};
+    } catch (error) {
+      console.error('Error getting table totals:', error);
+      throw new Error('Failed to calculate table totals');
+    }
+  }
+
+  async getGroupedData(
+    schemaName: string,
+    tableName: string,
+    groupByColumns: string[],
+    aggregations: Record<string, 'sum' | 'avg' | 'count' | 'min' | 'max'>,
+    searchTerm: string = '',
+    filters: Record<string, string> = {},
+    sortBy: string = '',
+    sortOrder: 'asc' | 'desc' = 'asc',
+    page: number = 1,
+    pageSize: number = 50
+  ): Promise<any> {
+    try {
+      const pool = await this.getPool();
+      
+      // Validate schema and table names
+      const validatedSchema = this.validateIdentifier(schemaName);
+      const validatedTable = this.validateIdentifier(tableName);
+      
+      // Get table schema
+      const schema = await this.getTableSchema(validatedSchema, validatedTable);
+      
+      // Build WHERE clause
+      let whereConditions: string[] = [];
+      
+      if (searchTerm) {
+        const searchableColumns = schema
+          .filter(col => ['nvarchar', 'varchar', 'char', 'text'].some(type => 
+            col.dataType.toLowerCase().includes(type)
+          ))
+          .map(col => `[${col.columnName}] LIKE @searchTerm`);
+        
+        if (searchableColumns.length > 0) {
+          whereConditions.push(`(${searchableColumns.join(' OR ')})`);
+        }
+      }
+      
+      Object.entries(filters).forEach(([column, value]) => {
+        if (value) {
+          whereConditions.push(`[${column}] = @filter_${column}`);
+        }
+      });
+      
+      const whereClause = whereConditions.length > 0 
+        ? 'WHERE ' + whereConditions.join(' AND ')
+        : '';
+      
+      // Build GROUP BY clause
+      const groupByClause = groupByColumns.map(col => `[${col}]`).join(', ');
+      
+      // Build SELECT clause with aggregations
+      const selectClauses = [
+        ...groupByColumns.map(col => `[${col}]`),
+        ...Object.entries(aggregations).map(([col, aggType]) => {
+          switch (aggType) {
+            case 'sum':
+              return `SUM(CAST([${col}] AS FLOAT)) as [${col}_sum]`;
+            case 'avg':
+              return `AVG(CAST([${col}] AS FLOAT)) as [${col}_avg]`;
+            case 'count':
+              return `COUNT([${col}]) as [${col}_count]`;
+            case 'min':
+              return `MIN([${col}]) as [${col}_min]`;
+            case 'max':
+              return `MAX([${col}]) as [${col}_max]`;
+            default:
+              return `SUM(CAST([${col}] AS FLOAT)) as [${col}_sum]`;
+          }
+        })
+      ];
+      
+      // Build ORDER BY clause
+      const orderByClause = sortBy 
+        ? `ORDER BY [${sortBy}] ${sortOrder.toUpperCase()}`
+        : groupByColumns.length > 0
+        ? `ORDER BY ${groupByColumns.map(col => `[${col}]`).join(', ')}`
+        : '';
+      
+      // Calculate offset
+      const offset = (page - 1) * pageSize;
+      
+      // Get count of groups
+      const countQuery = `
+        SELECT COUNT(*) as total FROM (
+          SELECT ${groupByColumns.map(col => `[${col}]`).join(', ')}
+          FROM [${validatedSchema}].[${validatedTable}]
+          ${whereClause}
+          GROUP BY ${groupByClause}
+        ) as grouped
+      `;
+      
+      const countRequest = pool.request();
+      if (searchTerm) {
+        countRequest.input('searchTerm', sql.NVarChar, `%${searchTerm}%`);
+      }
+      Object.entries(filters).forEach(([column, value]) => {
+        if (value) {
+          countRequest.input(`filter_${column}`, sql.NVarChar, value);
+        }
+      });
+      
+      const countResult = await countRequest.query(countQuery);
+      const total = countResult.recordset[0].total;
+      
+      // Get grouped data
+      const dataQuery = `
+        SELECT ${selectClauses.join(', ')}
+        FROM [${validatedSchema}].[${validatedTable}]
+        ${whereClause}
+        GROUP BY ${groupByClause}
+        ${orderByClause}
+        OFFSET @offset ROWS
+        FETCH NEXT @pageSize ROWS ONLY
+      `;
+      
+      const dataRequest = pool.request()
+        .input('offset', sql.Int, offset)
+        .input('pageSize', sql.Int, pageSize);
+      
+      if (searchTerm) {
+        dataRequest.input('searchTerm', sql.NVarChar, `%${searchTerm}%`);
+      }
+      Object.entries(filters).forEach(([column, value]) => {
+        if (value) {
+          dataRequest.input(`filter_${column}`, sql.NVarChar, value);
+        }
+      });
+      
+      const dataResult = await dataRequest.query(dataQuery);
+      const totalPages = Math.ceil(total / pageSize);
+      
+      // Transform results into grouped format
+      const groups = dataResult.recordset.map(row => {
+        const groupValues: Record<string, any> = {};
+        const aggregates: Record<string, any> = {};
+        
+        groupByColumns.forEach(col => {
+          groupValues[col] = row[col];
+        });
+        
+        Object.keys(aggregations).forEach(col => {
+          const aggType = aggregations[col];
+          aggregates[col] = row[`${col}_${aggType}`];
+        });
+        
+        return {
+          groupKey: groupByColumns.map(col => row[col]).join('_'),
+          groupValues,
+          aggregates,
+          items: [], // Items would be fetched separately if needed
+          expanded: false
+        };
+      });
+      
+      return {
+        groups,
+        total,
+        page,
+        pageSize,
+        totalPages
+      };
+    } catch (error) {
+      console.error('Error getting grouped data:', error);
+      throw new Error('Failed to get grouped data');
+    }
+  }
+  
+  private validateIdentifier(identifier: string): string {
+    // Basic validation to prevent SQL injection
+    if (!/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(identifier)) {
+      throw new Error(`Invalid identifier: ${identifier}`);
+    }
+    return identifier;
+  }
+
   async closePool(): Promise<void> {
     if (this.pool) {
       await this.pool.close();
