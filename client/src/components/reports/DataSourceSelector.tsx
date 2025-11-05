@@ -265,9 +265,6 @@ export const DataSourceSelector = memo(({
                       data-testid={`select-workspace-${workspace.id}`}
                     >
                       {workspace.name}
-                      {workspace.isOnDedicatedCapacity && (
-                        <span className="ml-2 text-xs text-muted-foreground">(Premium)</span>
-                      )}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -312,9 +309,6 @@ export const DataSourceSelector = memo(({
                       data-testid={`select-dataset-${dataset.id}`}
                     >
                       {dataset.name}
-                      {dataset.storageMode && (
-                        <span className="ml-2 text-xs text-muted-foreground">({dataset.storageMode})</span>
-                      )}
                     </SelectItem>
                   ))}
                 </SelectContent>

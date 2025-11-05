@@ -127,10 +127,12 @@ export default function PaginatedReports() {
         return response.json();
       } else if (sourceType === 'powerbi' && selectedWorkspace && selectedDataset && selectedPowerBITable) {
         // POST request for Power BI data
+        const token = localStorage.getItem('auth-token');
         const response = await fetch('/api/powerbi/dataset-data', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
+            'Authorization': token ? `Bearer ${token}` : ''
           },
           credentials: 'include',
           body: JSON.stringify({
@@ -180,9 +182,13 @@ export default function PaginatedReports() {
         if (!response.ok) throw new Error('Failed to fetch totals');
         return response.json();
       } else if (sourceType === 'powerbi' && selectedWorkspace && selectedDataset && selectedPowerBITable) {
+        const token = localStorage.getItem('auth-token');
         const response = await fetch('/api/powerbi/dataset-totals', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 
+            'Content-Type': 'application/json',
+            'Authorization': token ? `Bearer ${token}` : ''
+          },
           credentials: 'include',
           body: JSON.stringify({
             workspaceId: selectedWorkspace,
@@ -299,10 +305,12 @@ export default function PaginatedReports() {
         // Fetch Power BI data in chunks
         // Note: Power BI might not return total count upfront, so we'll fetch until no more data
         while (hasMoreData) {
+          const token = localStorage.getItem('auth-token');
           const response = await fetch('/api/powerbi/dataset-data', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
+              'Authorization': token ? `Bearer ${token}` : ''
             },
             credentials: 'include',
             body: JSON.stringify({
