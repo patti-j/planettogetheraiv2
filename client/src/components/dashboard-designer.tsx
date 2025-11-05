@@ -369,14 +369,20 @@ export function DashboardDesigner({ open, onOpenChange, existingDashboard, onSav
                   }}
                   onDragOver={(e) => {
                     e.preventDefault();
-                    e.currentTarget.classList.add('border-blue-500', 'bg-blue-50');
+                    if (e.currentTarget && e.currentTarget.classList) {
+                      e.currentTarget.classList.add('border-blue-500', 'bg-blue-50');
+                    }
                   }}
                   onDragLeave={(e) => {
-                    e.currentTarget.classList.remove('border-blue-500', 'bg-blue-50');
+                    if (e.currentTarget && e.currentTarget.classList) {
+                      e.currentTarget.classList.remove('border-blue-500', 'bg-blue-50');
+                    }
                   }}
                   onDrop={(e) => {
                     e.preventDefault();
-                    e.currentTarget.classList.remove('border-blue-500', 'bg-blue-50');
+                    if (e.currentTarget && e.currentTarget.classList) {
+                      e.currentTarget.classList.remove('border-blue-500', 'bg-blue-50');
+                    }
                     
                     const rect = e.currentTarget.getBoundingClientRect();
                     const x = e.clientX - rect.left - 4; // Account for padding
