@@ -632,27 +632,23 @@ export default function PaginatedReports() {
   const exportToPDF = async (exportContent: any, filename: string) => {
     try {
       // Dynamic import of jsPDF and autoTable plugin
-      const jsPDFModule = await import('jspdf');
-      const jsPDF = jsPDFModule.jsPDF || jsPDFModule.default;
+      const { jsPDF } = await import('jspdf');
       
-      // Import autoTable plugin - this extends jsPDF prototype
-      const autoTableModule = await import('jspdf-autotable');
+      // Important: Import the autoTable plugin BEFORE creating the doc instance
+      await import('jspdf-autotable');
       
-      // Create new PDF document
+      // Create new PDF document - the autoTable plugin should now be available
       const doc = new jsPDF({
         orientation: exportContent.columns.length > 6 ? 'landscape' : 'portrait',
         unit: 'mm',
         format: 'a4'
-      }) as any;
+      });
       
-      // Verify autoTable is available - if not, manually attach it
-      if (!doc.autoTable && autoTableModule.default) {
-        console.log('Manually attaching autoTable to jsPDF instance');
-        // Some bundlers require manual attachment
-        doc.autoTable = autoTableModule.default.bind(doc);
-      }
+      // Cast to any to access the autoTable method
+      const docWithAutoTable = doc as any;
       
-      if (!doc.autoTable) {
+      // Double check that autoTable is available
+      if (!docWithAutoTable.autoTable) {
         console.error('autoTable is not available on jsPDF instance');
         throw new Error('PDF export plugin not loaded properly. The jspdf-autotable library may not be installed correctly.');
       }
@@ -722,7 +718,7 @@ export default function PaginatedReports() {
           return 'left';
         });
         
-        doc.autoTable({
+        docWithAutoTable.autoTable({
           head: [tableHeaders],
           body: tableRows,
           startY: yPosition,
@@ -784,7 +780,7 @@ export default function PaginatedReports() {
             // Add page number - ensure it's visible and properly positioned
             doc.setFontSize(9);
             doc.setTextColor(100, 100, 100); // Gray color for footer
-            const currentPage = data.pageNumber || doc.internal.getCurrentPageInfo().pageNumber;
+            const currentPage = data.pageNumber || 1;
             const pageString = `Page ${currentPage} of ${pageCount}`;
             
             // Center the page number text
@@ -813,7 +809,7 @@ export default function PaginatedReports() {
         
         // Add footer if provided
         if (exportContent.footer) {
-          const finalY = (doc as any).lastAutoTable?.finalY || doc.internal.pageSize.height - 30;
+          const finalY = docWithAutoTable.lastAutoTable?.finalY || doc.internal.pageSize.height - 30;
           if (finalY < doc.internal.pageSize.height - 20) {
             doc.setFontSize(10);
             doc.text(exportContent.footer, 14, finalY + 10);
