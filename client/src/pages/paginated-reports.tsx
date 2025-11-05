@@ -324,16 +324,14 @@ export default function PaginatedReports() {
     if (tableSchema && tableSchema.length > 0) {
       const allColumns = tableSchema.map(col => col.columnName);
       
-      // Initialize columnOrder with all columns if it's empty
-      if (columnOrder.length === 0) {
+      // Check if columns have changed (new table selected)
+      const columnsChanged = columnOrder.length !== allColumns.length || 
+                            !allColumns.every(col => columnOrder.includes(col));
+      
+      // Initialize or reset columns when table changes
+      if (columnOrder.length === 0 || columnsChanged) {
         setColumnOrder(allColumns);
-        setSelectedColumns(allColumns);
-      } else {
-        // Ensure columnOrder contains all new columns
-        const newColumns = allColumns.filter(col => !columnOrder.includes(col));
-        if (newColumns.length > 0) {
-          setColumnOrder(prev => [...prev, ...newColumns]);
-        }
+        setSelectedColumns(allColumns); // Select ALL columns by default
       }
     }
   }, [tableSchema]);
@@ -633,22 +631,30 @@ export default function PaginatedReports() {
   // PDF Export Function - Simplified approach
   const exportToPDF = async (exportContent: any, filename: string) => {
     try {
-      // Dynamic import of jsPDF and autoTable
-      const { jsPDF } = await import('jspdf');
-      await import('jspdf-autotable'); // This automatically extends jsPDF with autoTable
+      // Dynamic import of jsPDF and autoTable plugin
+      const jsPDFModule = await import('jspdf');
+      const jsPDF = jsPDFModule.jsPDF || jsPDFModule.default;
       
-      // Create new PDF document with autoTable support
-      // Cast to any to access autoTable method added by the plugin
+      // Import autoTable plugin - this extends jsPDF prototype
+      const autoTableModule = await import('jspdf-autotable');
+      
+      // Create new PDF document
       const doc = new jsPDF({
         orientation: exportContent.columns.length > 6 ? 'landscape' : 'portrait',
         unit: 'mm',
         format: 'a4'
       }) as any;
       
-      // Verify autoTable is available
+      // Verify autoTable is available - if not, manually attach it
+      if (!doc.autoTable && autoTableModule.default) {
+        console.log('Manually attaching autoTable to jsPDF instance');
+        // Some bundlers require manual attachment
+        doc.autoTable = autoTableModule.default.bind(doc);
+      }
+      
       if (!doc.autoTable) {
         console.error('autoTable is not available on jsPDF instance');
-        throw new Error('PDF export plugin not loaded properly');
+        throw new Error('PDF export plugin not loaded properly. The jspdf-autotable library may not be installed correctly.');
       }
       
       let yPosition = 15;
