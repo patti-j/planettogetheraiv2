@@ -378,19 +378,15 @@ export default function PaginatedReports() {
     });
     
     try {
+      // Import apiRequest for proper authentication
+      const { apiRequest } = await import('@/lib/queryClient');
+      
       // Determine total pages needed (using 100 rows per page for efficiency)
       const CHUNK_SIZE = 100;
       const totalRows = data?.total || 0;
       const totalPages = Math.ceil(totalRows / CHUNK_SIZE);
       
       console.log(`Fetching ${totalRows} rows in ${totalPages} chunks of ${CHUNK_SIZE}`);
-      
-      // Get the current auth token
-      const token = localStorage.getItem('token');
-      if (!token) {
-        console.error('No authentication token found');
-        throw new Error('Authentication required for export');
-      }
       
       // Fetch data in chunks
       for (let page = 1; page <= totalPages; page++) {
@@ -405,23 +401,8 @@ export default function PaginatedReports() {
         if (chunkUrl) {
           console.log(`Fetching chunk ${page}/${totalPages}`);
           
-          const response = await fetch(chunkUrl, {
-            method: 'GET',
-            headers: {
-              'Authorization': `Bearer ${token}`,
-              'Content-Type': 'application/json'
-            },
-            credentials: 'include'
-          });
-          
-          if (!response.ok) {
-            if (response.status === 401) {
-              console.error(`Authentication failed for chunk ${page}`);
-              throw new Error('Authentication failed. Please log in again.');
-            }
-            throw new Error(`Failed to fetch chunk ${page}: ${response.status}`);
-          }
-          
+          // Use apiRequest for proper authentication
+          const response = await apiRequest('GET', chunkUrl);
           const chunkResult = await response.json() as PaginatedReportData;
           allData = allData.concat(chunkResult.items || []);
           
