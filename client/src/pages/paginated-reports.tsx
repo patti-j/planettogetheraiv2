@@ -568,19 +568,19 @@ export default function PaginatedReports() {
   // PDF Export Function - Simplified approach
   const exportToPDF = async (exportContent: any, filename: string) => {
     try {
-      // Dynamic import of jsPDF
-      const jsPDFModule = await import('jspdf');
-      const jsPDF = jsPDFModule.default || jsPDFModule.jsPDF;
+      // Dynamic import of jsPDF and autoTable
+      const { jsPDF } = await import('jspdf');
+      const autoTableModule = await import('jspdf-autotable');
       
-      // Import autoTable plugin
-      await import('jspdf-autotable');
-      
-      // Create new PDF document
-      const doc = new jsPDF({
+      // Create new PDF document with autoTable support
+      const doc: any = new jsPDF({
         orientation: exportContent.columns.length > 6 ? 'landscape' : 'portrait',
         unit: 'mm',
         format: 'a4'
       });
+      
+      // Import autoTable plugin (this extends the jsPDF prototype)
+      // The import alone should add the autoTable method to the doc instance
       
       let yPosition = 15;
       
@@ -619,8 +619,8 @@ export default function PaginatedReports() {
         })
       );
       
-      // Use autoTable if available for professional table rendering
-      if ((doc as any).autoTable) {
+      // Always use autoTable for professional table rendering
+      if (true) { // Force usage of autoTable - it should always be available after import
         // Determine column alignments based on data types
         const columnAlignments = exportContent.columns.map((col: string) => {
           // Check first non-null value to determine data type
@@ -640,7 +640,7 @@ export default function PaginatedReports() {
           return 'left';
         });
         
-        (doc as any).autoTable({
+        doc.autoTable({
           head: [tableHeaders],
           body: tableRows,
           startY: yPosition,
@@ -685,10 +685,10 @@ export default function PaginatedReports() {
             }
             
             // Footer with page numbers on each page
-            const pageCount = (doc as any).internal.getNumberOfPages ? 
-                             (doc as any).internal.getNumberOfPages() : 
-                             (doc as any).getNumberOfPages ? 
-                             (doc as any).getNumberOfPages() : 
+            const pageCount = doc.internal.getNumberOfPages ? 
+                             doc.internal.getNumberOfPages() : 
+                             doc.getNumberOfPages ? 
+                             doc.getNumberOfPages() : 
                              '?';
             
             // Draw footer line
@@ -737,34 +737,8 @@ export default function PaginatedReports() {
           }
         }
       } else {
-        // Fallback: Simple text-based table if autoTable is not available
-        doc.setFontSize(9);
-        
-        // Add headers
-        const headerText = tableHeaders.join(' | ');
-        doc.text(headerText, 14, yPosition);
-        yPosition += 6;
-        
-        // Add separator
-        doc.text('-'.repeat(80), 14, yPosition);
-        yPosition += 6;
-        
-        // Add rows (limited to prevent overflow)
-        const maxRows = Math.min(tableRows.length, 40);
-        for (let i = 0; i < maxRows; i++) {
-          if (yPosition > 270) { // Check page boundary
-            doc.addPage();
-            yPosition = 20;
-          }
-          const rowText = tableRows[i].join(' | ');
-          doc.text(rowText.substring(0, 180), 14, yPosition);
-          yPosition += 6;
-        }
-        
-        if (tableRows.length > maxRows) {
-          yPosition += 6;
-          doc.text(`... and ${tableRows.length - maxRows} more rows`, 14, yPosition);
-        }
+        // This should never happen as we're importing autoTable above
+        throw new Error('PDF table generation library not loaded. Please try again or use CSV/Excel export.');
       }
       
       // Save the PDF file
