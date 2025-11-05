@@ -8,6 +8,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { useToast } from '@/hooks/use-toast';
 import { useMutation } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
+import { useLocation } from 'wouter';
 import { 
   ArrowLeft, 
   Bot, 
@@ -66,6 +67,7 @@ export function WorkWithAgentModal({ isOpen, onClose, recommendation }: WorkWith
   const [inputMessage, setInputMessage] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
+  const [, setLocation] = useLocation();
 
   // Initialize with welcome message from agent
   useEffect(() => {
@@ -164,27 +166,36 @@ export function WorkWithAgentModal({ isOpen, onClose, recommendation }: WorkWith
       icon: Calendar,
       title: 'Production Schedule',
       description: 'View current production timeline',
-      color: 'text-blue-600'
+      color: 'text-blue-600',
+      path: '/production-scheduler'
     },
     {
       icon: Package,
       title: 'Inventory Status',
       description: 'Check stock levels and availability',
-      color: 'text-green-600'
+      color: 'text-green-600',
+      path: '/inventory-optimization'
     },
     {
       icon: Users,
       title: 'Resource Allocation',
       description: 'View staff and equipment assignments',
-      color: 'text-purple-600'
+      color: 'text-purple-600',
+      path: '/labor-planning'
     },
     {
       icon: FileText,
       title: 'Work Orders',
       description: 'Review active work orders',
-      color: 'text-orange-600'
+      color: 'text-orange-600',
+      path: '/production-planning'
     }
   ];
+
+  const handleToolClick = (path: string) => {
+    setLocation(path);
+    onClose();
+  };
 
   return (
     <div className="fixed inset-0 z-50 bg-white dark:bg-gray-900">
@@ -422,7 +433,12 @@ export function WorkWithAgentModal({ isOpen, onClose, recommendation }: WorkWith
 
                 <div className="space-y-3">
                   {systemTools.map((tool, index) => (
-                    <Card key={index} className="cursor-pointer hover:shadow-md transition-shadow" data-testid={`system-tool-${index}`}>
+                    <Card 
+                      key={index} 
+                      className="cursor-pointer hover:shadow-md transition-shadow" 
+                      onClick={() => handleToolClick(tool.path)}
+                      data-testid={`system-tool-${index}`}
+                    >
                       <CardContent className="p-4">
                         <div className="flex items-start gap-3">
                           <div className={`p-2 rounded-lg bg-gray-100 dark:bg-gray-800 ${tool.color}`}>
