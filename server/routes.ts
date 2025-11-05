@@ -9580,6 +9580,48 @@ router.get("/api/reports/find", enhancedAuth, async (req, res) => {
   }
 });
 
+// Get datasets by workspace name (query parameter version)
+router.get("/api/powerbi/datasets", async (req, res) => {
+  try {
+    const { workspace } = req.query;
+    
+    // Validate workspace parameter
+    if (!workspace || typeof workspace !== 'string') {
+      return res.status(400).json({ 
+        message: "Workspace parameter is required",
+        error: "Please provide a workspace name"
+      });
+    }
+
+    // Use server-cached AAD token
+    const accessToken = await getServerAADToken();
+    
+    // First get all workspaces to find the workspace ID by name
+    const workspaces = await powerBIService.getWorkspaces(accessToken);
+    const targetWorkspace = workspaces.find(w => 
+      w.name.toLowerCase() === workspace.toLowerCase()
+    );
+
+    if (!targetWorkspace) {
+      return res.status(404).json({ 
+        message: `Workspace '${workspace}' not found`,
+        error: "Please check the workspace name and try again"
+      });
+    }
+
+    // Get datasets from the found workspace
+    const datasets = await powerBIService.getDatasetsFromWorkspace(accessToken, targetWorkspace.id);
+    res.json(datasets);
+    
+  } catch (error) {
+    console.error("Failed to get datasets by workspace name:", error);
+    res.status(500).json({ 
+      message: "Failed to fetch datasets",
+      error: error instanceof Error ? error.message : "Unknown error"
+    });
+  }
+});
+
 // Get all datasets from a specific workspace
 router.get("/api/powerbi/workspaces/:workspaceId/datasets", async (req, res) => {
   try {
