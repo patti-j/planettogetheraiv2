@@ -5729,21 +5729,21 @@ router.get("/api/saved-schedules/:id", requireAuth, async (req, res) => {
 router.post("/api/schedules/:id/versions", async (req, res) => {
   try {
     const scheduleId = parseInt(req.params.id);
-    const { scheduleName, changeType, changeDescription, comment, userId, snapshotData, operationSnapshots, resourceAllocations } = req.body;
+    const { scheduleName, changeType, changeDescription, comment, userId } = req.body;
     
-    // Create version history entry using storage
-    const newVersion = await storage.createScheduleVersion({
+    // Use ScheduleVersionService which fetches current operations and dependencies
+    const { scheduleVersionService } = await import('./services/schedule-version-service');
+    
+    const versionId = await scheduleVersionService.createVersion(
       scheduleId,
-      source: changeType || 'manual',
-      comment: comment || changeDescription || "No description provided",
-      createdBy: userId || 1,
-      versionTag: changeType === 'optimization' ? 'optimized' : (changeType === 'manual_save' ? 'manual' : null),
-      snapshotData: snapshotData || {},
-      operationSnapshots: operationSnapshots || {},
-      resourceAllocations: resourceAllocations || null,
-      parentVersionId: null, // Could be enhanced to track parent versions
-      metrics: null // Could be enhanced to track performance metrics
-    });
+      userId || 1,
+      changeType || 'manual',
+      comment || changeDescription || "No description provided",
+      changeType === 'optimization' ? 'optimized' : (changeType === 'manual_save' ? 'manual' : undefined)
+    );
+    
+    // Get the created version to return to client
+    const newVersion = await scheduleVersionService.getVersion(versionId);
     
     console.log('✅ Created version history entry:', newVersion);
     res.json({ success: true, version: newVersion });

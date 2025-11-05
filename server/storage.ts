@@ -1,3 +1,4 @@
+import crypto from 'crypto';
 import { 
   users, roles, permissions, userRoles, rolePermissions, 
   companyOnboarding, userPreferences, recentPages,
@@ -769,7 +770,7 @@ export class DatabaseStorage implements IStorage {
         : 1;
       
       // Generate checksum from schedule data
-      const checksum = require('crypto')
+      const checksum = crypto
         .createHash('sha256')
         .update(JSON.stringify(data.snapshotData || {}))
         .digest('hex');
