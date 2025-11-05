@@ -6594,113 +6594,37 @@
                 }
             });
             
-            // Add Load Schedule functionality
-            window.loadSchedule = async function() {
-                try {
-                    // Get auth token
-                    const authToken = getAuthToken();
+            // Add Load Schedule functionality - opens version history panel
+            window.loadSchedule = function() {
+                console.log('📚 Opening version history panel for schedule loading...');
+                
+                // Send message to parent React app to open version history
+                // This will open the version history panel where each version has a Load button
+                if (window.parent !== window) {
+                    window.parent.postMessage({
+                        type: 'OPEN_VERSION_HISTORY',
+                        source: 'production-scheduler',
+                        message: 'User requested to load a schedule version'
+                    }, '*');
                     
-                    // Fetch schedule versions from version history (includes dependencies!)
-                    const response = await fetch('/api/schedules/1/version-history', {
-                        headers: {
-                            'Authorization': authToken ? `Bearer ${authToken}` : ''
-                        }
-                    });
-                    
-                    if (response.ok) {
-                        const versions = await response.json();
-                        
-                        if (versions.length === 0) {
-                            // Use Bryntum's MessageDialog instead of alert
-                            if (window.scheduler && window.scheduler.bryntum) {
-                                window.scheduler.bryntum.MessageDialog.alert({
-                                    title: 'No Versions',
-                                    message: 'No saved schedule versions found'
-                                });
-                            } else {
-                                alert('No saved schedule versions found');
-                            }
-                            return;
-                        }
-                        
-                        // Use Bryntum's built-in combo selection dialog
-                        if (window.scheduler && window.scheduler.bryntum) {
-                            const { Combo, Popup } = window.scheduler.bryntum;
-                            
-                            // Prepare schedule items for the combo
-                            const scheduleItems = versions.map((v, i) => ({
-                                id: v.id,
-                                text: `Version ${v.versionNumber} - ${v.comment || v.source} - ${new Date(v.createdAt).toLocaleDateString()} ${new Date(v.createdAt).toLocaleTimeString()}`,
-                                version: v
-                            }));
-                            
-                            // Create a popup with a combo box
-                            const popup = new Popup({
-                                autoShow: true,
-                                centered: true,
-                                closable: true,
-                                modal: true,
-                                title: 'Select a schedule to load',
-                                width: 500,
-                                items: [
-                                    {
-                                        type: 'combo',
-                                        ref: 'scheduleCombo',
-                                        label: 'Schedule',
-                                        displayField: 'text',
-                                        valueField: 'id',
-                                        items: scheduleItems,
-                                        placeholder: 'Choose a schedule...',
-                                        style: 'margin: 20px'
-                                    }
-                                ],
-                                bbar: [
-                                    {
-                                        text: 'OK',
-                                        cls: 'b-blue',
-                                        onClick: async () => {
-                                            const combo = popup.widgetMap.scheduleCombo;
-                                            const selectedId = combo.value;
-                                            
-                                            if (selectedId !== null && selectedId !== undefined) {
-                                                const selectedItem = scheduleItems.find(item => item.id === selectedId);
-                                                if (selectedItem && selectedItem.version) {
-                                                    await loadSelectedVersion(selectedItem.version);
-                                                }
-                                            }
-                                            popup.close();
-                                        }
-                                    },
-                                    {
-                                        text: 'Cancel',
-                                        onClick: () => popup.close()
-                                    }
-                                ]
-                            });
-                            
-                            return;
-                        } else {
-                            // Fallback to prompt if Bryntum widgets not available
-                            const versionList = versions.map((v, i) => 
-                                `${i + 1}. Version ${v.versionNumber} - ${v.comment || v.source} (${new Date(v.createdAt).toLocaleDateString()})`
-                            ).join('\n');
-                            
-                            const selection = prompt(`Select a version to load:\n\n${versionList}\n\nEnter number (1-${versions.length}):`);
-                            
-                            if (selection) {
-                                const index = parseInt(selection) - 1;
-                                if (index >= 0 && index < versions.length) {
-                                    await loadSelectedVersion(versions[index]);
-                                }
-                            }
-                        }
-                    } else {
-                        // Handle error or fallback to localStorage
-                        loadLocalSchedules();
+                    // Show a toast notification if Bryntum is available
+                    if (window.scheduler && window.scheduler.bryntum) {
+                        window.scheduler.bryntum.Toast.show({
+                            html: 'Opening Version History panel...',
+                            color: 'b-blue',
+                            timeout: 2000
+                        });
                     }
-                } catch (error) {
-                    console.error('❌ Error loading schedules:', error);
-                    alert('Failed to load schedules. Please try again.');
+                } else {
+                    // If not in iframe, inform user to use Version History panel
+                    if (window.scheduler && window.scheduler.bryntum) {
+                        window.scheduler.bryntum.MessageDialog.alert({
+                            title: 'Load from Version History',
+                            message: 'Please open the Version History panel from the toolbar to load a specific schedule version. Each version has its own Load button.'
+                        });
+                    } else {
+                        alert('Please open the Version History panel from the toolbar to load a specific schedule version.');
+                    }
                 }
             };
             
@@ -6857,7 +6781,10 @@
                 }
             }
             
-            // Helper function to load local schedules from localStorage
+            // Helper function to load local schedules from localStorage - DEPRECATED
+            // This function is no longer used. Load button now opens the Version History panel
+            // where each version has its own Load button for better user experience
+            /*
             async function loadLocalSchedules() {
                 try {
                     // Fallback to localStorage

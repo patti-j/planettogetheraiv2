@@ -108,6 +108,16 @@ export default function ProductionScheduler() {
       } else if (event.data?.type === 'SCHEDULER_ERROR') {
         console.error('❌ Scheduler error:', event.data.error);
         setIsLoading(false); // Hide loading overlay even on error
+      } else if (event.data?.type === 'OPEN_VERSION_HISTORY') {
+        console.log('📚 Received OPEN_VERSION_HISTORY from iframe - opening version history panel');
+        // Open the version history panel
+        setShowVersionHistory(true);
+        
+        // Show a toast notification
+        toast({
+          title: "Version History",
+          description: "Select a version and click its Load button to load it",
+        });
       } else if (event.data?.type === 'SCHEDULE_UPDATED') {
         console.log('📬 Received SCHEDULE_UPDATED from iframe - schedule optimized!', event.data);
         
