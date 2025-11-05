@@ -440,76 +440,76 @@ export function VersionHistory({ scheduleId, currentVersionId }: VersionHistoryP
                       <h4 className="text-sm font-semibold mb-3">Schedule Metrics</h4>
                       <div className="grid grid-cols-3 gap-4 p-4 bg-muted/50 rounded-lg">
                         <div>
-                          <div className="text-xs text-muted-foreground mb-1">Time Span</div>
+                          <div className="text-xs text-muted-foreground mb-1">OTIF</div>
                           <div className="space-y-1">
                             <div className="text-sm">
                               <span className="text-muted-foreground">Base:</span> {
-                                comparison.baseVersion?.metrics?.timeSpan !== undefined ? 
-                                `${comparison.baseVersion.metrics.timeSpan.toFixed(1)} hrs` : 'N/A'
+                                comparison.baseVersion?.metrics?.otif !== undefined ? 
+                                `${comparison.baseVersion.metrics.otif.toFixed(1)}%` : 'N/A'
                               }
                             </div>
                             <div className="text-sm">
                               <span className="text-muted-foreground">Compare:</span> {
-                                comparison.compareVersion?.metrics?.timeSpan !== undefined ? 
-                                `${comparison.compareVersion.metrics.timeSpan.toFixed(1)} hrs` : 'N/A'
+                                comparison.compareVersion?.metrics?.otif !== undefined ? 
+                                `${comparison.compareVersion.metrics.otif.toFixed(1)}%` : 'N/A'
                               }
                             </div>
-                            {comparison.metrics?.timeSpanDelta !== undefined && (
+                            {comparison.metricsDelta?.otif !== undefined && (
                               <div className={`text-sm font-medium ${
-                                comparison.metrics.timeSpanDelta < 0 ? 'text-green-600' : 
-                                comparison.metrics.timeSpanDelta > 0 ? 'text-red-600' : ''
+                                comparison.metricsDelta.otif > 0 ? 'text-green-600' : 
+                                comparison.metricsDelta.otif < 0 ? 'text-red-600' : ''
                               }`}>
-                                Δ {comparison.metrics.timeSpanDelta > 0 ? '+' : ''}{comparison.metrics.timeSpanDelta.toFixed(1)} hrs
+                                Δ {comparison.metricsDelta.otif > 0 ? '+' : ''}{comparison.metricsDelta.otif.toFixed(1)}%
                               </div>
                             )}
                           </div>
                         </div>
                         <div>
-                          <div className="text-xs text-muted-foreground mb-1">Resource Usage</div>
+                          <div className="text-xs text-muted-foreground mb-1">Thruput</div>
                           <div className="space-y-1">
                             <div className="text-sm">
                               <span className="text-muted-foreground">Base:</span> {
-                                comparison.baseVersion?.metrics?.resourceUsage !== undefined ? 
-                                `${comparison.baseVersion.metrics.resourceUsage.toFixed(1)}%` : '0%'
+                                comparison.baseVersion?.metrics?.thruput !== undefined ? 
+                                `${comparison.baseVersion.metrics.thruput.toFixed(1)} u/d` : 'N/A'
                               }
                             </div>
                             <div className="text-sm">
                               <span className="text-muted-foreground">Compare:</span> {
-                                comparison.compareVersion?.metrics?.resourceUsage !== undefined ? 
-                                `${comparison.compareVersion.metrics.resourceUsage.toFixed(1)}%` : '0%'
+                                comparison.compareVersion?.metrics?.thruput !== undefined ? 
+                                `${comparison.compareVersion.metrics.thruput.toFixed(1)} u/d` : 'N/A'
                               }
                             </div>
-                            {comparison.metrics?.resourceUsageDelta !== undefined && (
+                            {comparison.metricsDelta?.thruput !== undefined && (
                               <div className={`text-sm font-medium ${
-                                comparison.metrics.resourceUsageDelta > 0 ? 'text-green-600' : 
-                                comparison.metrics.resourceUsageDelta < 0 ? 'text-red-600' : ''
+                                comparison.metricsDelta.thruput > 0 ? 'text-green-600' : 
+                                comparison.metricsDelta.thruput < 0 ? 'text-red-600' : ''
                               }`}>
-                                Δ {comparison.metrics.resourceUsageDelta > 0 ? '+' : ''}{comparison.metrics.resourceUsageDelta.toFixed(1)}%
+                                Δ {comparison.metricsDelta.thruput > 0 ? '+' : ''}{comparison.metricsDelta.thruput.toFixed(1)} u/d
                               </div>
                             )}
                           </div>
                         </div>
                         <div>
-                          <div className="text-xs text-muted-foreground mb-1">Total Duration</div>
+                          <div className="text-xs text-muted-foreground mb-1">Cost</div>
                           <div className="space-y-1">
                             <div className="text-sm">
                               <span className="text-muted-foreground">Base:</span> {
-                                comparison.baseVersion?.metrics?.totalDuration !== undefined ? 
-                                `${comparison.baseVersion.metrics.totalDuration.toFixed(1)} hrs` : '0 hrs'
+                                comparison.baseVersion?.metrics?.costPerUnit !== undefined ? 
+                                `$${comparison.baseVersion.metrics.costPerUnit.toFixed(2)}/u` : 'N/A'
                               }
                             </div>
                             <div className="text-sm">
                               <span className="text-muted-foreground">Compare:</span> {
-                                comparison.compareVersion?.metrics?.totalDuration !== undefined ? 
-                                `${comparison.compareVersion.metrics.totalDuration.toFixed(1)} hrs` : '0 hrs'
+                                comparison.compareVersion?.metrics?.costPerUnit !== undefined ? 
+                                `$${comparison.compareVersion.metrics.costPerUnit.toFixed(2)}/u` : 'N/A'
                               }
                             </div>
-                            {comparison.metrics?.totalDurationDelta !== undefined && (
+                            {comparison.metricsDelta?.costPerUnit !== undefined && (
                               <div className={`text-sm font-medium ${
-                                comparison.metrics.totalDurationDelta < 0 ? 'text-green-600' : 
-                                comparison.metrics.totalDurationDelta > 0 ? 'text-red-600' : ''
+                                comparison.metricsDelta.costPerUnit < 0 ? 'text-green-600' : 
+                                comparison.metricsDelta.costPerUnit > 0 ? 'text-red-600' : ''
                               }`}>
-                                Δ {comparison.metrics.totalDurationDelta > 0 ? '+' : ''}{comparison.metrics.totalDurationDelta.toFixed(1)} hrs
+                                Δ {comparison.metricsDelta.costPerUnit > 0 ? '+' : ''}${comparison.metricsDelta.costPerUnit.toFixed(2)}/u
                               </div>
                             )}
                           </div>

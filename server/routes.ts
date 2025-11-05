@@ -5842,12 +5842,73 @@ router.get("/api/schedules/:id/versions/:baseId/compare/:compareId", async (req,
       }, 0);
     };
     
+    // Calculate OTIF (On-Time In Full)
+    const calculateOTIF = (snapshot: any) => {
+      const operations = snapshot.operations || [];
+      let jobsOnTime = 0;
+      let totalJobsWithDueDates = 0;
+      
+      operations.forEach((op: any) => {
+        if (op.due_date && op.scheduled_end) {
+          totalJobsWithDueDates++;
+          const dueDateTime = new Date(op.due_date).getTime();
+          const endTime = new Date(op.scheduled_end).getTime();
+          if (endTime <= dueDateTime) {
+            jobsOnTime++;
+          }
+        }
+      });
+      
+      return totalJobsWithDueDates > 0 ? 
+        Math.round((jobsOnTime / totalJobsWithDueDates) * 1000) / 10 : 0;
+    };
+    
+    // Calculate Thruput (units per day)
+    const calculateThruput = (snapshot: any) => {
+      const operations = snapshot.operations || [];
+      const timeSpan = calculateTimeSpan(snapshot);
+      const timeSpanDays = timeSpan / 24;
+      
+      const totalUnits = operations.reduce((sum: number, op: any) => {
+        const quantity = parseFloat(op.quantity) || parseFloat(op.order_quantity) || 1;
+        return sum + quantity;
+      }, 0);
+      
+      return timeSpanDays > 0 ? 
+        Math.round((totalUnits / timeSpanDays) * 10) / 10 : 0;
+    };
+    
+    // Calculate Cost per unit
+    const calculateCostPerUnit = (snapshot: any) => {
+      const operations = snapshot.operations || [];
+      let totalCost = 0;
+      let totalUnits = 0;
+      
+      operations.forEach((op: any) => {
+        const quantity = parseFloat(op.quantity) || parseFloat(op.order_quantity) || 1;
+        totalUnits += quantity;
+        
+        const setupCost = parseFloat(op.setup_cost) || 0;
+        const runCost = (parseFloat(op.run_cost) || 0) * quantity;
+        totalCost += setupCost + runCost;
+      });
+      
+      return totalUnits > 0 ? 
+        Math.round((totalCost / totalUnits) * 100) / 100 : 0;
+    };
+    
     const baseTimeSpan = calculateTimeSpan(baseSnapshot);
     const compareTimeSpan = calculateTimeSpan(compareSnapshot);
     const baseResourceUsage = calculateResourceUsage(baseSnapshot);
     const compareResourceUsage = calculateResourceUsage(compareSnapshot);
     const baseTotalDuration = calculateTotalDuration(baseSnapshot);
     const compareTotalDuration = calculateTotalDuration(compareSnapshot);
+    const baseOTIF = calculateOTIF(baseSnapshot);
+    const compareOTIF = calculateOTIF(compareSnapshot);
+    const baseThruput = calculateThruput(baseSnapshot);
+    const compareThruput = calculateThruput(compareSnapshot);
+    const baseCostPerUnit = calculateCostPerUnit(baseSnapshot);
+    const compareCostPerUnit = calculateCostPerUnit(compareSnapshot);
     
     // Calculate differences
     const baseOps = baseSnapshot.operations || [];
@@ -5906,7 +5967,10 @@ router.get("/api/schedules/:id/versions/:baseId/compare/:compareId", async (req,
         metrics: {
           timeSpan: baseTimeSpan,
           resourceUsage: baseResourceUsage,
-          totalDuration: baseTotalDuration
+          totalDuration: baseTotalDuration,
+          otif: baseOTIF,
+          thruput: baseThruput,
+          costPerUnit: baseCostPerUnit
         }
       },
       compareVersion: {
@@ -5924,7 +5988,10 @@ router.get("/api/schedules/:id/versions/:baseId/compare/:compareId", async (req,
         metrics: {
           timeSpan: compareTimeSpan,
           resourceUsage: compareResourceUsage,
-          totalDuration: compareTotalDuration
+          totalDuration: compareTotalDuration,
+          otif: compareOTIF,
+          thruput: compareThruput,
+          costPerUnit: compareCostPerUnit
         }
       },
       differences: {
@@ -5938,10 +6005,13 @@ router.get("/api/schedules/:id/versions/:baseId/compare/:compareId", async (req,
           operationsRemoved: removed.length
         }
       },
-      metrics: {
+      metricsDelta: {
         timeSpanDelta: compareTimeSpan - baseTimeSpan,
         resourceUsageDelta: compareResourceUsage - baseResourceUsage,
-        totalDurationDelta: compareTotalDuration - baseTotalDuration
+        totalDurationDelta: compareTotalDuration - baseTotalDuration,
+        otif: compareOTIF - baseOTIF,
+        thruput: compareThruput - baseThruput,
+        costPerUnit: compareCostPerUnit - baseCostPerUnit
       }
     };
     
