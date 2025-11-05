@@ -70,6 +70,39 @@ export class ScheduleVersionService {
         .from(ptJobOperations)
         .where(sql`job_id IN (SELECT id FROM ptjobs)`);
 
+      // Fetch dependencies based on sequence_number
+      const ptDependenciesQuery = `
+        WITH job_operations AS (
+          SELECT 
+            jo.id as op_id,
+            jo.job_id,
+            jo.sequence_number
+          FROM ptjoboperations jo
+          WHERE jo.job_id IS NOT NULL 
+            AND jo.sequence_number IS NOT NULL
+        )
+        SELECT 
+          ROW_NUMBER() OVER () as dependency_id,
+          curr.op_id as from_operation_id,
+          next.op_id as to_operation_id
+        FROM job_operations curr
+        INNER JOIN job_operations next 
+          ON curr.job_id = next.job_id 
+          AND curr.sequence_number = next.sequence_number - 1
+        ORDER BY curr.job_id, curr.sequence_number
+      `;
+      
+      const rawDependencies = await db.execute(sql.raw(ptDependenciesQuery));
+      const dependenciesData = Array.isArray(rawDependencies) ? rawDependencies : rawDependencies.rows || [];
+      const dependencies = dependenciesData.map((dep: any) => ({
+        id: dep.dependency_id,
+        from: dep.from_operation_id,
+        to: dep.to_operation_id,
+        type: 2, // Finish-to-Start
+        lag: 0,
+        lagUnit: 'hour'
+      }));
+
       // Calculate next version number
       const lastVersion = await db
         .select({ versionNumber: scheduleVersions.versionNumber })
@@ -95,7 +128,7 @@ export class ScheduleVersionService {
           sequenceNumber: op.sequenceNumber
         })),
         resources: [], // TODO: Fetch from ptresources when available
-        dependencies: [], // TODO: Fetch from ptjobdependencies when available
+        dependencies: dependencies, // Now includes actual dependencies
         metadata: {
           operationCount: operations.length,
           timestamp: new Date().toISOString(),
