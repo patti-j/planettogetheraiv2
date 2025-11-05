@@ -3254,11 +3254,16 @@ router.get("/api/production-scheduler", (req, res) => {
     // Read and send the HTML file
     const htmlContent = fs.readFileSync(htmlPath, 'utf8');
     console.log('Successfully read HTML file, size:', htmlContent.length, 'bytes');
+    
+    // Set headers to bypass Vite transformation
     res.setHeader('Content-Type', 'text/html; charset=utf-8');
     res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
     res.setHeader('Pragma', 'no-cache');
     res.setHeader('Expires', '0');
-    res.send(htmlContent);
+    
+    // Important: Use res.end() instead of res.send() to bypass Vite middleware
+    // This prevents Vite from injecting its HMR client script
+    res.status(200).end(htmlContent);
   } catch (error) {
     console.error('Error serving demo HTML:', error);
     res.status(500).send('Error loading demo page');
