@@ -1,0 +1,101 @@
+{
+  "exportDate": "2025-11-05T20:14:41.440Z",
+  "tables": [
+    {
+      "name": "permissions",
+      "rowCount": 52
+    },
+    {
+      "name": "roles",
+      "rowCount": 11
+    },
+    {
+      "name": "role_permissions",
+      "rowCount": 107
+    },
+    {
+      "name": "users",
+      "rowCount": 9
+    },
+    {
+      "name": "user_roles",
+      "rowCount": 6
+    },
+    {
+      "name": "user_preferences",
+      "rowCount": 3
+    },
+    {
+      "name": "ptjobs",
+      "rowCount": 34
+    },
+    {
+      "name": "ptjoboperations",
+      "rowCount": 35
+    },
+    {
+      "name": "schedule_versions",
+      "rowCount": 25
+    },
+    {
+      "name": "dashboards",
+      "rowCount": 1
+    },
+    {
+      "name": "widgets",
+      "rowCount": 32570
+    },
+    {
+      "name": "recent_pages",
+      "rowCount": 3425
+    },
+    {
+      "name": "agent_connections",
+      "rowCount": 11
+    },
+    {
+      "name": "agent_actions",
+      "rowCount": 165
+    },
+    {
+      "name": "agent_metrics_hourly",
+      "rowCount": 264
+    },
+    {
+      "name": "agent_policies",
+      "rowCount": 44
+    },
+    {
+      "name": "agent_recommendations",
+      "rowCount": 73
+    },
+    {
+      "name": "max_chat_messages",
+      "rowCount": 518
+    }
+  ],
+  "totalRows": 37353,
+  "files": {
+    "combined": "/home/runner/workspace/database-exports/full-export-2025-11-05T20-14-35.sql",
+    "individual": [
+      "permissions-2025-11-05T20-14-35.sql",
+      "roles-2025-11-05T20-14-35.sql",
+      "role_permissions-2025-11-05T20-14-35.sql",
+      "users-2025-11-05T20-14-35.sql",
+      "user_roles-2025-11-05T20-14-35.sql",
+      "user_preferences-2025-11-05T20-14-35.sql",
+      "ptjobs-2025-11-05T20-14-35.sql",
+      "ptjoboperations-2025-11-05T20-14-35.sql",
+      "schedule_versions-2025-11-05T20-14-35.sql",
+      "dashboards-2025-11-05T20-14-35.sql",
+      "widgets-2025-11-05T20-14-35.sql",
+      "recent_pages-2025-11-05T20-14-35.sql",
+      "agent_connections-2025-11-05T20-14-35.sql",
+      "agent_actions-2025-11-05T20-14-35.sql",
+      "agent_metrics_hourly-2025-11-05T20-14-35.sql",
+      "agent_policies-2025-11-05T20-14-35.sql",
+      "agent_recommendations-2025-11-05T20-14-35.sql",
+      "max_chat_messages-2025-11-05T20-14-35.sql"
+    ]
+  }
+}

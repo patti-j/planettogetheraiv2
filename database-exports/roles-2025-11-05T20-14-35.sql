@@ -1,0 +1,12 @@
+-- Table: roles
+INSERT INTO roles (id, name, description, isActive, isSystemRole, createdAt) VALUES (1, 'Plant Manager', 'Senior management role with oversight of entire plant operations', TRUE, TRUE, '2025-09-27T18:23:16.448Z');
+INSERT INTO roles (id, name, description, isActive, isSystemRole, createdAt) VALUES (2, 'Executive', 'C-level executive with strategic oversight and decision-making authority', TRUE, TRUE, '2025-09-27T18:23:16.448Z');
+INSERT INTO roles (id, name, description, isActive, isSystemRole, createdAt) VALUES (3, 'General Manager', 'General management role with broad operational responsibility', TRUE, TRUE, '2025-09-27T18:23:16.448Z');
+INSERT INTO roles (id, name, description, isActive, isSystemRole, createdAt) VALUES (4, 'Production Control', 'Production planning and scheduling specialist role', TRUE, FALSE, '2025-09-27T18:23:16.448Z');
+INSERT INTO roles (id, name, description, isActive, isSystemRole, createdAt) VALUES (5, 'Quality Control', 'Quality assurance and control specialist role', TRUE, FALSE, '2025-09-27T18:23:16.448Z');
+INSERT INTO roles (id, name, description, isActive, isSystemRole, createdAt) VALUES (6, 'Maintenance', 'Equipment maintenance and reliability specialist role', TRUE, FALSE, '2025-09-27T18:23:16.448Z');
+INSERT INTO roles (id, name, description, isActive, isSystemRole, createdAt) VALUES (7, 'Shift Operations', 'Day-to-day operational management role for specific shifts', TRUE, FALSE, '2025-09-27T18:23:16.448Z');
+INSERT INTO roles (id, name, description, isActive, isSystemRole, createdAt) VALUES (8, 'Production Planner', 'Responsible for production planning, scheduling, and resource allocation', TRUE, TRUE, '2025-09-27T18:38:03.824Z');
+INSERT INTO roles (id, name, description, isActive, isSystemRole, createdAt) VALUES (9, 'Shop Floor Operator', 'Hands-on production worker responsible for equipment operation and production execution', TRUE, TRUE, '2025-09-27T18:38:03.824Z');
+INSERT INTO roles (id, name, description, isActive, isSystemRole, createdAt) VALUES (10, 'Purchasing Planner', 'Manages procurement, supplier relationships, and material planning', TRUE, TRUE, '2025-09-27T18:38:03.824Z');
+INSERT INTO roles (id, name, description, isActive, isSystemRole, createdAt) VALUES (11, 'Administrator', 'System administrator with full access to all features and settings', TRUE, TRUE, '2025-10-24T18:27:26.393Z');

@@ -1,0 +1,2 @@
+-- Table: dashboards
+INSERT INTO dashboards (id, name, description, isDefault, roleId, userId, configuration, isActive, createdAt, updatedAt) VALUES (1, 'Default Dashboard', 'AI-generated charts and widgets', TRUE, NULL, 1, '{}', TRUE, '2025-09-29T01:16:05.708Z', '2025-09-29T01:16:05.708Z');
