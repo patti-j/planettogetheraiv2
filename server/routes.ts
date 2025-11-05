@@ -5849,10 +5849,11 @@ router.get("/api/schedules/:id/versions/:baseId/compare/:compareId", async (req,
       let totalJobsWithDueDates = 0;
       
       operations.forEach((op: any) => {
-        if (op.due_date && op.scheduled_end) {
+        // Check for dueDate (camelCase) which is how it's mapped in the snapshot
+        if (op.dueDate && op.endDate) {
           totalJobsWithDueDates++;
-          const dueDateTime = new Date(op.due_date).getTime();
-          const endTime = new Date(op.scheduled_end).getTime();
+          const dueDateTime = new Date(op.dueDate).getTime();
+          const endTime = new Date(op.endDate).getTime();
           if (endTime <= dueDateTime) {
             jobsOnTime++;
           }
@@ -5884,13 +5885,19 @@ router.get("/api/schedules/:id/versions/:baseId/compare/:compareId", async (req,
       let totalCost = 0;
       let totalUnits = 0;
       
+      // Use time as a proxy for cost: (setup + cycle time) * assumed hourly rate
+      const assumedHourlyRate = 50; // $50/hour as default labor rate
+      
       operations.forEach((op: any) => {
-        const quantity = parseFloat(op.quantity) || parseFloat(op.order_quantity) || 1;
+        const quantity = parseFloat(op.quantity) || parseFloat(op.required_finish_qty) || 1;
         totalUnits += quantity;
         
-        const setupCost = parseFloat(op.setup_cost) || 0;
-        const runCost = (parseFloat(op.run_cost) || 0) * quantity;
-        totalCost += setupCost + runCost;
+        // Calculate cost from time fields
+        const setupHours = parseFloat(op.setup_hours) || 0;
+        const cycleHours = parseFloat(op.cycle_hrs) || 0;
+        const totalHours = setupHours + cycleHours;
+        
+        totalCost += totalHours * assumedHourlyRate;
       });
       
       return totalUnits > 0 ? 
