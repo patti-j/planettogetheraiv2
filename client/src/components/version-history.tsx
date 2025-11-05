@@ -56,11 +56,14 @@ interface Version {
   checksum: string;
   createdAt: string;
   createdBy: number;
+  createdByName?: string;
+  createdByUsername?: string;
   parentVersionId: number | null;
   changeType: string;
   comment: string | null;
   tag: string | null;
   snapshotData: any;
+  metrics?: any;
 }
 
 interface VersionComparison {
@@ -76,6 +79,12 @@ interface VersionComparison {
       operationsModified: number;
       operationsRemoved: number;
     };
+    resourceUtilization?: Record<string, any>;
+  };
+  metrics?: {
+    timeSpanDelta?: number;
+    resourceUsageDelta?: number;
+    totalDurationDelta?: number;
   };
 }
 
@@ -314,7 +323,7 @@ export function VersionHistory({ scheduleId, currentVersionId }: VersionHistoryP
                         )}
                         <div className="flex items-center justify-between gap-2">
                           <span className="text-xs text-muted-foreground flex-shrink-0">
-                            By User #{version.createdBy}
+                            By {version.createdByName || version.createdByUsername || `User #${version.createdBy}`}
                           </span>
                           <div className="flex space-x-2 flex-shrink-0">
                             {version.id !== currentVersionId && (

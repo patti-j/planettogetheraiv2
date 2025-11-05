@@ -12,7 +12,8 @@ import {
   versionComparisons,
   scheduleLocks,
   versionRollbacks,
-  ptJobOperations 
+  ptJobOperations,
+  users 
 } from '@shared/schema';
 import { eq, and, desc, sql } from 'drizzle-orm';
 
@@ -164,12 +165,30 @@ export class ScheduleVersionService {
     scheduleId: number,
     limit: number = 50
   ): Promise<any[]> {
-    return await db
-      .select()
+    const versions = await db
+      .select({
+        id: scheduleVersions.id,
+        scheduleId: scheduleVersions.scheduleId,
+        versionNumber: scheduleVersions.versionNumber,
+        checksum: scheduleVersions.checksum,
+        createdAt: scheduleVersions.createdAt,
+        createdBy: scheduleVersions.createdBy,
+        createdByName: sql<string>`CONCAT(${users.firstName}, ' ', ${users.lastName})`.as('created_by_name'),
+        createdByUsername: users.username,
+        parentVersionId: scheduleVersions.parentVersionId,
+        changeType: scheduleVersions.source,
+        comment: scheduleVersions.comment,
+        tag: scheduleVersions.versionTag,
+        snapshotData: scheduleVersions.snapshotData,
+        metrics: scheduleVersions.metrics,
+      })
       .from(scheduleVersions)
+      .leftJoin(users, eq(scheduleVersions.createdBy, users.id))
       .where(eq(scheduleVersions.scheduleId, scheduleId))
       .orderBy(desc(scheduleVersions.createdAt))
       .limit(limit);
+    
+    return versions;
   }
 
   /**
