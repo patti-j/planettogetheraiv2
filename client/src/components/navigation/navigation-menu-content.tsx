@@ -101,15 +101,8 @@ export function NavigationMenuContent({ isPinned, onTogglePin, onClose, isOpen }
   const allItems = getAllNavigationItems();
   const currentIndex = allItems.findIndex(item => item.href === location);
 
-  // Filter recent pages to exclude items already in main navigation to avoid duplicates
-  const filteredRecentPages = recentPages.filter(page => {
-    // Check if this page path exists in any navigation group
-    const isInMainNav = navigationGroups.some(group => 
-      group.features.some(feature => feature.href === page.path)
-    );
-    // Only show in Recent Pages if NOT in main navigation
-    return !isInMainNav;
-  });
+  // Show all recent pages - they provide quick access even if they're in main navigation
+  const filteredRecentPages = recentPages;
 
   const handleItemClick = (item: any) => {
     // Handle external links (e.g., HTML files)
