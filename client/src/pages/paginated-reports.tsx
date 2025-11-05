@@ -815,92 +815,155 @@ export default function PaginatedReports() {
         
         // Set up table dimensions
         const pageWidth = doc.internal.pageSize.width;
+        const pageHeight = doc.internal.pageSize.height;
         const margin = 14;
         const tableWidth = pageWidth - (margin * 2);
-        const columnWidth = tableWidth / exportContent.columns.length;
+        const rowHeight = 8;
+        const headerHeight = 10;
+        const bottomMargin = 25; // Space for footer
         
-        // Draw header background
-        doc.setFillColor(240, 240, 240);
-        doc.rect(margin, yPosition, tableWidth, 10, 'F');
+        // Calculate column widths dynamically
+        const numColumns = exportContent.columns.length;
+        let columnWidth: number;
+        let fontSize = 8;
         
-        // Draw header text
-        doc.setFontSize(9);
-        doc.setTextColor(0, 0, 0);
-        doc.setFont('helvetica', 'bold');
+        // Adjust column width and font size based on number of columns
+        if (numColumns <= 5) {
+          columnWidth = tableWidth / numColumns;
+          fontSize = 9;
+        } else if (numColumns <= 10) {
+          columnWidth = tableWidth / Math.min(numColumns, 8); // Max 8 columns visible
+          fontSize = 8;
+        } else {
+          // For many columns, use minimum width and smaller font
+          columnWidth = Math.max(25, tableWidth / 10);
+          fontSize = 7;
+        }
         
-        exportContent.columns.forEach((col: string, index: number) => {
-          const x = margin + (index * columnWidth) + 2;
-          const text = col.length > 15 ? col.substring(0, 13) + '...' : col;
-          doc.text(text, x, yPosition + 7);
-        });
+        // Helper function to draw header
+        const drawHeader = () => {
+          // Draw header background
+          doc.setFillColor(240, 240, 240);
+          const headerWidth = Math.min(tableWidth, columnWidth * numColumns);
+          doc.rect(margin, yPosition, headerWidth, headerHeight, 'F');
+          
+          // Draw header text
+          doc.setFontSize(fontSize);
+          doc.setTextColor(0, 0, 0);
+          doc.setFont('helvetica', 'bold');
+          
+          let currentX = margin;
+          exportContent.columns.forEach((col: string, index: number) => {
+            // Skip columns that would overflow the page
+            if (currentX + columnWidth > pageWidth - margin) {
+              return;
+            }
+            
+            const x = currentX + 2;
+            const maxChars = Math.floor((columnWidth - 4) / (fontSize * 0.5));
+            const text = col.length > maxChars ? col.substring(0, maxChars - 2) + '..' : col;
+            doc.text(text, x, yPosition + 7);
+            currentX += columnWidth;
+          });
+          
+          yPosition += headerHeight;
+          doc.setFont('helvetica', 'normal');
+        };
         
-        yPosition += 10;
-        doc.setFont('helvetica', 'normal');
+        // Draw initial header
+        drawHeader();
         
-        // Draw data rows
-        const maxRowsPerPage = 35; // Approximate rows that fit on a page
-        let rowCount = 0;
-        
-        exportContent.data.slice(0, Math.min(exportContent.data.length, 100)).forEach((row: any, rowIndex: number) => {
-          // Check if we need a new page
-          if (rowCount >= maxRowsPerPage) {
+        // Process all data with proper pagination
+        exportContent.data.forEach((row: any, rowIndex: number) => {
+          // Check if we need a new page (considering bottom margin)
+          if (yPosition + rowHeight > pageHeight - bottomMargin) {
             doc.addPage();
             yPosition = 20;
-            rowCount = 0;
             
-            // Redraw header on new page
-            doc.setFillColor(240, 240, 240);
-            doc.rect(margin, yPosition, tableWidth, 10, 'F');
-            doc.setFont('helvetica', 'bold');
-            doc.setFontSize(9);
+            // Add page header
+            doc.setFontSize(10);
+            doc.setTextColor(100, 100, 100);
+            doc.text(`${exportContent.tableName || 'Report'} - Page ${doc.internal.pages.length - 1}`, margin, 12);
             
-            exportContent.columns.forEach((col: string, index: number) => {
-              const x = margin + (index * columnWidth) + 2;
-              const text = col.length > 15 ? col.substring(0, 13) + '...' : col;
-              doc.text(text, x, yPosition + 7);
-            });
+            yPosition = 25;
             
-            yPosition += 10;
-            doc.setFont('helvetica', 'normal');
+            // Redraw table header on new page
+            drawHeader();
           }
           
           // Alternate row colors
           if (rowIndex % 2 === 1) {
             doc.setFillColor(250, 250, 250);
-            doc.rect(margin, yPosition, tableWidth, 8, 'F');
+            const rowWidth = Math.min(tableWidth, columnWidth * numColumns);
+            doc.rect(margin, yPosition, rowWidth, rowHeight, 'F');
           }
           
           // Draw row data
-          doc.setFontSize(8);
+          doc.setFontSize(fontSize);
           doc.setTextColor(0, 0, 0);
           
+          let currentX = margin;
           exportContent.columns.forEach((col: string, index: number) => {
+            // Skip columns that would overflow the page
+            if (currentX + columnWidth > pageWidth - margin) {
+              return;
+            }
+            
             const value = row[col];
-            const x = margin + (index * columnWidth) + 2;
+            const x = currentX + 2;
             let text = '';
             
             if (value === null || value === undefined) {
-              text = '';
+              text = '-';
+            } else if (typeof value === 'boolean') {
+              text = value ? 'Yes' : 'No';
+            } else if (typeof value === 'number') {
+              text = value.toLocaleString();
             } else {
               text = String(value);
-              // Truncate long text
-              const maxChars = Math.floor(columnWidth / 1.5);
-              if (text.length > maxChars) {
-                text = text.substring(0, maxChars - 3) + '...';
-              }
+            }
+            
+            // Calculate max characters based on column width and font size
+            const maxChars = Math.floor((columnWidth - 4) / (fontSize * 0.5));
+            if (text.length > maxChars) {
+              text = text.substring(0, maxChars - 2) + '..';
             }
             
             doc.text(text, x, yPosition + 6);
+            currentX += columnWidth;
           });
           
-          // Draw grid lines
+          // Draw horizontal grid line
           doc.setDrawColor(200, 200, 200);
           doc.setLineWidth(0.1);
-          doc.line(margin, yPosition + 8, margin + tableWidth, yPosition + 8);
+          const lineWidth = Math.min(tableWidth, columnWidth * numColumns);
+          doc.line(margin, yPosition + rowHeight, margin + lineWidth, yPosition + rowHeight);
           
-          yPosition += 8;
-          rowCount++;
+          yPosition += rowHeight;
         });
+        
+        // Add vertical grid lines for visible columns
+        doc.setDrawColor(200, 200, 200);
+        doc.setLineWidth(0.1);
+        let currentX = margin;
+        for (let i = 0; i <= numColumns; i++) {
+          if (currentX > pageWidth - margin) break;
+          
+          // Draw vertical line from top to current position
+          const startY = headerHeight + 15; // Adjust based on where table starts
+          doc.line(currentX, startY, currentX, yPosition);
+          currentX += columnWidth;
+        }
+        
+        // Add note if columns were cut off
+        const visibleColumns = Math.floor(tableWidth / columnWidth);
+        if (visibleColumns < numColumns) {
+          yPosition += 10;
+          doc.setFontSize(9);
+          doc.setTextColor(100, 100, 100);
+          doc.text(`Note: Showing ${visibleColumns} of ${numColumns} columns. `, margin, yPosition);
+          doc.text('For complete data, please use CSV or Excel export.', margin, yPosition + 5);
+        }
         
         // Add note about limited data
         if (exportContent.data.length > 100) {
