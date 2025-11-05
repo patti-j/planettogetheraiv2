@@ -293,9 +293,9 @@ export function VersionHistory({ scheduleId, currentVersionId }: VersionHistoryP
                     <Card className="ml-12 overflow-hidden cursor-pointer hover:shadow-md transition-shadow"
                           style={{ width: 'calc(100% - 3rem)' }}
                           onClick={() => setSelectedVersion(version)}>
-                      <CardHeader className="pb-3">
-                        <div className="flex items-start justify-between gap-2">
-                          <div className="space-y-1 min-w-0 flex-1">
+                      <CardHeader className="pb-3" style={{ width: '100%' }}>
+                        <div className="flex items-start justify-between gap-2" style={{ width: '100%' }}>
+                          <div className="space-y-1 min-w-0 flex-1" style={{ maxWidth: 'calc(100% - 150px)' }}>
                             <div className="flex items-center space-x-2 flex-wrap">
                               {getChangeTypeIcon(version.changeType)}
                               <span className="font-semibold">Version {version.versionNumber}</span>
