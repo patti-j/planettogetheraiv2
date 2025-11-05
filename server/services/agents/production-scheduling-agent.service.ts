@@ -259,7 +259,31 @@ export class ProductionSchedulingAgent extends BaseAgent {
         `• Version ${v.version_number} (${v.source}, created ${new Date(v.created_at).toLocaleDateString()})`
       ).join('\n');
       
-      // Delete the versions
+      // First, delete related operation versions (child records)
+      await db.execute(sql`
+        DELETE FROM operation_versions 
+        WHERE version_id IN (
+          SELECT id FROM schedule_versions 
+          WHERE schedule_id = 1 
+            AND version_number IN (${sql.join(versionNumbers.map(n => sql`${n}`), sql`, `)})
+        )
+      `);
+      
+      // Also delete related version comparisons if any
+      await db.execute(sql`
+        DELETE FROM version_comparisons 
+        WHERE version_id_1 IN (
+          SELECT id FROM schedule_versions 
+          WHERE schedule_id = 1 
+            AND version_number IN (${sql.join(versionNumbers.map(n => sql`${n}`), sql`, `)})
+        ) OR version_id_2 IN (
+          SELECT id FROM schedule_versions 
+          WHERE schedule_id = 1 
+            AND version_number IN (${sql.join(versionNumbers.map(n => sql`${n}`), sql`, `)})
+        )
+      `);
+      
+      // Now delete the schedule versions
       const deleteResult = await db.execute(sql`
         DELETE FROM schedule_versions 
         WHERE schedule_id = 1 
