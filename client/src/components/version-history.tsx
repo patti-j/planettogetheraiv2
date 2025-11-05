@@ -45,7 +45,8 @@ import {
   Unlock,
   History,
   Info,
-  Sparkles
+  Sparkles,
+  Download
 } from 'lucide-react';
 import { apiRequest, queryClient } from '@/lib/queryClient';
 
@@ -149,6 +150,29 @@ export function VersionHistory({ scheduleId, currentVersionId }: VersionHistoryP
       });
     }
   });
+
+  // Handle loading a version into the production scheduler
+  const handleLoadVersion = (version: Version) => {
+    // Send message to production scheduler iframe to load the version
+    const iframe = document.querySelector('iframe[src="/production-scheduler.html"]') as HTMLIFrameElement;
+    if (iframe && iframe.contentWindow) {
+      iframe.contentWindow.postMessage({
+        type: 'LOAD_VERSION',
+        version: version
+      }, '*');
+      
+      toast({
+        title: 'Loading Version',
+        description: `Loading version ${version.versionNumber} into the scheduler`,
+      });
+    } else {
+      toast({
+        title: 'Scheduler Not Available',
+        description: 'Please navigate to the Production Scheduler tab first',
+        variant: 'destructive',
+      });
+    }
+  };
 
   const getChangeTypeColor = (changeType: string | null | undefined) => {
     switch (changeType) {
@@ -333,13 +357,12 @@ export function VersionHistory({ scheduleId, currentVersionId }: VersionHistoryP
                                 size="sm"
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  setSelectedVersion(version);
-                                  setShowRollbackDialog(true);
+                                  handleLoadVersion(version);
                                 }}
-                                data-testid={`button-rollback-version-${version.id}`}
+                                data-testid={`button-load-version-${version.id}`}
                               >
-                                <RotateCcw className="h-3 w-3 mr-1" />
-                                Rollback
+                                <Download className="h-3 w-3 mr-1" />
+                                Load
                               </Button>
                             )}
                           </div>

@@ -5727,6 +5727,31 @@
                         }, '*');
                     }
                     
+                    // Handle load version request from version history component
+                    if (event.data?.type === 'LOAD_VERSION') {
+                        const version = event.data.version;
+                        console.log('📚 Version History requested version load:', version);
+                        
+                        if (version && window.loadSelectedVersion) {
+                            window.loadSelectedVersion(version).then(() => {
+                                console.log('✅ Version loaded successfully');
+                                parent.postMessage({
+                                    type: 'VERSION_LOAD_COMPLETE',
+                                    versionId: version.id,
+                                    success: true
+                                }, '*');
+                            }).catch(error => {
+                                console.error('❌ Failed to load version:', error);
+                                parent.postMessage({
+                                    type: 'VERSION_LOAD_COMPLETE',
+                                    versionId: version.id,
+                                    success: false,
+                                    error: error.message
+                                }, '*');
+                            });
+                        }
+                    }
+                    
                     // Handle scheduler commands from Max AI
                     if (event.data?.type === 'SCHEDULER_VIEW_CONTROL') {
                         const action = event.data.action;
