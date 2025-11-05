@@ -367,7 +367,7 @@ export default function PaginatedReports() {
       columnsToExport.push(...missingColumns);
     }
     
-    // Fetch ALL data for export (without pagination)
+    // Fetch ALL data for export - using chunked approach for better reliability
     let allData: any[] = [];
     
     console.log('Export initiated:', {
@@ -378,40 +378,67 @@ export default function PaginatedReports() {
     });
     
     try {
-      // Build URL for fetching all data
-      let exportUrl = "";
-      if (sourceType === 'sql' && selectedTable) {
-        exportUrl = `/api/paginated-reports?schemaName=${encodeURIComponent(selectedTable.schemaName)}&tableName=${encodeURIComponent(selectedTable.tableName)}&page=1&pageSize=999999`; // Large pageSize to get all data
-      } else if (sourceType === 'powerbi' && selectedPowerBITable && selectedDatasetId) {
-        exportUrl = `/api/paginated-reports/powerbi?datasetId=${encodeURIComponent(selectedDatasetId)}&tableName=${encodeURIComponent(selectedPowerBITable)}&page=1&pageSize=999999`;
+      // Determine total pages needed (using 100 rows per page for efficiency)
+      const CHUNK_SIZE = 100;
+      const totalRows = data?.total || 0;
+      const totalPages = Math.ceil(totalRows / CHUNK_SIZE);
+      
+      console.log(`Fetching ${totalRows} rows in ${totalPages} chunks of ${CHUNK_SIZE}`);
+      
+      // Get the current auth token
+      const token = localStorage.getItem('token');
+      if (!token) {
+        console.error('No authentication token found');
+        throw new Error('Authentication required for export');
       }
       
-      console.log('Fetching all data from:', exportUrl);
-      
-      if (exportUrl) {
-        // Fetch all data for export
-        const response = await fetch(exportUrl, {
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
+      // Fetch data in chunks
+      for (let page = 1; page <= totalPages; page++) {
+        let chunkUrl = "";
+        
+        if (sourceType === 'sql' && selectedTable) {
+          chunkUrl = `/api/paginated-reports?schemaName=${encodeURIComponent(selectedTable.schemaName)}&tableName=${encodeURIComponent(selectedTable.tableName)}&page=${page}&pageSize=${CHUNK_SIZE}`;
+        } else if (sourceType === 'powerbi' && selectedPowerBITable && selectedDatasetId) {
+          chunkUrl = `/api/paginated-reports/powerbi?datasetId=${encodeURIComponent(selectedDatasetId)}&tableName=${encodeURIComponent(selectedPowerBITable)}&page=${page}&pageSize=${CHUNK_SIZE}`;
+        }
+        
+        if (chunkUrl) {
+          console.log(`Fetching chunk ${page}/${totalPages}`);
+          
+          const response = await fetch(chunkUrl, {
+            method: 'GET',
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            },
+            credentials: 'include'
+          });
+          
+          if (!response.ok) {
+            if (response.status === 401) {
+              console.error(`Authentication failed for chunk ${page}`);
+              throw new Error('Authentication failed. Please log in again.');
+            }
+            throw new Error(`Failed to fetch chunk ${page}: ${response.status}`);
           }
-        });
-        
-        if (!response.ok) {
-          throw new Error(`Failed to fetch export data: ${response.status} ${response.statusText}`);
+          
+          const chunkResult = await response.json() as PaginatedReportData;
+          allData = allData.concat(chunkResult.items || []);
+          
+          // Show progress for large exports
+          if (totalPages > 5 && page % 5 === 0) {
+            console.log(`Progress: ${Math.round((page / totalPages) * 100)}% complete`);
+          }
         }
-        
-        const exportResult = await response.json() as PaginatedReportData;
-        allData = exportResult.items || [];
-        
-        console.log('Export data fetched:', {
-          totalRowsFetched: allData.length,
-          expectedRows: exportResult.total,
-          pagesReturned: Math.ceil(allData.length / 10)
-        });
-        
-        if (allData.length !== exportResult.total) {
-          console.warn(`Data mismatch: Expected ${exportResult.total} rows but got ${allData.length} rows`);
-        }
+      }
+      
+      console.log('Export data fetched successfully:', {
+        totalRowsFetched: allData.length,
+        expectedRows: totalRows
+      });
+      
+      if (allData.length !== totalRows) {
+        console.warn(`Data mismatch: Expected ${totalRows} rows but got ${allData.length} rows`);
       }
     } catch (error) {
       console.error('Failed to fetch all data for export:', error);
@@ -607,17 +634,21 @@ export default function PaginatedReports() {
     try {
       // Dynamic import of jsPDF and autoTable
       const { jsPDF } = await import('jspdf');
-      const autoTableModule = await import('jspdf-autotable');
+      await import('jspdf-autotable'); // This automatically extends jsPDF with autoTable
       
       // Create new PDF document with autoTable support
-      const doc: any = new jsPDF({
+      // Cast to any to access autoTable method added by the plugin
+      const doc = new jsPDF({
         orientation: exportContent.columns.length > 6 ? 'landscape' : 'portrait',
         unit: 'mm',
         format: 'a4'
-      });
+      }) as any;
       
-      // Import autoTable plugin (this extends the jsPDF prototype)
-      // The import alone should add the autoTable method to the doc instance
+      // Verify autoTable is available
+      if (!doc.autoTable) {
+        console.error('autoTable is not available on jsPDF instance');
+        throw new Error('PDF export plugin not loaded properly');
+      }
       
       let yPosition = 15;
       
