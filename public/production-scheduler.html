@@ -6441,6 +6441,15 @@
                                 if (versionResponse.ok) {
                                     const versionResult = await versionResponse.json();
                                     console.log('✅ Version history entry created for manual save:', versionResult);
+                                    
+                                    // Auto-load the newly created version if autoLoad flag is set
+                                    if (versionResult.autoLoad && versionResult.version) {
+                                        console.log('🔄 Auto-loading newly saved version...');
+                                        if (window.loadSelectedVersion) {
+                                            await window.loadSelectedVersion(versionResult.version);
+                                            console.log('✅ Manual save auto-loaded successfully');
+                                        }
+                                    }
                                 } else {
                                     const errorText = await versionResponse.text();
                                     console.error('❌ Failed to create version history entry:', errorText);
@@ -6535,9 +6544,19 @@
                                         comment: `Auto-save after optimization - ${new Date().toLocaleString()}`,
                                         userId: parseInt(localStorage.getItem('userId')) || 1
                                     })
-                                }).then(res => {
+                                }).then(async res => {
                                     if (res.ok) {
-                                        console.log('✅ Schedule version saved with dependencies');
+                                        const result = await res.json();
+                                        console.log('✅ Schedule version saved with dependencies', result);
+                                        
+                                        // Auto-load the newly created version if autoLoad flag is set
+                                        if (result.autoLoad && result.version) {
+                                            console.log('🔄 Auto-loading newly created version...');
+                                            if (window.loadSelectedVersion) {
+                                                await window.loadSelectedVersion(result.version);
+                                                console.log('✅ Version auto-loaded successfully');
+                                            }
+                                        }
                                     }
                                 }).catch(err => {
                                     console.warn('Failed to save schedule version:', err);

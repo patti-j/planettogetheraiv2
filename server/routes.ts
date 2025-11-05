@@ -5746,7 +5746,13 @@ router.post("/api/schedules/:id/versions", async (req, res) => {
     const newVersion = await scheduleVersionService.getVersion(versionId);
     
     console.log('✅ Created version history entry:', newVersion);
-    res.json({ success: true, version: newVersion });
+    
+    // Return success with autoLoad flag to trigger automatic loading in the UI
+    res.json({ 
+      success: true, 
+      version: newVersion,
+      autoLoad: true  // Signal the client to automatically load this version
+    });
   } catch (error) {
     console.error("Error creating version history:", error);
     res.status(500).json({ message: "Failed to create version history entry", error: error.message });
