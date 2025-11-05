@@ -393,9 +393,29 @@ export default function PaginatedReports() {
         let chunkUrl = "";
         
         if (sourceType === 'sql' && selectedTable) {
-          chunkUrl = `/api/paginated-reports?schemaName=${encodeURIComponent(selectedTable.schemaName)}&tableName=${encodeURIComponent(selectedTable.tableName)}&page=${page}&pageSize=${CHUNK_SIZE}`;
-        } else if (sourceType === 'powerbi' && selectedPowerBITable && selectedDatasetId) {
-          chunkUrl = `/api/paginated-reports/powerbi?datasetId=${encodeURIComponent(selectedDatasetId)}&tableName=${encodeURIComponent(selectedPowerBITable)}&page=${page}&pageSize=${CHUNK_SIZE}`;
+          // Use the same parameter names as the regular query (schema, table, not schemaName, tableName)
+          const params = new URLSearchParams({
+            schema: selectedTable.schemaName,
+            table: selectedTable.tableName,
+            page: page.toString(),
+            pageSize: CHUNK_SIZE.toString(),
+            searchTerm: searchTerm || '',
+            sortBy: sortBy || '',
+            sortOrder: sortOrder || 'asc'
+          });
+          chunkUrl = `/api/paginated-reports?${params}`;
+        } else if (sourceType === 'powerbi' && selectedPowerBITable && workspaceId && selectedDatasetId) {
+          const params = new URLSearchParams({
+            workspaceId: workspaceId,
+            datasetId: selectedDatasetId,
+            table: selectedPowerBITable,
+            page: page.toString(),
+            pageSize: CHUNK_SIZE.toString(),
+            searchTerm: searchTerm || '',
+            sortBy: sortBy || '',
+            sortOrder: sortOrder || 'asc'
+          });
+          chunkUrl = `/api/powerbi/dataset-data?${params}`;
         }
         
         if (chunkUrl) {
