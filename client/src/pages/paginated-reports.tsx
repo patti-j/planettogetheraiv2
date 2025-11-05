@@ -685,11 +685,8 @@ export default function PaginatedReports() {
             }
             
             // Footer with page numbers on each page
-            const pageCount = doc.internal.getNumberOfPages ? 
-                             doc.internal.getNumberOfPages() : 
-                             doc.getNumberOfPages ? 
-                             doc.getNumberOfPages() : 
-                             '?';
+            // Get total page count - use the data object's pageCount or calculate
+            const pageCount = data.pageCount || doc.internal.pages.length - 1 || '?';
             
             // Draw footer line
             doc.setDrawColor(200, 200, 200);
@@ -698,16 +695,16 @@ export default function PaginatedReports() {
                     doc.internal.pageSize.width - 10, 
                     doc.internal.pageSize.height - 15);
             
-            // Add page number
+            // Add page number - ensure it's visible and properly positioned
             doc.setFontSize(9);
-            doc.setTextColor(100);
-            const pageString = `Page ${data.pageNumber} of ${pageCount}`;
-            doc.text(
-              pageString,
-              doc.internal.pageSize.width / 2,
-              doc.internal.pageSize.height - 10,
-              { align: 'center' }
-            );
+            doc.setTextColor(100, 100, 100); // Gray color for footer
+            const currentPage = data.pageNumber || doc.internal.getCurrentPageInfo().pageNumber;
+            const pageString = `Page ${currentPage} of ${pageCount}`;
+            
+            // Center the page number text
+            const textWidth = doc.getTextWidth(pageString);
+            const centerX = (doc.internal.pageSize.width - textWidth) / 2;
+            doc.text(pageString, centerX, doc.internal.pageSize.height - 10);
             
             // Add timestamp on the left
             doc.setFontSize(8);
