@@ -203,12 +203,13 @@ export const ReportPreview = memo(({
   return (
     <Card className="flex-1">
       <CardHeader>
-        <CardTitle>Report Preview</CardTitle>
+        <div className="flex items-center justify-between">
+          <CardTitle>Report Preview</CardTitle>
+        </div>
         
         {/* Search and filter controls */}
         <div className="flex gap-2 mt-4">
           <div className="relative flex-1 max-w-sm">
-            <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="Search..."
               value={searchTerm}
@@ -216,6 +217,7 @@ export const ReportPreview = memo(({
               className="pl-8"
               data-testid="input-search"
             />
+            <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
           </div>
           
           <Select
