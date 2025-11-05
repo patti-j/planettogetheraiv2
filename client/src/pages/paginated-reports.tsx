@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
 import { toast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
-import { Settings, Download, FileText, FilePdf, FileSpreadsheet, Copy, Printer } from 'lucide-react';
+import { Settings, Download, FileText, FileSpreadsheet, Copy, Printer } from 'lucide-react';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import * as XLSX from 'xlsx';
@@ -641,7 +641,7 @@ export default function PaginatedReports() {
               className="h-24 flex flex-col gap-2"
               data-testid="dialog-export-pdf"
             >
-              <FilePdf className="h-8 w-8" />
+              <FileText className="h-8 w-8" />
               <span>PDF</span>
             </Button>
           </div>

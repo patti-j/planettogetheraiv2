@@ -93,7 +93,20 @@ The system uses a modular agent architecture designed for role-based access cont
 -   **Production Scheduler Architecture**: Hybrid iframe/React architecture loading Bryntum Scheduler Pro via a backend API route.
 -   **Voice Chat**: Integrates real-time voice chat with OpenAI's gpt-realtime-mini model using WebSocket and SSE.
 -   **Demand Forecasting**: Native React-based forecasting application with SQL Server integration, dynamic table/column selection, and time-series forecasting with Recharts visualization, including intermittent demand handling.
--   **Dynamic Paginated Reports**: Enhanced page supporting SQL Server tables and Power BI datasets as data sources, featuring workspace/dataset/table selection, data querying, and full table browsing with pagination, filtering, sorting, and search.
+-   **Advanced Paginated Reports Designer**: Professional report builder inspired by Power BI with:
+    - Split-pane layout with data fields sidebar and preview editor
+    - Resizable columns with drag handles for precise control
+    - **Include totals row** feature for automatic calculation of sums for numeric columns
+    - Drag-and-drop column reordering
+    - Report templates (Invoice, Financial Statement, Summary Report)
+    - Grouping and aggregation with subtotals
+    - Conditional formatting with visual rules
+    - Save/load report configurations
+    - Full export support (CSV, Excel, PDF) with customization options
+    - Server-side totals and grouping for accurate calculations across entire datasets
+    - Keyboard shortcuts (Ctrl+S save, Ctrl+O load, Ctrl+P print, Ctrl+E export)
+    - Print preview with page break indicators
+    - Full SQL Server and Power BI dataset support with pagination, filtering, sorting
 
 ## Important Implementation Notes
 

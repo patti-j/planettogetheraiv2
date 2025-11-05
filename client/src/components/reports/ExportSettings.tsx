@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
-import { Download, FileSpreadsheet, FileText, File } from "lucide-react";
+import { Download, FileSpreadsheet, FileText } from "lucide-react";
 
 export interface ExportConfig {
   format: 'csv' | 'excel' | 'pdf';
@@ -79,7 +79,7 @@ export const ExportSettings = memo(({
             className="flex-1"
             data-testid="button-export-pdf"
           >
-            <File className="mr-2 h-4 w-4" />
+            <FileText className="mr-2 h-4 w-4" />
             PDF
           </Button>
         </div>
