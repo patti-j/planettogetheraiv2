@@ -16,13 +16,15 @@ import { DataSourceSelector } from '@/components/reports/DataSourceSelector';
 import { ColumnConfigurator } from '@/components/reports/ColumnConfigurator';
 import { FormatRulesPanel, type FormatRule } from '@/components/reports/FormatRulesPanel';
 import { ReportPreview } from '@/components/reports/ReportPreview';
-import { ExportSettings, type ExportConfig } from '@/components/reports/ExportSettings';
+import { ExportSettings, ExportDialog, type ExportConfig } from '@/components/reports/ExportSettings';
 
 export default function PaginatedReports() {
   // Data source state
   const [sourceType, setSourceType] = useState<'sql' | 'powerbi'>('sql');
   const [selectedTable, setSelectedTable] = useState<{ tableName: string; schemaName: string } | null>(null);
+  const [selectedWorkspace, setSelectedWorkspace] = useState<string>('');
   const [selectedDataset, setSelectedDataset] = useState<string>('');
+  const [selectedPowerBITable, setSelectedPowerBITable] = useState<string>('');
   
   // Column configuration state
   const [selectedColumns, setSelectedColumns] = useState<string[]>([]);
@@ -45,6 +47,8 @@ export default function PaginatedReports() {
   // Export state
   const [showExportDialog, setShowExportDialog] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
+  const [exportProgress, setExportProgress] = useState(0);
+  const [exportMessage, setExportMessage] = useState('');
   const [exportConfig, setExportConfig] = useState<ExportConfig>({
     format: 'csv',
     includeHeaders: true,
@@ -78,24 +82,75 @@ export default function PaginatedReports() {
         sortOrder
       });
       return `/api/paginated-reports?${params}`;
+    } else if (sourceType === 'powerbi' && selectedWorkspace && selectedDataset && selectedPowerBITable) {
+      // Power BI uses POST request, so we'll handle it differently
+      return 'powerbi-data'; // This is just a key for React Query
     }
-    // TODO: Add Power BI data fetching
     return null;
-  }, [sourceType, selectedTable, page, pageSize, searchTerm, sortBy, sortOrder]);
+  }, [sourceType, selectedTable, selectedWorkspace, selectedDataset, selectedPowerBITable, page, pageSize, searchTerm, sortBy, sortOrder]);
   
   // Fetch table schema - using the correct endpoint format
-  const schemaUrl = selectedTable 
-    ? `/api/sql-tables/${selectedTable.schemaName}/${selectedTable.tableName}/schema` 
-    : null;
+  const schemaUrl = useMemo(() => {
+    if (sourceType === 'sql' && selectedTable) {
+      return `/api/sql-tables/${selectedTable.schemaName}/${selectedTable.tableName}/schema`;
+    } else if (sourceType === 'powerbi' && selectedWorkspace && selectedDataset && selectedPowerBITable) {
+      return `/api/powerbi/workspaces/${selectedWorkspace}/datasets/${selectedDataset}/tables/${selectedPowerBITable}/schema`;
+    }
+    return null;
+  }, [sourceType, selectedTable, selectedWorkspace, selectedDataset, selectedPowerBITable]);
     
   const { data: tableSchema } = useQuery({
     queryKey: schemaUrl ? [schemaUrl] : [],
-    enabled: !!schemaUrl && !!selectedTable
+    enabled: !!schemaUrl
   });
   
-  // Fetch data
+  // Fetch data - handle both SQL and Power BI
   const { data, isLoading } = useQuery({
-    queryKey: dataUrl ? [dataUrl] : [],
+    queryKey: dataUrl ? [dataUrl, columnFilters, selectedColumns] : [],
+    queryFn: async () => {
+      if (sourceType === 'sql' && selectedTable) {
+        // Regular GET request for SQL data
+        const params = new URLSearchParams({
+          schema: selectedTable.schemaName,
+          table: selectedTable.tableName,
+          page: page.toString(),
+          pageSize: pageSize.toString(),
+          searchTerm,
+          sortBy,
+          sortOrder,
+          filters: JSON.stringify(columnFilters),
+        });
+        const response = await fetch(`/api/paginated-reports?${params}`, {
+          credentials: 'include'
+        });
+        if (!response.ok) throw new Error('Failed to fetch data');
+        return response.json();
+      } else if (sourceType === 'powerbi' && selectedWorkspace && selectedDataset && selectedPowerBITable) {
+        // POST request for Power BI data
+        const response = await fetch('/api/powerbi/dataset-data', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          credentials: 'include',
+          body: JSON.stringify({
+            workspaceId: selectedWorkspace,
+            datasetId: selectedDataset,
+            tableName: selectedPowerBITable,
+            columns: selectedColumns.length > 0 ? selectedColumns : undefined,
+            filters: columnFilters,
+            searchTerm,
+            page,
+            pageSize,
+            sortBy,
+            sortOrder
+          })
+        });
+        if (!response.ok) throw new Error('Failed to fetch Power BI data');
+        return response.json();
+      }
+      return null;
+    },
     enabled: !!dataUrl
   });
   
@@ -111,12 +166,37 @@ export default function PaginatedReports() {
         filters: JSON.stringify(columnFilters),
       });
       return `/api/paginated-reports/totals?${params}`;
+    } else if (sourceType === 'powerbi' && selectedWorkspace && selectedDataset && selectedPowerBITable) {
+      return 'powerbi-totals'; // Key for React Query
     }
     return null;
-  }, [includeTotals, sourceType, selectedTable, searchTerm, columnFilters]);
+  }, [includeTotals, sourceType, selectedTable, selectedWorkspace, selectedDataset, selectedPowerBITable, searchTerm, columnFilters]);
 
   const { data: serverTotals } = useQuery({
-    queryKey: totalsUrl ? [totalsUrl] : [],
+    queryKey: totalsUrl ? [totalsUrl, columnFilters, selectedColumns] : [],
+    queryFn: async () => {
+      if (sourceType === 'sql' && selectedTable && totalsUrl) {
+        const response = await fetch(totalsUrl, { credentials: 'include' });
+        if (!response.ok) throw new Error('Failed to fetch totals');
+        return response.json();
+      } else if (sourceType === 'powerbi' && selectedWorkspace && selectedDataset && selectedPowerBITable) {
+        const response = await fetch('/api/powerbi/dataset-totals', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({
+            workspaceId: selectedWorkspace,
+            datasetId: selectedDataset,
+            tableName: selectedPowerBITable,
+            columns: selectedColumns,
+            filters: columnFilters
+          })
+        });
+        if (!response.ok) throw new Error('Failed to fetch Power BI totals');
+        return response.json();
+      }
+      return null;
+    },
     enabled: !!totalsUrl && includeTotals,
   });
 
@@ -147,6 +227,143 @@ export default function PaginatedReports() {
     
     return totalsRow;
   }, [includeTotals, tableSchema, serverTotals]);
+
+  // Function to fetch ALL data in chunks (for export)
+  const fetchAllData = useCallback(async () => {
+    // Check for required selections based on source type
+    if (sourceType === 'sql' && (!selectedTable || selectedColumns.length === 0)) {
+      throw new Error('No table or columns selected');
+    }
+    if (sourceType === 'powerbi' && (!selectedWorkspace || !selectedDataset || !selectedPowerBITable || selectedColumns.length === 0)) {
+      throw new Error('Power BI configuration incomplete or no columns selected');
+    }
+
+    const chunkSize = 100; // Fetch 100 rows at a time
+    let allData: any[] = [];
+    let currentPage = 1;
+    let hasMoreData = true;
+    let totalRows = 0;
+
+    setExportMessage('Fetching data...');
+    setExportProgress(0);
+
+    try {
+      if (sourceType === 'sql' && selectedTable) {
+        // First, get the total count to show accurate progress
+        const countParams = new URLSearchParams({
+          schema: selectedTable.schemaName,
+          table: selectedTable.tableName,
+          searchTerm,
+          filters: JSON.stringify(columnFilters),
+        });
+        
+        const countUrl = `/api/paginated-reports/count?${countParams}`;
+        const countResponse = await fetch(countUrl, { credentials: 'include' });
+        const { count } = await countResponse.json();
+        totalRows = count || 0;
+
+        // Now fetch all pages for SQL
+        while (hasMoreData) {
+          const params = new URLSearchParams({
+            schema: selectedTable.schemaName,
+            table: selectedTable.tableName,
+            page: currentPage.toString(),
+            pageSize: chunkSize.toString(),
+            searchTerm,
+            sortBy,
+            sortOrder,
+            filters: JSON.stringify(columnFilters),
+          });
+          
+          const url = `/api/paginated-reports?${params}`;
+          const response = await fetch(url, { credentials: 'include' });
+          
+          if (!response.ok) {
+            throw new Error(`Failed to fetch page ${currentPage}`);
+          }
+
+          const pageData = await response.json();
+          
+          if (pageData.items && pageData.items.length > 0) {
+            allData = [...allData, ...pageData.items];
+            const progress = Math.min(95, (allData.length / totalRows) * 100);
+            setExportProgress(progress);
+            setExportMessage(`Fetched ${allData.length} of ${totalRows} rows...`);
+          }
+          
+          // Check if there's more data
+          hasMoreData = pageData.items && pageData.items.length === chunkSize;
+          currentPage++;
+        }
+      } else if (sourceType === 'powerbi') {
+        // Fetch Power BI data in chunks
+        // Note: Power BI might not return total count upfront, so we'll fetch until no more data
+        while (hasMoreData) {
+          const response = await fetch('/api/powerbi/dataset-data', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            credentials: 'include',
+            body: JSON.stringify({
+              workspaceId: selectedWorkspace,
+              datasetId: selectedDataset,
+              tableName: selectedPowerBITable,
+              columns: selectedColumns,
+              filters: columnFilters,
+              searchTerm,
+              page: currentPage,
+              pageSize: chunkSize,
+              sortBy,
+              sortOrder
+            })
+          });
+          
+          if (!response.ok) {
+            throw new Error(`Failed to fetch Power BI data page ${currentPage}`);
+          }
+
+          const pageData = await response.json();
+          
+          if (pageData.items && pageData.items.length > 0) {
+            allData = [...allData, ...pageData.items];
+            
+            // Update progress (we don't know total for Power BI upfront)
+            if (pageData.totalCount) {
+              totalRows = pageData.totalCount;
+              const progress = Math.min(95, (allData.length / totalRows) * 100);
+              setExportProgress(progress);
+              setExportMessage(`Fetched ${allData.length} of ${totalRows} rows...`);
+            } else {
+              setExportMessage(`Fetched ${allData.length} rows...`);
+              setExportProgress((currentPage / (currentPage + 1)) * 100); // Estimate progress
+            }
+          }
+          
+          // Check if there's more data
+          hasMoreData = pageData.items && pageData.items.length === chunkSize;
+          currentPage++;
+        }
+      }
+
+      setExportProgress(100);
+      setExportMessage('Processing data for export...');
+      
+      // Filter data to only include selected columns and respect column order
+      const filteredData = allData.map(row => {
+        const filteredRow: Record<string, any> = {};
+        selectedColumns.forEach(col => {
+          filteredRow[col] = row[col];
+        });
+        return filteredRow;
+      });
+
+      return filteredData;
+    } catch (error) {
+      console.error('Error fetching all data:', error);
+      throw error;
+    }
+  }, [sourceType, selectedTable, selectedWorkspace, selectedDataset, selectedPowerBITable, selectedColumns, searchTerm, sortBy, sortOrder, columnFilters]);
   
   // Group data (client-side for now, should be moved to server)
   const groupedData = useMemo(() => {
@@ -240,6 +457,29 @@ export default function PaginatedReports() {
     setFormatRules(prev => prev.filter(rule => rule.id !== id));
   }, []);
   
+  // Column filter handlers
+  const handleColumnFilterChange = useCallback((column: string, value: string) => {
+    setColumnFilters(prev => ({
+      ...prev,
+      [column]: value
+    }));
+    setPage(1); // Reset to page 1 when filtering
+  }, []);
+
+  const clearColumnFilter = useCallback((column: string) => {
+    setColumnFilters(prev => {
+      const newFilters = { ...prev };
+      delete newFilters[column];
+      return newFilters;
+    });
+    setPage(1);
+  }, []);
+
+  const clearAllFilters = useCallback(() => {
+    setColumnFilters({});
+    setPage(1);
+  }, []);
+
   // Sorting
   const handleSort = useCallback((column: string) => {
     if (sortBy === column) {
@@ -251,11 +491,13 @@ export default function PaginatedReports() {
     setPage(1);
   }, [sortBy]);
   
-  // Export functions
-  const exportToCSV = useCallback(() => {
-    if (!data?.items || selectedColumns.length === 0) return;
+  // Export functions with all data support
+  const exportToCSV = useCallback(async (allData: any[]) => {
+    if (selectedColumns.length === 0) return;
     
     const rows = [];
+    const tableName = selectedTable?.tableName || 'report';
+    const dateStamp = new Date().toISOString().split('T')[0];
     
     // Add header
     if (exportConfig.includeHeaders) {
@@ -267,8 +509,16 @@ export default function PaginatedReports() {
     }
     
     // Add data
-    data.items.forEach(item => {
-      rows.push(selectedColumns.map(col => item[col] || ''));
+    allData.forEach(item => {
+      rows.push(selectedColumns.map(col => {
+        const value = item[col];
+        // Properly escape values
+        if (value === null || value === undefined) return '';
+        if (typeof value === 'string' && (value.includes(',') || value.includes('"') || value.includes('\n'))) {
+          return `"${value.replace(/"/g, '""')}"`;
+        }
+        return value;
+      }));
     });
     
     // Add totals
@@ -290,22 +540,18 @@ export default function PaginatedReports() {
     
     // Create CSV
     const csvContent = rows.map(row => 
-      row.map(cell => 
-        typeof cell === 'string' && cell.includes(',') 
-          ? `"${cell}"` 
-          : cell
-      ).join(',')
+      row.map(cell => String(cell || '')).join(',')
     ).join('\n');
     
-    // Download
-    const blob = new Blob([csvContent], { type: 'text/csv' });
+    // Download with proper filename
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `${exportConfig.fileName || 'report'}.csv`;
+    a.download = `${tableName}_${dateStamp}.csv`;
     a.click();
     window.URL.revokeObjectURL(url);
-  }, [data, selectedColumns, exportConfig, includeTotals, totals]);
+  }, [selectedColumns, selectedTable, exportConfig, includeTotals, totals]);
   
   const exportToExcel = useCallback(() => {
     if (!data?.items || selectedColumns.length === 0) return;
@@ -534,8 +780,12 @@ export default function PaginatedReports() {
                 onSourceTypeChange={setSourceType}
                 selectedTable={selectedTable}
                 onTableChange={setSelectedTable}
+                selectedWorkspace={selectedWorkspace}
+                onWorkspaceChange={setSelectedWorkspace}
                 selectedDataset={selectedDataset}
                 onDatasetChange={setSelectedDataset}
+                selectedPowerBITable={selectedPowerBITable}
+                onPowerBITableChange={setSelectedPowerBITable}
               />
             </TabsContent>
             
@@ -600,6 +850,11 @@ export default function PaginatedReports() {
             onPageChange={setPage}
             onPageSizeChange={setPageSize}
             onGroupExpand={handleGroupExpand}
+            tableSchema={tableSchema}
+            columnFilters={columnFilters}
+            onColumnFilterChange={handleColumnFilterChange}
+            onClearColumnFilter={clearColumnFilter}
+            onClearAllFilters={clearAllFilters}
           />
         </ResizablePanel>
       </ResizablePanelGroup>

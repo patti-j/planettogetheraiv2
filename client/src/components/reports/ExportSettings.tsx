@@ -1,4 +1,4 @@
-import { memo } from 'react';
+import { memo, useState, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -6,7 +6,11 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
-import { Download, FileSpreadsheet, FileText } from "lucide-react";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Progress } from "@/components/ui/progress";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Download, FileSpreadsheet, FileText, FilePlus, Loader2, FileIcon } from "lucide-react";
+import { toast } from "@/hooks/use-toast";
 
 export interface ExportConfig {
   format: 'csv' | 'excel' | 'pdf';
@@ -24,6 +28,234 @@ export interface ExportConfig {
   customFooter: string;
   fileName: string;
 }
+
+interface ExportDialogProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onExport: (format: 'csv' | 'excel' | 'pdf', exportAllData: boolean) => Promise<void>;
+  tableName?: string;
+  selectedColumns?: string[];
+  isExporting?: boolean;
+  exportProgress?: number;
+  exportMessage?: string;
+}
+
+export const ExportDialog = memo(({
+  isOpen,
+  onClose,
+  onExport,
+  tableName = 'report',
+  selectedColumns = [],
+  isExporting = false,
+  exportProgress = 0,
+  exportMessage = ''
+}: ExportDialogProps) => {
+  const [selectedFormat, setSelectedFormat] = useState<'csv' | 'excel' | 'pdf'>('csv');
+  const [exportAllData, setExportAllData] = useState(true);
+  const [includeHeader, setIncludeHeader] = useState(true);
+  const [includeFooter, setIncludeFooter] = useState(false);
+  const [includeTimestamp, setIncludeTimestamp] = useState(true);
+  const [customHeader, setCustomHeader] = useState('');
+  const [customFooter, setCustomFooter] = useState('');
+
+  const handleExport = useCallback(() => {
+    onExport(selectedFormat, exportAllData);
+  }, [selectedFormat, exportAllData, onExport]);
+
+  const getFormatIcon = (format: 'csv' | 'excel' | 'pdf') => {
+    switch (format) {
+      case 'csv':
+        return <FileText className="h-8 w-8 text-blue-500" />;
+      case 'excel':
+        return <FileSpreadsheet className="h-8 w-8 text-green-500" />;
+      case 'pdf':
+        return <FileIcon className="h-8 w-8 text-red-500" />;
+    }
+  };
+
+  const getFormatDescription = (format: 'csv' | 'excel' | 'pdf') => {
+    switch (format) {
+      case 'csv':
+        return 'Comma-separated values file, compatible with all spreadsheet programs';
+      case 'excel':
+        return 'Microsoft Excel workbook with formatted columns and auto-sizing';
+      case 'pdf':
+        return 'PDF document with professional formatting and print-ready layout';
+    }
+  };
+
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="max-w-2xl">
+        <DialogHeader>
+          <DialogTitle>Export Report Data</DialogTitle>
+          <DialogDescription>
+            Export your {tableName} data with {selectedColumns.length} selected columns
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-4 py-4">
+          {/* Export progress */}
+          {isExporting && (
+            <div className="space-y-2">
+              <div className="flex items-center justify-between text-sm">
+                <span className="flex items-center gap-2">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  {exportMessage || 'Preparing export...'}
+                </span>
+                <span>{Math.round(exportProgress)}%</span>
+              </div>
+              <Progress value={exportProgress} className="h-2" />
+            </div>
+          )}
+
+          {/* Format selection */}
+          {!isExporting && (
+            <>
+              <div className="grid grid-cols-3 gap-4">
+                {(['csv', 'excel', 'pdf'] as const).map((format) => (
+                  <button
+                    key={format}
+                    onClick={() => setSelectedFormat(format)}
+                    className={`
+                      flex flex-col items-center gap-2 p-4 rounded-lg border-2 transition-all
+                      ${selectedFormat === format
+                        ? 'border-primary bg-primary/5'
+                        : 'border-muted hover:border-muted-foreground/20'
+                      }
+                    `}
+                    data-testid={`button-format-${format}`}
+                  >
+                    {getFormatIcon(format)}
+                    <div className="text-center">
+                      <div className="font-medium text-sm uppercase">{format}</div>
+                      <div className="text-xs text-muted-foreground mt-1">
+                        {getFormatDescription(format)}
+                      </div>
+                    </div>
+                  </button>
+                ))}
+              </div>
+
+              {/* Data scope selection */}
+              <div className="space-y-3">
+                <Label>Data Scope</Label>
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="export-all"
+                    checked={exportAllData}
+                    onCheckedChange={(checked) => setExportAllData(checked as boolean)}
+                    data-testid="checkbox-export-all"
+                  />
+                  <label
+                    htmlFor="export-all"
+                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                  >
+                    Export all data (not just current page)
+                  </label>
+                </div>
+                {exportAllData && (
+                  <p className="text-xs text-muted-foreground">
+                    All data will be fetched in chunks of 100 rows. Large datasets may take longer to export.
+                  </p>
+                )}
+              </div>
+
+              {/* Optional headers/footers */}
+              <div className="space-y-3">
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="include-header"
+                    checked={includeHeader}
+                    onCheckedChange={(checked) => setIncludeHeader(checked as boolean)}
+                    data-testid="checkbox-include-header"
+                  />
+                  <label htmlFor="include-header" className="text-sm font-medium">
+                    Include header
+                  </label>
+                </div>
+                {includeHeader && (
+                  <Textarea
+                    value={customHeader}
+                    onChange={(e) => setCustomHeader(e.target.value)}
+                    placeholder="Optional custom header text..."
+                    rows={2}
+                    className="text-sm"
+                    data-testid="textarea-header"
+                  />
+                )}
+
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="include-footer"
+                    checked={includeFooter}
+                    onCheckedChange={(checked) => setIncludeFooter(checked as boolean)}
+                    data-testid="checkbox-include-footer"
+                  />
+                  <label htmlFor="include-footer" className="text-sm font-medium">
+                    Include footer
+                  </label>
+                </div>
+                {includeFooter && (
+                  <Textarea
+                    value={customFooter}
+                    onChange={(e) => setCustomFooter(e.target.value)}
+                    placeholder="Optional custom footer text..."
+                    rows={2}
+                    className="text-sm"
+                    data-testid="textarea-footer"
+                  />
+                )}
+
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="include-timestamp"
+                    checked={includeTimestamp}
+                    onCheckedChange={(checked) => setIncludeTimestamp(checked as boolean)}
+                    data-testid="checkbox-include-timestamp"
+                  />
+                  <label htmlFor="include-timestamp" className="text-sm font-medium">
+                    Include timestamp
+                  </label>
+                </div>
+              </div>
+            </>
+          )}
+        </div>
+
+        <DialogFooter>
+          <Button
+            variant="outline"
+            onClick={onClose}
+            disabled={isExporting}
+            data-testid="button-cancel"
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={handleExport}
+            disabled={isExporting || selectedColumns.length === 0}
+            data-testid="button-export-confirm"
+          >
+            {isExporting ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Exporting...
+              </>
+            ) : (
+              <>
+                <Download className="mr-2 h-4 w-4" />
+                Export
+              </>
+            )}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+});
+
+ExportDialog.displayName = 'ExportDialog';
 
 interface ExportSettingsProps {
   exportConfig: ExportConfig;

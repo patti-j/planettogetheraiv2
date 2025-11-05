@@ -1,7 +1,6 @@
-import { memo, useState } from 'react';
+import { memo, useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useQuery } from "@tanstack/react-query";
 import { Database, FileSpreadsheet, Loader2 } from "lucide-react";
@@ -11,9 +10,24 @@ interface SqlTable {
   schemaName: string;
 }
 
-interface PowerBiDataset {
+interface PowerBIWorkspace {
   id: string;
   name: string;
+  isReadOnly: boolean;
+  isOnDedicatedCapacity: boolean;
+}
+
+interface PowerBIDataset {
+  id: string;
+  name: string;
+  isRefreshable?: boolean;
+  storageMode?: string;
+}
+
+interface PowerBITable {
+  name: string;
+  columns?: any[];
+  isHidden?: boolean;
 }
 
 interface DataSourceSelectorProps {
@@ -21,8 +35,12 @@ interface DataSourceSelectorProps {
   onSourceTypeChange: (type: 'sql' | 'powerbi') => void;
   selectedTable: { tableName: string; schemaName: string } | null;
   onTableChange: (table: { tableName: string; schemaName: string } | null) => void;
+  selectedWorkspace: string;
+  onWorkspaceChange: (workspace: string) => void;
   selectedDataset: string;
   onDatasetChange: (dataset: string) => void;
+  selectedPowerBITable: string;
+  onPowerBITableChange: (table: string) => void;
 }
 
 export const DataSourceSelector = memo(({
@@ -30,30 +48,76 @@ export const DataSourceSelector = memo(({
   onSourceTypeChange,
   selectedTable,
   onTableChange,
+  selectedWorkspace,
+  onWorkspaceChange,
   selectedDataset,
-  onDatasetChange
+  onDatasetChange,
+  selectedPowerBITable,
+  onPowerBITableChange
 }: DataSourceSelectorProps) => {
-  const [workspaceName, setWorkspaceName] = useState('');
   
   // Fetch available tables for SQL Server
-  const { data: tables = [], isLoading: tablesLoading } = useQuery<SqlTable[]>({
+  const { data: sqlTables = [], isLoading: sqlTablesLoading } = useQuery<SqlTable[]>({
     queryKey: ['/api/sql-tables'],
     enabled: sourceType === 'sql',
   });
 
-  // Fetch available datasets for Power BI with workspace parameter
-  const { data: datasets = [], isLoading: datasetsLoading, error: datasetsError } = useQuery<PowerBiDataset[]>({
-    queryKey: ['/api/powerbi/datasets', workspaceName],
+  // Fetch Power BI workspaces
+  const { data: workspaces = [], isLoading: workspacesLoading, error: workspacesError } = useQuery<PowerBIWorkspace[]>({
+    queryKey: ['/api/powerbi/workspaces'],
+    enabled: sourceType === 'powerbi',
+    retry: false
+  });
+
+  // Fetch datasets from selected workspace
+  const { data: datasets = [], isLoading: datasetsLoading, error: datasetsError } = useQuery<PowerBIDataset[]>({
+    queryKey: ['/api/powerbi/workspaces', selectedWorkspace, 'datasets'],
     queryFn: async () => {
-      const response = await fetch(`/api/powerbi/datasets?workspace=${encodeURIComponent(workspaceName)}`);
+      if (!selectedWorkspace) return [];
+      const response = await fetch(`/api/powerbi/workspaces/${selectedWorkspace}/datasets`);
       if (!response.ok) {
         throw new Error(`Failed to fetch datasets: ${response.statusText}`);
       }
       return response.json();
     },
-    enabled: sourceType === 'powerbi' && workspaceName.trim().length > 0,
+    enabled: sourceType === 'powerbi' && !!selectedWorkspace,
     retry: false
   });
+
+  // Fetch tables from selected dataset
+  const { data: powerBITables = [], isLoading: tablesLoading, error: tablesError } = useQuery<PowerBITable[]>({
+    queryKey: ['/api/powerbi/workspaces', selectedWorkspace, 'datasets', selectedDataset, 'tables'],
+    queryFn: async () => {
+      if (!selectedWorkspace || !selectedDataset) return [];
+      const response = await fetch(`/api/powerbi/workspaces/${selectedWorkspace}/datasets/${selectedDataset}/tables`);
+      if (!response.ok) {
+        throw new Error(`Failed to fetch tables: ${response.statusText}`);
+      }
+      return response.json();
+    },
+    enabled: sourceType === 'powerbi' && !!selectedWorkspace && !!selectedDataset,
+    retry: false
+  });
+
+  // Reset downstream selections when upstream changes
+  useEffect(() => {
+    if (sourceType === 'powerbi') {
+      // Reset dataset and table when workspace changes
+      if (!selectedWorkspace) {
+        onDatasetChange('');
+        onPowerBITableChange('');
+      }
+    }
+  }, [selectedWorkspace, sourceType, onDatasetChange, onPowerBITableChange]);
+
+  useEffect(() => {
+    if (sourceType === 'powerbi') {
+      // Reset table when dataset changes
+      if (!selectedDataset) {
+        onPowerBITableChange('');
+      }
+    }
+  }, [selectedDataset, sourceType, onPowerBITableChange]);
 
   return (
     <Card>
@@ -141,10 +205,10 @@ export const DataSourceSelector = memo(({
                 const tableName = tableParts.join('.');
                 onTableChange({ schemaName: schema, tableName });
               }}
-              data-testid="select-table"
+              data-testid="select-sql-table"
             >
               <SelectTrigger>
-                {tablesLoading ? (
+                {sqlTablesLoading ? (
                   <div className="flex items-center">
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     Loading tables...
@@ -154,7 +218,7 @@ export const DataSourceSelector = memo(({
                 )}
               </SelectTrigger>
               <SelectContent>
-                {tables.map((table) => (
+                {sqlTables.map((table) => (
                   <SelectItem 
                     key={`${table.schemaName}.${table.tableName}`} 
                     value={`${table.schemaName}.${table.tableName}`}
@@ -170,34 +234,63 @@ export const DataSourceSelector = memo(({
 
         {sourceType === 'powerbi' && (
           <div className="space-y-4">
-            {/* Workspace Name Input */}
+            {/* Step 1: Workspace Selection */}
             <div className="space-y-2">
-              <Label htmlFor="workspace-name">Workspace Name</Label>
-              <Input
-                id="workspace-name"
-                type="text"
-                placeholder="Enter Power BI workspace name"
-                value={workspaceName}
-                onChange={(e) => setWorkspaceName(e.target.value)}
-                data-testid="input-workspace-name"
-              />
-              <p className="text-xs text-muted-foreground">
-                Enter your Power BI workspace name to load available datasets
-              </p>
+              <Label>Step 1: Select Workspace</Label>
+              <Select
+                value={selectedWorkspace}
+                onValueChange={onWorkspaceChange}
+                disabled={workspacesLoading}
+                data-testid="select-workspace"
+              >
+                <SelectTrigger>
+                  {workspacesLoading ? (
+                    <div className="flex items-center">
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Loading workspaces...
+                    </div>
+                  ) : workspacesError ? (
+                    <SelectValue placeholder="Failed to load workspaces" />
+                  ) : workspaces.length === 0 ? (
+                    <SelectValue placeholder="No workspaces found" />
+                  ) : (
+                    <SelectValue placeholder="Select a workspace" />
+                  )}
+                </SelectTrigger>
+                <SelectContent>
+                  {workspaces.map((workspace) => (
+                    <SelectItem 
+                      key={workspace.id} 
+                      value={workspace.id}
+                      data-testid={`select-workspace-${workspace.id}`}
+                    >
+                      {workspace.name}
+                      {workspace.isOnDedicatedCapacity && (
+                        <span className="ml-2 text-xs text-muted-foreground">(Premium)</span>
+                      )}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {workspacesError && (
+                <p className="text-xs text-destructive">
+                  Error loading workspaces. Please ensure Power BI authentication is configured.
+                </p>
+              )}
             </div>
 
-            {/* Dataset Selection */}
+            {/* Step 2: Dataset Selection */}
             <div className="space-y-2">
-              <Label>Select Dataset</Label>
+              <Label>Step 2: Select Dataset</Label>
               <Select
                 value={selectedDataset}
                 onValueChange={onDatasetChange}
-                disabled={!workspaceName.trim() || datasetsLoading}
+                disabled={!selectedWorkspace || datasetsLoading}
                 data-testid="select-dataset"
               >
                 <SelectTrigger>
-                  {!workspaceName.trim() ? (
-                    <SelectValue placeholder="Enter workspace name first" />
+                  {!selectedWorkspace ? (
+                    <SelectValue placeholder="Select workspace first" />
                   ) : datasetsLoading ? (
                     <div className="flex items-center">
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -216,19 +309,84 @@ export const DataSourceSelector = memo(({
                     <SelectItem 
                       key={dataset.id} 
                       value={dataset.id}
-                      data-testid={`select-item-${dataset.id}`}
+                      data-testid={`select-dataset-${dataset.id}`}
                     >
                       {dataset.name}
+                      {dataset.storageMode && (
+                        <span className="ml-2 text-xs text-muted-foreground">({dataset.storageMode})</span>
+                      )}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
-              {datasetsError && (
+              {datasetsError && selectedWorkspace && (
                 <p className="text-xs text-destructive">
-                  Error loading datasets. Please check the workspace name and try again.
+                  Error loading datasets. Please check your permissions for this workspace.
                 </p>
               )}
             </div>
+
+            {/* Step 3: Table Selection */}
+            <div className="space-y-2">
+              <Label>Step 3: Select Table</Label>
+              <Select
+                value={selectedPowerBITable}
+                onValueChange={onPowerBITableChange}
+                disabled={!selectedDataset || tablesLoading}
+                data-testid="select-powerbi-table"
+              >
+                <SelectTrigger>
+                  {!selectedDataset ? (
+                    <SelectValue placeholder="Select dataset first" />
+                  ) : tablesLoading ? (
+                    <div className="flex items-center">
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Loading tables...
+                    </div>
+                  ) : tablesError ? (
+                    <SelectValue placeholder="Failed to load tables" />
+                  ) : powerBITables.length === 0 ? (
+                    <SelectValue placeholder="No tables found in dataset" />
+                  ) : (
+                    <SelectValue placeholder="Select a table" />
+                  )}
+                </SelectTrigger>
+                <SelectContent>
+                  {powerBITables
+                    .filter(table => !table.isHidden) // Filter out hidden tables
+                    .map((table) => (
+                      <SelectItem 
+                        key={table.name} 
+                        value={table.name}
+                        data-testid={`select-powerbi-table-${table.name}`}
+                      >
+                        {table.name}
+                      </SelectItem>
+                    ))}
+                </SelectContent>
+              </Select>
+              {tablesError && selectedDataset && (
+                <p className="text-xs text-destructive">
+                  Error loading tables. The dataset may not support table discovery.
+                </p>
+              )}
+            </div>
+
+            {/* Configuration Status */}
+            {selectedWorkspace && selectedDataset && selectedPowerBITable && (
+              <div className="rounded-lg bg-primary/10 p-3">
+                <p className="text-sm font-medium text-primary">Power BI Configuration Complete</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Workspace: {workspaces.find(w => w.id === selectedWorkspace)?.name || selectedWorkspace}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  Dataset: {datasets.find(d => d.id === selectedDataset)?.name || selectedDataset}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  Table: {selectedPowerBITable}
+                </p>
+              </div>
+            )}
           </div>
         )}
       </CardContent>

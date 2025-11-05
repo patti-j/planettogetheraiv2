@@ -9,6 +9,7 @@ import { realtimeVoiceService } from './services/realtime-voice-service';
 import { aiSchedulingService } from "./services/ai-scheduling-recommendations";
 import { enhancedAuth } from "./enhanced-auth-middleware";
 import { db, directSql } from "./db";
+import { powerBIService } from "./services/powerbi";
 import { 
   insertDashboardSchema, 
   insertWidgetSchema, 
@@ -1102,6 +1103,226 @@ router.get("/api/recent-pages", async (req, res) => {
   } catch (error) {
     console.error("Error fetching recent pages:", error);
     res.status(500).json([]);
+  }
+});
+
+// ========================================
+// Power BI API Routes for Paginated Reports
+// ========================================
+
+// Get Power BI access token (auto authentication)
+router.get("/api/auth/auto", async (req, res) => {
+  try {
+    const token = await powerBIService.getAccessToken();
+    res.json({ 
+      access_token: token,
+      token_type: 'Bearer',
+      expires_in: 3600
+    });
+  } catch (error) {
+    console.error('[PowerBI] Authentication error:', error);
+    res.status(401).json({ 
+      message: 'Power BI authentication failed. Please ensure POWER_BI_CLIENT_ID and POWER_BI_CLIENT_SECRET are configured.' 
+    });
+  }
+});
+
+// Get list of Power BI workspaces
+router.get("/api/powerbi/workspaces", async (req, res) => {
+  try {
+    const accessToken = await powerBIService.getAccessToken();
+    const workspaces = await powerBIService.getWorkspaces(accessToken);
+    
+    res.json(workspaces);
+  } catch (error) {
+    console.error('[PowerBI] Error fetching workspaces:', error);
+    res.status(500).json({ 
+      message: 'Failed to fetch Power BI workspaces',
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
+// Get datasets from a specific workspace
+router.get("/api/powerbi/workspaces/:workspaceId/datasets", async (req, res) => {
+  try {
+    const { workspaceId } = req.params;
+    const accessToken = await powerBIService.getAccessToken();
+    
+    const datasets = await powerBIService.getDatasetsFromWorkspace(accessToken, workspaceId);
+    
+    res.json(datasets);
+  } catch (error) {
+    console.error('[PowerBI] Error fetching datasets:', error);
+    res.status(500).json({ 
+      message: 'Failed to fetch datasets',
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
+// Get tables from a specific dataset
+router.get("/api/powerbi/workspaces/:workspaceId/datasets/:datasetId/tables", async (req, res) => {
+  try {
+    const { workspaceId, datasetId } = req.params;
+    const accessToken = await powerBIService.getAccessToken();
+    
+    const tables = await powerBIService.getDatasetTables(accessToken, workspaceId, datasetId);
+    
+    res.json(tables);
+  } catch (error) {
+    console.error('[PowerBI] Error fetching tables:', error);
+    res.status(500).json({ 
+      message: 'Failed to fetch tables',
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
+// Get table schema (columns and data types)
+router.get("/api/powerbi/workspaces/:workspaceId/datasets/:datasetId/tables/:tableName/schema", async (req, res) => {
+  try {
+    const { workspaceId, datasetId, tableName } = req.params;
+    const accessToken = await powerBIService.getAccessToken();
+    
+    const schema = await powerBIService.getTableSchema(
+      accessToken,
+      workspaceId,
+      datasetId,
+      tableName
+    );
+    
+    res.json(schema);
+  } catch (error) {
+    console.error('[PowerBI] Error fetching table schema:', error);
+    res.status(500).json({ 
+      message: 'Failed to fetch table schema',
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
+// Query data from Power BI dataset (with pagination, filtering, and sorting)
+router.post("/api/powerbi/dataset-data", async (req, res) => {
+  try {
+    const { 
+      workspaceId, 
+      datasetId, 
+      tableName,
+      columns = [],
+      filters = {},
+      searchTerm = '',
+      page = 1,
+      pageSize = 10,
+      sortBy = '',
+      sortOrder = 'asc'
+    } = req.body;
+    
+    if (!workspaceId || !datasetId || !tableName) {
+      return res.status(400).json({ 
+        message: 'Missing required parameters: workspaceId, datasetId, and tableName are required' 
+      });
+    }
+    
+    const accessToken = await powerBIService.getAccessToken();
+    
+    const result = await powerBIService.queryTableData({
+      accessToken,
+      workspaceId,
+      datasetId,
+      tableName,
+      columns,
+      filters,
+      searchTerm,
+      page,
+      pageSize,
+      sortBy,
+      sortOrder
+    });
+    
+    res.json(result);
+  } catch (error) {
+    console.error('[PowerBI] Error querying dataset data:', error);
+    res.status(500).json({ 
+      message: 'Failed to query dataset data',
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
+// Calculate totals for Power BI dataset columns
+router.post("/api/powerbi/dataset-totals", async (req, res) => {
+  try {
+    const { 
+      workspaceId, 
+      datasetId, 
+      tableName,
+      columns = [],
+      filters = {}
+    } = req.body;
+    
+    if (!workspaceId || !datasetId || !tableName) {
+      return res.status(400).json({ 
+        message: 'Missing required parameters: workspaceId, datasetId, and tableName are required' 
+      });
+    }
+    
+    const accessToken = await powerBIService.getAccessToken();
+    
+    const totals = await powerBIService.calculateTotals(
+      accessToken,
+      workspaceId,
+      datasetId,
+      tableName,
+      columns,
+      filters
+    );
+    
+    res.json(totals);
+  } catch (error) {
+    console.error('[PowerBI] Error calculating totals:', error);
+    res.status(500).json({ 
+      message: 'Failed to calculate totals',
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
+// Alternative endpoint for Power BI datasets listing (by workspace name)
+router.get("/api/powerbi/datasets", async (req, res) => {
+  try {
+    const { workspace } = req.query;
+    
+    if (!workspace || typeof workspace !== 'string') {
+      return res.status(400).json({ 
+        message: 'Workspace name is required' 
+      });
+    }
+    
+    const accessToken = await powerBIService.getAccessToken();
+    
+    // First, find the workspace by name
+    const workspaces = await powerBIService.getWorkspaces(accessToken);
+    const targetWorkspace = workspaces.find((ws: any) => 
+      ws.name.toLowerCase() === workspace.toLowerCase()
+    );
+    
+    if (!targetWorkspace) {
+      return res.status(404).json({ 
+        message: `Workspace '${workspace}' not found` 
+      });
+    }
+    
+    // Then get datasets from that workspace
+    const datasets = await powerBIService.getDatasetsFromWorkspace(accessToken, targetWorkspace.id);
+    
+    res.json(datasets);
+  } catch (error) {
+    console.error('[PowerBI] Error fetching datasets:', error);
+    res.status(500).json({ 
+      message: 'Failed to fetch datasets',
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
   }
 });
 

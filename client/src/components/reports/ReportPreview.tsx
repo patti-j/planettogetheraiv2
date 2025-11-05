@@ -1,13 +1,23 @@
-import { memo, useState, useCallback, useEffect } from 'react';
+import { memo, useState, useCallback, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
-import { ChevronLeft, ChevronRight, Search, Filter, ChevronDown, ChevronRight as ChevronRightIcon, Loader2 } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { ChevronLeft, ChevronRight, Search, Filter, ChevronDown, ChevronRight as ChevronRightIcon, Loader2, X } from "lucide-react";
 import { FormatRule } from './FormatRulesPanel';
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
+
+interface TableColumn {
+  columnName: string;
+  dataType: string;
+  isNullable: boolean;
+  maxLength?: number;
+  precision?: number;
+  scale?: number;
+}
 
 interface ReportPreviewProps {
   data: {
@@ -37,6 +47,12 @@ interface ReportPreviewProps {
   onPageChange: (page: number) => void;
   onPageSizeChange: (size: number) => void;
   onGroupExpand?: (groupKey: string) => void;
+  // New props for column filtering
+  tableSchema?: TableColumn[] | null;
+  columnFilters?: Record<string, string>;
+  onColumnFilterChange?: (column: string, value: string) => void;
+  onClearColumnFilter?: (column: string) => void;
+  onClearAllFilters?: () => void;
 }
 
 export const ReportPreview = memo(({
@@ -60,11 +76,73 @@ export const ReportPreview = memo(({
   pageSize,
   onPageChange,
   onPageSizeChange,
-  onGroupExpand
+  onGroupExpand,
+  tableSchema,
+  columnFilters = {},
+  onColumnFilterChange,
+  onClearColumnFilter,
+  onClearAllFilters
 }: ReportPreviewProps) => {
   const [resizingColumn, setResizingColumn] = useState<string | null>(null);
   const [startX, setStartX] = useState(0);
   const [startWidth, setStartWidth] = useState(0);
+
+  // Get schema info for a column
+  const getColumnSchema = useCallback((columnName: string): TableColumn | undefined => {
+    return tableSchema?.find(col => col.columnName === columnName);
+  }, [tableSchema]);
+
+  // Format data type for display
+  const formatDataType = useCallback((dataType: string): string => {
+    const type = dataType.toLowerCase();
+    if (type.includes('varchar') || type.includes('char')) return 'Text';
+    if (type.includes('int')) return 'Number';
+    if (type.includes('decimal') || type.includes('numeric') || type.includes('float')) return 'Decimal';
+    if (type.includes('date') || type.includes('time')) return 'Date/Time';
+    if (type.includes('bit') || type.includes('bool')) return 'Boolean';
+    if (type.includes('money')) return 'Currency';
+    return dataType;
+  }, []);
+
+  // Filter data based on column filters and global search
+  const filteredData = useMemo(() => {
+    if (!data?.items) return null;
+    
+    let filtered = [...data.items];
+    
+    // Apply column filters
+    Object.entries(columnFilters).forEach(([column, filterValue]) => {
+      if (filterValue) {
+        filtered = filtered.filter(item => {
+          const value = item[column];
+          if (value === null || value === undefined) return false;
+          return String(value).toLowerCase().includes(filterValue.toLowerCase());
+        });
+      }
+    });
+    
+    // Apply global search (already handled server-side, but kept for consistency)
+    if (searchTerm) {
+      filtered = filtered.filter(item =>
+        selectedColumns.some(col => {
+          const value = item[col];
+          if (value === null || value === undefined) return false;
+          return String(value).toLowerCase().includes(searchTerm.toLowerCase());
+        })
+      );
+    }
+    
+    return {
+      ...data,
+      items: filtered,
+      total: filtered.length
+    };
+  }, [data, columnFilters, searchTerm, selectedColumns]);
+
+  // Check if there are any active filters
+  const hasActiveFilters = useMemo(() => {
+    return Object.values(columnFilters).some(filter => filter !== '');
+  }, [columnFilters]);
 
   // Apply conditional formatting
   const getCellStyle = useCallback((column: string, value: any): React.CSSProperties => {
@@ -229,13 +307,53 @@ export const ReportPreview = memo(({
       <CardHeader className="flex-shrink-0 border-b">
         <div className="flex items-center justify-between">
           <CardTitle>Report Preview</CardTitle>
+          {hasActiveFilters && onClearAllFilters && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onClearAllFilters}
+              data-testid="button-clear-all-filters"
+            >
+              <X className="mr-1 h-3 w-3" />
+              Clear All Filters
+            </Button>
+          )}
         </div>
+        
+        {/* Active filters as badges */}
+        {hasActiveFilters && (
+          <div className="flex flex-wrap gap-2 mt-3">
+            {Object.entries(columnFilters).map(([column, value]) => {
+              if (!value) return null;
+              return (
+                <Badge
+                  key={column}
+                  variant="secondary"
+                  className="flex items-center gap-1 px-2 py-1"
+                  data-testid={`badge-filter-${column}`}
+                >
+                  <span className="font-medium">{column}:</span>
+                  <span>{value}</span>
+                  {onClearColumnFilter && (
+                    <button
+                      onClick={() => onClearColumnFilter(column)}
+                      className="ml-1 hover:text-destructive"
+                      data-testid={`clear-filter-${column}`}
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  )}
+                </Badge>
+              );
+            })}
+          </div>
+        )}
         
         {/* Search and filter controls */}
         <div className="flex gap-2 mt-4">
           <div className="relative flex-1 max-w-sm">
             <Input
-              placeholder="Search..."
+              placeholder="Search all columns..."
               value={searchTerm}
               onChange={(e) => onSearchChange(e.target.value)}
               className="pl-8"
@@ -273,155 +391,215 @@ export const ReportPreview = memo(({
                 </div>
               ) : groupingEnabled && groupedData ? (
                 renderGroupedData()
+              ) : filteredData && filteredData.items.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
+                  <Search className="h-12 w-12 mb-4 opacity-50" />
+                  <p className="text-lg font-medium">No results found</p>
+                  {hasActiveFilters && (
+                    <p className="text-sm mt-2">
+                      Try adjusting your filters or{' '}
+                      {onClearAllFilters && (
+                        <button
+                          onClick={onClearAllFilters}
+                          className="text-primary underline"
+                        >
+                          clear all filters
+                        </button>
+                      )}
+                    </p>
+                  )}
+                </div>
               ) : (
                 <div className="relative">
                   <Table>
                     <TableHeader className="sticky top-0 z-10 bg-background border-b">
+                      {/* First row: Column headers with data types */}
                       <TableRow>
-                        {selectedColumns.map((column) => (
-                          <TableHead
-                        key={column}
-                        className="relative hover:bg-gray-100 dark:hover:bg-gray-800"
-                        style={{ 
-                          width: columnWidths[column] || 150,
-                          userSelect: resizingColumn ? 'none' : 'auto'
-                        }}
-                        data-testid={`header-${column}`}
-                      >
-                        <div 
-                          className="flex items-center justify-between cursor-pointer pr-4"
-                          onClick={() => onSort(column)}
-                        >
-                          <span>{column}</span>
-                          {sortBy === column && (
-                            <span className="ml-1">
-                              {sortOrder === 'asc' ? '↑' : '↓'}
-                            </span>
-                          )}
-                        </div>
-                        {/* Resize Handle - wider area for easier interaction */}
-                        <div
-                          className={`
-                            absolute -right-1 top-0 h-full w-2 cursor-col-resize 
-                            hover:bg-blue-500/30 transition-colors
-                            ${resizingColumn === column ? 'bg-blue-500/50' : ''}
-                          `}
-                          style={{
-                            padding: '0 3px',
-                            width: '8px',
-                            marginRight: '-3px'
-                          }}
-                          onMouseDown={(e) => handleMouseDown(e, column)}
-                          title="Drag to resize column"
-                        >
-                          {/* Visual indicator line */}
-                          <div className={`
-                            h-full w-0.5 mx-auto
-                            ${resizingColumn === column ? 'bg-blue-600' : 'bg-gray-300 dark:bg-gray-600'}
-                          `} />
-                        </div>
-                      </TableHead>
-                    ))}
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {data?.items.map((item, idx) => (
-                    <TableRow key={idx} data-testid={`row-${idx}`}>
-                      {selectedColumns.map((column) => (
-                        <TableCell
-                          key={column}
-                          style={{
-                            width: columnWidths[column] || 150,
-                            ...getCellStyle(column, item[column])
-                          }}
-                          data-testid={`cell-${idx}-${column}`}
-                        >
-                          {formatCellValue(item[column])}
-                        </TableCell>
+                        {selectedColumns.map((column) => {
+                          const schema = getColumnSchema(column);
+                          return (
+                            <TableHead
+                              key={column}
+                              className="relative hover:bg-gray-100 dark:hover:bg-gray-800 pb-1"
+                              style={{ 
+                                width: columnWidths[column] || 150,
+                                userSelect: resizingColumn ? 'none' : 'auto'
+                              }}
+                              data-testid={`header-${column}`}
+                            >
+                              <div 
+                                className="flex flex-col cursor-pointer pr-4"
+                                onClick={() => onSort(column)}
+                              >
+                                <div className="flex items-center justify-between">
+                                  <span className="font-medium">{column}</span>
+                                  {sortBy === column && (
+                                    <span className="ml-1">
+                                      {sortOrder === 'asc' ? '↑' : '↓'}
+                                    </span>
+                                  )}
+                                </div>
+                                {schema && (
+                                  <span className="text-xs text-muted-foreground mt-0.5">
+                                    {formatDataType(schema.dataType)}
+                                  </span>
+                                )}
+                              </div>
+                              {/* Resize Handle */}
+                              <div
+                                className={`
+                                  absolute -right-1 top-0 h-full w-2 cursor-col-resize 
+                                  hover:bg-blue-500/30 transition-colors
+                                  ${resizingColumn === column ? 'bg-blue-500/50' : ''}
+                                `}
+                                style={{
+                                  padding: '0 3px',
+                                  width: '8px',
+                                  marginRight: '-3px'
+                                }}
+                                onMouseDown={(e) => handleMouseDown(e, column)}
+                                title="Drag to resize column"
+                              >
+                                <div className={`
+                                  h-full w-0.5 mx-auto
+                                  ${resizingColumn === column ? 'bg-blue-600' : 'bg-gray-300 dark:bg-gray-600'}
+                                `} />
+                              </div>
+                            </TableHead>
+                          );
+                        })}
+                      </TableRow>
+                      {/* Second row: Filter inputs */}
+                      {onColumnFilterChange && (
+                        <TableRow className="bg-gray-50 dark:bg-gray-900/50">
+                          {selectedColumns.map((column) => (
+                            <TableHead
+                              key={`filter-${column}`}
+                              className="p-1"
+                              style={{ width: columnWidths[column] || 150 }}
+                            >
+                              <div className="relative">
+                                <Input
+                                  placeholder="Filter..."
+                                  value={columnFilters[column] || ''}
+                                  onChange={(e) => onColumnFilterChange(column, e.target.value)}
+                                  className="h-8 text-sm pl-7 pr-7"
+                                  data-testid={`filter-input-${column}`}
+                                />
+                                <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3 w-3 text-muted-foreground pointer-events-none" />
+                                {columnFilters[column] && onClearColumnFilter && (
+                                  <button
+                                    onClick={() => onClearColumnFilter(column)}
+                                    className="absolute right-2 top-1/2 -translate-y-1/2 hover:text-destructive"
+                                    data-testid={`clear-filter-input-${column}`}
+                                  >
+                                    <X className="h-3 w-3" />
+                                  </button>
+                                )}
+                              </div>
+                            </TableHead>
+                          ))}
+                        </TableRow>
+                      )}
+                    </TableHeader>
+                    <TableBody>
+                      {filteredData?.items.map((item, idx) => (
+                        <TableRow key={idx} data-testid={`row-${idx}`}>
+                          {selectedColumns.map((column) => (
+                            <TableCell
+                              key={column}
+                              style={{
+                                width: columnWidths[column] || 150,
+                                ...getCellStyle(column, item[column])
+                              }}
+                              data-testid={`cell-${idx}-${column}`}
+                            >
+                              {formatCellValue(item[column])}
+                            </TableCell>
+                          ))}
+                        </TableRow>
                       ))}
-                    </TableRow>
-                  ))}
-                  
-                  {/* Totals row */}
-                  {includeTotals && totals && Object.keys(totals).length > 0 && (
-                    <TableRow className="font-bold bg-gray-100 dark:bg-gray-900">
-                      {selectedColumns.map((column) => (
-                        <TableCell
-                          key={column}
-                          style={{ width: columnWidths[column] || 150 }}
-                          data-testid={`total-${column}`}
-                        >
-                          {formatCellValue(totals[column])}
-                        </TableCell>
-                      ))}
-                    </TableRow>
-                  )}
-                </TableBody>
-              </Table>
-              </div>
-            )}
+                      
+                      {/* Totals row */}
+                      {includeTotals && totals && Object.keys(totals).length > 0 && (
+                        <TableRow className="font-bold bg-gray-100 dark:bg-gray-900">
+                          {selectedColumns.map((column) => (
+                            <TableCell
+                              key={column}
+                              style={{ width: columnWidths[column] || 150 }}
+                              data-testid={`total-${column}`}
+                            >
+                              {formatCellValue(totals[column])}
+                            </TableCell>
+                          ))}
+                        </TableRow>
+                      )}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
             </div>
             <ScrollBar orientation="horizontal" />
           </ScrollArea>
         </div>
         
         {/* Pagination controls - Fixed at bottom */}
-        {data && data.totalPages > 1 && (
+        {filteredData && filteredData.totalPages > 1 && (
           <div className="flex-shrink-0 border-t bg-background px-4 py-3">
             <div className="flex items-center justify-between">
               <div className="text-sm text-gray-600">
-                Showing {((page - 1) * pageSize) + 1} to {Math.min(page * pageSize, data.total)} of {data.total} results
-            </div>
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => onPageChange(page - 1)}
-                disabled={page === 1}
-                data-testid="button-prev-page"
-              >
-                <ChevronLeft className="h-4 w-4" />
-                Previous
-              </Button>
-              <div className="flex items-center gap-1">
-                {Array.from({ length: Math.min(5, data.totalPages) }, (_, i) => {
-                  let pageNum;
-                  if (data.totalPages <= 5) {
-                    pageNum = i + 1;
-                  } else if (page <= 3) {
-                    pageNum = i + 1;
-                  } else if (page >= data.totalPages - 2) {
-                    pageNum = data.totalPages - 4 + i;
-                  } else {
-                    pageNum = page - 2 + i;
-                  }
-                  
-                  return (
-                    <Button
-                      key={i}
-                      variant={pageNum === page ? "default" : "outline"}
-                      size="sm"
-                      onClick={() => onPageChange(pageNum)}
-                      data-testid={`button-page-${pageNum}`}
-                    >
-                      {pageNum}
-                    </Button>
-                  );
-                })}
+                Showing {((page - 1) * pageSize) + 1} to {Math.min(page * pageSize, filteredData.total)} of {filteredData.total} results
               </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => onPageChange(page + 1)}
-                disabled={page === data.totalPages}
-                data-testid="button-next-page"
-              >
-                Next
-                <ChevronRight className="h-4 w-4" />
-              </Button>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => onPageChange(page - 1)}
+                  disabled={page === 1}
+                  data-testid="button-prev-page"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                  Previous
+                </Button>
+                <div className="flex items-center gap-1">
+                  {Array.from({ length: Math.min(5, filteredData.totalPages) }, (_, i) => {
+                    let pageNum;
+                    if (filteredData.totalPages <= 5) {
+                      pageNum = i + 1;
+                    } else if (page <= 3) {
+                      pageNum = i + 1;
+                    } else if (page >= filteredData.totalPages - 2) {
+                      pageNum = filteredData.totalPages - 4 + i;
+                    } else {
+                      pageNum = page - 2 + i;
+                    }
+                    
+                    return (
+                      <Button
+                        key={i}
+                        variant={pageNum === page ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => onPageChange(pageNum)}
+                        data-testid={`button-page-${pageNum}`}
+                      >
+                        {pageNum}
+                      </Button>
+                    );
+                  })}
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => onPageChange(page + 1)}
+                  disabled={page === filteredData.totalPages}
+                  data-testid="button-next-page"
+                >
+                  Next
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
           </div>
-        </div>
         )}
       </CardContent>
     </Card>

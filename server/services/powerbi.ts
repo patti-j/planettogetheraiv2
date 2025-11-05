@@ -124,8 +124,40 @@ export class PowerBIService {
     // All other datasets will default to "Import" mode via fallback logic
   };
 
+  private tokenCache: { token: string; expiresAt: number } | null = null;
+
   constructor() {
     // Simple service - no complex config needed
+  }
+
+  /**
+   * Get access token for Power BI - supports both user context and service principal
+   */
+  async getAccessToken(): Promise<string> {
+    // Check if we have a valid cached token
+    if (this.tokenCache && this.tokenCache.expiresAt > Date.now()) {
+      return this.tokenCache.token;
+    }
+
+    // Try to get credentials from environment variables
+    const clientId = process.env.POWER_BI_CLIENT_ID;
+    const clientSecret = process.env.POWER_BI_CLIENT_SECRET;
+    const tenantId = process.env.POWER_BI_TENANT_ID || 'common';
+
+    if (clientId && clientSecret) {
+      // Use service principal authentication
+      const token = await this.authenticateServicePrincipal(clientId, clientSecret, tenantId);
+      
+      // Cache the token (expires in 1 hour)
+      this.tokenCache = {
+        token,
+        expiresAt: Date.now() + 50 * 60 * 1000 // 50 minutes
+      };
+      
+      return token;
+    }
+
+    throw new Error('Power BI authentication not configured. Please set POWER_BI_CLIENT_ID and POWER_BI_CLIENT_SECRET environment variables.');
   }
 
   // Get report from specific workspace
@@ -2017,6 +2049,246 @@ export class PowerBIService {
       return buffer;
     } catch (error) {
       throw new Error(`Failed to download export file: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }
+
+  /**
+   * Query table data with pagination and filters for paginated reports
+   */
+  async queryTableData(params: {
+    accessToken: string;
+    workspaceId: string;
+    datasetId: string;
+    tableName: string;
+    columns?: string[];
+    filters?: Record<string, any>;
+    searchTerm?: string;
+    page?: number;
+    pageSize?: number;
+    sortBy?: string;
+    sortOrder?: 'asc' | 'desc';
+  }): Promise<{ items: any[], totalCount: number }> {
+    try {
+      const { 
+        accessToken, 
+        workspaceId, 
+        datasetId, 
+        tableName, 
+        columns = [], 
+        filters = {},
+        searchTerm = '',
+        page = 1, 
+        pageSize = 10,
+        sortBy = '',
+        sortOrder = 'asc'
+      } = params;
+
+      // Build DAX query
+      let daxQuery = '';
+      const skip = (page - 1) * pageSize;
+
+      // Build base query with optional filtering
+      if (Object.keys(filters).length > 0 || searchTerm) {
+        const filterConditions: string[] = [];
+        
+        // Add column filters
+        Object.entries(filters).forEach(([column, value]) => {
+          if (value !== undefined && value !== null && value !== '') {
+            if (typeof value === 'string') {
+              filterConditions.push(`'${tableName}'[${column}] = "${value}"`);
+            } else if (typeof value === 'number') {
+              filterConditions.push(`'${tableName}'[${column}] = ${value}`);
+            }
+          }
+        });
+
+        // Add search term filter (searches across all string columns)
+        if (searchTerm && columns.length > 0) {
+          const searchConditions = columns
+            .map(col => `SEARCH("${searchTerm}", '${tableName}'[${col}], 1, 0) > 0`)
+            .join(' || ');
+          
+          if (searchConditions) {
+            filterConditions.push(`(${searchConditions})`);
+          }
+        }
+
+        if (filterConditions.length > 0) {
+          daxQuery = `FILTER('${tableName}', ${filterConditions.join(' && ')})`;
+        } else {
+          daxQuery = `'${tableName}'`;
+        }
+      } else {
+        daxQuery = `'${tableName}'`;
+      }
+
+      // Add sorting and pagination
+      if (sortBy) {
+        const direction = sortOrder === 'desc' ? 0 : 1;
+        daxQuery = `TOPN(${skip + pageSize}, ${daxQuery}, '${tableName}'[${sortBy}], ${direction})`;
+      } else {
+        // Without sorting, use TOPN for pagination
+        daxQuery = `TOPN(${skip + pageSize}, ${daxQuery})`;
+      }
+
+      // Select specific columns if requested
+      if (columns.length > 0) {
+        const columnSelections = columns.map(col => `"${col}", '${tableName}'[${col}]`).join(', ');
+        daxQuery = `SELECTCOLUMNS(${daxQuery}, ${columnSelections})`;
+      }
+
+      // Wrap in EVALUATE
+      daxQuery = `EVALUATE ${daxQuery}`;
+
+      console.log('[PowerBI] Executing paginated DAX query:', daxQuery);
+
+      // Execute the main query
+      const result = await this.executeDAXQuery(
+        accessToken,
+        workspaceId,
+        datasetId,
+        daxQuery
+      );
+
+      // Skip the first 'skip' rows to implement pagination
+      const items = (result || []).slice(skip, skip + pageSize);
+
+      // Get total count with a separate query
+      const countQuery = `EVALUATE ROW("Count", COUNTROWS('${tableName}'))`;
+      const countResult = await this.executeDAXQuery(
+        accessToken,
+        workspaceId,
+        datasetId,
+        countQuery
+      );
+
+      const totalCount = countResult?.[0]?.Count || 0;
+
+      return {
+        items,
+        totalCount
+      };
+    } catch (error) {
+      console.error('[PowerBI] Error querying table data:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get table schema including columns and their data types
+   */
+  async getTableSchema(
+    accessToken: string,
+    workspaceId: string,
+    datasetId: string,
+    tableName: string
+  ): Promise<Array<{ columnName: string; dataType: string; isNullable: boolean }>> {
+    try {
+      const columns = await this.getTableColumns(accessToken, workspaceId, datasetId, tableName);
+      
+      return columns.map((col: any) => ({
+        columnName: col.name,
+        dataType: this.mapPowerBIDataType(col.dataType),
+        isNullable: true // Power BI doesn't provide nullable info directly
+      }));
+    } catch (error) {
+      console.error('[PowerBI] Error getting table schema:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Map Power BI data types to SQL-like types for consistency
+   */
+  private mapPowerBIDataType(dataType: string): string {
+    const typeMapping: Record<string, string> = {
+      'Int64': 'bigint',
+      'Int32': 'int',
+      'Int16': 'smallint',
+      'Double': 'float',
+      'Decimal': 'decimal',
+      'Boolean': 'bit',
+      'String': 'nvarchar',
+      'DateTime': 'datetime',
+      'DateTimeZone': 'datetimeoffset',
+      'Time': 'time',
+      'Date': 'date',
+      'Binary': 'varbinary',
+      'Guid': 'uniqueidentifier'
+    };
+    
+    return typeMapping[dataType] || 'nvarchar';
+  }
+
+  /**
+   * Calculate totals for numeric columns
+   */
+  async calculateTotals(
+    accessToken: string,
+    workspaceId: string,
+    datasetId: string,
+    tableName: string,
+    columns: string[],
+    filters?: Record<string, any>
+  ): Promise<Record<string, number>> {
+    try {
+      const numericColumns = columns.filter(col => 
+        // Assume columns with certain keywords are numeric
+        ['amount', 'total', 'quantity', 'price', 'cost', 'count', 'sum'].some(keyword => 
+          col.toLowerCase().includes(keyword)
+        )
+      );
+
+      if (numericColumns.length === 0) {
+        return {};
+      }
+
+      // Build DAX query for totals
+      const sumExpressions = numericColumns.map(col => 
+        `"${col}_Total", SUM('${tableName}'[${col}])`
+      ).join(', ');
+
+      let daxQuery = `EVALUATE ROW(${sumExpressions})`;
+
+      if (filters && Object.keys(filters).length > 0) {
+        const filterConditions = Object.entries(filters)
+          .map(([column, value]) => {
+            if (typeof value === 'string') {
+              return `'${tableName}'[${column}] = "${value}"`;
+            } else if (typeof value === 'number') {
+              return `'${tableName}'[${column}] = ${value}`;
+            }
+            return null;
+          })
+          .filter(Boolean)
+          .join(' && ');
+
+        if (filterConditions) {
+          daxQuery = `EVALUATE CALCULATETABLE(ROW(${sumExpressions}), FILTER('${tableName}', ${filterConditions}))`;
+        }
+      }
+
+      const result = await this.executeDAXQuery(
+        accessToken,
+        workspaceId,
+        datasetId,
+        daxQuery
+      );
+
+      const totals: Record<string, number> = {};
+      if (result && result[0]) {
+        numericColumns.forEach(col => {
+          const totalKey = `${col}_Total`;
+          if (result[0][totalKey] !== undefined) {
+            totals[col] = result[0][totalKey];
+          }
+        });
+      }
+
+      return totals;
+    } catch (error) {
+      console.error('[PowerBI] Error calculating totals:', error);
+      return {};
     }
   }
 }
