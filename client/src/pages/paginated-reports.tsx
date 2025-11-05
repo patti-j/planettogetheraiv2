@@ -83,14 +83,14 @@ export default function PaginatedReports() {
     return null;
   }, [sourceType, selectedTable, page, pageSize, searchTerm, sortBy, sortOrder]);
   
-  // Fetch table schema
+  // Fetch table schema - using the correct endpoint format
   const schemaUrl = selectedTable 
-    ? `/api/sql-schema?table=${selectedTable.tableName}&schema=${selectedTable.schemaName}` 
+    ? `/api/sql-tables/${selectedTable.schemaName}/${selectedTable.tableName}/schema` 
     : null;
     
   const { data: tableSchema } = useQuery({
     queryKey: schemaUrl ? [schemaUrl] : [],
-    enabled: !!schemaUrl
+    enabled: !!schemaUrl && !!selectedTable
   });
   
   // Fetch data
