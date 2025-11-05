@@ -140,9 +140,9 @@ export class PowerBIService {
     }
 
     // Try to get credentials from environment variables
-    const clientId = process.env.POWER_BI_CLIENT_ID;
-    const clientSecret = process.env.POWER_BI_CLIENT_SECRET;
-    const tenantId = process.env.POWER_BI_TENANT_ID || 'common';
+    const clientId = process.env.POWERBI_APPLICATION_ID;
+    const clientSecret = process.env.POWERBI_APPLICATION_SECRET;
+    const tenantId = process.env.POWERBI_TENANT_ID || 'common';
 
     if (clientId && clientSecret) {
       // Use service principal authentication
@@ -157,7 +157,7 @@ export class PowerBIService {
       return token;
     }
 
-    throw new Error('Power BI authentication not configured. Please set POWER_BI_CLIENT_ID and POWER_BI_CLIENT_SECRET environment variables.');
+    throw new Error('Power BI authentication not configured. Please set POWERBI_APPLICATION_ID and POWERBI_APPLICATION_SECRET environment variables.');
   }
 
   // Get report from specific workspace
