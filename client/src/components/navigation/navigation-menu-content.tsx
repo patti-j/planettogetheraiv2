@@ -245,89 +245,6 @@ export function NavigationMenuContent({ isPinned, onTogglePin, onClose, isOpen }
         </div>
       </div>
 
-      {/* Recent Pages Section - Only show in list mode and when there are recent pages */}
-      {layoutMode === 'list' && filteredRecentPages.length > 0 && (
-        <div className="px-3 py-2 border-b flex-shrink-0">
-          <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center gap-2">
-              <Clock className="h-3 w-3 text-muted-foreground" />
-              <p className="text-xs font-medium text-muted-foreground">Recent Pages</p>
-            </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={clearRecentPages}
-              className="h-5 px-1 text-xs"
-            >
-              Clear
-            </Button>
-          </div>
-          
-          <ScrollArea className="h-32 w-full navigation-menu-scroll" style={{ touchAction: 'pan-y', WebkitOverflowScrolling: 'touch' }}>
-            <div className="space-y-0.5 pr-2">
-              {filteredRecentPages.slice(0, userPreferences?.dashboardLayout?.maxRecentPages || 5).map((page, pageIndex) => {
-                const IconComponent = getIconComponent(page.icon || 'FileText');
-                // Find the color from navigation config
-                const getColorForPage = () => {
-                  for (const group of navigationGroups) {
-                    const feature = group.features.find((f: any) => f.href === page.path);
-                    if (feature) {
-                      // Convert bg-color to text-color
-                      const bgColor = feature.color;
-                      if (!bgColor) return 'text-blue-500';
-                      if (bgColor.includes('gradient')) return 'text-purple-500';
-                      return bgColor.replace('bg-', 'text-');
-                    }
-                  }
-                  return 'text-gray-500';
-                };
-
-                return (
-                  <Tooltip key={`${page.path}-${pageIndex}`}>
-                    <TooltipTrigger asChild>
-                      <Button
-                        variant={location === page.path ? 'secondary' : 'ghost'}
-                        className="w-full justify-start group h-7"
-                        onClick={() => {
-                          handleNavigation(page.path, page.label);
-                          if (!isPinned && onClose) onClose();
-                        }}
-                      >
-                        <IconComponent className={cn("h-3 w-3 mr-2 flex-shrink-0", getColorForPage())} />
-                        <span className="flex-1 text-left truncate text-xs">
-                          {page.label}
-                        </span>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className={cn(
-                            "h-4 w-4 p-0 transition-opacity",
-                            page.isPinned ? "opacity-100" : "opacity-0 group-hover:opacity-100"
-                          )}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            togglePinPage(page.path);
-                          }}
-                        >
-                          {page.isPinned ? (
-                            <PinOff className="h-2.5 w-2.5" />
-                          ) : (
-                            <Pin className="h-2.5 w-2.5" />
-                          )}
-                        </Button>
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent side="right">
-                      <p>{page.label}</p>
-                    </TooltipContent>
-                  </Tooltip>
-                );
-              })}
-            </div>
-          </ScrollArea>
-        </div>
-      )}
-
       {/* Menu Content */}
       <ScrollArea className="flex-1 overflow-y-auto navigation-menu-scroll">
         <div className="py-3 pb-10" style={{ 
@@ -338,6 +255,104 @@ export function NavigationMenuContent({ isPinned, onTogglePin, onClose, isOpen }
           {layoutMode === 'list' ? (
             // List Layout - Show items grouped by category with headers
             <div className="px-3">
+              {/* Recents Group - Always show at top if there are recent pages */}
+              {filteredRecentPages.length > 0 && (
+                <div className="mb-4 border-b border-border/20 pb-4">
+                  {/* Category Header */}
+                  <div className="flex items-center justify-between px-2 py-1 mb-2">
+                    <div className="flex items-center gap-2">
+                      <Clock className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-sm font-medium text-foreground/70">
+                        Recents
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-muted-foreground">
+                        {filteredRecentPages.length}
+                      </span>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={clearRecentPages}
+                        className="h-5 px-2 text-xs"
+                      >
+                        Clear
+                      </Button>
+                    </div>
+                  </div>
+
+                  {/* Recent Pages Items */}
+                  <div className="space-y-0.5">
+                    {filteredRecentPages.slice(0, userPreferences?.dashboardLayout?.maxRecentPages || 5).map((page, pageIndex) => {
+                      const IconComponent = getIconComponent(page.icon || 'FileText');
+                      const isActive = location === page.path;
+                      
+                      // Find the color from navigation config
+                      const getColorForPage = () => {
+                        for (const group of navigationGroups) {
+                          const feature = group.features.find((f: any) => f.href === page.path);
+                          if (feature) {
+                            // Convert bg-color to text-color
+                            const bgColor = feature.color;
+                            if (!bgColor) return 'text-blue-500';
+                            if (bgColor.includes('gradient')) return 'text-purple-500';
+                            return bgColor.replace('bg-', 'text-');
+                          }
+                        }
+                        return 'text-gray-500';
+                      };
+
+                      return (
+                        <Button
+                          key={`${page.path}-${pageIndex}`}
+                          variant="ghost"
+                          className={cn(
+                            "w-full justify-start text-left h-9 px-3 font-normal transition-all duration-150 group",
+                            isActive && "bg-accent text-accent-foreground",
+                            !isActive && "hover:bg-accent/50 hover:text-foreground"
+                          )}
+                          onClick={() => {
+                            handleNavigation(page.path, page.label);
+                            if (!isPinned && onClose) onClose();
+                          }}
+                        >
+                          <div className="flex items-center gap-3 flex-1">
+                            <IconComponent className={cn(
+                              "h-4 w-4 flex-shrink-0",
+                              isActive ? "text-primary" : getColorForPage()
+                            )} />
+                            <span className={cn(
+                              "truncate text-sm",
+                              !isActive && "text-foreground/80"
+                            )}>
+                              {page.label}
+                            </span>
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className={cn(
+                              "h-4 w-4 p-0 transition-opacity",
+                              page.isPinned ? "opacity-100" : "opacity-0 group-hover:opacity-100"
+                            )}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              togglePinPage(page.path);
+                            }}
+                          >
+                            {page.isPinned ? (
+                              <PinOff className="h-2.5 w-2.5" />
+                            ) : (
+                              <Pin className="h-2.5 w-2.5" />
+                            )}
+                          </Button>
+                        </Button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
               {filteredGroups.map((group, groupIndex) => {
                 const priorityBg = group.priority === 'high' 
                   ? 'bg-primary/[0.02]' 
@@ -420,19 +435,19 @@ export function NavigationMenuContent({ isPinned, onTogglePin, onClose, isOpen }
           ) : (
             // Hierarchical Layout - Show collapsible categories
             <>
-              {/* Recent Pages as Collapsible Category - Only show when there are recent pages */}
+              {/* Recents as Collapsible Category - Only show when there are recent pages */}
               {filteredRecentPages.length > 0 && (
                 <div className="px-3 py-2 border-b border-border/40">
-                  {/* Recent Pages Header - Clickable to expand/collapse */}
+                  {/* Recents Header - Clickable to expand/collapse */}
                   <Button
                     variant="ghost"
                     className="w-full justify-between h-9 px-2 font-medium hover:bg-accent/50"
-                    onClick={() => toggleGroup('Recent Pages')}
+                    onClick={() => toggleGroup('Recents')}
                   >
                     <div className="flex items-center gap-2">
                       <Clock className="h-4 w-4 text-muted-foreground" />
                       <span className="text-sm font-medium">
-                        Recent Pages
+                        Recents
                       </span>
                     </div>
                     <div className="flex items-center gap-1">
@@ -455,7 +470,7 @@ export function NavigationMenuContent({ isPinned, onTogglePin, onClose, isOpen }
                   </Button>
 
                   {/* Recent Pages Items - Only shown when expanded */}
-                  {expandedGroups.has('Recent Pages') && (
+                  {expandedGroups.has('Recents') && (
                     <div className="mt-1 ml-3 space-y-0.5">
                       {filteredRecentPages.map((page, pageIndex) => {
                         const IconComponent = getIconComponent(page.icon || 'FileText');
