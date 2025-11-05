@@ -403,6 +403,12 @@ export class ScheduleVersionService {
     // Calculate total working hours and resource utilization
     let totalWorkingHours = 0;
     const resourceUsageMap = new Map<string, number>();
+    
+    // Track on-time performance and units
+    let jobsOnTime = 0;
+    let totalJobsWithDueDates = 0;
+    let totalUnits = 0;
+    let totalCost = 0;
 
     operations.forEach(op => {
       if (op.scheduledStart && op.scheduledEnd) {
@@ -420,6 +426,24 @@ export class ScheduleVersionService {
           const currentUsage = resourceUsageMap.get(op.resourceId) || 0;
           resourceUsageMap.set(op.resourceId, currentUsage + operationHours);
         }
+        
+        // Calculate OTIF (On-Time In Full)
+        if (op.dueDate) {
+          totalJobsWithDueDates++;
+          const dueDateTime = new Date(op.dueDate).getTime();
+          if (end <= dueDateTime) {
+            jobsOnTime++;
+          }
+        }
+        
+        // Calculate total units (quantity)
+        const quantity = parseFloat(op.quantity) || parseFloat(op.orderQuantity) || 1;
+        totalUnits += quantity;
+        
+        // Calculate total cost (setup cost + run cost)
+        const setupCost = parseFloat(op.setupCost) || 0;
+        const runCost = (parseFloat(op.runCost) || 0) * quantity;
+        totalCost += setupCost + runCost;
       }
     });
 
@@ -441,6 +465,19 @@ export class ScheduleVersionService {
         resourceUtilization = Math.min(100, resourceUtilization);
       }
     }
+    
+    // Calculate OTIF percentage
+    const otif = totalJobsWithDueDates > 0 ? 
+      Math.round((jobsOnTime / totalJobsWithDueDates) * 1000) / 10 : 0; // Round to 1 decimal
+    
+    // Calculate Thruput (units per day)
+    const makespanDays = makespan / 24; // Convert hours to days
+    const thruput = makespanDays > 0 ? 
+      Math.round((totalUnits / makespanDays) * 10) / 10 : 0; // Round to 1 decimal
+    
+    // Calculate Cost per unit
+    const costPerUnit = totalUnits > 0 ? 
+      Math.round((totalCost / totalUnits) * 100) / 100 : 0; // Round to 2 decimals
 
     return {
       makespan,
@@ -450,7 +487,10 @@ export class ScheduleVersionService {
       totalChangeovers: 0, // Would calculate based on resource switches  
       constraintViolations: operations.filter(op => 
         op.constraintType && op.constraintDate).length,
-      totalWorkingHours: Math.round(totalWorkingHours * 10) / 10 // Add total working hours
+      totalWorkingHours: Math.round(totalWorkingHours * 10) / 10, // Add total working hours
+      otif, // On-Time In Full percentage
+      thruput, // Average units per day
+      costPerUnit // Cost per unit
     };
   }
 
