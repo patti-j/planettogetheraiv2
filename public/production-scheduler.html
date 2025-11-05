@@ -6497,17 +6497,22 @@
                                     }
                                 };
                                 
-                                // Save version in background (don't wait for response)
-                                fetch('/api/saved-schedules', {
+                                // Save as a proper version history entry (with dependencies)
+                                fetch('/api/schedules/1/versions', {
                                     method: 'POST',
                                     headers: {
                                         'Content-Type': 'application/json',
                                         'Authorization': authToken ? `Bearer ${authToken}` : ''
                                     },
-                                    body: JSON.stringify(scheduleData)
+                                    body: JSON.stringify({
+                                        changeType: 'optimization',
+                                        changeDescription: `Applied ${document.getElementById('schedulingAlgorithm').options[document.getElementById('schedulingAlgorithm').selectedIndex].text} algorithm`,
+                                        comment: `Auto-save after optimization - ${new Date().toLocaleString()}`,
+                                        userId: parseInt(localStorage.getItem('userId')) || 1
+                                    })
                                 }).then(res => {
                                     if (res.ok) {
-                                        console.log('📚 Schedule version saved for history');
+                                        console.log('✅ Schedule version saved with dependencies');
                                     }
                                 }).catch(err => {
                                     console.warn('Failed to save schedule version:', err);
@@ -6551,25 +6556,25 @@
                     // Get auth token
                     const authToken = getAuthToken();
                     
-                    // Fetch saved schedules from database
-                    const response = await fetch('/api/saved-schedules', {
+                    // Fetch schedule versions from version history (includes dependencies!)
+                    const response = await fetch('/api/schedules/1/version-history', {
                         headers: {
                             'Authorization': authToken ? `Bearer ${authToken}` : ''
                         }
                     });
                     
                     if (response.ok) {
-                        const schedules = await response.json();
+                        const versions = await response.json();
                         
-                        if (schedules.length === 0) {
+                        if (versions.length === 0) {
                             // Use Bryntum's MessageDialog instead of alert
                             if (window.scheduler && window.scheduler.bryntum) {
                                 window.scheduler.bryntum.MessageDialog.alert({
-                                    title: 'No Schedules',
-                                    message: 'No saved schedules found'
+                                    title: 'No Versions',
+                                    message: 'No saved schedule versions found'
                                 });
                             } else {
-                                alert('No saved schedules found');
+                                alert('No saved schedule versions found');
                             }
                             return;
                         }
@@ -6579,10 +6584,10 @@
                             const { Combo, Popup } = window.scheduler.bryntum;
                             
                             // Prepare schedule items for the combo
-                            const scheduleItems = schedules.map((s, i) => ({
-                                id: i,
-                                text: `${s.name} - ${new Date(s.updatedAt).toLocaleDateString()} ${new Date(s.updatedAt).toLocaleTimeString()}`,
-                                schedule: s
+                            const scheduleItems = versions.map((v, i) => ({
+                                id: v.id,
+                                text: `Version ${v.versionNumber} - ${v.comment || v.source} - ${new Date(v.createdAt).toLocaleDateString()} ${new Date(v.createdAt).toLocaleTimeString()}`,
+                                version: v
                             }));
                             
                             // Create a popup with a combo box
@@ -6615,8 +6620,8 @@
                                             
                                             if (selectedId !== null && selectedId !== undefined) {
                                                 const selectedItem = scheduleItems.find(item => item.id === selectedId);
-                                                if (selectedItem && selectedItem.schedule) {
-                                                    await loadSelectedSchedule(selectedItem.schedule);
+                                                if (selectedItem && selectedItem.version) {
+                                                    await loadSelectedVersion(selectedItem.version);
                                                 }
                                             }
                                             popup.close();
@@ -6632,16 +6637,16 @@
                             return;
                         } else {
                             // Fallback to prompt if Bryntum widgets not available
-                            const scheduleList = schedules.map((s, i) => 
-                                `${i + 1}. ${s.name} (${new Date(s.updatedAt).toLocaleDateString()})`
+                            const versionList = versions.map((v, i) => 
+                                `${i + 1}. Version ${v.versionNumber} - ${v.comment || v.source} (${new Date(v.createdAt).toLocaleDateString()})`
                             ).join('\n');
                             
-                            const selection = prompt(`Select a schedule to load:\n\n${scheduleList}\n\nEnter number (1-${schedules.length}):`);
+                            const selection = prompt(`Select a version to load:\n\n${versionList}\n\nEnter number (1-${versions.length}):`);
                             
                             if (selection) {
                                 const index = parseInt(selection) - 1;
-                                if (index >= 0 && index < schedules.length) {
-                                    await loadSelectedSchedule(schedules[index]);
+                                if (index >= 0 && index < versions.length) {
+                                    await loadSelectedVersion(versions[index]);
                                 }
                             }
                         }
@@ -6655,26 +6660,57 @@
                 }
             };
             
-            // Helper function to load a selected schedule
-            async function loadSelectedSchedule(selectedSchedule) {
+            // Helper function to load a selected version from version history
+            async function loadSelectedVersion(selectedVersion) {
                 try {
-                    // Load the schedule using Bryntum's loadInlineData method
+                    console.log('📚 Loading version:', selectedVersion);
+                    
+                    // Parse the snapshot data from the version
+                    const snapshotData = typeof selectedVersion.snapshotData === 'string' 
+                        ? JSON.parse(selectedVersion.snapshotData) 
+                        : selectedVersion.snapshotData;
+                    
+                    // Load the schedule data including dependencies
                     if (window.scheduler && window.scheduler.project) {
-                        // Try to load using Bryntum's built-in method first
-                        let loadSuccess = false;
-                        
                         try {
-                            // Clean up the schedule data before loading
-                            const cleanedData = {
-                                events: selectedSchedule.scheduleData.events || [],
-                                resources: selectedSchedule.scheduleData.resources || [],
-                                // Skip dependencies as they cause issues with Bryntum's internal methods
-                                // Dependencies are visual-only anyway
-                                dependencies: []
-                            };
+                            // First, we need to reload the operations to get the scheduled times from the version
+                            // The version contains operations with their scheduled start/end times
+                            const operations = snapshotData.operations || [];
+                            const dependencies = snapshotData.dependencies || [];
                             
-                            await window.scheduler.project.loadInlineData(cleanedData);
-                            loadSuccess = true;
+                            console.log(`📚 Loading ${operations.length} operations and ${dependencies.length} dependencies from version`);
+                            
+                            // Update operations with their scheduled times from the version
+                            operations.forEach(op => {
+                                const event = window.scheduler.eventStore.getById(op.id);
+                                if (event && op.scheduledStart && op.scheduledEnd) {
+                                    event.startDate = new Date(op.scheduledStart);
+                                    event.endDate = new Date(op.scheduledEnd);
+                                    event.manuallyScheduled = op.manuallyScheduled || false;
+                                    console.log(`✅ Updated operation ${op.id} with times from version`);
+                                }
+                            });
+                            
+                            // Load dependencies if visual store exists
+                            if (window.visualDependencyStore && dependencies.length > 0) {
+                                console.log('📚 Loading dependencies into visual store...');
+                                window.visualDependencyStore.data = dependencies;
+                                console.log(`✅ Loaded ${dependencies.length} dependencies`);
+                            }
+                            
+                            // Refresh the scheduler view
+                            window.scheduler.refresh();
+                            
+                            console.log('✅ Version loaded successfully');
+                            
+                            // Show success message
+                            if (window.scheduler && window.scheduler.bryntum) {
+                                window.scheduler.bryntum.Toast.show({
+                                    html: `Loaded version ${selectedVersion.versionNumber} with ${dependencies.length} dependencies`,
+                                    color: 'b-green',
+                                    timeout: 3000
+                                });
+                            }
                         } catch (loadError) {
                             console.warn('Could not use loadInlineData, trying manual load:', loadError);
                             
