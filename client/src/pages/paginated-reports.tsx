@@ -631,24 +631,21 @@ export default function PaginatedReports() {
     }
   };
 
-  // PDF Export Function - Simplified approach
+  // PDF Export Function - with fallback approach
   const exportToPDF = async (exportContent: any, filename: string) => {
     try {
-      // Create new PDF document - the autoTable plugin is already imported
+      // Create new PDF document
       const doc = new jsPDF({
         orientation: exportContent.columns.length > 6 ? 'landscape' : 'portrait',
         unit: 'mm',
         format: 'a4'
       });
       
-      // Cast to any to access the autoTable method
+      // Try to use autoTable if available
       const docWithAutoTable = doc as any;
       
-      // Double check that autoTable is available
-      if (!docWithAutoTable.autoTable) {
-        console.error('autoTable is not available on jsPDF instance');
-        throw new Error('PDF export plugin not loaded properly. The jspdf-autotable library may not be installed correctly.');
-      }
+      // Check if autoTable plugin is available
+      const hasAutoTable = typeof docWithAutoTable.autoTable === 'function';
       
       let yPosition = 15;
       
@@ -694,8 +691,8 @@ export default function PaginatedReports() {
         lastRow: tableRows[tableRows.length - 1]
       });
       
-      // Always use autoTable for professional table rendering
-      if (true) { // Force usage of autoTable - it should always be available after import
+      // Use autoTable if available, otherwise fallback to manual table
+      if (hasAutoTable) {
         // Determine column alignments based on data types
         const columnAlignments = exportContent.columns.map((col: string) => {
           // Check first non-null value to determine data type
@@ -813,8 +810,114 @@ export default function PaginatedReports() {
           }
         }
       } else {
-        // This should never happen as we're importing autoTable above
-        throw new Error('PDF table generation library not loaded. Please try again or use CSV/Excel export.');
+        // Fallback: Create manual table without autoTable plugin
+        console.log('Using fallback PDF table generation (autoTable not available)');
+        
+        // Set up table dimensions
+        const pageWidth = doc.internal.pageSize.width;
+        const margin = 14;
+        const tableWidth = pageWidth - (margin * 2);
+        const columnWidth = tableWidth / exportContent.columns.length;
+        
+        // Draw header background
+        doc.setFillColor(240, 240, 240);
+        doc.rect(margin, yPosition, tableWidth, 10, 'F');
+        
+        // Draw header text
+        doc.setFontSize(9);
+        doc.setTextColor(0, 0, 0);
+        doc.setFont('helvetica', 'bold');
+        
+        exportContent.columns.forEach((col: string, index: number) => {
+          const x = margin + (index * columnWidth) + 2;
+          const text = col.length > 15 ? col.substring(0, 13) + '...' : col;
+          doc.text(text, x, yPosition + 7);
+        });
+        
+        yPosition += 10;
+        doc.setFont('helvetica', 'normal');
+        
+        // Draw data rows
+        const maxRowsPerPage = 35; // Approximate rows that fit on a page
+        let rowCount = 0;
+        
+        exportContent.data.slice(0, Math.min(exportContent.data.length, 100)).forEach((row: any, rowIndex: number) => {
+          // Check if we need a new page
+          if (rowCount >= maxRowsPerPage) {
+            doc.addPage();
+            yPosition = 20;
+            rowCount = 0;
+            
+            // Redraw header on new page
+            doc.setFillColor(240, 240, 240);
+            doc.rect(margin, yPosition, tableWidth, 10, 'F');
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(9);
+            
+            exportContent.columns.forEach((col: string, index: number) => {
+              const x = margin + (index * columnWidth) + 2;
+              const text = col.length > 15 ? col.substring(0, 13) + '...' : col;
+              doc.text(text, x, yPosition + 7);
+            });
+            
+            yPosition += 10;
+            doc.setFont('helvetica', 'normal');
+          }
+          
+          // Alternate row colors
+          if (rowIndex % 2 === 1) {
+            doc.setFillColor(250, 250, 250);
+            doc.rect(margin, yPosition, tableWidth, 8, 'F');
+          }
+          
+          // Draw row data
+          doc.setFontSize(8);
+          doc.setTextColor(0, 0, 0);
+          
+          exportContent.columns.forEach((col: string, index: number) => {
+            const value = row[col];
+            const x = margin + (index * columnWidth) + 2;
+            let text = '';
+            
+            if (value === null || value === undefined) {
+              text = '';
+            } else {
+              text = String(value);
+              // Truncate long text
+              const maxChars = Math.floor(columnWidth / 1.5);
+              if (text.length > maxChars) {
+                text = text.substring(0, maxChars - 3) + '...';
+              }
+            }
+            
+            doc.text(text, x, yPosition + 6);
+          });
+          
+          // Draw grid lines
+          doc.setDrawColor(200, 200, 200);
+          doc.setLineWidth(0.1);
+          doc.line(margin, yPosition + 8, margin + tableWidth, yPosition + 8);
+          
+          yPosition += 8;
+          rowCount++;
+        });
+        
+        // Add note about limited data
+        if (exportContent.data.length > 100) {
+          yPosition += 10;
+          doc.setFontSize(10);
+          doc.setTextColor(100, 100, 100);
+          doc.text(`Note: Showing first 100 rows of ${exportContent.data.length} total rows`, margin, yPosition);
+          doc.text('For complete data, please use CSV or Excel export', margin, yPosition + 6);
+        }
+        
+        // Add footer if provided
+        if (exportContent.footer) {
+          yPosition += 10;
+          doc.setFontSize(10);
+          doc.setTextColor(0, 0, 0);
+          doc.text(exportContent.footer, margin, yPosition);
+        }
       }
       
       // Save the PDF file
