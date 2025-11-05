@@ -1,8 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable';
+import { Input } from '@/components/ui/input';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { useToast } from '@/hooks/use-toast';
+import { useMutation } from '@tanstack/react-query';
+import { apiRequest } from '@/lib/queryClient';
 import { 
   ArrowLeft, 
   Bot, 
@@ -16,8 +21,17 @@ import {
   Target,
   Clock,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Send,
+  Loader2
 } from 'lucide-react';
+
+interface Message {
+  id: string;
+  type: 'user' | 'assistant';
+  content: string;
+  timestamp: Date;
+}
 
 interface ActionRecommendation {
   id: string;
@@ -48,6 +62,90 @@ interface WorkWithAgentModalProps {
 export function WorkWithAgentModal({ isOpen, onClose, recommendation }: WorkWithAgentModalProps) {
   const [isConnected, setIsConnected] = useState(true);
   const [isDetailsMinimized, setIsDetailsMinimized] = useState(false);
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [inputMessage, setInputMessage] = useState('');
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const { toast } = useToast();
+
+  // Initialize with welcome message from agent
+  useEffect(() => {
+    if (isOpen && recommendation && messages.length === 0) {
+      const welcomeMessage: Message = {
+        id: 'welcome-' + Date.now(),
+        type: 'assistant',
+        content: `Hello! I'm the Production Scheduling Agent. I'm here to help you resolve: "${recommendation.title}"\n\nI can help you:\n• Analyze the situation and provide recommendations\n• Execute scheduling algorithms (ASAP, ALAP)\n• Check resource availability\n• Review job priorities\n\nHow can I assist you with this action?`,
+        timestamp: new Date()
+      };
+      setMessages([welcomeMessage]);
+    }
+  }, [isOpen, recommendation]);
+
+  // Auto-scroll to bottom when new messages arrive
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
+
+  // Send message mutation
+  const sendMessageMutation = useMutation({
+    mutationFn: async (message: string) => {
+      const response = await apiRequest("POST", "/api/max-ai/chat", {
+        message: message,
+        context: {
+          page: 'action-resolution',
+          currentPage: '/action-resolution',
+          agent: 'production_scheduling',
+          recommendation: recommendation,
+          userRole: 'Administrator'
+        },
+        conversationHistory: messages.slice(-5) // Send last 5 messages for context
+      });
+      return response.json();
+    },
+    onSuccess: (data) => {
+      // Add assistant's response to messages
+      const assistantMessage: Message = {
+        id: Date.now().toString() + '-assistant',
+        type: 'assistant',
+        content: data.response || data.message || data.reply || 'I received your message.',
+        timestamp: new Date()
+      };
+      setMessages(prev => [...prev, assistantMessage]);
+    },
+    onError: (error) => {
+      console.error('Error sending message:', error);
+      toast({
+        title: "Error",
+        description: "Failed to send message. Please try again.",
+        variant: "destructive"
+      });
+    }
+  });
+
+  const handleSendMessage = () => {
+    if (!inputMessage.trim() || sendMessageMutation.isPending) return;
+
+    // Add user message to chat
+    const userMessage: Message = {
+      id: Date.now().toString() + '-user',
+      type: 'user',
+      content: inputMessage,
+      timestamp: new Date()
+    };
+    setMessages(prev => [...prev, userMessage]);
+
+    // Send to API
+    sendMessageMutation.mutate(inputMessage);
+    
+    // Clear input
+    setInputMessage('');
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey && !sendMessageMutation.isPending) {
+      e.preventDefault();
+      handleSendMessage();
+    }
+  };
 
   if (!isOpen || !recommendation) return null;
 
@@ -222,33 +320,89 @@ export function WorkWithAgentModal({ isOpen, onClose, recommendation }: WorkWith
         <ResizablePanelGroup direction="horizontal" className="flex-1">
           {/* Center Panel - Agent Conversation */}
           <ResizablePanel defaultSize={50} minSize={30} maxSize={70}>
-            <div className="flex flex-col h-full">
-              <div className="flex-1 p-6">
-                <div className="flex items-center gap-3 mb-4">
+            <div className="flex flex-col h-full bg-white dark:bg-gray-800">
+              {/* Chat Header */}
+              <div className="p-4 border-b border-gray-200 dark:border-gray-700">
+                <div className="flex items-center gap-3">
                   <div className="flex items-center gap-2">
                     <Bot className="w-6 h-6 text-blue-600" />
                     <h3 className="text-lg font-semibold">Discuss with Production Scheduling</h3>
                   </div>
                   {isConnected && (
                     <div className="flex items-center gap-1 text-sm text-green-600">
-                      <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                      <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
                       Connected
                     </div>
                   )}
                 </div>
-
-                <p className="text-gray-600 dark:text-gray-400 mb-8">
+                <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
                   Work together to resolve: {recommendation.title}
                 </p>
+              </div>
 
-                <div className="flex flex-col items-center justify-center flex-1 max-w-md mx-auto">
-                  <div className="w-16 h-16 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center mb-4">
-                    <CheckCircle className="w-8 h-8 text-blue-600" />
-                  </div>
-                  <h4 className="text-lg font-medium mb-2">Ready to resolve this action</h4>
-                  <p className="text-gray-600 dark:text-gray-400 text-center mb-6">
-                    Start a conversation with Production Scheduling to work through the resolution
-                  </p>
+              {/* Messages Area */}
+              <ScrollArea className="flex-1 p-4">
+                <div className="space-y-4">
+                  {messages.map((message) => (
+                    <div
+                      key={message.id}
+                      className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}
+                      data-testid={`message-${message.type}-${message.id}`}
+                    >
+                      <div
+                        className={`max-w-[80%] rounded-lg px-4 py-2 ${
+                          message.type === 'user'
+                            ? 'bg-blue-600 text-white'
+                            : 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-100'
+                        }`}
+                      >
+                        <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+                        <span className="text-xs opacity-70 mt-1 block">
+                          {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                  {sendMessageMutation.isPending && (
+                    <div className="flex justify-start">
+                      <div className="bg-gray-100 dark:bg-gray-700 rounded-lg px-4 py-2">
+                        <div className="flex items-center gap-2">
+                          <Loader2 className="w-4 h-4 animate-spin text-blue-600" />
+                          <span className="text-sm text-gray-600 dark:text-gray-400">Thinking...</span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  <div ref={messagesEndRef} />
+                </div>
+              </ScrollArea>
+
+              {/* Input Area */}
+              <div className="p-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
+                <div className="flex gap-2">
+                  <Input
+                    type="text"
+                    placeholder="Type your message..."
+                    value={inputMessage}
+                    onChange={(e) => setInputMessage(e.target.value)}
+                    onKeyDown={handleKeyDown}
+                    disabled={sendMessageMutation.isPending}
+                    className="flex-1"
+                    data-testid="input-chat-message"
+                  />
+                  <Button
+                    onClick={handleSendMessage}
+                    disabled={!inputMessage.trim() || sendMessageMutation.isPending}
+                    className="gap-2"
+                    data-testid="button-send-message"
+                  >
+                    {sendMessageMutation.isPending ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Send className="w-4 h-4" />
+                    )}
+                    Send
+                  </Button>
                 </div>
               </div>
             </div>
