@@ -1,4 +1,4 @@
-import { memo, useState, useCallback, useMemo } from 'react';
+import { memo, useState, useCallback, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -120,31 +120,55 @@ export const ReportPreview = memo(({
   }, []);
 
   const handleMouseDown = (e: React.MouseEvent, column: string) => {
+    // Stop propagation to prevent triggering column sort
+    e.stopPropagation();
+    e.preventDefault();
+    
     setResizingColumn(column);
     setStartX(e.clientX);
     setStartWidth(columnWidths[column] || 150);
-    e.preventDefault();
+    
+    // Prevent text selection during resize
+    document.body.style.userSelect = 'none';
+    document.body.style.cursor = 'col-resize';
   };
 
   const handleMouseMove = useCallback((e: MouseEvent) => {
     if (!resizingColumn) return;
+    
     const diff = e.clientX - startX;
     const newWidth = Math.max(50, startWidth + diff);
     onColumnResize(resizingColumn, newWidth);
   }, [resizingColumn, startX, startWidth, onColumnResize]);
 
   const handleMouseUp = useCallback(() => {
-    setResizingColumn(null);
-  }, []);
+    if (resizingColumn) {
+      // Re-enable text selection
+      document.body.style.userSelect = '';
+      document.body.style.cursor = '';
+      setResizingColumn(null);
+    }
+  }, [resizingColumn]);
 
   // Add mouse event listeners for column resizing
-  useMemo(() => {
+  useEffect(() => {
     if (resizingColumn) {
       document.addEventListener('mousemove', handleMouseMove);
       document.addEventListener('mouseup', handleMouseUp);
+      
+      // Also listen for mouse leave to handle edge cases
+      const handleMouseLeave = () => {
+        document.body.style.userSelect = '';
+        document.body.style.cursor = '';
+      };
+      document.addEventListener('mouseleave', handleMouseLeave);
+      
       return () => {
         document.removeEventListener('mousemove', handleMouseMove);
         document.removeEventListener('mouseup', handleMouseUp);
+        document.removeEventListener('mouseleave', handleMouseLeave);
+        document.body.style.userSelect = '';
+        document.body.style.cursor = '';
       };
     }
   }, [resizingColumn, handleMouseMove, handleMouseUp]);
@@ -201,8 +225,8 @@ export const ReportPreview = memo(({
   };
 
   return (
-    <Card className="flex-1">
-      <CardHeader>
+    <Card className="flex flex-col h-[70vh] max-h-[800px] min-h-[400px]">
+      <CardHeader className="flex-shrink-0 border-b">
         <div className="flex items-center justify-between">
           <CardTitle>Report Preview</CardTitle>
         </div>
@@ -238,28 +262,36 @@ export const ReportPreview = memo(({
         </div>
       </CardHeader>
       
-      <CardContent>
-        <ScrollArea className="w-full">
-          <div className="min-w-full">
-            {loading ? (
-              <div className="flex items-center justify-center py-8">
-                <Loader2 className="h-8 w-8 animate-spin" />
-              </div>
-            ) : groupingEnabled && groupedData ? (
-              renderGroupedData()
-            ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    {selectedColumns.map((column) => (
-                      <TableHead
+      <CardContent className="flex-1 flex flex-col overflow-hidden p-0">
+        {/* Table Container with proper scrolling */}
+        <div className="flex-1 overflow-hidden relative">
+          <ScrollArea className="h-full w-full p-4">
+            <div className="min-w-full">
+              {loading ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="h-8 w-8 animate-spin" />
+                </div>
+              ) : groupingEnabled && groupedData ? (
+                renderGroupedData()
+              ) : (
+                <div className="relative">
+                  <Table>
+                    <TableHeader className="sticky top-0 z-10 bg-background border-b">
+                      <TableRow>
+                        {selectedColumns.map((column) => (
+                          <TableHead
                         key={column}
-                        className="relative cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800"
-                        style={{ width: columnWidths[column] || 150 }}
-                        onClick={() => onSort(column)}
+                        className="relative hover:bg-gray-100 dark:hover:bg-gray-800"
+                        style={{ 
+                          width: columnWidths[column] || 150,
+                          userSelect: resizingColumn ? 'none' : 'auto'
+                        }}
                         data-testid={`header-${column}`}
                       >
-                        <div className="flex items-center justify-between">
+                        <div 
+                          className="flex items-center justify-between cursor-pointer pr-4"
+                          onClick={() => onSort(column)}
+                        >
                           <span>{column}</span>
                           {sortBy === column && (
                             <span className="ml-1">
@@ -267,10 +299,27 @@ export const ReportPreview = memo(({
                             </span>
                           )}
                         </div>
+                        {/* Resize Handle - wider area for easier interaction */}
                         <div
-                          className="absolute right-0 top-0 h-full w-2 cursor-col-resize hover:bg-blue-500"
+                          className={`
+                            absolute -right-1 top-0 h-full w-2 cursor-col-resize 
+                            hover:bg-blue-500/30 transition-colors
+                            ${resizingColumn === column ? 'bg-blue-500/50' : ''}
+                          `}
+                          style={{
+                            padding: '0 3px',
+                            width: '8px',
+                            marginRight: '-3px'
+                          }}
                           onMouseDown={(e) => handleMouseDown(e, column)}
-                        />
+                          title="Drag to resize column"
+                        >
+                          {/* Visual indicator line */}
+                          <div className={`
+                            h-full w-0.5 mx-auto
+                            ${resizingColumn === column ? 'bg-blue-600' : 'bg-gray-300 dark:bg-gray-600'}
+                          `} />
+                        </div>
                       </TableHead>
                     ))}
                   </TableRow>
@@ -309,16 +358,19 @@ export const ReportPreview = memo(({
                   )}
                 </TableBody>
               </Table>
+              </div>
             )}
-          </div>
-          <ScrollBar orientation="horizontal" />
-        </ScrollArea>
+            </div>
+            <ScrollBar orientation="horizontal" />
+          </ScrollArea>
+        </div>
         
-        {/* Pagination controls */}
+        {/* Pagination controls - Fixed at bottom */}
         {data && data.totalPages > 1 && (
-          <div className="flex items-center justify-between mt-4">
-            <div className="text-sm text-gray-600">
-              Showing {((page - 1) * pageSize) + 1} to {Math.min(page * pageSize, data.total)} of {data.total} results
+          <div className="flex-shrink-0 border-t bg-background px-4 py-3">
+            <div className="flex items-center justify-between">
+              <div className="text-sm text-gray-600">
+                Showing {((page - 1) * pageSize) + 1} to {Math.min(page * pageSize, data.total)} of {data.total} results
             </div>
             <div className="flex gap-2">
               <Button
@@ -369,6 +421,7 @@ export const ReportPreview = memo(({
               </Button>
             </div>
           </div>
+        </div>
         )}
       </CardContent>
     </Card>
