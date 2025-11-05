@@ -9,7 +9,7 @@ packages = ["freetds", "glibcLocales", "jq", "redis", "unixODBC", "unzip"]
 [deployment]
 deploymentTarget = "autoscale"
 build = ["npm", "run", "build"]
-run = ["npm", "start"]
+run = ["node", "dist/index.js"]
 
 [workflows]
 runButton = "Project"
