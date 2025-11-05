@@ -696,8 +696,12 @@ export default function PaginatedReports() {
             lineColor: [128, 128, 128], // Gray borders
             lineWidth: 0.1,
             valign: 'middle', // Vertical alignment
-            font: 'helvetica'
+            font: 'helvetica',
+            minCellHeight: 0, // Allow cells to be as small as needed
+            minCellWidth: 0 // Allow cells to be as narrow as needed
           },
+          pageBreak: 'auto', // Ensure automatic page breaks
+          rowPageBreak: 'avoid', // Try to avoid breaking rows across pages
           headStyles: {
             fillColor: [240, 240, 240], // Light gray header background
             textColor: [0, 0, 0], // Black text
