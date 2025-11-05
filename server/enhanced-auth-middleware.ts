@@ -121,9 +121,9 @@ async function authenticateJWT(token: string, req: AuthenticatedRequest): Promis
       `${row.permissions.feature}:${row.permissions.action}`
     );
 
-    // Special handling for admin users in development - grant wildcard permission like existing system
-    if ((userRecord.username === 'admin' || userRecord.email === 'admin@planettogether.com') && 
-        process.env.NODE_ENV === 'development') {
+    // Special handling for admin users - grant wildcard permission
+    // Admin user should have full access in both development and production
+    if (userRecord.username === 'admin' || userRecord.email === 'admin@planettogether.com') {
       permissionStrings = ['*'];
     }
 

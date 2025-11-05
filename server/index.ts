@@ -373,6 +373,10 @@ app.use((req, res, next) => {
     try {
       const { initializeAdminUser } = await import('./init-admin');
       await initializeAdminUser();
+      
+      // Also ensure admin has full access (especially in production)
+      const { ensureAdminAccess } = await import('./ensure-admin-access');
+      await ensureAdminAccess();
     } catch (error) {
       log(`⚠️ Admin user initialization error: ${error}`);
     }
