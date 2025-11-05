@@ -216,11 +216,7 @@ export default function PaginatedReports() {
   });
 
   // Update selected columns when table schema loads
-  useEffect(() => {
-    if (tableSchema) {
-      setSelectedColumns(tableSchema.map(col => col.columnName));
-    }
-  }, [tableSchema]);
+  // Removed - this is handled by the other useEffect below
 
   const handleSourceTypeChange = (type: SourceType) => {
     setSourceType(type);
@@ -325,10 +321,20 @@ export default function PaginatedReports() {
 
   // Initialize column order when schema is loaded
   useEffect(() => {
-    if (tableSchema && tableSchema.length > 0 && columnOrder.length === 0) {
-      const initialOrder = tableSchema.map(col => col.columnName);
-      setColumnOrder(initialOrder);
-      setSelectedColumns(initialOrder);
+    if (tableSchema && tableSchema.length > 0) {
+      const allColumns = tableSchema.map(col => col.columnName);
+      
+      // Initialize columnOrder with all columns if it's empty
+      if (columnOrder.length === 0) {
+        setColumnOrder(allColumns);
+        setSelectedColumns(allColumns);
+      } else {
+        // Ensure columnOrder contains all new columns
+        const newColumns = allColumns.filter(col => !columnOrder.includes(col));
+        if (newColumns.length > 0) {
+          setColumnOrder(prev => [...prev, ...newColumns]);
+        }
+      }
     }
   }, [tableSchema]);
 
@@ -352,7 +358,14 @@ export default function PaginatedReports() {
       return;
     }
 
-    const columnsToExport = columnOrder.filter(col => selectedColumns.includes(col));
+    // Export columns in the order they appear in columnOrder, but ensure all selected columns are included
+    const columnsToExport = selectedColumns.filter(col => columnOrder.includes(col));
+    // Also add any selected columns that might not be in columnOrder (edge case)
+    const missingColumns = selectedColumns.filter(col => !columnOrder.includes(col));
+    if (missingColumns.length > 0) {
+      console.warn('Some columns were not in columnOrder:', missingColumns);
+      columnsToExport.push(...missingColumns);
+    }
     
     // Fetch ALL data for export (without pagination)
     let allData: any[] = [];
