@@ -401,6 +401,10 @@ app.use((req, res, next) => {
       if (process.env.NODE_ENV === 'production') {
         const { ensureProductionUsersAccess } = await import('./production-init');
         await ensureProductionUsersAccess();
+        
+        // Fix production permissions for schedule access
+        const { fixProductionPermissions } = await import('./production-permissions-fix');
+        await fixProductionPermissions();
       }
     } catch (error) {
       log(`⚠️ Admin user initialization error: ${error}`);
