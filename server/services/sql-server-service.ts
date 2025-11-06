@@ -117,7 +117,8 @@ class SQLServerService {
     pageSize: number = 10,
     searchTerm: string = '',
     sortBy: string = '',
-    sortOrder: 'asc' | 'desc' = 'asc'
+    sortOrder: 'asc' | 'desc' = 'asc',
+    filters: Record<string, string> = {}
   ): Promise<{
     items: any[];
     total: number;
@@ -137,8 +138,10 @@ class SQLServerService {
       const schema = await this.getTableSchema(validatedSchema, validatedTable);
       const columns = schema.map(col => `[${col.columnName}]`).join(', ');
       
-      // Build WHERE clause for search
-      let whereClause = '';
+      // Build WHERE clause for search and filters
+      let whereConditions: string[] = [];
+      
+      // Add search term conditions
       if (searchTerm && schema.length > 0) {
         const searchConditions = schema
           .filter(col => ['varchar', 'nvarchar', 'char', 'nchar', 'text', 'ntext'].includes(col.dataType.toLowerCase()))
@@ -146,9 +149,25 @@ class SQLServerService {
           .join(' OR ');
         
         if (searchConditions) {
-          whereClause = `WHERE ${searchConditions}`;
+          whereConditions.push(`(${searchConditions})`);
         }
       }
+      
+      // Add column filter conditions with LIKE for partial matching
+      Object.entries(filters).forEach(([column, value]) => {
+        if (value) {
+          // Validate column exists in schema
+          const columnExists = schema.some(col => col.columnName === column);
+          if (columnExists) {
+            // Use LIKE for partial matching
+            whereConditions.push(`CAST([${column}] AS NVARCHAR(MAX)) LIKE @filter_${column}`);
+          }
+        }
+      });
+      
+      const whereClause = whereConditions.length > 0 
+        ? 'WHERE ' + whereConditions.join(' AND ')
+        : '';
 
       // Validate and build ORDER BY clause
       let orderByClause = '';
@@ -179,6 +198,14 @@ class SQLServerService {
       if (searchTerm) {
         countRequest.input('searchTerm', sql.NVarChar, `%${searchTerm}%`);
       }
+      
+      // Add filter parameters with wildcards for partial matching
+      Object.entries(filters).forEach(([column, value]) => {
+        if (value) {
+          countRequest.input(`filter_${column}`, sql.NVarChar, `%${value}%`);
+        }
+      });
+      
       const countResult = await countRequest.query(countQuery);
       const total = countResult.recordset[0].total;
 
@@ -199,6 +226,13 @@ class SQLServerService {
       if (searchTerm) {
         dataRequest.input('searchTerm', sql.NVarChar, `%${searchTerm}%`);
       }
+      
+      // Add filter parameters with wildcards for partial matching
+      Object.entries(filters).forEach(([column, value]) => {
+        if (value) {
+          dataRequest.input(`filter_${column}`, sql.NVarChar, `%${value}%`);
+        }
+      });
 
       const dataResult = await dataRequest.query(dataQuery);
       const totalPages = Math.ceil(total / pageSize);

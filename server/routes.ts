@@ -11344,6 +11344,7 @@ router.get("/api/paginated-reports", enhancedAuth, async (req, res) => {
     const searchTerm = (req.query.searchTerm as string) || "";
     const sortBy = (req.query.sortBy as string) || "";
     const sortOrder = (req.query.sortOrder as string) === "asc" ? "asc" : "desc";
+    const filters = req.query.filters ? JSON.parse(req.query.filters as string) : {};
 
     const data = await sqlServerService.getTableData(
       schema,
@@ -11352,7 +11353,8 @@ router.get("/api/paginated-reports", enhancedAuth, async (req, res) => {
       pageSize,
       searchTerm,
       sortBy,
-      sortOrder
+      sortOrder,
+      filters
     );
 
     res.json(data);
