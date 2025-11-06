@@ -94,6 +94,29 @@ app.use(session({
   }
 }));
 
+// Health check endpoint - must be early in middleware chain for deployment
+app.get('/health', (req, res) => {
+  res.status(200).json({ 
+    status: 'healthy',
+    timestamp: new Date().toISOString(),
+    service: 'planettogether-api'
+  });
+});
+
+// Root health check for deployment (Replit checks the / endpoint)
+app.get('/', (req, res) => {
+  // If this is an API health check (no Accept header for HTML), return JSON
+  if (!req.headers.accept || !req.headers.accept.includes('text/html')) {
+    return res.status(200).json({ 
+      status: 'healthy',
+      timestamp: new Date().toISOString(),
+      service: 'planettogether'
+    });
+  }
+  // Otherwise, let it fall through to serve the app
+  next();
+});
+
 // Logging middleware
 app.use((req, res, next) => {
   const start = Date.now();
