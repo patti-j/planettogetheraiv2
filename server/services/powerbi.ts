@@ -2162,38 +2162,35 @@ export class PowerBIService {
       // Build DAX query
       let daxQuery = '';
       const skip = (page - 1) * pageSize;
+      
+      // Build filter conditions (needed for both main query and count query)
+      const filterConditions: string[] = [];
+      
+      // Add column filters
+      Object.entries(filters).forEach(([column, value]) => {
+        if (value !== undefined && value !== null && value !== '') {
+          if (typeof value === 'string') {
+            filterConditions.push(`'${tableName}'[${column}] = "${value}"`);
+          } else if (typeof value === 'number') {
+            filterConditions.push(`'${tableName}'[${column}] = ${value}`);
+          }
+        }
+      });
+
+      // Add search term filter (searches across all string columns)
+      if (searchTerm && effectiveColumns.length > 0) {
+        const searchConditions = effectiveColumns
+          .map(col => `SEARCH("${searchTerm}", '${tableName}'[${col}], 1, 0) > 0`)
+          .join(' || ');
+        
+        if (searchConditions) {
+          filterConditions.push(`(${searchConditions})`);
+        }
+      }
 
       // Build base query with optional filtering
-      if (Object.keys(filters).length > 0 || searchTerm) {
-        const filterConditions: string[] = [];
-        
-        // Add column filters
-        Object.entries(filters).forEach(([column, value]) => {
-          if (value !== undefined && value !== null && value !== '') {
-            if (typeof value === 'string') {
-              filterConditions.push(`'${tableName}'[${column}] = "${value}"`);
-            } else if (typeof value === 'number') {
-              filterConditions.push(`'${tableName}'[${column}] = ${value}`);
-            }
-          }
-        });
-
-        // Add search term filter (searches across all string columns)
-        if (searchTerm && effectiveColumns.length > 0) {
-          const searchConditions = effectiveColumns
-            .map(col => `SEARCH("${searchTerm}", '${tableName}'[${col}], 1, 0) > 0`)
-            .join(' || ');
-          
-          if (searchConditions) {
-            filterConditions.push(`(${searchConditions})`);
-          }
-        }
-
-        if (filterConditions.length > 0) {
-          daxQuery = `FILTER('${tableName}', ${filterConditions.join(' && ')})`;
-        } else {
-          daxQuery = `'${tableName}'`;
-        }
+      if (filterConditions.length > 0) {
+        daxQuery = `FILTER('${tableName}', ${filterConditions.join(' && ')})`;
       } else {
         daxQuery = `'${tableName}'`;
       }
@@ -2261,8 +2258,16 @@ export class PowerBIService {
         return cleanRow;
       });
 
-      // Get total count with a separate query
-      const countQuery = `EVALUATE ROW("Count", COUNTROWS('${tableName}'))`;
+      // Get total count with a separate query (applying same filters)
+      let countQuery: string;
+      if (filterConditions.length > 0) {
+        // Apply same filters to count query
+        countQuery = `EVALUATE ROW("Count", COUNTROWS(FILTER('${tableName}', ${filterConditions.join(' && ')})))`;
+      } else {
+        // No filters, count all rows
+        countQuery = `EVALUATE ROW("Count", COUNTROWS('${tableName}'))`;
+      }
+      
       const countResult = await this.executeDAXQuery(
         accessToken,
         workspaceId,
@@ -2270,7 +2275,7 @@ export class PowerBIService {
         countQuery
       );
 
-      const totalCount = countResult?.[0]?.Count || 0;
+      const totalCount = countResult?.[0]?.Count || items.length;
 
       return {
         items,
