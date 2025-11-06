@@ -238,7 +238,8 @@ app.use((req, res, next) => {
   app.use('/api/forecasting', forecastingRoutes);  // Forecasting API routes
 
   // Create HTTP server and WebSocket server
-  const port = 5000;
+  // Use PORT environment variable for production, fallback to 5000 for development
+  const port = process.env.PORT ? parseInt(process.env.PORT) : 5000;
   const server = createServer(app);
   
   // Set up WebSocket server for real-time production events
