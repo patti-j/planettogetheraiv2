@@ -11460,6 +11460,49 @@ router.get("/api/paginated-reports/export-data", enhancedAuth, async (req, res) 
   }
 });
 
+// Get details for expanded groups - fetches the raw rows for a specific group combination
+router.post("/api/paginated-reports/group-details", enhancedAuth, async (req, res) => {
+  try {
+    const {
+      schema = 'dbo',
+      table,
+      groupValues = {},  // The specific group values to filter by
+      selectedColumns = [],
+      sortBy = "",
+      sortOrder = "asc",
+      page = 1,
+      pageSize = 50
+    } = req.body;
+    
+    if (!table || !schema) {
+      return res.status(400).json({ error: "Schema and table name are required" });
+    }
+
+    // Build filters from group values
+    const filters = { ...groupValues };
+
+    // Fetch the detail rows for this group
+    const data = await sqlServerService.getTableData(
+      schema,
+      table,
+      page,
+      pageSize,
+      "",  // no search term for group details
+      sortBy,
+      sortOrder,
+      filters,
+      false,  // no distinct for detail rows
+      selectedColumns,
+      {}  // no aggregation for detail rows
+    );
+
+    res.json(data);
+  } catch (error) {
+    console.error("Error fetching group detail data:", error);
+    res.status(500).json({ error: "Failed to fetch group detail data" });
+  }
+});
+
 // Get grouped and aggregated data
 router.post("/api/paginated-reports/grouped", enhancedAuth, async (req, res) => {
   try {
