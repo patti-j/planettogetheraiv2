@@ -632,94 +632,160 @@ export default function PaginatedReports() {
     XLSX.writeFile(workbook, `${exportConfig.fileName || 'report'}.xlsx`);
   }, [data, selectedColumns, columnWidths, exportConfig, includeTotals, totals]);
   
-  const exportToPDF = useCallback(() => {
+  const exportToPDF = useCallback(async () => {
     if (!data?.items || selectedColumns.length === 0) return;
     
-    const doc = new jsPDF({
-      orientation: exportConfig.orientation,
-      unit: 'mm',
-      format: exportConfig.paperSize
-    });
-    
-    // Add header
-    let yPos = exportConfig.marginTop;
-    if (exportConfig.includeHeaders && exportConfig.customHeader) {
-      doc.setFontSize(12);
-      doc.text(exportConfig.customHeader, exportConfig.marginLeft, yPos);
-      yPos += 10;
-    }
-    
-    // Prepare table data
-    const tableData = data.items.map(item =>
-      selectedColumns.map(col => {
-        const value = item[col];
-        if (value === null || value === undefined) return '';
-        if (typeof value === 'number') {
-          return Number.isInteger(value) ? value.toString() : value.toFixed(2);
-        }
-        return String(value);
-      })
-    );
-    
-    // Add totals row
-    if (includeTotals && totals) {
-      tableData.push(
-        selectedColumns.map(col => {
-          const value = totals[col];
-          if (value === null || value === undefined) return '';
-          if (typeof value === 'number') {
-            return Number.isInteger(value) ? value.toString() : value.toFixed(2);
+    setIsExporting(true);
+    try {
+      // First, fetch all data if we have more pages
+      let allData = data.items;
+      if (data.totalPages > 1) {
+        // Fetch all data for export
+        const allDataUrl = sourceType === 'sql' && selectedTable
+          ? `/api/paginated-reports/export-data?schema=${selectedTable.schemaName}&table=${selectedTable.tableName}&filters=${encodeURIComponent(JSON.stringify(columnFilters))}&sortBy=${sortBy}&sortOrder=${sortOrder}`
+          : null;
+          
+        if (allDataUrl) {
+          const token = localStorage.getItem('auth_token');
+          const response = await fetch(allDataUrl, {
+            headers: {
+              'Authorization': token ? `Bearer ${token}` : ''
+            },
+            credentials: 'include'
+          });
+          
+          if (response.ok) {
+            const exportData = await response.json();
+            allData = exportData.items || allData;
           }
-          return String(value);
-        })
-      );
-    }
-    
-    // Generate table
-    (doc as any).autoTable({
-      head: [selectedColumns],
-      body: tableData,
-      startY: yPos,
-      margin: {
-        left: exportConfig.marginLeft,
-        right: exportConfig.marginRight
-      },
-      styles: {
-        fontSize: exportConfig.fontSize,
-        cellPadding: 2
-      },
-      headStyles: {
-        fillColor: [66, 139, 202],
-        textColor: 255,
-        fontStyle: 'bold'
-      },
-      alternateRowStyles: {
-        fillColor: [245, 245, 245]
+        }
       }
-    });
-    
-    // Add footer
-    if (exportConfig.includeFooters && exportConfig.customFooter) {
+      
+      const doc = new jsPDF({
+        orientation: exportConfig.orientation as 'portrait' | 'landscape',
+        unit: 'mm',
+        format: exportConfig.paperSize as any
+      });
+      
+      // Calculate how many rows fit on each page
+      const rowHeight = 8; // Approximate height for each row
+      const headerHeight = 10;
       const pageHeight = doc.internal.pageSize.height;
-      doc.setFontSize(10);
-      doc.text(exportConfig.customFooter, exportConfig.marginLeft, pageHeight - exportConfig.marginBottom);
+      const usableHeight = pageHeight - exportConfig.marginTop - exportConfig.marginBottom - headerHeight;
+      const rowsPerPage = Math.floor(usableHeight / rowHeight);
+      
+      // Split data into pages matching the report preview pagination
+      const actualRowsPerPage = pageSize; // Use the actual pageSize from the report
+      const totalDataPages = Math.ceil(allData.length / actualRowsPerPage);
+      
+      for (let pageNum = 0; pageNum < totalDataPages; pageNum++) {
+        if (pageNum > 0) {
+          doc.addPage();
+        }
+        
+        // Add header on each page
+        let yPos = exportConfig.marginTop;
+        if (exportConfig.includeHeaders && exportConfig.customHeader) {
+          doc.setFontSize(12);
+          doc.text(exportConfig.customHeader, exportConfig.marginLeft, yPos);
+          yPos += 10;
+        }
+        
+        // Add page number
+        doc.setFontSize(10);
+        doc.text(
+          `Page ${pageNum + 1} of ${totalDataPages}`,
+          doc.internal.pageSize.width - exportConfig.marginRight - 30,
+          exportConfig.marginTop
+        );
+        
+        // Get data for this page
+        const startIdx = pageNum * actualRowsPerPage;
+        const endIdx = Math.min(startIdx + actualRowsPerPage, allData.length);
+        const pageData = allData.slice(startIdx, endIdx);
+        
+        // Prepare table data for this page
+        const tableData = pageData.map(item =>
+          selectedColumns.map(col => {
+            const value = item[col];
+            if (value === null || value === undefined) return '';
+            if (typeof value === 'number') {
+              return Number.isInteger(value) ? value.toString() : value.toFixed(2);
+            }
+            return String(value);
+          })
+        );
+        
+        // Add totals row only on the last page
+        if (pageNum === totalDataPages - 1 && includeTotals && totals) {
+          tableData.push(
+            selectedColumns.map(col => {
+              const value = totals[col];
+              if (value === null || value === undefined) return '';
+              if (typeof value === 'number') {
+                return Number.isInteger(value) ? value.toString() : value.toFixed(2);
+              }
+              return `Total: ${String(value)}`;
+            })
+          );
+        }
+        
+        // Generate table for this page
+        doc.autoTable({
+          head: [selectedColumns],
+          body: tableData,
+          startY: yPos,
+          margin: {
+            left: exportConfig.marginLeft,
+            right: exportConfig.marginRight
+          },
+          styles: {
+            fontSize: exportConfig.fontSize,
+            cellPadding: 2
+          },
+          headStyles: {
+            fillColor: [66, 139, 202],
+            textColor: 255,
+            fontStyle: 'bold'
+          },
+          alternateRowStyles: {
+            fillColor: [245, 245, 245]
+          },
+          didDrawPage: function(data) {
+            // Add footer on each page
+            if (exportConfig.includeFooters && exportConfig.customFooter) {
+              doc.setFontSize(10);
+              doc.text(
+                exportConfig.customFooter, 
+                exportConfig.marginLeft, 
+                pageHeight - exportConfig.marginBottom
+              );
+            }
+            
+            // Add timestamp on each page
+            if (exportConfig.includeTimestamp) {
+              doc.setFontSize(8);
+              doc.text(
+                `Generated: ${new Date().toLocaleString()}`,
+                doc.internal.pageSize.width - exportConfig.marginRight - 50,
+                pageHeight - exportConfig.marginBottom + 5
+              );
+            }
+          }
+        });
+      }
+      
+      // Save PDF
+      const tableName = selectedTable?.tableName || 'report';
+      const dateStamp = new Date().toISOString().split('T')[0];
+      doc.save(`${tableName}_${dateStamp}.pdf`);
+    } catch (error) {
+      console.error('PDF export error:', error);
+      throw error;
+    } finally {
+      setIsExporting(false);
     }
-    
-    // Add timestamp
-    if (exportConfig.includeTimestamp) {
-      const pageWidth = doc.internal.pageSize.width;
-      const pageHeight = doc.internal.pageSize.height;
-      doc.setFontSize(8);
-      doc.text(
-        `Generated: ${new Date().toLocaleString()}`,
-        pageWidth - exportConfig.marginRight - 50,
-        pageHeight - exportConfig.marginBottom + 5
-      );
-    }
-    
-    // Save PDF
-    doc.save(`${exportConfig.fileName || 'report'}.pdf`);
-  }, [data, selectedColumns, exportConfig, includeTotals, totals]);
+  }, [data, selectedColumns, exportConfig, includeTotals, totals, pageSize, sourceType, selectedTable, columnFilters, sortBy, sortOrder]);
   
   // Main export handler
   const handleExport = useCallback(async (format: 'csv' | 'excel' | 'pdf') => {
