@@ -1723,17 +1723,17 @@
                         console.log('🍺 Fermenter Tank 2 capabilities:', resourceCapabilities[6]);
                         console.log('🍺 Fermenter Tank 3 capabilities:', resourceCapabilities[7]);
                     }
-                } catch (error) {
-                    console.error('❌ Error fetching data:', error);
-                    // No fallback - let resources stay empty rather than showing wrong equipment
-                    resources = [];
-                }
+                    } catch (error) {
+                        console.error('❌ Error fetching data:', error);
+                        // No fallback - let resources stay empty rather than showing wrong equipment
+                        resources = [];
+                    }
 
-                // Map resources to create resource lookup by both ID and name
-                const resourceMap = new Map();
-                const resourceByName = new Map();
-                const originalIdMap = new Map(); // Map original numeric IDs to new string IDs
-                resources.forEach(resource => {
+                    // Map resources to create resource lookup by both ID and name
+                    const resourceMap = new Map();
+                    const resourceByName = new Map();
+                    const originalIdMap = new Map(); // Map original numeric IDs to new string IDs
+                    resources.forEach(resource => {
                     resourceMap.set(resource.id, resource);
                     resourceMap.set(resource.name, resource);
                     // Also create a name-based lookup for better matching
