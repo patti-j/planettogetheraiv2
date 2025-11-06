@@ -1452,91 +1452,91 @@
                     console.log('✅ Bryntum SchedulerPro loaded successfully', window.SchedulerPro);
                     
                     // Notify parent window that scheduler is ready
-                if (window.parent !== window) {
-                    window.parent.postMessage({ type: 'SCHEDULER_READY' }, '*');
-                    console.log('📤 Sent SCHEDULER_READY message to parent');
-                }
-                
-                // Set today's date to September 3, 2025
-                const today = new Date(2025, 8, 3); // September 3, 2025
-                today.setHours(8, 0, 0, 0); // Start at 8 AM
-                
-                // Helper to create a date relative to September 3, 2025
-                function createDate(hoursFromNow) {
-                    const date = new Date(2025, 8, 3); // September 3, 2025
-                    date.setHours(8 + hoursFromNow, 0, 0, 0); // Start at 8 AM
-                    return date;
-                }
-                
-                // Planning area filter state
-                let selectedPlanningArea = 'all';
-                let lastScheduledArea = '';
-                let allPlanningAreas = [];
-                
-                // Load all planning areas for the dropdown (once on startup)
-                async function loadPlanningAreas() {
+                    if (window.parent !== window) {
+                        window.parent.postMessage({ type: 'SCHEDULER_READY' }, '*');
+                        console.log('📤 Sent SCHEDULER_READY message to parent');
+                    }
+                    
+                    // Set today's date to September 3, 2025
+                    const today = new Date(2025, 8, 3); // September 3, 2025
+                    today.setHours(8, 0, 0, 0); // Start at 8 AM
+                    
+                    // Helper to create a date relative to September 3, 2025
+                    function createDate(hoursFromNow) {
+                        const date = new Date(2025, 8, 3); // September 3, 2025
+                        date.setHours(8 + hoursFromNow, 0, 0, 0); // Start at 8 AM
+                        return date;
+                    }
+                    
+                    // Planning area filter state
+                    let selectedPlanningArea = 'all';
+                    let lastScheduledArea = '';
+                    let allPlanningAreas = [];
+                    
+                    // Load all planning areas for the dropdown (once on startup)
+                    async function loadPlanningAreas() {
+                        try {
+                            // Get auth token using helper function
+                            const authToken = getAuthToken();
+                            const authHeaders = authToken ? { 'Authorization': `Bearer ${authToken}` } : {};
+                            
+                            const response = await fetch('/api/resources', { headers: authHeaders });
+                            if (response.ok) {
+                                const allResources = await response.json();
+                                const areas = new Set();
+                                allResources.forEach(resource => {
+                                    if (resource.planning_area) {
+                                        areas.add(resource.planning_area);
+                                    }
+                                });
+                                allPlanningAreas = Array.from(areas).sort();
+                                
+                                // Populate dropdown
+                                const dropdown = document.getElementById('planningAreaFilter');
+                                allPlanningAreas.forEach(area => {
+                                    const option = document.createElement('option');
+                                    option.value = area;
+                                    option.textContent = area;
+                                    option.setAttribute('data-testid', `option-planning-area-${area}`);
+                                    dropdown.appendChild(option);
+                                });
+                                
+                                console.log('✅ Planning areas loaded:', allPlanningAreas);
+                            }
+                        } catch (error) {
+                            console.error('Error loading planning areas:', error);
+                        }
+                    }
+                    
+                    // Load planning areas first
+                    await loadPlanningAreas();
+                    
+                    // NOTE: Click listener for applyPlanningAreaFilter button is already
+                    // attached via document.addEventListener at line 1145-1150
+                    // No need for duplicate listener here
+                    console.log('✅ Planning area filter button handler already attached via document click delegation');
+                    
+                    // Fetch real PT operations and resources from the backend
+                    let resources = [];
+                    let ptOperations = [];
+                    let resourceCapabilities = {};
+                    let fetchedDependencies = []; // Store dependencies at a higher scope
+                    
                     try {
                         // Get auth token using helper function
                         const authToken = getAuthToken();
                         const authHeaders = authToken ? { 'Authorization': `Bearer ${authToken}` } : {};
                         
-                        const response = await fetch('/api/resources', { headers: authHeaders });
-                        if (response.ok) {
-                            const allResources = await response.json();
-                            const areas = new Set();
-                            allResources.forEach(resource => {
-                                if (resource.planning_area) {
-                                    areas.add(resource.planning_area);
-                                }
-                            });
-                            allPlanningAreas = Array.from(areas).sort();
-                            
-                            // Populate dropdown
-                            const dropdown = document.getElementById('planningAreaFilter');
-                            allPlanningAreas.forEach(area => {
-                                const option = document.createElement('option');
-                                option.value = area;
-                                option.textContent = area;
-                                option.setAttribute('data-testid', `option-planning-area-${area}`);
-                                dropdown.appendChild(option);
-                            });
-                            
-                            console.log('✅ Planning areas loaded:', allPlanningAreas);
-                        }
-                    } catch (error) {
-                        console.error('Error loading planning areas:', error);
-                    }
-                }
-                
-                // Load planning areas first
-                await loadPlanningAreas();
-                
-                // NOTE: Click listener for applyPlanningAreaFilter button is already
-                // attached via document.addEventListener at line 1145-1150
-                // No need for duplicate listener here
-                console.log('✅ Planning area filter button handler already attached via document click delegation');
-                
-                // Fetch real PT operations and resources from the backend
-                let resources = [];
-                let ptOperations = [];
-                let resourceCapabilities = {};
-                let fetchedDependencies = []; // Store dependencies at a higher scope
-                
-                try {
-                    // Get auth token using helper function
-                    const authToken = getAuthToken();
-                    const authHeaders = authToken ? { 'Authorization': `Bearer ${authToken}` } : {};
-                    
-                    // Fetch resources, PT operations, jobs, and dependencies from the backend APIs
-                    // NOTE: Dependencies are for visual display only - ALAP uses sequence numbers for scheduling
-                    const timestamp = Date.now(); // Cache-busting timestamp
-                    const [resourcesResponse, operationsResponse, dependenciesResponse, capabilitiesResponse, jobsResponse] = await Promise.all([
-                        fetch('/api/resources?_=' + timestamp, { headers: authHeaders }),
-                        fetch('/api/pt-operations?_=' + timestamp, { headers: authHeaders }), 
-                        fetch('/api/pt-dependencies?_=' + timestamp, { headers: authHeaders }), // Keep for visual dependency lines
-                        fetch('/api/resources-with-capabilities?_=' + timestamp, { headers: authHeaders }),
-                        fetch('/api/jobs?_=' + timestamp, { headers: authHeaders }) // CRITICAL: Fetch jobs directly to get real priorities
-                    ]);
+                        // Fetch resources, PT operations, jobs, and dependencies from the backend APIs
+                        // NOTE: Dependencies are for visual display only - ALAP uses sequence numbers for scheduling
+                        const timestamp = Date.now(); // Cache-busting timestamp
+                        const [resourcesResponse, operationsResponse, dependenciesResponse, capabilitiesResponse, jobsResponse] = await Promise.all([
+                            fetch('/api/resources?_=' + timestamp, { headers: authHeaders }),
+                            fetch('/api/pt-operations?_=' + timestamp, { headers: authHeaders }), 
+                            fetch('/api/pt-dependencies?_=' + timestamp, { headers: authHeaders }), // Keep for visual dependency lines
+                            fetch('/api/resources-with-capabilities?_=' + timestamp, { headers: authHeaders }),
+                            fetch('/api/jobs?_=' + timestamp, { headers: authHeaders }) // CRITICAL: Fetch jobs directly to get real priorities
+                        ]);
                     
                     if (resourcesResponse.ok) {
                         resources = await resourcesResponse.json();
