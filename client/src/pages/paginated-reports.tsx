@@ -64,26 +64,6 @@ export default function PaginatedReports() {
       .filter(col => numericTypes.some(type => col.dataType.toLowerCase().includes(type)))
       .map(col => col.columnName);
   }, []);
-
-  // Initialize aggregation types when useDistinct changes or columns change
-  useEffect(() => {
-    if (useDistinct && tableSchema) {
-      const numericCols = getNumericColumns(tableSchema);
-      const newAggregationTypes: Record<string, 'sum' | 'avg' | 'count' | 'min' | 'max'> = {};
-      
-      // Initialize with 'sum' for all numeric columns that are selected
-      numericCols.forEach(col => {
-        if (selectedColumns.includes(col)) {
-          newAggregationTypes[col] = aggregationTypes[col] || 'sum';
-        }
-      });
-      
-      setAggregationTypes(newAggregationTypes);
-    } else if (!useDistinct) {
-      // Clear aggregation types when distinct is disabled
-      setAggregationTypes({});
-    }
-  }, [useDistinct, selectedColumns, tableSchema]);
   
   // Export state
   const [showExportDialog, setShowExportDialog] = useState(false);
@@ -147,6 +127,33 @@ export default function PaginatedReports() {
     queryKey: schemaUrl ? [schemaUrl] : [],
     enabled: !!schemaUrl
   });
+
+  // Initialize aggregation types when useDistinct changes or columns change
+  useEffect(() => {
+    if (useDistinct && tableSchema) {
+      const numericCols = getNumericColumns(tableSchema);
+      
+      setAggregationTypes(prev => {
+        const newAggregationTypes: Record<string, 'sum' | 'avg' | 'count' | 'min' | 'max'> = {};
+        
+        // Initialize with 'sum' for all numeric columns that are selected
+        numericCols.forEach(col => {
+          if (selectedColumns.includes(col)) {
+            newAggregationTypes[col] = prev[col] || 'sum';
+          }
+        });
+        
+        // Only update if actually changed to avoid infinite loop
+        if (JSON.stringify(prev) !== JSON.stringify(newAggregationTypes)) {
+          return newAggregationTypes;
+        }
+        return prev;
+      });
+    } else if (!useDistinct) {
+      // Clear aggregation types when distinct is disabled
+      setAggregationTypes({});
+    }
+  }, [useDistinct, selectedColumns, tableSchema, getNumericColumns]);
   
   // Fetch data - handle both SQL and Power BI
   const { data, isLoading } = useQuery({
