@@ -17,10 +17,11 @@ echo ""
 echo ""
 echo "📤 Sending import request to production..."
 
-# Make the API call to import data
+# Make the API call to import data (with -L to follow redirects)
 response=$(curl -X POST "$PROD_URL/api/admin/import-production-data" \
   -H "Content-Type: application/json" \
   -H "X-Setup-Key: $SETUP_KEY" \
+  -L \
   --connect-timeout 30 \
   --max-time 300 \
   -w "\nHTTP_STATUS:%{http_code}" \
