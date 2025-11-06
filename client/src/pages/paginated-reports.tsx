@@ -8,7 +8,7 @@ import { toast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { Settings, Download, FileText, FileSpreadsheet, Copy, Printer } from 'lucide-react';
 import jsPDF from 'jspdf';
-import 'jspdf-autotable';
+import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 
 // Import the new focused components
@@ -920,11 +920,9 @@ export default function PaginatedReports() {
         tableRows.push(totalsRow);
       }
       
-      // Check if autoTable is available
-      const hasAutoTable = typeof doc.autoTable === 'function';
-      
-      if (hasAutoTable) {
-        // Use autoTable for professional PDF generation with pagination
+      // Use autoTable for professional PDF generation with pagination
+      // The import should have attached the autoTable method to jsPDF prototype
+      try {
         const tableConfig: any = {
           body: tableRows,
           startY: yPosition,
@@ -1018,12 +1016,13 @@ export default function PaginatedReports() {
           };
         
         // Apply the configuration to generate the PDF table
-        doc.autoTable(tableConfig);
-      } else {
-        // Fallback without autoTable
-        console.error('jsPDF autoTable plugin not available');
+        // Use the imported autoTable function directly
+        autoTable(doc, tableConfig);
+      } catch (error) {
+        // Fallback if autoTable fails
+        console.error('Error using jsPDF autoTable:', error);
         doc.setFontSize(10);
-        doc.text('Table data export requires autoTable plugin', 14, yPosition + 10);
+        doc.text('Error generating table. Please check console for details.', 14, yPosition + 10);
         doc.text(`Total records: ${allData.length}`, 14, yPosition + 20);
       }
       
