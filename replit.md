@@ -106,6 +106,13 @@ The system uses a modular agent architecture designed for role-based access cont
       - Search functionality for finding columns quickly
       - Column reordering within shown panel maintains display order
       - Preserves column order when toggling visibility
+    - **Smart Aggregation with "Show distinct rows"** (enabled by default):
+      - Automatically groups by text columns and aggregates numeric columns
+      - Customizable aggregation types per column (SUM, AVG, MIN, MAX, COUNT)
+      - Visual indicators showing aggregation type in column headers
+      - Aggregation supported for both SQL Server and Power BI data sources
+      - Intelligent totals calculation that avoids double-aggregation
+      - Export headers automatically include aggregation type (e.g., "Revenue (SUM)")
     - Report templates (Invoice, Financial Statement, Summary Report)
     - Grouping and aggregation with subtotals
     - Conditional formatting with visual rules
@@ -117,6 +124,7 @@ The system uses a modular agent architecture designed for role-based access cont
       - All formats fetch complete datasets (not just current page)
       - Export loading indicators and progress tracking
       - Automatic column selection fallback (uses all columns if none selected)
+      - Aggregation-aware exports with proper column headers showing aggregation types
     - Server-side totals and grouping for accurate calculations across entire datasets
     - Keyboard shortcuts (Ctrl+S save, Ctrl+O load, Ctrl+P print, Ctrl+E export)
     - Print preview with page break indicators
@@ -125,6 +133,7 @@ The system uses a modular agent architecture designed for role-based access cont
       - Column data type display hidden for Power BI sources
       - Proper filtered count queries ensuring accurate pagination totals
       - Automatic column selection reset when switching tables
+      - DAX query support for aggregation with SUMMARIZE and ADDCOLUMNS functions
 
 ## Important Implementation Notes
 
