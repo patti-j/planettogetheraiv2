@@ -269,26 +269,24 @@ class SQLServerService {
         }
       }
       
-      // Default order by first selected column if no sort specified (and it's in the GROUP BY if applicable)
-      if (!orderByClause && selectedColumns.length > 0) {
-        const firstSelectedCol = selectedColumns[0];
-        if (distinct && groupByColumns.length > 0) {
-          // For aggregated queries, only use first column if it's in GROUP BY
-          if (groupByColumns.includes(firstSelectedCol)) {
-            orderByClause = `ORDER BY [${firstSelectedCol}] ASC`;
-          } else if (groupByColumns.length > 0) {
-            // Otherwise use the first GROUP BY column
-            orderByClause = `ORDER BY [${groupByColumns[0]}] ASC`;
-          }
-        } else {
-          orderByClause = `ORDER BY [${firstSelectedCol}] ASC`;
-        }
-      }
-
       // Build GROUP BY clause for aggregation
       const groupByClause = distinct && groupByColumns.length > 0
         ? `GROUP BY ${groupByColumns.map(col => `[${col}]`).join(', ')}`
         : '';
+      
+      // Default ORDER BY for pagination (SQL Server requires ORDER BY with OFFSET/FETCH)
+      if (!orderByClause) {
+        if (distinct && groupByColumns.length > 0) {
+          // For aggregated queries, use first GROUP BY column
+          orderByClause = `ORDER BY [${groupByColumns[0]}] ASC`;
+        } else if (selectedColumns.length > 0) {
+          // Use first selected column
+          orderByClause = `ORDER BY [${selectedColumns[0]}] ASC`;
+        } else if (schema.length > 0) {
+          // Fallback to first schema column
+          orderByClause = `ORDER BY [${schema[0].columnName}] ASC`;
+        }
+      }
 
       // Get total count
       let countQuery: string;

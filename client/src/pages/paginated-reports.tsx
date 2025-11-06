@@ -56,13 +56,20 @@ export default function PaginatedReports() {
   const [useDistinct, setUseDistinct] = useState(true); // Enabled by default
   const [aggregationTypes, setAggregationTypes] = useState<Record<string, 'sum' | 'avg' | 'count' | 'min' | 'max' | 'none'>>({});
   
-  // Helper function to detect numeric columns
+  // Helper function to detect numeric columns (works with both SQL and Power BI schemas)
   const getNumericColumns = useCallback((schema: TableColumn[] | null): string[] => {
     if (!schema) return [];
-    const numericTypes = ['int', 'decimal', 'float', 'money', 'numeric', 'bigint', 'smallint', 'tinyint'];
+    const numericTypes = ['int', 'decimal', 'float', 'money', 'numeric', 'bigint', 'smallint', 'tinyint', 'number', 'double'];
     return schema
-      .filter(col => numericTypes.some(type => col.dataType.toLowerCase().includes(type)))
-      .map(col => col.columnName);
+      .filter(col => {
+        // Handle both SQL (columnName) and Power BI (name) schemas
+        const dataType = col.dataType || (col as any).type || '';
+        return numericTypes.some(type => dataType.toLowerCase().includes(type));
+      })
+      .map(col => {
+        // Return the column name from either columnName (SQL) or name (Power BI)
+        return col.columnName || (col as any).name || '';
+      });
   }, []);
   
   // Export state
