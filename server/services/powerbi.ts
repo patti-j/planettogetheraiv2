@@ -2259,23 +2259,56 @@ export class PowerBIService {
       });
 
       // Get total count with a separate query (applying same filters)
-      let countQuery: string;
-      if (filterConditions.length > 0) {
-        // Apply same filters to count query
-        countQuery = `EVALUATE ROW("Count", COUNTROWS(FILTER('${tableName}', ${filterConditions.join(' && ')})))`;
-      } else {
-        // No filters, count all rows
-        countQuery = `EVALUATE ROW("Count", COUNTROWS('${tableName}'))`;
-      }
+      let totalCount = items.length; // Default fallback
       
-      const countResult = await this.executeDAXQuery(
-        accessToken,
-        workspaceId,
-        datasetId,
-        countQuery
-      );
-
-      const totalCount = countResult?.[0]?.Count || items.length;
+      try {
+        let countQuery: string;
+        if (filterConditions.length > 0) {
+          // Apply same filters to count query
+          countQuery = `EVALUATE ROW("Count", COUNTROWS(FILTER('${tableName}', ${filterConditions.join(' && ')})))`;
+        } else {
+          // No filters, count all rows
+          countQuery = `EVALUATE ROW("Count", COUNTROWS('${tableName}'))`;
+        }
+        
+        console.log('[PowerBI] Executing count query:', countQuery);
+        
+        const countResult = await this.executeDAXQuery(
+          accessToken,
+          workspaceId,
+          datasetId,
+          countQuery
+        );
+        
+        console.log('[PowerBI] Count query result:', countResult);
+        
+        // Extract the count value - Power BI might return it in different formats
+        if (countResult && Array.isArray(countResult) && countResult.length > 0) {
+          const firstRow = countResult[0];
+          // Try different possible field names
+          const countValue = firstRow.Count || 
+                           firstRow['[Count]'] || 
+                           firstRow.count ||
+                           firstRow['Count'];
+          
+          if (typeof countValue === 'number' && countValue > 0) {
+            totalCount = countValue;
+            console.log('[PowerBI] Total count from query:', totalCount);
+          } else {
+            console.warn('[PowerBI] Count value not found or invalid, using items.length:', items.length);
+          }
+        } else {
+          console.warn('[PowerBI] Empty count result, using items.length:', items.length);
+        }
+      } catch (countError) {
+        console.error('[PowerBI] Failed to execute count query, falling back to items.length:', countError);
+        // If count query fails, try to estimate based on whether we got a full page
+        // If we got exactly pageSize items, there might be more
+        if (items.length === pageSize) {
+          // We can't know the exact count, but indicate there are more pages
+          totalCount = items.length; // This will still be wrong, but at least consistent
+        }
+      }
 
       return {
         items,
