@@ -1198,7 +1198,9 @@ router.post("/api/powerbi/dataset-data", async (req, res) => {
       page = 1,
       pageSize = 10,
       sortBy = '',
-      sortOrder = 'asc'
+      sortOrder = 'asc',
+      distinct = false,
+      aggregationTypes = {}
     } = req.body;
     
     if (!workspaceId || !datasetId || !tableName) {
@@ -1220,7 +1222,9 @@ router.post("/api/powerbi/dataset-data", async (req, res) => {
       page,
       pageSize,
       sortBy,
-      sortOrder
+      sortOrder,
+      distinct,
+      aggregationTypes
     });
     
     res.json(result);

@@ -3,6 +3,7 @@ import { useQuery, useMutation } from '@tanstack/react-query';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
 import { toast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
@@ -54,6 +55,35 @@ export default function PaginatedReports() {
   const [pageSize, setPageSize] = useState(10);
   const [useDistinct, setUseDistinct] = useState(true); // Enabled by default
   const [aggregationTypes, setAggregationTypes] = useState<Record<string, 'sum' | 'avg' | 'count' | 'min' | 'max'>>({});
+  
+  // Helper function to detect numeric columns
+  const getNumericColumns = useCallback((schema: TableColumn[] | null): string[] => {
+    if (!schema) return [];
+    const numericTypes = ['int', 'decimal', 'float', 'money', 'numeric', 'bigint', 'smallint', 'tinyint'];
+    return schema
+      .filter(col => numericTypes.some(type => col.dataType.toLowerCase().includes(type)))
+      .map(col => col.columnName);
+  }, []);
+
+  // Initialize aggregation types when useDistinct changes or columns change
+  useEffect(() => {
+    if (useDistinct && tableSchema) {
+      const numericCols = getNumericColumns(tableSchema);
+      const newAggregationTypes: Record<string, 'sum' | 'avg' | 'count' | 'min' | 'max'> = {};
+      
+      // Initialize with 'sum' for all numeric columns that are selected
+      numericCols.forEach(col => {
+        if (selectedColumns.includes(col)) {
+          newAggregationTypes[col] = aggregationTypes[col] || 'sum';
+        }
+      });
+      
+      setAggregationTypes(newAggregationTypes);
+    } else if (!useDistinct) {
+      // Clear aggregation types when distinct is disabled
+      setAggregationTypes({});
+    }
+  }, [useDistinct, selectedColumns, tableSchema]);
   
   // Export state
   const [showExportDialog, setShowExportDialog] = useState(false);
@@ -133,7 +163,8 @@ export default function PaginatedReports() {
           sortOrder,
           filters: JSON.stringify(columnFilters),
           distinct: useDistinct.toString(),
-          selectedColumns: JSON.stringify(selectedColumns)
+          selectedColumns: JSON.stringify(selectedColumns),
+          aggregationTypes: JSON.stringify(aggregationTypes)
         });
         const token = localStorage.getItem('auth_token');
         const response = await fetch(`/api/paginated-reports?${params}`, {
@@ -163,7 +194,9 @@ export default function PaginatedReports() {
             page,
             pageSize,
             sortBy,
-            sortOrder
+            sortOrder,
+            distinct: useDistinct,
+            aggregationTypes: useDistinct ? aggregationTypes : undefined
           })
         });
         if (!response.ok) throw new Error('Failed to fetch Power BI data');
@@ -245,17 +278,62 @@ export default function PaginatedReports() {
         col.dataType.toLowerCase().includes(type)
       );
       
-      if (isNumeric && serverTotals) {
-        totalsRow[col.columnName] = serverTotals[col.columnName] || 0;
+      if (isNumeric) {
+        // When using aggregation, the totals need special handling
+        if (useDistinct && aggregationTypes[col.columnName]) {
+          const aggType = aggregationTypes[col.columnName];
+          
+          // For COUNT aggregation, sum the counts from aggregated data
+          // For other aggregations (SUM, AVG, MIN, MAX), use server totals or calculate from visible data
+          if (aggType === 'count') {
+            // Sum of counts from the current page data
+            totalsRow[col.columnName] = data?.items?.reduce((sum, item) => 
+              sum + (parseFloat(item[col.columnName]) || 0), 0) || 0;
+          } else if (serverTotals && serverTotals[col.columnName] !== undefined) {
+            // Use server-calculated totals for aggregated data
+            totalsRow[col.columnName] = serverTotals[col.columnName];
+          } else if (data?.items && aggType) {
+            // Calculate totals based on aggregation type from visible data
+            const values = data.items.map(item => parseFloat(item[col.columnName]) || 0).filter(v => !isNaN(v));
+            
+            if (values.length > 0) {
+              switch (aggType) {
+                case 'sum':
+                  totalsRow[col.columnName] = values.reduce((a, b) => a + b, 0);
+                  break;
+                case 'avg':
+                  totalsRow[col.columnName] = values.reduce((a, b) => a + b, 0) / values.length;
+                  break;
+                case 'min':
+                  totalsRow[col.columnName] = Math.min(...values);
+                  break;
+                case 'max':
+                  totalsRow[col.columnName] = Math.max(...values);
+                  break;
+                default:
+                  totalsRow[col.columnName] = values.reduce((a, b) => a + b, 0);
+              }
+            } else {
+              totalsRow[col.columnName] = 0;
+            }
+          } else {
+            totalsRow[col.columnName] = 0;
+          }
+        } else {
+          // No aggregation - use standard totals from server
+          totalsRow[col.columnName] = serverTotals?.[col.columnName] || 0;
+        }
       } else if (col.columnName === firstTextColumn) {
-        totalsRow[col.columnName] = 'Total';
+        // Display "Total" label with aggregation indicator if applicable
+        const hasAggregation = useDistinct && Object.keys(aggregationTypes).length > 0;
+        totalsRow[col.columnName] = hasAggregation ? 'Total (Aggregated)' : 'Total';
       } else {
         totalsRow[col.columnName] = '';
       }
     });
     
     return totalsRow;
-  }, [includeTotals, tableSchema, serverTotals]);
+  }, [includeTotals, tableSchema, serverTotals, useDistinct, aggregationTypes, data]);
 
   // Function to fetch ALL data in chunks (for export)
   const fetchAllData = useCallback(async () => {
@@ -636,7 +714,14 @@ export default function PaginatedReports() {
           rows.push([exportConfig.customHeader]);
           rows.push([]);
         }
-        rows.push(columnsToExport);
+        // Add column headers with aggregation types if applicable
+        const headersWithAggregation = columnsToExport.map(col => {
+          if (useDistinct && aggregationTypes[col]) {
+            return `${col} (${aggregationTypes[col].toUpperCase()})`;
+          }
+          return col;
+        });
+        rows.push(headersWithAggregation);
       }
       
       // Add data
@@ -783,8 +868,14 @@ export default function PaginatedReports() {
         wsData.push([]);
       }
       
-      // Add column headers
-      wsData.push(columnsToExport);
+      // Add column headers with aggregation types if applicable
+      const headersWithAggregation = columnsToExport.map(col => {
+        if (useDistinct && aggregationTypes[col]) {
+          return `${col} (${aggregationTypes[col].toUpperCase()})`;
+        }
+        return col;
+      });
+      wsData.push(headersWithAggregation);
       
       // Add data
       allData.forEach((item: any) => {
@@ -1020,8 +1111,13 @@ export default function PaginatedReports() {
       doc.text(`Table: ${tableName}`, marginLeft, yPosition);
       yPosition += 8;
       
-      // Prepare table data
-      const tableHeaders = columnsToExport;
+      // Prepare table data with aggregation types in headers
+      const tableHeaders = columnsToExport.map(col => {
+        if (useDistinct && aggregationTypes[col]) {
+          return `${col} (${aggregationTypes[col].toUpperCase()})`;
+        }
+        return col;
+      });
       const tableRows = allData.map((item: any) =>
         columnsToExport.map(col => {
           // Check if column exists
@@ -1322,6 +1418,52 @@ export default function PaginatedReports() {
                     </Button>
                   </div>
                   
+                  {/* Aggregation Type Selection for Numeric Columns */}
+                  {useDistinct && tableSchema && getNumericColumns(tableSchema).length > 0 && (
+                    <div className="border-l-4 border-primary/20 pl-4 space-y-3">
+                      <div>
+                        <label className="text-sm font-medium">Aggregation Types</label>
+                        <p className="text-xs text-muted-foreground">
+                          Select how to aggregate numeric columns when showing distinct rows
+                        </p>
+                      </div>
+                      <div className="space-y-2 max-h-60 overflow-y-auto">
+                        {getNumericColumns(tableSchema)
+                          .filter(col => selectedColumns.includes(col))
+                          .map(col => (
+                            <div key={col} className="flex items-center justify-between gap-2">
+                              <span className="text-sm truncate flex-1" title={col}>{col}</span>
+                              <Select
+                                value={aggregationTypes[col] || 'sum'}
+                                onValueChange={(value: 'sum' | 'avg' | 'count' | 'min' | 'max') => {
+                                  setAggregationTypes(prev => ({
+                                    ...prev,
+                                    [col]: value
+                                  }));
+                                }}
+                              >
+                                <SelectTrigger className="w-24 h-7 text-xs">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="sum">SUM</SelectItem>
+                                  <SelectItem value="avg">AVG</SelectItem>
+                                  <SelectItem value="min">MIN</SelectItem>
+                                  <SelectItem value="max">MAX</SelectItem>
+                                  <SelectItem value="count">COUNT</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          ))}
+                        {getNumericColumns(tableSchema).filter(col => selectedColumns.includes(col)).length === 0 && (
+                          <p className="text-xs text-muted-foreground italic">
+                            No numeric columns selected
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                  
                   <div className="flex items-center justify-between">
                     <div className="space-y-1">
                       <label className="text-sm font-medium">Enable Grouping</label>
@@ -1410,6 +1552,8 @@ export default function PaginatedReports() {
             onColumnFilterChange={handleColumnFilterChange}
             onClearColumnFilter={clearColumnFilter}
             onClearAllFilters={clearAllFilters}
+            useDistinct={useDistinct}
+            aggregationTypes={aggregationTypes}
           />
         </ResizablePanel>
       </ResizablePanelGroup>

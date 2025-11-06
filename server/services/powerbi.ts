@@ -2129,6 +2129,8 @@ export class PowerBIService {
     pageSize?: number;
     sortBy?: string;
     sortOrder?: 'asc' | 'desc';
+    distinct?: boolean;
+    aggregationTypes?: Record<string, 'sum' | 'avg' | 'count' | 'min' | 'max'>;
   }): Promise<{ items: any[], totalCount: number }> {
     try {
       const { 
@@ -2142,7 +2144,9 @@ export class PowerBIService {
         page = 1, 
         pageSize = 10,
         sortBy = '',
-        sortOrder = 'asc'
+        sortOrder = 'asc',
+        distinct = false,
+        aggregationTypes = {}
       } = params;
 
       // If no columns specified, fetch all columns from the table schema
@@ -2188,27 +2192,119 @@ export class PowerBIService {
         }
       }
 
-      // Build base query with optional filtering
-      if (filterConditions.length > 0) {
-        daxQuery = `FILTER('${tableName}', ${filterConditions.join(' && ')})`;
+      // Check if we need to do aggregation
+      if (distinct && Object.keys(aggregationTypes).length > 0) {
+        // Separate text and numeric columns for GROUP BY
+        const textColumns = effectiveColumns.filter(col => !(col in aggregationTypes));
+        const numericColumns = effectiveColumns.filter(col => col in aggregationTypes);
+        
+        // Build SUMMARIZE query with GROUP BY and aggregations
+        let aggregationExpressions: string[] = [];
+        
+        // Add group by columns
+        textColumns.forEach(col => {
+          aggregationExpressions.push(`"${col}", '${tableName}'[${col}]`);
+        });
+        
+        // Add aggregation expressions for numeric columns  
+        numericColumns.forEach(col => {
+          const aggType = aggregationTypes[col] || 'sum';
+          let aggFunction = '';
+          
+          switch (aggType) {
+            case 'sum':
+              aggFunction = `SUM('${tableName}'[${col}])`;
+              break;
+            case 'avg':
+              aggFunction = `AVERAGE('${tableName}'[${col}])`;
+              break;
+            case 'min':
+              aggFunction = `MIN('${tableName}'[${col}])`;
+              break;
+            case 'max':
+              aggFunction = `MAX('${tableName}'[${col}])`;
+              break;
+            case 'count':
+              aggFunction = `COUNT('${tableName}'[${col}])`;
+              break;
+            default:
+              aggFunction = `SUM('${tableName}'[${col}])`;
+          }
+          
+          aggregationExpressions.push(`"${col}", ${aggFunction}`);
+        });
+        
+        // Build base table with filters
+        let baseTable = tableName;
+        if (filterConditions.length > 0) {
+          baseTable = `FILTER('${tableName}', ${filterConditions.join(' && ')})`;
+        } else {
+          baseTable = `'${tableName}'`;
+        }
+        
+        // Build SUMMARIZE query
+        if (aggregationExpressions.length > 0) {
+          daxQuery = `SUMMARIZE(${baseTable}, ${aggregationExpressions.join(', ')})`;
+        } else {
+          // No columns selected, just get distinct rows
+          daxQuery = `DISTINCT(${baseTable})`;
+        }
+        
+        // Add sorting and pagination to the aggregated result
+        if (sortBy) {
+          const direction = sortOrder === 'desc' ? 0 : 1;
+          daxQuery = `TOPN(${skip + pageSize}, ${daxQuery}, [${sortBy}], ${direction})`;
+        } else {
+          daxQuery = `TOPN(${skip + pageSize}, ${daxQuery})`;
+        }
+      } else if (distinct) {
+        // Distinct without aggregation - just remove duplicates
+        let baseTable = tableName;
+        if (filterConditions.length > 0) {
+          baseTable = `FILTER('${tableName}', ${filterConditions.join(' && ')})`;
+        } else {
+          baseTable = `'${tableName}'`;
+        }
+        
+        // Get distinct rows
+        if (effectiveColumns.length > 0) {
+          const columnSelections = effectiveColumns.map(col => `'${tableName}'[${col}]`).join(', ');
+          daxQuery = `DISTINCT(SELECTCOLUMNS(${baseTable}, ${effectiveColumns.map(col => `"${col}", '${tableName}'[${col}]`).join(', ')}))`;
+        } else {
+          daxQuery = `DISTINCT(${baseTable})`;
+        }
+        
+        // Add sorting and pagination
+        if (sortBy) {
+          const direction = sortOrder === 'desc' ? 0 : 1;
+          daxQuery = `TOPN(${skip + pageSize}, ${daxQuery}, [${sortBy}], ${direction})`;
+        } else {
+          daxQuery = `TOPN(${skip + pageSize}, ${daxQuery})`;
+        }
       } else {
-        daxQuery = `'${tableName}'`;
-      }
+        // No aggregation - standard query
+        // Build base query with optional filtering
+        if (filterConditions.length > 0) {
+          daxQuery = `FILTER('${tableName}', ${filterConditions.join(' && ')})`;
+        } else {
+          daxQuery = `'${tableName}'`;
+        }
 
-      // Add sorting and pagination
-      if (sortBy) {
-        const direction = sortOrder === 'desc' ? 0 : 1;
-        daxQuery = `TOPN(${skip + pageSize}, ${daxQuery}, '${tableName}'[${sortBy}], ${direction})`;
-      } else {
-        // Without sorting, use TOPN for pagination
-        daxQuery = `TOPN(${skip + pageSize}, ${daxQuery})`;
-      }
+        // Add sorting and pagination
+        if (sortBy) {
+          const direction = sortOrder === 'desc' ? 0 : 1;
+          daxQuery = `TOPN(${skip + pageSize}, ${daxQuery}, '${tableName}'[${sortBy}], ${direction})`;
+        } else {
+          // Without sorting, use TOPN for pagination
+          daxQuery = `TOPN(${skip + pageSize}, ${daxQuery})`;
+        }
 
-      // Always use SELECTCOLUMNS when we have columns (either specified or fetched from schema)
-      // This ensures proper column selection even when columns were originally empty
-      if (effectiveColumns.length > 0) {
-        const columnSelections = effectiveColumns.map(col => `"${col}", '${tableName}'[${col}]`).join(', ');
-        daxQuery = `SELECTCOLUMNS(${daxQuery}, ${columnSelections})`;
+        // Always use SELECTCOLUMNS when we have columns (either specified or fetched from schema)
+        // This ensures proper column selection even when columns were originally empty
+        if (effectiveColumns.length > 0) {
+          const columnSelections = effectiveColumns.map(col => `"${col}", '${tableName}'[${col}]`).join(', ');
+          daxQuery = `SELECTCOLUMNS(${daxQuery}, ${columnSelections})`;
+        }
       }
 
       // Wrap in EVALUATE

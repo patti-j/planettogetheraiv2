@@ -127,6 +127,9 @@ interface ReportPreviewProps {
   onClearColumnFilter?: (column: string) => void;
   onClearAllFilters?: () => void;
   sourceType?: 'sql' | 'powerbi';
+  // Props for aggregation
+  useDistinct?: boolean;
+  aggregationTypes?: Record<string, 'sum' | 'avg' | 'count' | 'min' | 'max'>;
 }
 
 export const ReportPreview = memo(({
@@ -154,7 +157,9 @@ export const ReportPreview = memo(({
   onColumnFilterChange,
   onClearColumnFilter,
   onClearAllFilters,
-  sourceType
+  sourceType,
+  useDistinct = false,
+  aggregationTypes = {}
 }: ReportPreviewProps) => {
   const [resizingColumn, setResizingColumn] = useState<string | null>(null);
   const [startX, setStartX] = useState(0);
@@ -477,7 +482,15 @@ export const ReportPreview = memo(({
                                 onClick={() => onSort(column)}
                               >
                                 <div className="flex items-center justify-between">
-                                  <span className="font-medium">{column}</span>
+                                  <span className="font-medium">
+                                    {column}
+                                    {/* Show aggregation type badge if distinct mode with aggregation */}
+                                    {useDistinct && aggregationTypes[column] && (
+                                      <Badge className="ml-2 text-xs uppercase" variant="secondary">
+                                        {aggregationTypes[column]}
+                                      </Badge>
+                                    )}
+                                  </span>
                                   {sortBy === column && (
                                     <span className="ml-1">
                                       {sortOrder === 'asc' ? '↑' : '↓'}
