@@ -28,6 +28,7 @@ const SecurityFeaturesPage = lazy(() => import("@/pages/security-features"));
 const IntegrationApiPage = lazy(() => import("@/pages/integration-api"));
 const AnalyticsReportingPage = lazy(() => import("@/pages/analytics-reporting"));
 const InvestorRelationsPage = lazy(() => import("@/pages/investor-relations"));
+const DevelopmentRoadmap = lazy(() => import("@/pages/development-roadmap"));
 
 // Loading component for page transitions
 const PageLoader = () => (
@@ -159,6 +160,12 @@ export default function WebsiteApp() {
           <Route path="/investors">
             <WebsiteLayout>
               <InvestorRelationsPage />
+            </WebsiteLayout>
+          </Route>
+          
+          <Route path="/roadmap">
+            <WebsiteLayout>
+              <DevelopmentRoadmap />
             </WebsiteLayout>
           </Route>
           
