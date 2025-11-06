@@ -3265,7 +3265,7 @@ router.get("/api/pt-resources", async (req, res) => {
         p.external_id as plant_external_id
       FROM ptresources r
       LEFT JOIN ptplants p ON r.plant_id = p.id
-      WHERE r.active = true
+      WHERE r.is_active = true
       ORDER BY r.name
     `;
 
@@ -3314,8 +3314,8 @@ router.get("/api/resources-with-capabilities", async (req, res) => {
         ) as capabilities
       FROM ptresources r
       LEFT JOIN ptresourcecapabilities rc ON r.id = rc.resource_id
-      WHERE r.active = true
-      GROUP BY r.id, r.name, r.resource_id, r.capacity_type, r.active
+      WHERE r.is_active = true
+      GROUP BY r.id, r.name, r.resource_id, r.capacity_type, r.is_active
       ORDER BY r.id
     `);
 
@@ -5226,7 +5226,7 @@ router.get("/dashboard-metrics", requireAuth, async (req, res) => {
         FROM ptresources r
         LEFT JOIN ptjobresources jr ON r.resource_id = jr.default_resource_id
         LEFT JOIN ptjoboperations jo ON jr.operation_id = jo.id
-        WHERE r.active = true
+        WHERE r.is_active = true
           AND jo.scheduled_start >= NOW() - INTERVAL '7 days'
           AND jo.scheduled_start <= NOW() + INTERVAL '7 days'
         GROUP BY r.id, r.name
