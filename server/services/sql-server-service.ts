@@ -118,7 +118,8 @@ class SQLServerService {
     searchTerm: string = '',
     sortBy: string = '',
     sortOrder: 'asc' | 'desc' = 'asc',
-    filters: Record<string, string> = {}
+    filters: Record<string, string> = {},
+    distinct: boolean = false
   ): Promise<{
     items: any[];
     total: number;
@@ -188,11 +189,20 @@ class SQLServerService {
       }
 
       // Get total count
-      const countQuery = `
-        SELECT COUNT(*) as total
-        FROM [${validatedSchema}].[${validatedTable}]
-        ${whereClause}
-      `;
+      const countQuery = distinct 
+        ? `
+          SELECT COUNT(*) as total
+          FROM (
+            SELECT DISTINCT ${columns}
+            FROM [${validatedSchema}].[${validatedTable}]
+            ${whereClause}
+          ) AS DistinctCount
+        `
+        : `
+          SELECT COUNT(*) as total
+          FROM [${validatedSchema}].[${validatedTable}]
+          ${whereClause}
+        `;
 
       const countRequest = pool.request();
       if (searchTerm) {
@@ -211,7 +221,7 @@ class SQLServerService {
 
       // Get paginated data
       const dataQuery = `
-        SELECT ${columns}
+        SELECT ${distinct ? 'DISTINCT' : ''} ${columns}
         FROM [${validatedSchema}].[${validatedTable}]
         ${whereClause}
         ${orderByClause}

@@ -52,6 +52,7 @@ export default function PaginatedReports() {
   const [columnFilters, setColumnFilters] = useState<Record<string, string>>({});
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
+  const [useDistinct, setUseDistinct] = useState(false);
   
   // Export state
   const [showExportDialog, setShowExportDialog] = useState(false);
@@ -88,7 +89,8 @@ export default function PaginatedReports() {
         pageSize: pageSize.toString(),
         sortBy,
         sortOrder,
-        filters: JSON.stringify(columnFilters)
+        filters: JSON.stringify(columnFilters),
+        distinct: useDistinct.toString()
       });
       return `/api/paginated-reports?${params}`;
     } else if (sourceType === 'powerbi' && selectedWorkspace && selectedDataset && selectedPowerBITable) {
@@ -96,7 +98,7 @@ export default function PaginatedReports() {
       return 'powerbi-data'; // This is just a key for React Query
     }
     return null;
-  }, [sourceType, selectedTable, selectedWorkspace, selectedDataset, selectedPowerBITable, page, pageSize, sortBy, sortOrder, columnFilters]);
+  }, [sourceType, selectedTable, selectedWorkspace, selectedDataset, selectedPowerBITable, page, pageSize, sortBy, sortOrder, columnFilters, useDistinct]);
   
   // Fetch table schema - using the correct endpoint format
   const schemaUrl = useMemo(() => {
@@ -115,7 +117,7 @@ export default function PaginatedReports() {
   
   // Fetch data - handle both SQL and Power BI
   const { data, isLoading } = useQuery({
-    queryKey: dataUrl ? [dataUrl, page, pageSize, sortBy, sortOrder, columnFilters, selectedColumns] : [],
+    queryKey: dataUrl ? [dataUrl, page, pageSize, sortBy, sortOrder, columnFilters, selectedColumns, useDistinct] : [],
     queryFn: async () => {
       if (sourceType === 'sql' && selectedTable) {
         // Regular GET request for SQL data
@@ -127,6 +129,7 @@ export default function PaginatedReports() {
           sortBy,
           sortOrder,
           filters: JSON.stringify(columnFilters),
+          distinct: useDistinct.toString()
         });
         const token = localStorage.getItem('auth_token');
         const response = await fetch(`/api/paginated-reports?${params}`, {
@@ -553,7 +556,7 @@ export default function PaginatedReports() {
       if (data.totalPages > 1) {
         // Fetch all data for export
         const allDataUrl = sourceType === 'sql' && selectedTable
-          ? `/api/paginated-reports/export-data?schema=${selectedTable.schemaName}&table=${selectedTable.tableName}&filters=${encodeURIComponent(JSON.stringify(columnFilters))}&sortBy=${sortBy}&sortOrder=${sortOrder}`
+          ? `/api/paginated-reports/export-data?schema=${selectedTable.schemaName}&table=${selectedTable.tableName}&filters=${encodeURIComponent(JSON.stringify(columnFilters))}&sortBy=${sortBy}&sortOrder=${sortOrder}&distinct=${useDistinct}`
           : null;
           
         if (allDataUrl) {
@@ -656,7 +659,7 @@ export default function PaginatedReports() {
       if (data.totalPages > 1) {
         // Fetch all data for export
         const allDataUrl = sourceType === 'sql' && selectedTable
-          ? `/api/paginated-reports/export-data?schema=${selectedTable.schemaName}&table=${selectedTable.tableName}&filters=${encodeURIComponent(JSON.stringify(columnFilters))}&sortBy=${sortBy}&sortOrder=${sortOrder}`
+          ? `/api/paginated-reports/export-data?schema=${selectedTable.schemaName}&table=${selectedTable.tableName}&filters=${encodeURIComponent(JSON.stringify(columnFilters))}&sortBy=${sortBy}&sortOrder=${sortOrder}&distinct=${useDistinct}`
           : null;
           
         if (allDataUrl) {
@@ -791,7 +794,7 @@ export default function PaginatedReports() {
     } finally {
       setIsExporting(false);
     }
-  }, [data, selectedColumns, columnWidths, exportConfig, includeTotals, totals, formatRules, sourceType, selectedTable, columnFilters, sortBy, sortOrder, tableSchema]);
+  }, [data, selectedColumns, columnWidths, exportConfig, includeTotals, totals, formatRules, sourceType, selectedTable, columnFilters, sortBy, sortOrder, tableSchema, useDistinct]);
   
   const exportToPDF = useCallback(async () => {
     if (!data?.items) return;
@@ -810,7 +813,7 @@ export default function PaginatedReports() {
       if (data.totalPages > 1) {
         // Fetch all data for export
         const allDataUrl = sourceType === 'sql' && selectedTable
-          ? `/api/paginated-reports/export-data?schema=${selectedTable.schemaName}&table=${selectedTable.tableName}&filters=${encodeURIComponent(JSON.stringify(columnFilters))}&sortBy=${sortBy}&sortOrder=${sortOrder}`
+          ? `/api/paginated-reports/export-data?schema=${selectedTable.schemaName}&table=${selectedTable.tableName}&filters=${encodeURIComponent(JSON.stringify(columnFilters))}&sortBy=${sortBy}&sortOrder=${sortOrder}&distinct=${useDistinct}`
           : null;
           
         if (allDataUrl) {
@@ -951,7 +954,7 @@ export default function PaginatedReports() {
     } finally {
       setIsExporting(false);
     }
-  }, [data, selectedColumns, exportConfig, includeTotals, totals, pageSize, sourceType, selectedTable, columnFilters, sortBy, sortOrder, tableSchema]);
+  }, [data, selectedColumns, exportConfig, includeTotals, totals, pageSize, sourceType, selectedTable, columnFilters, sortBy, sortOrder, tableSchema, useDistinct]);
   
   // Main export handler
   const handleExport = useCallback(async (format: 'csv' | 'excel' | 'pdf') => {
@@ -1080,6 +1083,22 @@ export default function PaginatedReports() {
                       onClick={() => setIncludeTotals(!includeTotals)}
                     >
                       {includeTotals ? "Enabled" : "Disabled"}
+                    </Button>
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-1">
+                      <label className="text-sm font-medium">Show Distinct Rows</label>
+                      <p className="text-xs text-muted-foreground">
+                        Remove duplicate rows and show only unique combinations of values
+                      </p>
+                    </div>
+                    <Button
+                      variant={useDistinct ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => setUseDistinct(!useDistinct)}
+                    >
+                      {useDistinct ? "Enabled" : "Disabled"}
                     </Button>
                   </div>
                   
