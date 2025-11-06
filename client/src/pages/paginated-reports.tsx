@@ -44,6 +44,10 @@ export default function PaginatedReports() {
   const [groupingColumns, setGroupingColumns] = useState<string[]>([]);
   const [includeTotals, setIncludeTotals] = useState(false);
   
+  // Grouping state
+  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
+  const [groupDetails, setGroupDetails] = useState<Record<string, any[]>>({});
+  
   // Format rules state
   const [formatRules, setFormatRules] = useState<FormatRule[]>([]);
   
@@ -504,33 +508,111 @@ export default function PaginatedReports() {
   }, [sourceType, selectedTable, selectedWorkspace, selectedDataset, selectedPowerBITable, selectedColumns, sortBy, sortOrder, columnFilters, tableSchema]);
   
   // Group data (client-side for now, should be moved to server)
-  const groupedData = useMemo(() => {
-    if (!groupingEnabled || groupingColumns.length === 0 || !data?.items) {
-      return null;
-    }
-    
-    // TODO: Replace with server-side grouping
-    const groups = new Map<string, any>();
-    
-    data.items.forEach((item: any) => {
-      const groupKey = groupingColumns.map(col => item[col]).join('_');
-      if (!groups.has(groupKey)) {
-        groups.set(groupKey, {
-          groupKey,
-          groupValues: groupingColumns.reduce((acc, col) => {
+  // Fetch grouped data from server when grouping is enabled
+  const { data: groupedData } = useQuery({
+    queryKey: groupingEnabled && groupingColumns.length > 0 
+      ? ['grouped', sourceType, selectedTable, selectedWorkspace, selectedDataset, selectedPowerBITable, 
+         groupingColumns, page, pageSize, sortBy, sortOrder, columnFilters, selectedColumns]
+      : [],
+    queryFn: async () => {
+      const token = localStorage.getItem('auth_token');
+      
+      if (sourceType === 'sql' && selectedTable) {
+        const params = new URLSearchParams({
+          schema: selectedTable.schemaName,
+          table: selectedTable.tableName,
+          groupColumns: JSON.stringify(groupingColumns),
+          aggregateColumns: JSON.stringify(selectedColumns.filter(col => !groupingColumns.includes(col))),
+          page: page.toString(),
+          pageSize: pageSize.toString(),
+          sortBy,
+          sortOrder,
+          filters: JSON.stringify(columnFilters)
+        });
+        
+        const response = await fetch(`/api/paginated-reports/grouped?${params}`, {
+          headers: {
+            'Authorization': token ? `Bearer ${token}` : ''
+          },
+          credentials: 'include'
+        });
+        
+        if (!response.ok) throw new Error('Failed to fetch grouped data');
+        const result = await response.json();
+        
+        // Transform server response to match expected format
+        return {
+          groups: result.groups?.map((group: any) => ({
+            ...group,
+            groupKey: JSON.stringify(group.groupValues),
+            expanded: expandedGroups.has(JSON.stringify(group.groupValues)),
+            items: groupDetails[JSON.stringify(group.groupValues)] || []
+          })) || []
+        };
+      } else if (sourceType === 'powerbi' && selectedWorkspace && selectedDataset && selectedPowerBITable) {
+        // For Power BI, we'll use the regular endpoint with aggregation
+        const response = await fetch('/api/powerbi/dataset-data', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': token ? `Bearer ${token}` : ''
+          },
+          credentials: 'include',
+          body: JSON.stringify({
+            workspaceId: selectedWorkspace,
+            datasetId: selectedDataset,
+            tableName: selectedPowerBITable,
+            columns: selectedColumns,
+            filters: columnFilters,
+            page,
+            pageSize,
+            sortBy,
+            sortOrder,
+            distinct: true,
+            aggregationTypes: selectedColumns.reduce((acc, col) => {
+              if (!groupingColumns.includes(col)) {
+                // Detect if column is numeric and apply default aggregation
+                const numericColumn = tableSchema?.find(c => 
+                  c.columnName === col && 
+                  ['int', 'decimal', 'float', 'money', 'numeric', 'bigint', 'smallint', 'tinyint'].some(type =>
+                    c.dataType.toLowerCase().includes(type)
+                  )
+                );
+                if (numericColumn) {
+                  acc[col] = 'sum'; // Default to SUM for numeric columns
+                }
+              }
+              return acc;
+            }, {} as Record<string, string>)
+          })
+        });
+        
+        if (!response.ok) throw new Error('Failed to fetch Power BI grouped data');
+        const result = await response.json();
+        
+        // Transform aggregated results into groups
+        const groups = result.items?.map((item: any) => {
+          const groupValues = groupingColumns.reduce((acc, col) => {
             acc[col] = item[col];
             return acc;
-          }, {} as Record<string, any>),
-          items: [],
-          expanded: false,
-          aggregates: {}
-        });
+          }, {} as Record<string, any>);
+          
+          return {
+            groupValues,
+            groupKey: JSON.stringify(groupValues),
+            expanded: expandedGroups.has(JSON.stringify(groupValues)),
+            items: groupDetails[JSON.stringify(groupValues)] || [],
+            aggregates: item // The entire item contains aggregated values
+          };
+        }) || [];
+        
+        return { groups };
       }
-      groups.get(groupKey).items.push(item);
-    });
-    
-    return { groups: Array.from(groups.values()) };
-  }, [groupingEnabled, groupingColumns, data]);
+      
+      return { groups: [] };
+    },
+    enabled: groupingEnabled && groupingColumns.length > 0 && !!dataUrl
+  });
   
   // Reset selected columns when table changes
   useEffect(() => {
@@ -580,10 +662,98 @@ export default function PaginatedReports() {
     );
   }, []);
   
-  const handleGroupExpand = useCallback((groupKey: string) => {
-    // TODO: Implement group expansion logic
-    console.log('Expanding group:', groupKey);
-  }, []);
+  const handleGroupExpand = useCallback(async (groupKey: string) => {
+    // Toggle expanded state
+    const newExpandedGroups = new Set(expandedGroups);
+    if (newExpandedGroups.has(groupKey)) {
+      newExpandedGroups.delete(groupKey);
+      // Clear cached details for this group
+      setGroupDetails(prev => {
+        const newDetails = { ...prev };
+        delete newDetails[groupKey];
+        return newDetails;
+      });
+    } else {
+      newExpandedGroups.add(groupKey);
+      
+      // Fetch detail rows for this group if not already fetched
+      if (!groupDetails[groupKey]) {
+        try {
+          // Parse the group key to extract filter values
+          const groupValues = JSON.parse(groupKey);
+          
+          // Build filters for the group
+          const groupFilters = { ...columnFilters };
+          Object.entries(groupValues).forEach(([col, val]) => {
+            groupFilters[col] = val as string;
+          });
+          
+          // Fetch detail rows for this group
+          const token = localStorage.getItem('auth_token');
+          
+          if (sourceType === 'sql' && selectedTable) {
+            const params = new URLSearchParams({
+              schema: selectedTable.schemaName,
+              table: selectedTable.tableName,
+              page: '1',
+              pageSize: '100', // Get up to 100 detail rows per group
+              filters: JSON.stringify(groupFilters),
+              selectedColumns: JSON.stringify(selectedColumns),
+              sortBy: sortBy || '',
+              sortOrder: sortOrder || 'asc'
+            });
+            
+            const response = await fetch(`/api/paginated-reports?${params}`, {
+              headers: {
+                'Authorization': token ? `Bearer ${token}` : ''
+              },
+              credentials: 'include'
+            });
+            
+            if (response.ok) {
+              const data = await response.json();
+              setGroupDetails(prev => ({
+                ...prev,
+                [groupKey]: data.items || []
+              }));
+            }
+          } else if (sourceType === 'powerbi' && selectedWorkspace && selectedDataset && selectedPowerBITable) {
+            const response = await fetch('/api/powerbi/dataset-data', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': token ? `Bearer ${token}` : ''
+              },
+              credentials: 'include',
+              body: JSON.stringify({
+                workspaceId: selectedWorkspace,
+                datasetId: selectedDataset,
+                tableName: selectedPowerBITable,
+                columns: selectedColumns.length > 0 ? selectedColumns : undefined,
+                filters: groupFilters,
+                page: 1,
+                pageSize: 100,
+                sortBy: sortBy || null,
+                sortOrder: sortOrder || 'asc'
+              })
+            });
+            
+            if (response.ok) {
+              const data = await response.json();
+              setGroupDetails(prev => ({
+                ...prev,
+                [groupKey]: data.items || []
+              }));
+            }
+          }
+        } catch (error) {
+          console.error('Failed to fetch group details:', error);
+        }
+      }
+    }
+    
+    setExpandedGroups(newExpandedGroups);
+  }, [expandedGroups, groupDetails, columnFilters, sourceType, selectedTable, selectedWorkspace, selectedDataset, selectedPowerBITable, selectedColumns, sortBy, sortOrder]);
   
   // Format rules management
   const handleAddFormatRule = useCallback(() => {

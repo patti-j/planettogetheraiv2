@@ -316,49 +316,87 @@ export const ReportPreview = memo(({
     if (!groupedData || !groupedData.groups) return null;
 
     return (
-      <div className="space-y-2">
-        {groupedData.groups.map((group: any) => (
-          <div key={group.groupKey} className="border rounded">
-            <div
-              className="flex items-center p-2 bg-gray-50 dark:bg-gray-900 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800"
-              onClick={() => onGroupExpand?.(group.groupKey)}
-              data-testid={`group-header-${group.groupKey}`}
-            >
-              {group.expanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRightIcon className="h-4 w-4" />}
-              <span className="ml-2 font-medium">
-                {groupingColumns.map(col => `${col}: ${group.groupValues[col]}`).join(', ')}
-              </span>
-              {Object.entries(group.aggregates || {}).map(([col, value]) => (
-                <span key={col} className="ml-4 text-sm text-gray-600">
-                  {col}: {formatCellValue(value)}
+      <div className="space-y-2 p-4">
+        {groupedData.groups.map((group: any) => {
+          const isExpanded = group.expanded;
+          const groupItems = group.items || [];
+          
+          return (
+            <div key={group.groupKey} className="border rounded-lg overflow-hidden shadow-sm">
+              <div
+                className="flex items-center p-3 bg-gray-50 dark:bg-gray-900 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                onClick={() => onGroupExpand?.(group.groupKey)}
+                data-testid={`group-header-${group.groupKey}`}
+              >
+                {isExpanded ? <ChevronDown className="h-4 w-4 text-gray-600" /> : <ChevronRightIcon className="h-4 w-4 text-gray-600" />}
+                <span className="ml-2 font-medium flex-1">
+                  {groupingColumns.map(col => `${col}: ${group.groupValues[col]}`).join(', ')}
                 </span>
-              ))}
-            </div>
-            {group.expanded && group.items?.length > 0 && (
-              <div className="p-2">
-                <Table>
-                  <TableBody>
-                    {group.items.map((item: any, idx: number) => (
-                      <TableRow key={idx}>
+                
+                {/* Show aggregated values */}
+                <div className="flex gap-4 mr-4">
+                  {Object.entries(group.aggregates || {}).map(([col, value]) => {
+                    // Only show numeric aggregations
+                    if (typeof value === 'number' || !isNaN(Number(value))) {
+                      return (
+                        <span key={col} className="text-sm text-gray-600">
+                          <span className="font-medium">{col}:</span> {formatCellValue(value)}
+                        </span>
+                      );
+                    }
+                    return null;
+                  })}
+                </div>
+                
+                {/* Show item count */}
+                <span className="text-sm text-gray-500">
+                  ({groupItems.length} {groupItems.length === 1 ? 'row' : 'rows'})
+                </span>
+              </div>
+              
+              {isExpanded && groupItems.length > 0 && (
+                <div className="border-t bg-white dark:bg-gray-950">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
                         {selectedColumns.map(column => (
-                          <TableCell
-                            key={column}
-                            style={{
-                              width: columnWidths[column] || 150,
-                              ...getCellStyle(column, item[column])
-                            }}
-                          >
-                            {formatCellValue(item[column])}
-                          </TableCell>
+                          <TableHead key={column} style={{ width: columnWidths[column] || 150 }}>
+                            {column}
+                          </TableHead>
                         ))}
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-            )}
-          </div>
-        ))}
+                    </TableHeader>
+                    <TableBody>
+                      {groupItems.map((item: any, idx: number) => (
+                        <TableRow key={idx} className="hover:bg-gray-50 dark:hover:bg-gray-800">
+                          {selectedColumns.map(column => (
+                            <TableCell
+                              key={column}
+                              className="py-2"
+                              style={{
+                                width: columnWidths[column] || 150,
+                                ...getCellStyle(column, item[column])
+                              }}
+                            >
+                              {formatCellValue(item[column])}
+                            </TableCell>
+                          ))}
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
+              
+              {isExpanded && groupItems.length === 0 && (
+                <div className="border-t bg-white dark:bg-gray-950 p-4 text-center text-gray-500">
+                  <Loader2 className="h-4 w-4 animate-spin inline mr-2" />
+                  Loading details...
+                </div>
+              )}
+            </div>
+          );
+        })}
       </div>
     );
   };
