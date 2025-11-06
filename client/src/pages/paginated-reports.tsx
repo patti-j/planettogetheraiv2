@@ -552,8 +552,8 @@ export default function PaginatedReports() {
           })) || []
         };
       } else if (sourceType === 'powerbi' && selectedWorkspace && selectedDataset && selectedPowerBITable) {
-        // For Power BI, we'll use the regular endpoint with aggregation
-        const response = await fetch('/api/powerbi/dataset-data', {
+        // For Power BI, use the grouped endpoint
+        const response = await fetch('/api/powerbi/grouped-data', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -564,51 +564,29 @@ export default function PaginatedReports() {
             workspaceId: selectedWorkspace,
             datasetId: selectedDataset,
             tableName: selectedPowerBITable,
-            columns: selectedColumns,
+            groupByColumns: groupingColumns,
+            aggregations: aggregationTypes,
             filters: columnFilters,
-            page,
-            pageSize,
+            searchTerm: '',
             sortBy,
             sortOrder,
-            distinct: true,
-            aggregationTypes: selectedColumns.reduce((acc, col) => {
-              if (!groupingColumns.includes(col)) {
-                // Detect if column is numeric and apply default aggregation
-                const numericColumn = tableSchema?.find(c => 
-                  c.columnName === col && 
-                  ['int', 'decimal', 'float', 'money', 'numeric', 'bigint', 'smallint', 'tinyint'].some(type =>
-                    c.dataType.toLowerCase().includes(type)
-                  )
-                );
-                if (numericColumn) {
-                  acc[col] = 'sum'; // Default to SUM for numeric columns
-                }
-              }
-              return acc;
-            }, {} as Record<string, string>)
+            page,
+            pageSize
           })
         });
         
         if (!response.ok) throw new Error('Failed to fetch Power BI grouped data');
         const result = await response.json();
         
-        // Transform aggregated results into groups
-        const groups = result.items?.map((item: any) => {
-          const groupValues = groupingColumns.reduce((acc, col) => {
-            acc[col] = item[col];
-            return acc;
-          }, {} as Record<string, any>);
-          
-          return {
-            groupValues,
-            groupKey: JSON.stringify(groupValues),
-            expanded: expandedGroups.has(JSON.stringify(groupValues)),
-            items: groupDetails[JSON.stringify(groupValues)] || [],
-            aggregates: item // The entire item contains aggregated values
-          };
-        }) || [];
-        
-        return { groups };
+        // Transform server response to match expected format
+        return {
+          groups: result.groups?.map((group: any) => ({
+            ...group,
+            groupKey: JSON.stringify(group.groupValues),
+            expanded: expandedGroups.has(JSON.stringify(group.groupValues)),
+            items: groupDetails[JSON.stringify(group.groupValues)] || []
+          })) || []
+        };
       }
       
       return { groups: [] };

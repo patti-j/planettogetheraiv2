@@ -2145,6 +2145,198 @@ export class PowerBIService {
   /**
    * Query table data with pagination and filters for paginated reports
    */
+  async getGroupedData(params: {
+    accessToken: string;
+    workspaceId: string;
+    datasetId: string;
+    tableName: string;
+    groupByColumns: string[];
+    aggregations: Record<string, 'sum' | 'avg' | 'min' | 'max' | 'count'>;
+    filters?: Record<string, any>;
+    searchTerm?: string;
+    sortBy?: string;
+    sortOrder?: 'asc' | 'desc';
+    page?: number;
+    pageSize?: number;
+  }): Promise<any> {
+    try {
+      const {
+        accessToken,
+        workspaceId,
+        datasetId,
+        tableName,
+        groupByColumns = [],
+        aggregations = {},
+        filters = {},
+        searchTerm = '',
+        sortBy = '',
+        sortOrder = 'asc',
+        page = 1,
+        pageSize = 50
+      } = params;
+
+      if (!groupByColumns || groupByColumns.length === 0) {
+        throw new Error('Group by columns are required');
+      }
+
+      // Build filter conditions
+      const filterConditions: string[] = [];
+      
+      // Add column filters
+      Object.entries(filters).forEach(([column, value]) => {
+        if (value !== undefined && value !== null && value !== '') {
+          if (typeof value === 'string') {
+            filterConditions.push(`'${tableName}'[${column}] = "${value}"`);
+          } else if (typeof value === 'number') {
+            filterConditions.push(`'${tableName}'[${column}] = ${value}`);
+          }
+        }
+      });
+
+      // Build base table with filters
+      let baseTable = tableName;
+      if (filterConditions.length > 0) {
+        baseTable = `FILTER('${tableName}', ${filterConditions.join(' && ')})`;
+      } else {
+        baseTable = `'${tableName}'`;
+      }
+
+      // Build SUMMARIZE query
+      const summarizeArgs: string[] = [];
+      
+      // Group by columns come first
+      groupByColumns.forEach(col => {
+        summarizeArgs.push(`'${tableName}'[${col}]`);
+      });
+      
+      // Then add aggregated columns
+      Object.entries(aggregations).forEach(([col, aggType]) => {
+        let aggFunction = '';
+        
+        switch (aggType) {
+          case 'sum':
+            aggFunction = `SUM('${tableName}'[${col}])`;
+            break;
+          case 'avg':
+            aggFunction = `AVERAGE('${tableName}'[${col}])`;
+            break;
+          case 'min':
+            aggFunction = `MIN('${tableName}'[${col}])`;
+            break;
+          case 'max':
+            aggFunction = `MAX('${tableName}'[${col}])`;
+            break;
+          case 'count':
+            aggFunction = `COUNT('${tableName}'[${col}])`;
+            break;
+          default:
+            aggFunction = `SUM('${tableName}'[${col}])`;
+        }
+        
+        // Add as name-value pair for SUMMARIZE
+        summarizeArgs.push(`"${col}_${aggType}", ${aggFunction}`);
+      });
+
+      // Build the main query
+      let daxQuery = `SUMMARIZE(${baseTable}, ${summarizeArgs.join(', ')})`;
+
+      // Count query for total groups
+      const countQuery = `EVALUATE ROW("Count", COUNTROWS(${daxQuery}))`;
+      
+      console.log('[PowerBI] Executing count query:', countQuery);
+      const countResult = await this.executeDAXQuery(
+        accessToken,
+        workspaceId,
+        datasetId,
+        countQuery
+      );
+      
+      const totalGroups = countResult?.[0]?.['[Count]'] || countResult?.[0]?.['Count'] || 0;
+      
+      // Add sorting and pagination
+      // Note: DAX doesn't have OFFSET, so we'll fetch more rows and slice on the client
+      const skip = (page - 1) * pageSize;
+      const totalToFetch = skip + pageSize;
+      
+      if (sortBy && (groupByColumns.includes(sortBy) || sortBy in aggregations)) {
+        const direction = sortOrder === 'desc' ? 0 : 1;
+        // If sorting by aggregated column, use the aggregated name
+        const sortColumn = sortBy in aggregations ? `[${sortBy}_${aggregations[sortBy]}]` : `[${sortBy}]`;
+        daxQuery = `TOPN(${totalToFetch}, ${daxQuery}, ${sortColumn}, ${direction})`;
+      } else {
+        // Default sort by first group column
+        if (groupByColumns.length > 0) {
+          daxQuery = `TOPN(${totalToFetch}, ${daxQuery}, [${groupByColumns[0]}], 1)`;
+        } else {
+          daxQuery = `TOPN(${totalToFetch}, ${daxQuery})`;
+        }
+      }
+
+      // Execute the main query
+      daxQuery = `EVALUATE ${daxQuery}`;
+      
+      console.log('[PowerBI] Executing grouped DAX query:', daxQuery);
+      const result = await this.executeDAXQuery(
+        accessToken,
+        workspaceId,
+        datasetId,
+        daxQuery
+      );
+
+      // Slice results for pagination (since DAX doesn't have OFFSET)
+      const paginatedResult = (result || []).slice(skip, skip + pageSize);
+      
+      // Transform results into grouped format
+      const groups = paginatedResult.map((row: any) => {
+        const groupValues: Record<string, any> = {};
+        const aggregates: Record<string, any> = {};
+        
+        // Clean up column names and separate group values from aggregates
+        Object.entries(row).forEach(([key, value]) => {
+          // Remove brackets from column names
+          let cleanKey = key;
+          if (key.startsWith('[') && key.endsWith(']')) {
+            cleanKey = key.slice(1, -1);
+          }
+          
+          // Check if it's a group column or aggregate
+          if (groupByColumns.includes(cleanKey)) {
+            groupValues[cleanKey] = value;
+          } else {
+            // It's an aggregate - extract the column name
+            Object.keys(aggregations).forEach(col => {
+              const aggType = aggregations[col];
+              if (cleanKey === `${col}_${aggType}`) {
+                aggregates[col] = value;
+              }
+            });
+          }
+        });
+        
+        return {
+          groupKey: groupByColumns.map(col => groupValues[col]).join('_'),
+          groupValues,
+          aggregates,
+          items: [], // Items would be fetched separately if needed
+          expanded: false
+        };
+      });
+
+      const totalPages = Math.ceil(totalGroups / pageSize);
+      
+      return {
+        groups,
+        total: totalGroups,
+        page,
+        pageSize,
+        totalPages
+      };
+    } catch (error) {
+      console.error('[PowerBI] Error getting grouped data:', error);
+      throw error;
+    }
+  }
+
   async queryTableData(params: {
     accessToken: string;
     workspaceId: string;
@@ -2283,11 +2475,19 @@ export class PowerBIService {
         }
         
         // Add sorting and pagination to the aggregated result
-        if (sortBy) {
+        if (sortBy && (columnsToGroupBy.includes(sortBy) || columnsWithAggregation.includes(sortBy))) {
+          // Only sort if the sortBy column is in the grouped or aggregated columns
           const direction = sortOrder === 'desc' ? 0 : 1;
           daxQuery = `TOPN(${skip + pageSize}, ${daxQuery}, [${sortBy}], ${direction})`;
         } else {
-          daxQuery = `TOPN(${skip + pageSize}, ${daxQuery})`;
+          // No valid sort column, just paginate
+          // Use first available column for sorting if available (DAX TOPN requires sort column)
+          const firstCol = columnsToGroupBy[0] || columnsWithAggregation[0];
+          if (firstCol) {
+            daxQuery = `TOPN(${skip + pageSize}, ${daxQuery}, [${firstCol}], 1)`;
+          } else {
+            daxQuery = `TOPN(${skip + pageSize}, ${daxQuery})`;
+          }
         }
       } else if (distinct) {
         // Distinct without aggregation - just remove duplicates
@@ -2307,11 +2507,18 @@ export class PowerBIService {
         }
         
         // Add sorting and pagination
-        if (sortBy) {
+        if (sortBy && effectiveColumns.includes(sortBy)) {
+          // Only sort if the sortBy column is in the selected columns
           const direction = sortOrder === 'desc' ? 0 : 1;
           daxQuery = `TOPN(${skip + pageSize}, ${daxQuery}, [${sortBy}], ${direction})`;
         } else {
-          daxQuery = `TOPN(${skip + pageSize}, ${daxQuery})`;
+          // No valid sort column, just paginate
+          // Use first column for sorting if available (DAX TOPN requires sort column)
+          if (effectiveColumns.length > 0) {
+            daxQuery = `TOPN(${skip + pageSize}, ${daxQuery}, [${effectiveColumns[0]}], 1)`;
+          } else {
+            daxQuery = `TOPN(${skip + pageSize}, ${daxQuery})`;
+          }
         }
       } else {
         // No aggregation - standard query

@@ -1185,6 +1185,62 @@ router.get("/api/powerbi/workspaces/:workspaceId/datasets/:datasetId/tables/:tab
   }
 });
 
+// Get grouped and aggregated data for Power BI
+router.post("/api/powerbi/grouped-data", async (req, res) => {
+  try {
+    const {
+      workspaceId,
+      datasetId,
+      tableName,
+      groupByColumns = [],
+      aggregations = {},
+      searchTerm = "",
+      filters = {},
+      sortBy = "",
+      sortOrder = "asc",
+      page = 1,
+      pageSize = 50
+    } = req.body;
+    
+    if (!workspaceId || !datasetId || !tableName) {
+      return res.status(400).json({ 
+        message: 'Missing required parameters: workspaceId, datasetId, and tableName are required' 
+      });
+    }
+
+    if (!groupByColumns || groupByColumns.length === 0) {
+      return res.status(400).json({ 
+        message: 'Group by columns are required for grouped data' 
+      });
+    }
+    
+    const accessToken = await powerBIService.getAccessToken();
+    
+    const result = await powerBIService.getGroupedData({
+      accessToken,
+      workspaceId,
+      datasetId,
+      tableName,
+      groupByColumns,
+      aggregations,
+      filters,
+      searchTerm,
+      sortBy,
+      sortOrder,
+      page,
+      pageSize
+    });
+    
+    res.json(result);
+  } catch (error) {
+    console.error('[PowerBI] Error getting grouped data:', error);
+    res.status(500).json({ 
+      message: 'Failed to get grouped data',
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
 // Query data from Power BI dataset (with pagination, filtering, and sorting)
 router.post("/api/powerbi/dataset-data", async (req, res) => {
   try {
