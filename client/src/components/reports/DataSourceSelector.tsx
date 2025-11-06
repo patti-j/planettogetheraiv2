@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useQuery } from "@tanstack/react-query";
-import { Database, FileSpreadsheet, Loader2 } from "lucide-react";
+import { Database, BarChart3, Loader2 } from "lucide-react";
 
 interface SqlTable {
   tableName: string;
@@ -139,7 +139,7 @@ export const DataSourceSelector = memo(({
                 hover:shadow-md
                 ${sourceType === 'sql' 
                   ? 'border-primary bg-primary/5' 
-                  : 'border-muted-foreground/25 hover:border-muted-foreground/40'
+                  : 'border-border hover:border-muted-foreground/40'
                 }
               `}
               role="button"
@@ -147,18 +147,18 @@ export const DataSourceSelector = memo(({
               onKeyDown={(e) => e.key === 'Enter' && onSourceTypeChange('sql')}
               data-testid="tile-sql"
             >
-              <div className="flex flex-col items-center justify-center space-y-3">
-                <Database 
-                  className={`h-10 w-10 ${
-                    sourceType === 'sql' ? 'text-primary' : 'text-muted-foreground'
-                  }`}
-                />
-                <span className={`
-                  text-sm font-medium
-                  ${sourceType === 'sql' ? 'text-primary' : 'text-foreground'}
-                `}>
-                  SQL Server
-                </span>
+              <div className="flex flex-col items-center justify-center space-y-4">
+                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-900/20">
+                  <Database className="h-8 w-8 text-blue-600 dark:text-blue-400" />
+                </div>
+                <div className="text-center space-y-1">
+                  <h3 className="text-base font-semibold">
+                    Analytics SQL Database
+                  </h3>
+                  <p className="text-xs text-muted-foreground">
+                    Connect to SQL Server tables for direct data access
+                  </p>
+                </div>
               </div>
             </div>
 
@@ -170,7 +170,7 @@ export const DataSourceSelector = memo(({
                 hover:shadow-md
                 ${sourceType === 'powerbi' 
                   ? 'border-primary bg-primary/5' 
-                  : 'border-muted-foreground/25 hover:border-muted-foreground/40'
+                  : 'border-border hover:border-muted-foreground/40'
                 }
               `}
               role="button"
@@ -178,18 +178,18 @@ export const DataSourceSelector = memo(({
               onKeyDown={(e) => e.key === 'Enter' && onSourceTypeChange('powerbi')}
               data-testid="tile-powerbi"
             >
-              <div className="flex flex-col items-center justify-center space-y-3">
-                <FileSpreadsheet 
-                  className={`h-10 w-10 ${
-                    sourceType === 'powerbi' ? 'text-primary' : 'text-muted-foreground'
-                  }`}
-                />
-                <span className={`
-                  text-sm font-medium
-                  ${sourceType === 'powerbi' ? 'text-primary' : 'text-foreground'}
-                `}>
-                  Power BI
-                </span>
+              <div className="flex flex-col items-center justify-center space-y-4">
+                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-yellow-100 dark:bg-yellow-900/20">
+                  <BarChart3 className="h-8 w-8 text-yellow-600 dark:text-yellow-400" />
+                </div>
+                <div className="text-center space-y-1">
+                  <h3 className="text-base font-semibold">
+                    Power BI Datasets
+                  </h3>
+                  <p className="text-xs text-muted-foreground">
+                    Access semantic models from your Power BI workspaces
+                  </p>
+                </div>
               </div>
             </div>
           </div>
