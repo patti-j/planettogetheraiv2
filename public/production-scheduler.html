@@ -1509,10 +1509,7 @@
                 }
                 
                 // Load planning areas first
-                // Use IIFE to ensure proper async context
-                (async () => {
-                    await loadPlanningAreas();
-                })();
+                await loadPlanningAreas();
                 
                 // NOTE: Click listener for applyPlanningAreaFilter button is already
                 // attached via document.addEventListener at line 1145-1150
