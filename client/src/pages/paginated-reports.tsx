@@ -333,6 +333,7 @@ export default function PaginatedReports() {
           }
           
           // Check if there's more data
+          // For Power BI, continue while we get full pages
           hasMoreData = pageData.items && pageData.items.length === chunkSize;
           currentPage++;
         }
@@ -383,6 +384,7 @@ export default function PaginatedReports() {
           }
           
           // Check if there's more data
+          // For Power BI, continue while we get full pages
           hasMoreData = pageData.items && pageData.items.length === chunkSize;
           currentPage++;
         }
