@@ -816,7 +816,7 @@ export default function PaginatedReports() {
       // First, fetch all data if we have more pages
       let allData = data.items;
       if (data.totalPages > 1) {
-        // Fetch all data for export - use columnsToExport instead of selectedColumns
+        // Fetch all data for export
         const allDataUrl = sourceType === 'sql' && selectedTable
           ? `/api/paginated-reports/export-data?schema=${selectedTable.schemaName}&table=${selectedTable.tableName}&filters=${encodeURIComponent(JSON.stringify(columnFilters))}&sortBy=${sortBy}&sortOrder=${sortOrder}&distinct=${useDistinct}&selectedColumns=${encodeURIComponent(JSON.stringify(columnsToExport))}`
           : null;
@@ -844,122 +844,187 @@ export default function PaginatedReports() {
         throw new Error('No data available to export');
       }
       
+      // Create document respecting user's export configuration
       const doc = new jsPDF({
         orientation: exportConfig.orientation as 'portrait' | 'landscape',
         unit: 'mm',
         format: exportConfig.paperSize as any
-      });
+      }) as any; // Cast to any to access autoTable
       
       // Get table name for header
       const tableName = selectedTable ? `${selectedTable.schemaName}.${selectedTable.tableName}` : 'Report';
       const fileName = exportConfig.fileName || selectedTable?.tableName || 'report';
       
-      // Calculate rows per page
-      const pageHeight = doc.internal.pageSize.height;
-      const marginTop = 20;
-      const marginBottom = 15;
-      const rowHeight = 7;
-      const headerHeight = 20; // Space for headers
-      const usableHeight = pageHeight - marginTop - marginBottom - headerHeight;
-      const rowsPerPage = Math.floor(usableHeight / rowHeight);
-      const totalDataPages = Math.ceil(allData.length / rowsPerPage);
+      // Initial Y position for content - respect margin settings
+      const marginTop = exportConfig.marginTop || 15;
+      const marginLeft = exportConfig.marginLeft || 14;
+      const marginRight = exportConfig.marginRight || 14;
+      const marginBottom = exportConfig.marginBottom || 15;
+      let yPosition = marginTop;
       
-      for (let pageNum = 0; pageNum < totalDataPages; pageNum++) {
-        if (pageNum > 0) {
-          doc.addPage();
-        }
-        
-        // Add Generated date at the top
-        doc.setFontSize(10);
-        doc.setTextColor(100);
-        const currentDate = new Date().toLocaleDateString('en-US', { 
-          year: 'numeric', 
-          month: 'numeric', 
-          day: 'numeric',
-          hour: '2-digit',
-          minute: '2-digit'
+      // Add custom header if configured
+      if (exportConfig.includeHeaders && exportConfig.customHeader) {
+        doc.setFontSize(exportConfig.fontSize || 10);
+        doc.text(exportConfig.customHeader, marginLeft, yPosition);
+        yPosition += 8;
+      }
+      
+      // Add timestamp if configured
+      if (exportConfig.includeTimestamp) {
+        doc.setFontSize(exportConfig.fontSize || 10);
+        doc.text(`Generated: ${new Date().toLocaleString()}`, marginLeft, yPosition);
+        yPosition += 6;
+      }
+      
+      // Add table name
+      doc.setFontSize((exportConfig.fontSize || 10) + 1);
+      doc.text(`Table: ${tableName}`, marginLeft, yPosition);
+      yPosition += 8;
+      
+      // Prepare table data
+      const tableHeaders = columnsToExport;
+      const tableRows = allData.map((item: any) =>
+        columnsToExport.map(col => {
+          // Check if column exists
+          if (!(col in item)) {
+            console.warn(`Column ${col} not found in data`);
+            return '';
+          }
+          const value = item[col];
+          if (value === null || value === undefined) return '';
+          if (typeof value === 'number') {
+            return Number.isInteger(value) ? value.toString() : value.toFixed(2);
+          }
+          if (typeof value === 'boolean') return value ? 'Yes' : 'No';
+          
+          // Handle long strings
+          const strValue = String(value);
+          if (strValue.length > 60) {
+            return strValue.substring(0, 57) + '...';
+          }
+          return strValue;
+        })
+      );
+      
+      // Add totals row if needed
+      if (includeTotals && totals) {
+        const totalsRow = columnsToExport.map(col => {
+          const value = totals[col];
+          if (value !== undefined && value !== null) {
+            return typeof value === 'number' 
+              ? Number.isInteger(value) ? value.toString() : value.toFixed(2)
+              : String(value);
+          }
+          return col === columnsToExport[0] ? 'Total' : '';
         });
-        doc.text(`Generated: ${currentDate}`, 14, 10);
-        
-        // Add table name
-        doc.setFontSize(11);
-        doc.setTextColor(0);
-        doc.text(`Table: ${tableName}`, 14, 17);
-        
-        // Get data for this page
-        const startIdx = pageNum * rowsPerPage;
-        const endIdx = Math.min(startIdx + rowsPerPage, allData.length);
-        const pageData = allData.slice(startIdx, endIdx);
-        
-        // Prepare table data - only use columns that exist in the data
-        const tableData = pageData.map((item: any) =>
-          columnsToExport.map(col => {
-            // Check if column exists in the item
-            if (!(col in item)) {
-              console.warn(`Column ${col} not found in data item`);
-              return '';
-            }
-            const value = item[col];
-            if (value === null || value === undefined) return '';
-            if (typeof value === 'number') {
-              return Number.isInteger(value) ? value.toString() : value.toFixed(2);
-            }
-            if (typeof value === 'boolean') return value ? 'Yes' : 'No';
-            return String(value);
-          })
-        );
-        
-        // Add totals row only on the last page
-        if (pageNum === totalDataPages - 1 && includeTotals && totals) {
-          tableData.push(
-            columnsToExport.map(col => {
-              const value = totals[col];
-              if (value === null || value === undefined) return '';
-              if (typeof value === 'number') {
-                return Number.isInteger(value) ? value.toString() : value.toFixed(2);
-              }
-              return String(value);
-            })
-          );
-        }
-        
-        // Generate table with clean style
-        doc.autoTable({
-          head: [columnsToExport],
-          body: tableData,
-          startY: 22,
-          margin: { left: 14, right: 14 },
+        tableRows.push(totalsRow);
+      }
+      
+      // Check if autoTable is available
+      const hasAutoTable = typeof doc.autoTable === 'function';
+      
+      if (hasAutoTable) {
+        // Use autoTable for professional PDF generation with pagination
+        const tableConfig: any = {
+          body: tableRows,
+          startY: yPosition,
+          theme: 'grid',
           styles: {
-            fontSize: 9,
+            fontSize: exportConfig.fontSize || 9,
             cellPadding: 3,
+            overflow: 'linebreak',
+            lineColor: [128, 128, 128],
             lineWidth: 0.1,
-            lineColor: [200, 200, 200]
+            valign: 'middle',
+            font: 'helvetica'
           },
+          pageBreak: 'auto',
+          rowPageBreak: 'avoid',
           headStyles: {
             fillColor: [240, 240, 240],
             textColor: [0, 0, 0],
             fontStyle: 'bold',
-            halign: 'left'
+            halign: 'center',
+            lineColor: [128, 128, 128],
+            lineWidth: 0.1
           },
           alternateRowStyles: {
             fillColor: [250, 250, 250]
           },
-          didDrawPage: function(data) {
-            // Add page number at bottom
-            const pageString = pageNum === 0 && totalDataPages === 1 
-              ? tableName 
-              : `${tableName} - Page ${pageNum + 1}`;
+          margin: { left: marginLeft, right: marginRight, top: yPosition, bottom: marginBottom },
+          showHead: exportConfig.includeHeaders !== false ? 'everyPage' : false,
+          tableLineColor: [128, 128, 128],
+          tableLineWidth: 0.1
+        };
+        
+        // Only add headers if includeHeaders is not explicitly false
+        if (exportConfig.includeHeaders !== false) {
+          tableConfig.head = [tableHeaders];
+        }
+        
+        // Add the didDrawPage callback
+        tableConfig.didDrawPage = function(data: any) {
+            // Add page header on continued pages
+            if (data.pageNumber > 1) {
+              doc.setFontSize(10);
+              doc.setTextColor(100);
+              doc.text(`${tableName} - Continued`, 10, 10);
+            }
             
+            // Footer with page numbers
+            const pageCount = data.pageCount || '?';
+            
+            // Draw footer line
+            doc.setDrawColor(200, 200, 200);
+            doc.setLineWidth(0.1);
+            doc.line(10, doc.internal.pageSize.height - 15, 
+                    doc.internal.pageSize.width - 10, 
+                    doc.internal.pageSize.height - 15);
+            
+            // Page number
             doc.setFontSize(9);
-            doc.setTextColor(100);
+            doc.setTextColor(100, 100, 100);
+            const currentPage = data.pageNumber || 1;
+            const pageString = `Page ${currentPage} of ${pageCount}`;
+            
+            // Center the page number
+            const textWidth = doc.getTextWidth(pageString);
+            const centerX = (doc.internal.pageSize.width - textWidth) / 2;
+            doc.text(pageString, centerX, doc.internal.pageSize.height - 10);
+            
+            // Add timestamp on the left
+            doc.setFontSize(8);
             doc.text(
-              pageString,
-              doc.internal.pageSize.width / 2,
-              pageHeight - 8,
-              { align: 'center' }
+              new Date().toLocaleDateString(),
+              10,
+              doc.internal.pageSize.height - 10
             );
-          }
-        });
+            
+            // Add report name on the right
+            doc.text(
+              tableName,
+              doc.internal.pageSize.width - 10,
+              doc.internal.pageSize.height - 10,
+              { align: 'right' }
+            );
+            
+            // Add custom footer if configured
+            if (exportConfig.includeFooters && exportConfig.customFooter) {
+              doc.setFontSize(exportConfig.fontSize || 9);
+              doc.setTextColor(50, 50, 50);
+              const footerY = doc.internal.pageSize.height - marginBottom - 5;
+              doc.text(exportConfig.customFooter, marginLeft, footerY);
+            }
+          };
+        
+        // Apply the configuration to generate the PDF table
+        doc.autoTable(tableConfig);
+      } else {
+        // Fallback without autoTable
+        console.error('jsPDF autoTable plugin not available');
+        doc.setFontSize(10);
+        doc.text('Table data export requires autoTable plugin', 14, yPosition + 10);
+        doc.text(`Total records: ${allData.length}`, 14, yPosition + 20);
       }
       
       // Save PDF
@@ -971,7 +1036,7 @@ export default function PaginatedReports() {
     } finally {
       setIsExporting(false);
     }
-  }, [data, selectedColumns, exportConfig, includeTotals, totals, pageSize, sourceType, selectedTable, columnFilters, sortBy, sortOrder, tableSchema, useDistinct]);
+  }, [data, selectedColumns, exportConfig, includeTotals, totals, sourceType, selectedTable, columnFilters, sortBy, sortOrder, tableSchema, useDistinct]);
   
   // Main export handler
   const handleExport = useCallback(async (format: 'csv' | 'excel' | 'pdf') => {
