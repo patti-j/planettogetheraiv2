@@ -69,6 +69,7 @@ const defaultHeaderItemsByRole = {
     { id: 'analytics', label: 'Analytics', icon: 'BarChart3', href: '/analytics' },
     { id: 'systems', label: 'Systems', icon: 'Database', href: '/systems-management-dashboard' },
     { id: 'users', label: 'Users', icon: 'Shield', href: '/user-access-management' },
+    { id: 'llm-settings', label: 'AI Models', icon: 'Sparkles', href: '/llm-settings' },
     { id: 'notifications', label: 'Notifications', icon: 'Bell', action: 'notifications' },
     { id: 'theme', label: 'Theme', icon: 'Settings', action: 'theme', alwaysVisible: true }
   ],
@@ -78,6 +79,7 @@ const defaultHeaderItemsByRole = {
     { id: 'schedule', label: 'Schedule', icon: 'Calendar', href: '/production-scheduler' },
     { id: 'shop-floor', label: 'Shop Floor', icon: 'Factory', href: '/shop-floor' },
     { id: 'capacity', label: 'Capacity', icon: 'Briefcase', href: '/capacity-planning' },
+    { id: 'llm-settings', label: 'AI Models', icon: 'Sparkles', href: '/llm-settings' },
     { id: 'alerts', label: 'Alerts', icon: 'AlertTriangle', action: 'alerts' },
     { id: 'search', label: 'Search', icon: 'Search', action: 'search', alwaysVisible: true },
     { id: 'theme', label: 'Theme', icon: 'Settings', action: 'theme', alwaysVisible: true }
@@ -89,6 +91,7 @@ const defaultHeaderItemsByRole = {
     { id: 'optimization', label: 'Optimize', icon: 'Sparkles', href: '/optimization-studio' },
     { id: 'business-goals', label: 'Goals', icon: 'Target', href: '/business-goals' },
     { id: 'reports', label: 'Reports', icon: 'BarChart3', href: '/reports' },
+    { id: 'llm-settings', label: 'AI Models', icon: 'Brain', href: '/llm-settings' },
     { id: 'search', label: 'Search', icon: 'Search', action: 'search', alwaysVisible: true },
     { id: 'theme', label: 'Theme', icon: 'Settings', action: 'theme', alwaysVisible: true }
   ],
