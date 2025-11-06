@@ -518,23 +518,25 @@ export default function PaginatedReports() {
       const token = localStorage.getItem('auth_token');
       
       if (sourceType === 'sql' && selectedTable) {
-        const params = new URLSearchParams({
-          schema: selectedTable.schemaName,
-          table: selectedTable.tableName,
-          groupColumns: JSON.stringify(groupingColumns),
-          aggregateColumns: JSON.stringify(selectedColumns.filter(col => !groupingColumns.includes(col))),
-          page: page.toString(),
-          pageSize: pageSize.toString(),
-          sortBy,
-          sortOrder,
-          filters: JSON.stringify(columnFilters)
-        });
-        
-        const response = await fetch(`/api/paginated-reports/grouped?${params}`, {
+        const response = await fetch('/api/paginated-reports/grouped', {
+          method: 'POST',
           headers: {
-            'Authorization': token ? `Bearer ${token}` : ''
+            'Authorization': token ? `Bearer ${token}` : '',
+            'Content-Type': 'application/json'
           },
-          credentials: 'include'
+          credentials: 'include',
+          body: JSON.stringify({
+            schema: selectedTable.schemaName,
+            table: selectedTable.tableName,
+            groupByColumns: groupingColumns,
+            aggregationTypes: columnsAggregation,
+            searchTerm: searchTerm || '',
+            sortBy,
+            sortOrder,
+            filters: columnFilters,
+            page,
+            pageSize
+          })
         });
         
         if (!response.ok) throw new Error('Failed to fetch grouped data');

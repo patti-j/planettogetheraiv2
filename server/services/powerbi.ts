@@ -2222,20 +2222,32 @@ export class PowerBIService {
 
       // Check if we need to do aggregation
       if (distinct && Object.keys(aggregationTypes).length > 0) {
-        // Separate text and numeric columns for GROUP BY
-        const textColumns = effectiveColumns.filter(col => !(col in aggregationTypes));
-        const numericColumns = effectiveColumns.filter(col => col in aggregationTypes);
+        // Separate columns into those that will be grouped vs aggregated
+        const columnsWithAggregation = effectiveColumns.filter(col => 
+          col in aggregationTypes
+        );
+        const columnsToGroupBy = effectiveColumns.filter(col => 
+          !(col in aggregationTypes)
+        );
         
-        // Build SUMMARIZE query with GROUP BY and aggregations
-        let aggregationExpressions: string[] = [];
+        // Build base table with filters
+        let baseTable = tableName;
+        if (filterConditions.length > 0) {
+          baseTable = `FILTER('${tableName}', ${filterConditions.join(' && ')})`;
+        } else {
+          baseTable = `'${tableName}'`;
+        }
         
-        // Add group by columns
-        textColumns.forEach(col => {
-          aggregationExpressions.push(`"${col}", '${tableName}'[${col}]`);
+        // Build SUMMARIZE query
+        const summarizeArgs: string[] = [];
+        
+        // In DAX SUMMARIZE, grouping columns come first as just column references
+        columnsToGroupBy.forEach(col => {
+          summarizeArgs.push(`'${tableName}'[${col}]`);
         });
         
-        // Add aggregation expressions for numeric columns  
-        numericColumns.forEach(col => {
+        // Then add aggregated columns with their aggregation functions as name-value pairs
+        columnsWithAggregation.forEach(col => {
           const aggType = aggregationTypes[col] || 'sum';
           let aggFunction = '';
           
@@ -2259,22 +2271,14 @@ export class PowerBIService {
               aggFunction = `SUM('${tableName}'[${col}])`;
           }
           
-          aggregationExpressions.push(`"${col}", ${aggFunction}`);
+          summarizeArgs.push(`"${col}", ${aggFunction}`);
         });
         
-        // Build base table with filters
-        let baseTable = tableName;
-        if (filterConditions.length > 0) {
-          baseTable = `FILTER('${tableName}', ${filterConditions.join(' && ')})`;
+        // Build the query
+        if (summarizeArgs.length > 0) {
+          daxQuery = `SUMMARIZE(${baseTable}, ${summarizeArgs.join(', ')})`;
         } else {
-          baseTable = `'${tableName}'`;
-        }
-        
-        // Build SUMMARIZE query
-        if (aggregationExpressions.length > 0) {
-          daxQuery = `SUMMARIZE(${baseTable}, ${aggregationExpressions.join(', ')})`;
-        } else {
-          // No columns selected, just get distinct rows
+          // No columns selected or all filtered out, just get distinct rows
           daxQuery = `DISTINCT(${baseTable})`;
         }
         
@@ -2391,12 +2395,12 @@ export class PowerBIService {
         // Check if we're doing aggregation/distinct
         if (distinct && Object.keys(aggregationTypes).length > 0) {
           // Count grouped/aggregated results
-          const textColumns = effectiveColumns.filter(col => !(col in aggregationTypes));
+          const columnsToGroupBy = effectiveColumns.filter(col => !(col in aggregationTypes));
           
           // Build a count query for grouped data
-          if (textColumns.length > 0) {
+          if (columnsToGroupBy.length > 0) {
             // Build SUMMARIZE query to count distinct groups
-            const groupByColumns = textColumns.map(col => `'${tableName}'[${col}]`).join(', ');
+            const groupByColumns = columnsToGroupBy.map(col => `'${tableName}'[${col}]`).join(', ');
             const filterPart = filterConditions.length > 0 
               ? `FILTER('${tableName}', ${filterConditions.join(' && ')})`
               : `'${tableName}'`;
@@ -2414,12 +2418,8 @@ export class PowerBIService {
               )
             `;
           } else {
-            // No text columns to group by, just count the filtered rows
-            if (filterConditions.length > 0) {
-              countQuery = `EVALUATE ROW("Count", COUNTROWS(FILTER('${tableName}', ${filterConditions.join(' && ')})))`;
-            } else {
-              countQuery = `EVALUATE ROW("Count", COUNTROWS('${tableName}'))`;
-            }
+            // No grouping columns but has aggregation - just return 1 row
+            countQuery = `EVALUATE ROW("Count", 1)`;
           }
         } else if (distinct) {
           // Count distinct rows (without aggregation)
