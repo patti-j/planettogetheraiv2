@@ -611,13 +611,16 @@ export default function PaginatedReports() {
         row.map(cell => String(cell || '')).join(',')
       ).join('\n');
       
-      // Download with proper filename
+      // Download with proper filename using export settings
       const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `${tableName}_${dateStamp}.csv`;
+      const fileName = exportConfig.fileName || tableName || 'report';
+      a.download = `${fileName}_${dateStamp}.csv`;
+      document.body.appendChild(a);
       a.click();
+      document.body.removeChild(a);
       window.URL.revokeObjectURL(url);
     } catch (error) {
       console.error('CSV export error:', error);
@@ -769,9 +772,10 @@ export default function PaginatedReports() {
       
       const tableName = selectedTable?.tableName || 'report';
       const dateStamp = new Date().toISOString().split('T')[0];
+      const fileName = exportConfig.fileName || tableName || 'report';
       
       XLSX.utils.book_append_sheet(workbook, worksheet, 'Report');
-      XLSX.writeFile(workbook, `${tableName}_${dateStamp}.xlsx`);
+      XLSX.writeFile(workbook, `${fileName}_${dateStamp}.xlsx`);
     } catch (error) {
       console.error('Excel export error:', error);
       throw error;
@@ -933,7 +937,8 @@ export default function PaginatedReports() {
       // Save PDF
       const tableName = selectedTable?.tableName || 'report';
       const dateStamp = new Date().toISOString().split('T')[0];
-      doc.save(`${tableName}_${dateStamp}.pdf`);
+      const fileName = exportConfig.fileName || tableName || 'report';
+      doc.save(`${fileName}_${dateStamp}.pdf`);
     } catch (error) {
       console.error('PDF export error:', error);
       throw error;
@@ -948,13 +953,13 @@ export default function PaginatedReports() {
     try {
       switch (format) {
         case 'csv':
-          exportToCSV();
+          await exportToCSV();
           break;
         case 'excel':
-          exportToExcel();
+          await exportToExcel();
           break;
         case 'pdf':
-          exportToPDF();
+          await exportToPDF();
           break;
       }
       toast({
