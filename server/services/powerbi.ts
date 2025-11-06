@@ -2382,17 +2382,76 @@ export class PowerBIService {
         return cleanRow;
       });
 
-      // Get total count with a separate query (applying same filters)
+      // Get total count with a separate query (applying same filters and accounting for distinct/aggregation)
       let totalCount = items.length; // Default fallback
       
       try {
         let countQuery: string;
-        if (filterConditions.length > 0) {
-          // Apply same filters to count query
-          countQuery = `EVALUATE ROW("Count", COUNTROWS(FILTER('${tableName}', ${filterConditions.join(' && ')})))`;
+        
+        // Check if we're doing aggregation/distinct
+        if (distinct && Object.keys(aggregationTypes).length > 0) {
+          // Count grouped/aggregated results
+          const textColumns = effectiveColumns.filter(col => !(col in aggregationTypes));
+          
+          // Build a count query for grouped data
+          if (textColumns.length > 0) {
+            // Build SUMMARIZE query to count distinct groups
+            const groupByColumns = textColumns.map(col => `'${tableName}'[${col}]`).join(', ');
+            const filterPart = filterConditions.length > 0 
+              ? `FILTER('${tableName}', ${filterConditions.join(' && ')})`
+              : `'${tableName}'`;
+            
+            countQuery = `
+              EVALUATE 
+              ROW(
+                "Count", 
+                COUNTROWS(
+                  SUMMARIZE(
+                    ${filterPart},
+                    ${groupByColumns}
+                  )
+                )
+              )
+            `;
+          } else {
+            // No text columns to group by, just count the filtered rows
+            if (filterConditions.length > 0) {
+              countQuery = `EVALUATE ROW("Count", COUNTROWS(FILTER('${tableName}', ${filterConditions.join(' && ')})))`;
+            } else {
+              countQuery = `EVALUATE ROW("Count", COUNTROWS('${tableName}'))`;
+            }
+          }
+        } else if (distinct) {
+          // Count distinct rows (without aggregation)
+          const columnsToSelect = effectiveColumns.length > 0 
+            ? effectiveColumns.map(col => `'${tableName}'[${col}]`).join(', ')
+            : `'${tableName}'[${effectiveColumns[0]}]`; // Need at least one column
+          
+          const filterPart = filterConditions.length > 0 
+            ? `FILTER('${tableName}', ${filterConditions.join(' && ')})`
+            : `'${tableName}'`;
+          
+          countQuery = `
+            EVALUATE 
+            ROW(
+              "Count", 
+              COUNTROWS(
+                DISTINCT(
+                  SELECTCOLUMNS(
+                    ${filterPart},
+                    ${effectiveColumns.map(col => `"${col}", '${tableName}'[${col}]`).join(', ')}
+                  )
+                )
+              )
+            )
+          `;
         } else {
-          // No filters, count all rows
-          countQuery = `EVALUATE ROW("Count", COUNTROWS('${tableName}'))`;
+          // Regular count without distinct
+          if (filterConditions.length > 0) {
+            countQuery = `EVALUATE ROW("Count", COUNTROWS(FILTER('${tableName}', ${filterConditions.join(' && ')})))`;
+          } else {
+            countQuery = `EVALUATE ROW("Count", COUNTROWS('${tableName}'))`;
+          }
         }
         
         console.log('[PowerBI] Executing count query:', countQuery);
@@ -2415,7 +2474,7 @@ export class PowerBIService {
                            firstRow.count ||
                            firstRow['Count'];
           
-          if (typeof countValue === 'number' && countValue > 0) {
+          if (typeof countValue === 'number' && countValue >= 0) {
             totalCount = countValue;
             console.log('[PowerBI] Total count from query:', totalCount);
           } else {
