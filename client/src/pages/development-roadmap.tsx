@@ -114,6 +114,20 @@ export default function DevelopmentRoadmap() {
           icon: Network
         },
         {
+          title: "AI What-If Scenario Planning",
+          description: "AI-powered simulation engine to test capacity changes, demand scenarios, and optimization strategies in parallel",
+          category: "ai-ml",
+          impact: "high",
+          icon: Sparkles
+        },
+        {
+          title: "Visual Factory",
+          description: "Digital andon boards, production dashboards, and real-time visual management tools",
+          category: "ux",
+          impact: "medium",
+          icon: Eye
+        },
+        {
           title: "Guided Tours",
           description: "Interactive onboarding and feature discovery with step-by-step walkthroughs",
           category: "ux",
@@ -144,18 +158,11 @@ export default function DevelopmentRoadmap() {
           icon: Network
         },
         {
-          title: "AI What-If Scenario Planning",
-          description: "AI-powered simulation engine to test capacity changes, demand scenarios, and optimization strategies in parallel",
+          title: "Agentic API",
+          description: "AI-powered API layer with autonomous decision-making, intelligent routing, and self-healing capabilities",
           category: "ai-ml",
           impact: "high",
-          icon: Sparkles
-        },
-        {
-          title: "Predictive Maintenance Integration",
-          description: "Machine learning models to predict equipment failures and automatically adjust schedules",
-          category: "ai-ml",
-          impact: "high",
-          icon: Settings
+          icon: Bot
         },
         {
           title: "Voice-Activated Planning",
@@ -205,13 +212,6 @@ export default function DevelopmentRoadmap() {
           category: "analytics",
           impact: "medium",
           icon: Timer
-        },
-        {
-          title: "Visual Factory",
-          description: "Digital andon boards, production dashboards, and real-time visual management tools",
-          category: "ux",
-          impact: "medium",
-          icon: Eye
         },
         {
           title: "Task Tracking",
@@ -265,11 +265,32 @@ export default function DevelopmentRoadmap() {
           icon: Database
         },
         {
-          title: "What-If Scenario Planning",
-          description: "Parallel simulation engine to test capacity changes, new product introductions, and demand scenarios",
+          title: "Autonomous Scheduling",
+          description: "AI system that continuously optimizes schedules based on real-time conditions and historical performance",
+          category: "ai-ml",
+          impact: "high",
+          icon: Brain
+        },
+        {
+          title: "Predictive Maintenance Integration",
+          description: "Machine learning models to predict equipment failures and automatically adjust schedules",
+          category: "ai-ml",
+          impact: "high",
+          icon: Settings
+        },
+        {
+          title: "DDMRP (Demand Driven MRP)",
+          description: "Demand-driven material requirements planning with buffer management and flow-based execution",
           category: "platform",
           impact: "high",
-          icon: Sparkles
+          icon: Workflow
+        },
+        {
+          title: "Product Wheel Scheduling",
+          description: "Optimized sequencing for process industries with campaign planning and changeover minimization",
+          category: "platform",
+          impact: "high",
+          icon: Target
         },
         {
           title: "Global Manufacturing Support",
@@ -286,18 +307,11 @@ export default function DevelopmentRoadmap() {
           icon: Network
         },
         {
-          title: "Advanced Constraint Modeling",
-          description: "Support for complex rules including setup matrices, tool availability, skill-based routing, and batch processing",
-          category: "platform",
+          title: "Customer Success AI",
+          description: "Automated onboarding, in-app guidance, and proactive support recommendations",
+          category: "ux",
           impact: "medium",
-          icon: Target
-        },
-        {
-          title: "Performance Optimization",
-          description: "Sub-second schedule generation for 10,000+ jobs with 99.9% uptime SLA",
-          category: "platform",
-          impact: "medium",
-          icon: Zap
+          icon: Bot
         }
       ]
     },
@@ -316,18 +330,18 @@ export default function DevelopmentRoadmap() {
           icon: Factory
         },
         {
-          title: "Regulatory Compliance Engine",
-          description: "Automated validation for FDA 21 CFR Part 11, ISO 9001, AS9100, and IATF 16949 compliance",
-          category: "enterprise",
+          title: "Maintenance Planning",
+          description: "Preventive maintenance scheduling with integrated work orders, spare parts management, and downtime optimization",
+          category: "platform",
           impact: "high",
-          icon: Shield
+          icon: Wrench
         },
         {
-          title: "Supply Chain AI Copilot",
-          description: "Natural language interface to query schedules, analyze bottlenecks, and generate executive reports",
-          category: "ai-ml",
+          title: "Labor Certification Management",
+          description: "Skills tracking, certification expiry monitoring, and qualified operator assignment for compliance",
+          category: "enterprise",
           impact: "high",
-          icon: MessageSquare
+          icon: GraduationCap
         },
         {
           title: "Collaborative Planning Portal",
@@ -342,13 +356,6 @@ export default function DevelopmentRoadmap() {
           category: "platform",
           impact: "medium",
           icon: Package
-        },
-        {
-          title: "Embedded BI & Data Warehouse",
-          description: "Built-in OLAP cube for multi-dimensional analysis and custom KPI tracking",
-          category: "analytics",
-          impact: "low",
-          icon: Database
         }
       ]
     },
@@ -360,13 +367,6 @@ export default function DevelopmentRoadmap() {
       description: "Self-optimizing systems that learn and improve without human intervention",
       features: [
         {
-          title: "Autonomous Scheduling",
-          description: "AI system that continuously optimizes schedules based on real-time conditions and historical performance",
-          category: "ai-ml",
-          impact: "high",
-          icon: Brain
-        },
-        {
           title: "Intelligent Resource Allocation",
           description: "ML-powered labor and machine assignment that balances efficiency, skills, and utilization",
           category: "ai-ml",
@@ -374,32 +374,11 @@ export default function DevelopmentRoadmap() {
           icon: Users
         },
         {
-          title: "Digital Twin Integration",
-          description: "Virtual factory simulation for testing changes before implementation and real-time optimization",
-          category: "platform",
-          impact: "high",
-          icon: Factory
-        },
-        {
-          title: "Blockchain Supply Chain",
-          description: "Distributed ledger for end-to-end traceability, quality records, and supplier verification",
-          category: "integration",
-          impact: "medium",
-          icon: Network
-        },
-        {
           title: "Sustainability Metrics",
           description: "Carbon footprint tracking, energy optimization, and ESG reporting integrated into scheduling decisions",
           category: "analytics",
-          impact: "medium",
+          impact: "high",
           icon: TrendingUp
-        },
-        {
-          title: "Voice-Activated Planning",
-          description: "Hands-free schedule adjustments and status queries for shop floor environments",
-          category: "ux",
-          impact: "low",
-          icon: MessageSquare
         }
       ]
     },
@@ -444,13 +423,6 @@ export default function DevelopmentRoadmap() {
           category: "analytics",
           impact: "medium",
           icon: Database
-        },
-        {
-          title: "Customer Success AI",
-          description: "Automated onboarding, in-app guidance, and proactive support recommendations",
-          category: "ux",
-          impact: "low",
-          icon: Bot
         }
       ]
     }
