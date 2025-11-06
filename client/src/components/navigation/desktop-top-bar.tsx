@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useLocation } from 'wouter';
-import { Search, Settings, User, ChevronDown, Building2, Calendar, Command, Sun, Moon, Monitor, Maximize2, Minimize2, MoreVertical, Rows3, Rows4, Rows2 } from 'lucide-react';
+import { Search, Settings, User, ChevronDown, Building2, Calendar, Command, Sun, Moon, Monitor, Maximize2, Minimize2, MoreVertical, Rows3, Rows4, Rows2, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useTheme } from '@/hooks/useThemeFederated';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -133,6 +133,14 @@ export function DesktopTopBar() {
     { label: 'View Notifications', action: () => document.dispatchEvent(new CustomEvent('toggle-bottom-drawer')) },
   ];
 
+  const handleBack = () => {
+    window.history.back();
+  };
+
+  const handleForward = () => {
+    window.history.forward();
+  };
+
   return (
     <div className="h-14 bg-background border-b flex items-center px-4 gap-3 sticky top-0 z-50">
       {/* Workspace Switcher */}
@@ -175,6 +183,49 @@ export function DesktopTopBar() {
           ))}
         </DropdownMenuContent>
       </DropdownMenu>
+
+      {/* Back/Forward Navigation */}
+      <div className="flex items-center gap-1 border-r pr-3">
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={handleBack}
+                className="h-9 w-9"
+                data-testid="button-navigate-back"
+              >
+                <ChevronLeft className="h-4 w-4" />
+                <span className="sr-only">Back</span>
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="bottom">
+              <p>Go back</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={handleForward}
+                className="h-9 w-9"
+                data-testid="button-navigate-forward"
+              >
+                <ChevronRight className="h-4 w-4" />
+                <span className="sr-only">Forward</span>
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="bottom">
+              <p>Go forward</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      </div>
 
       {/* Global Search / Command Palette */}
       <div className="flex items-center gap-2 flex-1 max-w-md">
