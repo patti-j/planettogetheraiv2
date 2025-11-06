@@ -68,7 +68,7 @@ import {
   goalActions,
   goalKpis
 } from "@shared/schema";
-import { insertUserSchema, insertCompanyOnboardingSchema, insertUserPreferencesSchema, insertSchedulingMessageSchema, widgets, scheduleVersions } from "@shared/schema";
+import { insertUserSchema, insertCompanyOnboardingSchema, insertUserPreferencesSchema, insertSchedulingMessageSchema, widgets, scheduleVersions, agentRecommendations } from "@shared/schema";
 import { systemMonitoringAgent } from "./monitoring-agent";
 import { schedulingAI } from "./services/scheduling-ai";
 import { log } from "./vite";
@@ -3826,17 +3826,26 @@ router.post("/api/ai/recommendations/:id/apply", requireAuth, async (req, res) =
 router.get("/api/ai/recommendations/:id/plan", requireAuth, async (req, res) => {
   try {
     const { id } = req.params;
-    console.log(`📋 Generating implementation plan for recommendation: ${id}`);
+    const userId = req.user?.id;
+    console.log(`📋 Generating implementation plan for recommendation: ${id} (user: ${userId})`);
     
-    // Get the recommendation details
-    const recommendations = await aiSchedulingService.getAllRecommendations();
-    const recommendation = recommendations.find(r => r.id === id);
+    // Get the recommendation from database by ID
+    const [recommendation] = await db
+      .select()
+      .from(agentRecommendations)
+      .where(
+        and(
+          eq(agentRecommendations.id, id),
+          eq(agentRecommendations.userId, userId)
+        )
+      )
+      .limit(1);
     
     if (!recommendation) {
       return res.status(404).json({ error: 'Recommendation not found' });
     }
     
-    // Generate the implementation plan based on the recommendation type
+    // Generate the implementation plan based on the recommendation
     const plan = await aiSchedulingService.generateImplementationPlan(recommendation);
     
     res.json(plan);
