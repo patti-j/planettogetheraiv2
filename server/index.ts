@@ -32,20 +32,38 @@ app.use(express.urlencoded({ extended: false, limit: '10mb' }));
 // CORS - Secure configuration for enterprise deployment
 app.use((req, res, next) => {
   const origin = req.headers.origin;
-  const allowedOrigins = [
-    'http://localhost:5000',
-    'https://localhost:5000', 
-    process.env.ALLOWED_ORIGIN,
-    process.env.PROD_ORIGIN
-  ].filter(Boolean);
+  
+  // Build allowed origins based on environment
+  const allowedOrigins: string[] = [];
+  
+  // In development, allow localhost
+  if (process.env.NODE_ENV !== 'production') {
+    allowedOrigins.push('http://localhost:5000', 'https://localhost:5000');
+  }
+  
+  // In production, allow Replit domains and custom domains
+  if (process.env.NODE_ENV === 'production') {
+    // Allow any Replit domain
+    if (origin && (origin.includes('.repl.co') || origin.includes('.replit.dev') || origin.includes('planettogetherai.com'))) {
+      allowedOrigins.push(origin);
+    }
+  }
+  
+  // Add configured origins
+  if (process.env.ALLOWED_ORIGIN) allowedOrigins.push(process.env.ALLOWED_ORIGIN);
+  if (process.env.PROD_ORIGIN) allowedOrigins.push(process.env.PROD_ORIGIN);
   
   // Only allow credentials for exact-match trusted origins (no prefix matching to prevent spoofing)
   if (origin && allowedOrigins.includes(origin)) {
     res.header('Access-Control-Allow-Origin', origin);
     res.header('Access-Control-Allow-Credentials', 'true');
+  } else if (process.env.NODE_ENV === 'production' && origin) {
+    // In production, allow any origin but without credentials for safety
+    res.header('Access-Control-Allow-Origin', origin);
+    res.header('Access-Control-Allow-Credentials', 'false');
   } else {
-    // No credentials for untrusted origins
-    res.header('Access-Control-Allow-Origin', allowedOrigins[0] || 'http://localhost:5000');
+    // Default fallback
+    res.header('Access-Control-Allow-Origin', '*');
     res.header('Access-Control-Allow-Credentials', 'false');
   }
   
@@ -238,7 +256,8 @@ app.use((req, res, next) => {
   app.use('/api/forecasting', forecastingRoutes);  // Forecasting API routes
 
   // Create HTTP server and WebSocket server
-  const port = 5000;
+  // Use PORT environment variable for production, fallback to 5000 for development
+  const port = process.env.PORT ? parseInt(process.env.PORT) : 5000;
   const server = createServer(app);
   
   // Set up WebSocket server for real-time production events

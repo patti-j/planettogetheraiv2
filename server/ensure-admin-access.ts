@@ -113,6 +113,7 @@ export async function ensureAdminAccess() {
         
         if (existingPermission.length === 0) {
           const [newPermission] = await db.insert(permissions).values({
+            name: `${feature}:${action}`,  // Add the required name field
             feature: feature,
             action: action,
             description: `${action} ${feature}`,

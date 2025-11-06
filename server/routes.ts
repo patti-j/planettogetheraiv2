@@ -14870,5 +14870,15 @@ router.get("/api/demand-change-requests", requireAuth, async (req, res) => {
   }
 });
 
+// One-time production data import endpoint
+router.post('/api/admin/import-production-data', async (req, res) => {
+  try {
+    const { handleProductionSetup } = await import('./import-production-data');
+    await handleProductionSetup(req, res);
+  } catch (error: any) {
+    res.status(500).json({ error: 'Import handler not available' });
+  }
+});
+
 // Forced rebuild - all duplicate keys fixed
 export default router;
