@@ -522,115 +522,244 @@ export default function PaginatedReports() {
   }, [sortBy]);
   
   // Export functions with all data support
-  const exportToCSV = useCallback(async (allData: any[]) => {
-    if (selectedColumns.length === 0) return;
-    
-    const rows = [];
-    const tableName = selectedTable?.tableName || 'report';
-    const dateStamp = new Date().toISOString().split('T')[0];
-    
-    // Add header
-    if (exportConfig.includeHeaders) {
-      if (exportConfig.customHeader) {
-        rows.push([exportConfig.customHeader]);
-        rows.push([]);
-      }
-      rows.push(selectedColumns);
-    }
-    
-    // Add data
-    allData.forEach(item => {
-      rows.push(selectedColumns.map(col => {
-        const value = item[col];
-        // Properly escape values
-        if (value === null || value === undefined) return '';
-        if (typeof value === 'string' && (value.includes(',') || value.includes('"') || value.includes('\n'))) {
-          return `"${value.replace(/"/g, '""')}"`;
-        }
-        return value;
-      }));
-    });
-    
-    // Add totals
-    if (includeTotals && totals) {
-      rows.push(selectedColumns.map(col => totals[col] || ''));
-    }
-    
-    // Add footer
-    if (exportConfig.includeFooters && exportConfig.customFooter) {
-      rows.push([]);
-      rows.push([exportConfig.customFooter]);
-    }
-    
-    // Add timestamp
-    if (exportConfig.includeTimestamp) {
-      rows.push([]);
-      rows.push([`Generated on: ${new Date().toLocaleString()}`]);
-    }
-    
-    // Create CSV
-    const csvContent = rows.map(row => 
-      row.map(cell => String(cell || '')).join(',')
-    ).join('\n');
-    
-    // Download with proper filename
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `${tableName}_${dateStamp}.csv`;
-    a.click();
-    window.URL.revokeObjectURL(url);
-  }, [selectedColumns, selectedTable, exportConfig, includeTotals, totals]);
-  
-  const exportToExcel = useCallback(() => {
+  const exportToCSV = useCallback(async () => {
     if (!data?.items || selectedColumns.length === 0) return;
     
-    const workbook = XLSX.utils.book_new();
-    const wsData = [];
-    
-    // Add header
-    if (exportConfig.includeHeaders && exportConfig.customHeader) {
-      wsData.push([exportConfig.customHeader]);
-      wsData.push([]);
+    setIsExporting(true);
+    try {
+      // First, fetch all data if we have more pages
+      let allData = data.items;
+      if (data.totalPages > 1) {
+        // Fetch all data for export
+        const allDataUrl = sourceType === 'sql' && selectedTable
+          ? `/api/paginated-reports/export-data?schema=${selectedTable.schemaName}&table=${selectedTable.tableName}&filters=${encodeURIComponent(JSON.stringify(columnFilters))}&sortBy=${sortBy}&sortOrder=${sortOrder}`
+          : null;
+          
+        if (allDataUrl) {
+          const token = localStorage.getItem('auth_token');
+          const response = await fetch(allDataUrl, {
+            headers: {
+              'Authorization': token ? `Bearer ${token}` : ''
+            },
+            credentials: 'include'
+          });
+          
+          if (response.ok) {
+            const exportData = await response.json();
+            allData = exportData.items || allData;
+          }
+        }
+      }
+      
+      const rows = [];
+      const tableName = selectedTable?.tableName || 'report';
+      const dateStamp = new Date().toISOString().split('T')[0];
+      
+      // Add header
+      if (exportConfig.includeHeaders) {
+        if (exportConfig.customHeader) {
+          rows.push([exportConfig.customHeader]);
+          rows.push([]);
+        }
+        rows.push(selectedColumns);
+      }
+      
+      // Add data
+      allData.forEach(item => {
+        rows.push(selectedColumns.map(col => {
+          const value = item[col];
+          // Properly escape values
+          if (value === null || value === undefined) return '';
+          if (typeof value === 'string' && (value.includes(',') || value.includes('"') || value.includes('\n'))) {
+            return `"${value.replace(/"/g, '""')}"`;
+          }
+          return value;
+        }));
+      });
+      
+      // Add totals
+      if (includeTotals && totals) {
+        rows.push(selectedColumns.map(col => totals[col] || ''));
+      }
+      
+      // Add footer
+      if (exportConfig.includeFooters && exportConfig.customFooter) {
+        rows.push([]);
+        rows.push([exportConfig.customFooter]);
+      }
+      
+      // Add timestamp
+      if (exportConfig.includeTimestamp) {
+        rows.push([]);
+        rows.push([`Generated on: ${new Date().toLocaleString()}`]);
+      }
+      
+      // Create CSV
+      const csvContent = rows.map(row => 
+        row.map(cell => String(cell || '')).join(',')
+      ).join('\n');
+      
+      // Download with proper filename
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${tableName}_${dateStamp}.csv`;
+      a.click();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('CSV export error:', error);
+      throw error;
+    } finally {
+      setIsExporting(false);
     }
+  }, [data, selectedColumns, selectedTable, exportConfig, includeTotals, totals, sourceType, columnFilters, sortBy, sortOrder]);
+  
+  const exportToExcel = useCallback(async () => {
+    if (!data?.items || selectedColumns.length === 0) return;
     
-    // Add column headers
-    wsData.push(selectedColumns);
-    
-    // Add data
-    data.items.forEach(item => {
-      wsData.push(selectedColumns.map(col => item[col] || ''));
-    });
-    
-    // Add totals
-    if (includeTotals && totals) {
-      wsData.push(selectedColumns.map(col => totals[col] || ''));
+    setIsExporting(true);
+    try {
+      // First, fetch all data if we have more pages
+      let allData = data.items;
+      if (data.totalPages > 1) {
+        // Fetch all data for export
+        const allDataUrl = sourceType === 'sql' && selectedTable
+          ? `/api/paginated-reports/export-data?schema=${selectedTable.schemaName}&table=${selectedTable.tableName}&filters=${encodeURIComponent(JSON.stringify(columnFilters))}&sortBy=${sortBy}&sortOrder=${sortOrder}`
+          : null;
+          
+        if (allDataUrl) {
+          const token = localStorage.getItem('auth_token');
+          const response = await fetch(allDataUrl, {
+            headers: {
+              'Authorization': token ? `Bearer ${token}` : ''
+            },
+            credentials: 'include'
+          });
+          
+          if (response.ok) {
+            const exportData = await response.json();
+            allData = exportData.items || allData;
+          }
+        }
+      }
+      
+      const workbook = XLSX.utils.book_new();
+      const wsData = [];
+      
+      // Add header
+      if (exportConfig.includeHeaders && exportConfig.customHeader) {
+        wsData.push([exportConfig.customHeader]);
+        wsData.push([]);
+      }
+      
+      // Add column headers
+      wsData.push(selectedColumns);
+      
+      // Add data
+      allData.forEach(item => {
+        wsData.push(selectedColumns.map(col => item[col] || ''));
+      });
+      
+      // Add totals
+      if (includeTotals && totals) {
+        wsData.push(selectedColumns.map(col => totals[col] || ''));
+      }
+      
+      // Add footer
+      if (exportConfig.includeFooters && exportConfig.customFooter) {
+        wsData.push([]);
+        wsData.push([exportConfig.customFooter]);
+      }
+      
+      // Add timestamp
+      if (exportConfig.includeTimestamp) {
+        wsData.push([]);
+        wsData.push([`Generated on: ${new Date().toLocaleString()}`]);
+      }
+      
+      const worksheet = XLSX.utils.aoa_to_sheet(wsData);
+      
+      // Apply formatting rules if they exist
+      if (formatRules && formatRules.length > 0) {
+        const headerRowCount = exportConfig.includeHeaders && exportConfig.customHeader ? 3 : 1;
+        
+        // Iterate through data rows to apply format rules
+        allData.forEach((item, rowIndex) => {
+          const actualRow = headerRowCount + rowIndex + 1; // Excel rows are 1-indexed
+          
+          selectedColumns.forEach((col, colIndex) => {
+            const cellAddress = XLSX.utils.encode_cell({ r: actualRow - 1, c: colIndex });
+            const value = item[col];
+            
+            // Check each format rule
+            formatRules.forEach(rule => {
+              if (rule.column === col && value !== null && value !== undefined) {
+                let matches = false;
+                
+                // Check condition
+                switch (rule.condition) {
+                  case 'equals':
+                    matches = String(value) === String(rule.value);
+                    break;
+                  case 'contains':
+                    matches = String(value).includes(String(rule.value));
+                    break;
+                  case 'greater':
+                    matches = Number(value) > Number(rule.value);
+                    break;
+                  case 'less':
+                    matches = Number(value) < Number(rule.value);
+                    break;
+                  case 'between':
+                    if (rule.value2) {
+                      const num = Number(value);
+                      matches = num >= Number(rule.value) && num <= Number(rule.value2);
+                    }
+                    break;
+                }
+                
+                if (matches) {
+                  // Apply formatting
+                  if (!worksheet[cellAddress]) {
+                    worksheet[cellAddress] = { v: value };
+                  }
+                  
+                  worksheet[cellAddress].s = {
+                    fill: {
+                      patternType: 'solid',
+                      fgColor: { rgb: rule.backgroundColor?.replace('#', '') || 'FFFFFF' }
+                    },
+                    font: {
+                      color: { rgb: rule.textColor?.replace('#', '') || '000000' },
+                      bold: rule.fontWeight === 'bold'
+                    }
+                  };
+                }
+              }
+            });
+          });
+        });
+      }
+      
+      // Apply column widths
+      const colWidths = selectedColumns.map(col => ({
+        wch: Math.max(10, Math.min(50, (columnWidths[col] || 150) / 10))
+      }));
+      worksheet['!cols'] = colWidths;
+      
+      const tableName = selectedTable?.tableName || 'report';
+      const dateStamp = new Date().toISOString().split('T')[0];
+      
+      XLSX.utils.book_append_sheet(workbook, worksheet, 'Report');
+      XLSX.writeFile(workbook, `${tableName}_${dateStamp}.xlsx`);
+    } catch (error) {
+      console.error('Excel export error:', error);
+      throw error;
+    } finally {
+      setIsExporting(false);
     }
-    
-    // Add footer
-    if (exportConfig.includeFooters && exportConfig.customFooter) {
-      wsData.push([]);
-      wsData.push([exportConfig.customFooter]);
-    }
-    
-    // Add timestamp
-    if (exportConfig.includeTimestamp) {
-      wsData.push([]);
-      wsData.push([`Generated on: ${new Date().toLocaleString()}`]);
-    }
-    
-    const worksheet = XLSX.utils.aoa_to_sheet(wsData);
-    
-    // Apply column widths
-    const colWidths = selectedColumns.map(col => ({
-      wch: Math.max(10, Math.min(50, (columnWidths[col] || 150) / 10))
-    }));
-    worksheet['!cols'] = colWidths;
-    
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'Report');
-    XLSX.writeFile(workbook, `${exportConfig.fileName || 'report'}.xlsx`);
-  }, [data, selectedColumns, columnWidths, exportConfig, includeTotals, totals]);
+  }, [data, selectedColumns, columnWidths, exportConfig, includeTotals, totals, formatRules, sourceType, selectedTable, columnFilters, sortBy, sortOrder]);
   
   const exportToPDF = useCallback(async () => {
     if (!data?.items || selectedColumns.length === 0) return;
