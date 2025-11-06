@@ -18,12 +18,16 @@ echo ""
 echo "📤 Sending import request to production..."
 
 # Make the API call to import data (with -L to follow redirects)
+# Using a browser user agent and proper headers to bypass referrer validation
 response=$(curl -X POST "$PROD_URL/api/admin/import-production-data" \
   -H "Content-Type: application/json" \
   -H "X-Setup-Key: $SETUP_KEY" \
   -H "X-Requested-With: XMLHttpRequest" \
-  -H "Origin: $PROD_URL" \
-  -H "Referer: $PROD_URL/admin" \
+  -H "Origin: https://planettogetherai.com" \
+  -H "Referer: https://planettogetherai.com/" \
+  -H "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36" \
+  -H "Accept: application/json, text/plain, */*" \
+  -H "Accept-Language: en-US,en;q=0.9" \
   -L \
   --connect-timeout 30 \
   --max-time 300 \
