@@ -75,6 +75,7 @@ The system uses a modular agent architecture designed for role-based access cont
 -   **Authentication System**: Unified role-based permissions system with JWT authentication, supporting explicit logouts in development.
 -   **AI Integration**: OpenAI GPT-4o for NLP, intelligent data generation, custom metric calculation, AI-powered modifications, and dynamic content creation. Utilizes OpenAI structured outputs with Zod schemas and retry logic for data generation. Agents provide concise initial responses.
 -   **Hint System Service**: Intelligent contextual hints with user interaction tracking.
+-   **Power BI Integration**: Complete feature parity with SQL Server for grouped data, using DAX SUMMARIZE queries for aggregation and proper DISTINCT handling.
 
 ### Core System Design & Features
 -   **Navigation**: Unified layout with consistent header/navigation, organized into 11 functional groups.
