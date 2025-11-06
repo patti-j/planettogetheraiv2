@@ -21,6 +21,7 @@ echo "📤 Sending import request to production..."
 response=$(curl -X POST "$PROD_URL/api/admin/import-production-data" \
   -H "Content-Type: application/json" \
   -H "X-Setup-Key: $SETUP_KEY" \
+  -H "X-Requested-With: XMLHttpRequest" \
   -L \
   --connect-timeout 30 \
   --max-time 300 \
