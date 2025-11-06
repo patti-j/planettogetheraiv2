@@ -5,7 +5,9 @@ import {
   CheckCircle2, Circle, Clock, TrendingUp, Zap, Brain, 
   Network, Database, Shield, Globe, Users, BarChart3,
   Workflow, Bot, MessageSquare, FileSpreadsheet, Calendar,
-  Settings, Sparkles, Target, Package, Truck, Factory
+  Settings, Sparkles, Target, Package, Truck, Factory,
+  PieChart, Layers, CheckSquare, Gauge, MapPin, Timer,
+  Eye, ClipboardList, Wrench, GraduationCap, BookOpen
 } from "lucide-react";
 
 interface RoadmapQuarter {
@@ -49,6 +51,27 @@ export default function DevelopmentRoadmap() {
           icon: Brain
         },
         {
+          title: "AI Scheduling Assistant",
+          description: "Conversational AI that suggests optimal schedules, explains decisions, and handles routine planning tasks",
+          category: "ai-ml",
+          impact: "high",
+          icon: Bot
+        },
+        {
+          title: "Supply Chain AI Copilot",
+          description: "Natural language interface to query schedules, analyze bottlenecks, and generate executive reports",
+          category: "ai-ml",
+          impact: "high",
+          icon: MessageSquare
+        },
+        {
+          title: "AI Driven Analytics",
+          description: "Machine learning powered insights for production optimization, anomaly detection, and predictive analytics",
+          category: "ai-ml",
+          impact: "high",
+          icon: Sparkles
+        },
+        {
           title: "Multi-Tenant Enterprise Architecture",
           description: "Role-based access control, department isolation, SSO integration, and audit logging",
           category: "enterprise",
@@ -63,11 +86,39 @@ export default function DevelopmentRoadmap() {
           icon: BarChart3
         },
         {
+          title: "PowerBI Reporting",
+          description: "Native PowerBI integration with embedded dashboards and custom report publishing",
+          category: "analytics",
+          impact: "medium",
+          icon: PieChart
+        },
+        {
+          title: "Planning Area Management",
+          description: "Configurable planning zones with independent optimization rules and scheduling parameters",
+          category: "platform",
+          impact: "medium",
+          icon: MapPin
+        },
+        {
+          title: "Advanced Constraint Modeling",
+          description: "Support for complex rules including setup matrices, tool availability, skill-based routing, and batch processing",
+          category: "platform",
+          impact: "high",
+          icon: Target
+        },
+        {
           title: "ERP Integration Framework",
-          description: "Pre-built connectors for SAP, Oracle, Microsoft Dynamics with bi-directional data sync",
+          description: "Standardized framework for bi-directional data sync with enterprise systems",
           category: "integration",
           impact: "high",
           icon: Network
+        },
+        {
+          title: "Guided Tours",
+          description: "Interactive onboarding and feature discovery with step-by-step walkthroughs",
+          category: "ux",
+          impact: "low",
+          icon: BookOpen
         },
         {
           title: "Mobile-Responsive Interface",
@@ -86,11 +137,18 @@ export default function DevelopmentRoadmap() {
       description: "Enhanced AI capabilities and workflow automation to reduce manual planning overhead",
       features: [
         {
-          title: "AI Scheduling Assistant",
-          description: "Conversational AI that suggests optimal schedules, explains decisions, and handles routine planning tasks",
+          title: "ERP Connectors - SAP, Oracle, Dynamics",
+          description: "Pre-built connectors for SAP, Oracle, and Microsoft Dynamics with automated data mapping and validation",
+          category: "integration",
+          impact: "high",
+          icon: Network
+        },
+        {
+          title: "AI What-If Scenario Planning",
+          description: "AI-powered simulation engine to test capacity changes, demand scenarios, and optimization strategies in parallel",
           category: "ai-ml",
           impact: "high",
-          icon: Bot
+          icon: Sparkles
         },
         {
           title: "Predictive Maintenance Integration",
@@ -98,6 +156,69 @@ export default function DevelopmentRoadmap() {
           category: "ai-ml",
           impact: "high",
           icon: Settings
+        },
+        {
+          title: "Voice-Activated Planning",
+          description: "Hands-free schedule adjustments and status queries for shop floor environments",
+          category: "ux",
+          impact: "medium",
+          icon: MessageSquare
+        },
+        {
+          title: "Business Goals Management",
+          description: "Set, track, and align operational goals with strategic objectives and KPI targets",
+          category: "platform",
+          impact: "medium",
+          icon: Target
+        },
+        {
+          title: "KPI Tracking",
+          description: "Real-time monitoring and trending of key performance indicators across all production areas",
+          category: "analytics",
+          impact: "medium",
+          icon: Gauge
+        },
+        {
+          title: "Production Planning",
+          description: "Master production scheduling with demand-driven MRP and rough-cut capacity planning",
+          category: "platform",
+          impact: "high",
+          icon: Calendar
+        },
+        {
+          title: "ATP/CTP (Available-to-Promise)",
+          description: "Real-time inventory and capacity checking for customer promise date calculations",
+          category: "platform",
+          impact: "high",
+          icon: CheckSquare
+        },
+        {
+          title: "Theory of Constraints",
+          description: "Automated bottleneck identification and DBR (Drum-Buffer-Rope) scheduling methodology",
+          category: "platform",
+          impact: "high",
+          icon: Layers
+        },
+        {
+          title: "Time Tracking",
+          description: "Labor and machine time capture with variance analysis and efficiency reporting",
+          category: "analytics",
+          impact: "medium",
+          icon: Timer
+        },
+        {
+          title: "Visual Factory",
+          description: "Digital andon boards, production dashboards, and real-time visual management tools",
+          category: "ux",
+          impact: "medium",
+          icon: Eye
+        },
+        {
+          title: "Task Tracking",
+          description: "Work order management with priority scheduling and completion tracking",
+          category: "platform",
+          impact: "medium",
+          icon: ClipboardList
         },
         {
           title: "Automated Workflow Engine",
@@ -121,10 +242,10 @@ export default function DevelopmentRoadmap() {
           icon: Truck
         },
         {
-          title: "Custom Report Builder",
-          description: "Drag-and-drop report designer with scheduling, export options, and executive summaries",
+          title: "AI Custom Report Builder",
+          description: "AI-assisted report designer with natural language queries, auto-generated insights, and predictive analytics",
           category: "analytics",
-          impact: "low",
+          impact: "medium",
           icon: FileSpreadsheet
         }
       ]
