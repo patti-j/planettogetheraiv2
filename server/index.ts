@@ -396,6 +396,12 @@ app.use((req, res, next) => {
       // Also ensure admin has full access (especially in production)
       const { ensureAdminAccess } = await import('./ensure-admin-access');
       await ensureAdminAccess();
+      
+      // Initialize production users (Patti and Jim) if in production
+      if (process.env.NODE_ENV === 'production') {
+        const { ensureProductionUsersAccess } = await import('./production-init');
+        await ensureProductionUsersAccess();
+      }
     } catch (error) {
       log(`⚠️ Admin user initialization error: ${error}`);
     }
