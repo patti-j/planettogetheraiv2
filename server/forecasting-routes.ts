@@ -4,7 +4,11 @@ import sql from 'mssql';
 const router = Router();
 
 // Python ML service URL
-const ML_SERVICE_URL = 'http://localhost:8000';
+// In production autoscale, the ML service cannot run on a separate port
+// For development, it runs on localhost:8000
+const ML_SERVICE_URL = process.env.NODE_ENV === 'production' 
+  ? null  // ML service not available in autoscale deployment
+  : 'http://localhost:8000';
 
 // SQL Server connection config from environment variables
 const getSqlConfig = () => ({
@@ -301,6 +305,13 @@ router.post('/train', async (req, res) => {
     // Create unique model ID based on filters
     const modelId = `model_${selectedPlanningAreas?.join('_') || 'all'}_${selectedScenarios?.join('_') || 'all'}`;
 
+    // Check if ML service is available
+    if (!ML_SERVICE_URL) {
+      return res.status(503).json({ 
+        error: 'ML forecasting service is not available in production deployment. Please use development environment for ML training.' 
+      });
+    }
+
     // Call Python ML service to train models for all items
     const mlResponse = await fetch(`${ML_SERVICE_URL}/train`, {
       method: 'POST',
@@ -453,6 +464,13 @@ router.post('/forecast', async (req, res) => {
 
     if (Object.keys(itemsData).length === 0) {
       return res.status(404).json({ error: 'No data found for any of the selected items' });
+    }
+
+    // Check if ML service is available
+    if (!ML_SERVICE_URL) {
+      return res.status(503).json({ 
+        error: 'ML forecasting service is not available in production deployment. Please use development environment for ML forecasting.' 
+      });
     }
 
     // Call Python ML service to generate forecast using the trained models
