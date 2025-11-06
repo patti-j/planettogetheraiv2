@@ -11400,6 +11400,50 @@ router.get("/api/paginated-reports/totals", enhancedAuth, async (req, res) => {
   }
 });
 
+// Get all data for export (without pagination)
+router.get("/api/paginated-reports/export-data", enhancedAuth, async (req, res) => {
+  try {
+    const schema = (req.query.schema as string) || 'dbo';
+    const table = req.query.table as string;
+    const searchTerm = (req.query.searchTerm as string) || "";
+    const sortBy = (req.query.sortBy as string) || "";
+    const sortOrder = (req.query.sortOrder as string) === "asc" ? "asc" : "desc";
+    const filters = req.query.filters ? JSON.parse(req.query.filters as string) : {};
+    
+    if (!table || !schema) {
+      return res.status(400).json({ error: "Schema and table name are required" });
+    }
+
+    // Validate schema and table exist
+    const validTables = await sqlServerService.listTables();
+    const isValidTable = validTables.some(
+      t => t.schemaName === schema && t.tableName === table
+    );
+    
+    if (!isValidTable) {
+      return res.status(400).json({ error: "Invalid schema or table name" });
+    }
+
+    // Fetch all data by setting a very large pageSize
+    // SQL Server can handle up to 100k rows efficiently
+    const allData = await sqlServerService.getTableData(
+      schema,
+      table,
+      1,        // page 1
+      100000,   // large pageSize to get all data
+      searchTerm,
+      sortBy,
+      sortOrder,
+      filters
+    );
+
+    res.json(allData);
+  } catch (error) {
+    console.error("Error fetching export data:", error);
+    res.status(500).json({ error: "Failed to fetch export data from SQL Server" });
+  }
+});
+
 // Get grouped and aggregated data
 router.post("/api/paginated-reports/grouped", enhancedAuth, async (req, res) => {
   try {
