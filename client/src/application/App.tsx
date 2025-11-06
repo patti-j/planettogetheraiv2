@@ -34,6 +34,7 @@ import AIInsightsPage from "@/pages/ai-insights";
 import ForkliftDriver from "@/pages/forklift-driver";
 import EmailSettings from "@/pages/email-settings";
 import Settings from "@/pages/settings";
+import LLMSettings from "@/pages/llm-settings";
 import LaborPlanning from "@/pages/labor-planning";
 import EnterpriseMap from "@/pages/enterprise-map";
 // import DemoPage from "@/pages/demo"; // Commented out - file doesn't exist
@@ -554,6 +555,7 @@ export default function ApplicationApp() {
                 </ProtectedRoute>
               </Route>
               <Route path="/settings" component={Settings} />
+              <Route path="/llm-settings" component={LLMSettings} />
               <Route path="/integrations">
                 <ProtectedRoute feature="integrations" action="view">
                   <IntegrationsPage />
