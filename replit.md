@@ -97,7 +97,15 @@ The system uses a modular agent architecture designed for role-based access cont
     - Split-pane layout with data fields sidebar and preview editor
     - Resizable columns with drag handles for precise control
     - **Include totals row** feature for automatic calculation of sums for numeric columns
-    - Drag-and-drop column reordering
+    - **Advanced Column Chooser**: Dual-panel drag-and-drop interface for column selection
+      - Hidden and Shown columns panels for intuitive management
+      - Drag-and-drop between panels for quick column visibility toggling
+      - Multi-select with Shift/Ctrl click support
+      - Arrow buttons for moving multiple selected columns
+      - Double-click to quickly move columns between panels
+      - Search functionality for finding columns quickly
+      - Column reordering within shown panel maintains display order
+      - Preserves column order when toggling visibility
     - Report templates (Invoice, Financial Statement, Summary Report)
     - Grouping and aggregation with subtotals
     - Conditional formatting with visual rules
