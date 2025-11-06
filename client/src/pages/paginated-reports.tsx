@@ -806,16 +806,19 @@ export default function PaginatedReports() {
       ? selectedColumns 
       : (tableSchema?.map(col => col.columnName) || []);
       
-    if (columnsToExport.length === 0) return;
+    if (columnsToExport.length === 0) {
+      console.error('No columns selected for PDF export');
+      return;
+    }
     
     setIsExporting(true);
     try {
       // First, fetch all data if we have more pages
       let allData = data.items;
       if (data.totalPages > 1) {
-        // Fetch all data for export
+        // Fetch all data for export - use columnsToExport instead of selectedColumns
         const allDataUrl = sourceType === 'sql' && selectedTable
-          ? `/api/paginated-reports/export-data?schema=${selectedTable.schemaName}&table=${selectedTable.tableName}&filters=${encodeURIComponent(JSON.stringify(columnFilters))}&sortBy=${sortBy}&sortOrder=${sortOrder}&distinct=${useDistinct}&selectedColumns=${encodeURIComponent(JSON.stringify(selectedColumns))}`
+          ? `/api/paginated-reports/export-data?schema=${selectedTable.schemaName}&table=${selectedTable.tableName}&filters=${encodeURIComponent(JSON.stringify(columnFilters))}&sortBy=${sortBy}&sortOrder=${sortOrder}&distinct=${useDistinct}&selectedColumns=${encodeURIComponent(JSON.stringify(columnsToExport))}`
           : null;
           
         if (allDataUrl) {
@@ -830,8 +833,15 @@ export default function PaginatedReports() {
           if (response.ok) {
             const exportData = await response.json();
             allData = exportData.items || allData;
+          } else {
+            throw new Error(`Failed to fetch export data: ${response.statusText}`);
           }
         }
+      }
+      
+      // Validate we have data to export
+      if (!allData || allData.length === 0) {
+        throw new Error('No data available to export');
       }
       
       const doc = new jsPDF({
@@ -881,9 +891,14 @@ export default function PaginatedReports() {
         const endIdx = Math.min(startIdx + rowsPerPage, allData.length);
         const pageData = allData.slice(startIdx, endIdx);
         
-        // Prepare table data
+        // Prepare table data - only use columns that exist in the data
         const tableData = pageData.map((item: any) =>
           columnsToExport.map(col => {
+            // Check if column exists in the item
+            if (!(col in item)) {
+              console.warn(`Column ${col} not found in data item`);
+              return '';
+            }
             const value = item[col];
             if (value === null || value === undefined) return '';
             if (typeof value === 'number') {
