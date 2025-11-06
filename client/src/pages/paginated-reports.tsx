@@ -555,7 +555,10 @@ export default function PaginatedReports() {
     try {
       // First, fetch all data if we have more pages
       let allData = data.items;
-      if (data.totalPages > 1) {
+      // For Power BI, always fetch all data; for SQL, only if multiple pages
+      const shouldFetchAllData = sourceType === 'powerbi' || (data.totalPages > 1);
+      
+      if (shouldFetchAllData) {
         // Fetch all data for export based on source type
         if (sourceType === 'sql' && selectedTable) {
           const allDataUrl = `/api/paginated-reports/export-data?schema=${selectedTable.schemaName}&table=${selectedTable.tableName}&filters=${encodeURIComponent(JSON.stringify(columnFilters))}&sortBy=${sortBy}&sortOrder=${sortOrder}&distinct=${useDistinct}&selectedColumns=${encodeURIComponent(JSON.stringify(selectedColumns))}`;
@@ -610,8 +613,8 @@ export default function PaginatedReports() {
             if (pageData.items && pageData.items.length > 0) {
               allData = [...allData, ...pageData.items];
               currentPage++;
-              // Check if we have all data
-              hasMoreData = pageData.items.length === 1000 && currentPage <= (pageData.totalPages || 1);
+              // Continue fetching while we get full pages of data
+              hasMoreData = pageData.items.length === 1000;
             } else {
               hasMoreData = false;
             }
@@ -700,7 +703,10 @@ export default function PaginatedReports() {
     try {
       // First, fetch all data if we have more pages
       let allData = data.items;
-      if (data.totalPages > 1) {
+      // For Power BI, always fetch all data; for SQL, only if multiple pages
+      const shouldFetchAllData = sourceType === 'powerbi' || (data.totalPages > 1);
+      
+      if (shouldFetchAllData) {
         // Fetch all data for export based on source type
         if (sourceType === 'sql' && selectedTable) {
           const allDataUrl = `/api/paginated-reports/export-data?schema=${selectedTable.schemaName}&table=${selectedTable.tableName}&filters=${encodeURIComponent(JSON.stringify(columnFilters))}&sortBy=${sortBy}&sortOrder=${sortOrder}&distinct=${useDistinct}&selectedColumns=${encodeURIComponent(JSON.stringify(selectedColumns))}`;
@@ -755,8 +761,8 @@ export default function PaginatedReports() {
             if (pageData.items && pageData.items.length > 0) {
               allData = [...allData, ...pageData.items];
               currentPage++;
-              // Check if we have all data
-              hasMoreData = pageData.items.length === 1000 && currentPage <= (pageData.totalPages || 1);
+              // Continue fetching while we get full pages of data
+              hasMoreData = pageData.items.length === 1000;
             } else {
               hasMoreData = false;
             }
@@ -899,7 +905,10 @@ export default function PaginatedReports() {
     try {
       // First, fetch all data if we have more pages
       let allData = data.items;
-      if (data.totalPages > 1) {
+      // For Power BI, always fetch all data; for SQL, only if multiple pages
+      const shouldFetchAllData = sourceType === 'powerbi' || (data.totalPages > 1);
+      
+      if (shouldFetchAllData) {
         // Fetch all data for export based on source type
         if (sourceType === 'sql' && selectedTable) {
           const allDataUrl = `/api/paginated-reports/export-data?schema=${selectedTable.schemaName}&table=${selectedTable.tableName}&filters=${encodeURIComponent(JSON.stringify(columnFilters))}&sortBy=${sortBy}&sortOrder=${sortOrder}&distinct=${useDistinct}&selectedColumns=${encodeURIComponent(JSON.stringify(columnsToExport))}`;
@@ -956,8 +965,8 @@ export default function PaginatedReports() {
             if (pageData.items && pageData.items.length > 0) {
               allData = [...allData, ...pageData.items];
               currentPage++;
-              // Check if we have all data
-              hasMoreData = pageData.items.length === 1000 && currentPage <= (pageData.totalPages || 1);
+              // Continue fetching while we get full pages of data
+              hasMoreData = pageData.items.length === 1000;
             } else {
               hasMoreData = false;
             }
