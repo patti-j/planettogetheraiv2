@@ -56,19 +56,19 @@ export default function PaginatedReports() {
   const [useDistinct, setUseDistinct] = useState(true); // Enabled by default
   const [aggregationTypes, setAggregationTypes] = useState<Record<string, 'sum' | 'avg' | 'count' | 'min' | 'max' | 'none'>>({});
   
-  // Helper function to detect numeric columns (works with both SQL and Power BI schemas)
+  // Helper function to detect numeric columns (works identically for both SQL and Power BI)
   const getNumericColumns = useCallback((schema: TableColumn[] | null): string[] => {
     if (!schema) return [];
-    const numericTypes = ['int', 'decimal', 'float', 'money', 'numeric', 'bigint', 'smallint', 'tinyint', 'number', 'double'];
+    const numericTypes = ['int', 'decimal', 'float', 'money', 'numeric', 'bigint', 'smallint', 'tinyint', 'number', 'double', 'real'];
     return schema
       .filter(col => {
-        // Handle both SQL (columnName) and Power BI (name) schemas
-        const dataType = col.dataType || (col as any).type || '';
+        // Both SQL Server and Power BI return dataType field
+        const dataType = col.dataType || '';
         return numericTypes.some(type => dataType.toLowerCase().includes(type));
       })
       .map(col => {
-        // Return the column name from either columnName (SQL) or name (Power BI)
-        return col.columnName || (col as any).name || '';
+        // Both SQL Server and Power BI return columnName field
+        return col.columnName || '';
       });
   }, []);
   

@@ -821,7 +821,7 @@ export class PowerBIService {
     const queryUrl = `https://api.powerbi.com/v1.0/myorg/groups/${workspaceId}/datasets/${datasetId}/executeQueries`;
     
     try {
-      // Get one row to discover columns
+      // Get one row to discover columns and infer data types
       const daxQuery = `EVALUATE TOPN(1, '${tableName}')`;
       
       const response = await fetch(queryUrl, {
@@ -845,10 +845,38 @@ export class PowerBIService {
       if (result.results && result.results[0] && result.results[0].tables && result.results[0].tables[0]) {
         const tableData = result.results[0].tables[0];
         if (tableData.rows && tableData.rows.length > 0) {
-          return Object.keys(tableData.rows[0]).map(col => ({
-            name: col.replace(/^\[|\]$/g, '').replace(/^.*\[|\]$/g, ''),
-            dataType: 'Auto'
-          }));
+          const firstRow = tableData.rows[0];
+          return Object.keys(firstRow).map(col => {
+            const cleanName = col.replace(/^\[|\]$/g, '').replace(/^.*\[|\]$/g, '');
+            const value = firstRow[col];
+            
+            // Infer data type from the actual value
+            let inferredType = 'String';
+            if (value !== null && value !== undefined) {
+              if (typeof value === 'number') {
+                // Check if it's an integer or decimal
+                if (Number.isInteger(value)) {
+                  inferredType = 'Int64';
+                } else {
+                  inferredType = 'Double';
+                }
+              } else if (typeof value === 'boolean') {
+                inferredType = 'Boolean';
+              } else if (typeof value === 'string') {
+                // Check if it's a date/time string
+                if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/.test(value)) {
+                  inferredType = 'DateTime';
+                } else if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+                  inferredType = 'Date';
+                }
+              }
+            }
+            
+            return {
+              name: cleanName,
+              dataType: inferredType
+            };
+          });
         }
       }
 
