@@ -107,6 +107,10 @@ The system uses a modular agent architecture designed for role-based access cont
     - Keyboard shortcuts (Ctrl+S save, Ctrl+O load, Ctrl+P print, Ctrl+E export)
     - Print preview with page break indicators
     - Full SQL Server and Power BI dataset support with pagination, filtering, sorting
+    - Power BI-specific features:
+      - Column data type display hidden for Power BI sources
+      - Proper filtered count queries ensuring accurate pagination totals
+      - Automatic column selection reset when switching tables
 
 ## Important Implementation Notes
 
