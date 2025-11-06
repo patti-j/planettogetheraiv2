@@ -1,0 +1,4 @@
+ id | job_id | external_id | name | description | operation_id | base_operation_id | required_finish_qty | cycle_hrs | setup_hours | post_processing_hours | scheduled_start | scheduled_end | percent_finished | created_at | updated_at 
+----+--------+-------------+------+-------------+--------------+-------------------+---------------------+-----------+-------------+-----------------------+-----------------+---------------+------------------+------------+------------
+(0 rows)
+

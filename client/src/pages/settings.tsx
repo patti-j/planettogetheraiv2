@@ -38,6 +38,7 @@ import {
   CheckCircle,
   BarChart3,
   Zap,
+  Brain,
   X,
   ArrowLeft
 } from 'lucide-react';
@@ -1222,6 +1223,40 @@ export default function Settings() {
                   >
                     <Save className="h-4 w-4 mr-2" />
                     Save Agent Settings
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* AI Model Settings Card */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Brain className="h-5 w-5" />
+                  AI Model Configuration
+                </CardTitle>
+                <CardDescription>
+                  Configure OpenAI, local LLM models, and other AI providers
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <p className="text-sm text-muted-foreground">
+                    Manage your AI models, configure OpenAI API settings, set up local LLM models with Ollama, 
+                    and control which AI provider is used for different features in the system.
+                  </p>
+                </div>
+                
+                <Separator />
+                
+                <div className="flex justify-between items-center">
+                  <div>
+                    <p className="font-medium">Current Active Provider</p>
+                    <p className="text-sm text-muted-foreground">OpenAI (GPT-4)</p>
+                  </div>
+                  <Button onClick={() => setLocation('/llm-settings')}>
+                    <Sparkles className="h-4 w-4 mr-2" />
+                    Manage AI Models
                   </Button>
                 </div>
               </CardContent>

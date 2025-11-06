@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Production Data Import - PlanetTogether</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    
+    .container {
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+      max-width: 500px;
+      width: 100%;
+      padding: 40px;
+    }
+    
+    .logo {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+    
+    .logo svg {
+      width: 60px;
+      height: 60px;
+    }
+    
+    h1 {
+      color: #333;
+      font-size: 24px;
+      margin-bottom: 10px;
+      text-align: center;
+    }
+    
+    .subtitle {
+      color: #666;
+      text-align: center;
+      margin-bottom: 30px;
+      font-size: 14px;
+    }
+    
+    .form-group {
+      margin-bottom: 20px;
+    }
+    
+    label {
+      display: block;
+      color: #555;
+      font-weight: 500;
+      margin-bottom: 8px;
+      font-size: 14px;
+    }
+    
+    input {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      font-size: 16px;
+      transition: border-color 0.3s;
+    }
+    
+    input:focus {
+      outline: none;
+      border-color: #667eea;
+    }
+    
+    button {
+      width: 100%;
+      padding: 14px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.3s;
+    }
+    
+    button:hover {
+      opacity: 0.9;
+    }
+    
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    
+    .message {
+      margin-top: 20px;
+      padding: 12px;
+      border-radius: 6px;
+      font-size: 14px;
+      display: none;
+    }
+    
+    .message.success {
+      background: #d4edda;
+      color: #155724;
+      border: 1px solid #c3e6cb;
+      display: block;
+    }
+    
+    .message.error {
+      background: #f8d7da;
+      color: #721c24;
+      border: 1px solid #f5c6cb;
+      display: block;
+    }
+    
+    .message.info {
+      background: #cce5ff;
+      color: #004085;
+      border: 1px solid #b8daff;
+      display: block;
+    }
+    
+    .loader {
+      display: inline-block;
+      width: 20px;
+      height: 20px;
+      border: 3px solid rgba(255,255,255,.3);
+      border-radius: 50%;
+      border-top-color: white;
+      animation: spin 1s ease-in-out infinite;
+      margin-left: 10px;
+      vertical-align: middle;
+    }
+    
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    
+    .status-list {
+      margin-top: 20px;
+      padding: 15px;
+      background: #f8f9fa;
+      border-radius: 6px;
+      font-size: 14px;
+      display: none;
+    }
+    
+    .status-list.active {
+      display: block;
+    }
+    
+    .status-item {
+      display: flex;
+      align-items: center;
+      margin-bottom: 8px;
+      color: #666;
+    }
+    
+    .status-item:last-child {
+      margin-bottom: 0;
+    }
+    
+    .status-item.complete {
+      color: #28a745;
+    }
+    
+    .status-item.error {
+      color: #dc3545;
+    }
+    
+    .status-icon {
+      margin-right: 10px;
+      font-size: 18px;
+    }
+    
+    .warning {
+      background: #fff3cd;
+      color: #856404;
+      padding: 15px;
+      border-radius: 6px;
+      margin-bottom: 20px;
+      font-size: 14px;
+      border: 1px solid #ffeaa7;
+    }
+    
+    .warning strong {
+      display: block;
+      margin-bottom: 5px;
+    }
+    
+    .note {
+      background: #d1ecf1;
+      color: #0c5460;
+      padding: 15px;
+      border-radius: 6px;
+      margin-bottom: 20px;
+      font-size: 14px;
+      border: 1px solid #bee5eb;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="logo">
+      <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="50" cy="50" r="45" fill="#667eea"/>
+        <path d="M30 50 L45 65 L70 35" stroke="white" stroke-width="6" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </div>
+    
+    <h1>Production Data Import</h1>
+    <p class="subtitle">Initialize your production database with demo data</p>
+    
+    <div class="note">
+      <strong>ℹ️ Note:</strong>
+      If your production database was already seeded, you can skip this step and go directly to <a href="/login">login</a> with admin/admin123.
+    </div>
+    
+    <div class="warning">
+      <strong>⚠️ Important:</strong>
+      This will replace all existing data in the production database. Only run this if your database is empty or you want to reset it.
+    </div>
+    
+    <form id="importForm">
+      <div class="form-group">
+        <label for="setupKey">Production Setup Key</label>
+        <input 
+          type="password" 
+          id="setupKey" 
+          name="setupKey" 
+          placeholder="Enter your setup key"
+          required
+        />
+      </div>
+      
+      <button type="submit" id="importBtn">
+        Import Production Data
+      </button>
+    </form>
+    
+    <div id="message" class="message"></div>
+    
+    <div id="statusList" class="status-list">
+      <div class="status-item" id="status-auth">
+        <span class="status-icon">⏳</span>
+        <span>Authenticating...</span>
+      </div>
+      <div class="status-item" id="status-clear">
+        <span class="status-icon">⏳</span>
+        <span>Clearing existing data...</span>
+      </div>
+      <div class="status-item" id="status-users">
+        <span class="status-icon">⏳</span>
+        <span>Importing users and permissions...</span>
+      </div>
+      <div class="status-item" id="status-jobs">
+        <span class="status-icon">⏳</span>
+        <span>Importing jobs and operations...</span>
+      </div>
+      <div class="status-item" id="status-verify">
+        <span class="status-icon">⏳</span>
+        <span>Verifying data integrity...</span>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const form = document.getElementById('importForm');
+    const message = document.getElementById('message');
+    const statusList = document.getElementById('statusList');
+    const importBtn = document.getElementById('importBtn');
+    
+    function showMessage(text, type) {
+      message.textContent = text;
+      message.className = `message ${type}`;
+    }
+    
+    function updateStatus(id, status, text) {
+      const item = document.getElementById(`status-${id}`);
+      if (item) {
+        item.className = `status-item ${status}`;
+        const icon = item.querySelector('.status-icon');
+        if (status === 'complete') {
+          icon.textContent = '✅';
+        } else if (status === 'error') {
+          icon.textContent = '❌';
+        }
+        if (text) {
+          item.querySelector('span:last-child').textContent = text;
+        }
+      }
+    }
+    
+    async function importData(setupKey) {
+      statusList.classList.add('active');
+      updateStatus('auth', '', 'Authenticating...');
+      updateStatus('clear', '', 'Waiting...');
+      updateStatus('users', '', 'Waiting...');
+      updateStatus('jobs', '', 'Waiting...');
+      updateStatus('verify', '', 'Waiting...');
+      
+      try {
+        updateStatus('auth', 'complete', 'Authenticated');
+        
+        // Make the import request
+        updateStatus('clear', '', 'Checking database...');
+        
+        const response = await fetch('/api/admin/import-production-data', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Setup-Key': setupKey,
+            'X-Requested-With': 'XMLHttpRequest'
+          },
+          credentials: 'same-origin'
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+          updateStatus('clear', 'complete', 'Database prepared');
+          updateStatus('users', 'complete', `${data.details?.tablesImported || 'Data'} imported`);
+          updateStatus('jobs', 'complete', `${data.details?.totalRows || 'Rows'} imported`);
+          updateStatus('verify', 'complete', 'Data verified successfully');
+          
+          showMessage('✅ Import successful! You can now login with admin/admin123', 'success');
+          
+          // Show login link after 2 seconds
+          setTimeout(() => {
+            showMessage('✅ Import complete! Redirecting to login...', 'success');
+            setTimeout(() => {
+              window.location.href = '/login';
+            }, 2000);
+          }, 2000);
+        } else {
+          throw new Error(data.error || data.message || 'Import failed');
+        }
+      } catch (error) {
+        console.error('Import error:', error);
+        
+        // Update status based on where we failed
+        const allStatuses = ['auth', 'clear', 'users', 'jobs', 'verify'];
+        let foundError = false;
+        for (const status of allStatuses) {
+          const item = document.getElementById(`status-${status}`);
+          if (item && !item.classList.contains('complete') && !foundError) {
+            updateStatus(status, 'error', 'Failed');
+            foundError = true;
+          }
+        }
+        
+        showMessage(`❌ Error: ${error.message}`, 'error');
+      }
+    }
+    
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const setupKey = document.getElementById('setupKey').value;
+      
+      if (!setupKey) {
+        showMessage('Please enter the setup key', 'error');
+        return;
+      }
+      
+      importBtn.disabled = true;
+      importBtn.innerHTML = 'Importing...<span class="loader"></span>';
+      
+      try {
+        await importData(setupKey);
+      } finally {
+        importBtn.disabled = false;
+        importBtn.textContent = 'Import Production Data';
+      }
+    });
+  </script>
+</body>
+</html>

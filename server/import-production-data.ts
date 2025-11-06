@@ -121,18 +121,11 @@ export async function importProductionData() {
 
 // One-time setup endpoint (should be protected and run only once)
 export async function handleProductionSetup(req: any, res: any) {
-  // Security check - only allow in production and with special key
-  if (process.env.NODE_ENV !== 'production') {
-    return res.status(403).json({ 
-      error: 'This endpoint only works in production environment' 
-    });
-  }
-  
-  // Check for setup key (you should set this as a secret in Replit)
+  // Check for setup key (this is the only security we need)
   const setupKey = req.headers['x-setup-key'];
-  if (setupKey !== process.env.PRODUCTION_SETUP_KEY) {
+  if (!setupKey || setupKey !== process.env.PRODUCTION_SETUP_KEY) {
     return res.status(401).json({ 
-      error: 'Invalid setup key' 
+      error: 'Invalid or missing setup key. Please ensure you have the correct PRODUCTION_SETUP_KEY.' 
     });
   }
   

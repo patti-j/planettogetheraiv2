@@ -171,9 +171,8 @@ export default function HomePage() {
   // Apply recommendation mutation
   const applyRecommendation = useMutation({
     mutationFn: async (recommendationId: string) => {
-      return await apiRequest(`/api/ai/recommendations/${recommendationId}/apply`, {
-        method: 'POST',
-      });
+      const response = await apiRequest('POST', `/api/ai/recommendations/${recommendationId}/apply`);
+      return await response.json();
     },
     onSuccess: (data, variables) => {
       toast({
@@ -197,9 +196,8 @@ export default function HomePage() {
   // Generate plan mutation
   const generatePlan = useMutation({
     mutationFn: async (recommendationId: string) => {
-      return await apiRequest(`/api/ai/recommendations/${recommendationId}/plan`, {
-        method: 'GET',
-      });
+      const response = await apiRequest('GET', `/api/ai/recommendations/${recommendationId}/plan`);
+      return await response.json();
     },
     onSuccess: (data) => {
       setPlanPreviewModal((prev) => ({ 

@@ -89,7 +89,7 @@ export async function ensureAdminAccess() {
     
     // 4. Create all permissions if they don't exist
     const features = [
-      'dashboard', 'production', 'inventory', 'scheduling', 'planning',
+      'dashboard', 'production', 'inventory', 'schedule', 'scheduling', 'planning',
       'analytics', 'reports', 'administration', 'settings', 'integrations',
       'ai-insights', 'optimization', 'master-data', 'workflows', 'canvas',
       'control-tower', 'demand-forecasting', 'labor-planning', 'maintenance',

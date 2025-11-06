@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useLocation } from 'wouter';
-import { Sparkles, TrendingUp, Lightbulb, Activity, ChevronLeft, ChevronRight, Play, RefreshCw, MessageSquare, Send, User, GripVertical, Settings, Volume2, VolumeX, Palette, Zap, Shield, Bell, X, Copy, Check, ChevronDown, Square, BookOpen, History, Monitor, Layers, Calendar, Factory, Wrench, Package, Target, Truck, DollarSign, MessageCircle, Paperclip, FileText, Image, File, Mic, MicOff, StopCircle, CheckCircle, Loader2 } from 'lucide-react';
+import { Sparkles, TrendingUp, Lightbulb, Activity, ChevronLeft, ChevronRight, Play, RefreshCw, MessageSquare, Send, User, GripVertical, Settings, Volume2, VolumeX, Palette, Zap, Shield, Bell, X, Copy, Check, ChevronDown, Square, BookOpen, History, Monitor, Layers, Calendar, Factory, Wrench, Package, Target, Truck, DollarSign, MessageCircle, Paperclip, FileText, Image, File, Mic, MicOff, StopCircle, CheckCircle, Loader2, Brain } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -1889,7 +1889,75 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
             <TabsContent value="settings" className="flex-1 overflow-hidden mt-2 data-[state=inactive]:hidden">
               <ScrollArea className="h-full px-4">
                 <div className="space-y-6 pt-2 pb-4">
-                  {/* Model Settings - Using standardized GPT-4o model */}
+                  {/* AI Model Selection */}
+                  <div className="space-y-4">
+                    <div>
+                      <h3 className="text-sm font-medium mb-3 flex items-center gap-2">
+                        <Brain className="w-4 h-4" />
+                        AI Model
+                      </h3>
+                      <Select value={aiSettings.model} onValueChange={(value) => setAiSettings(prev => ({ ...prev, model: value }))}>
+                        <SelectTrigger className="w-full">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="gpt-4">
+                            <div className="flex flex-col">
+                              <span>GPT-4</span>
+                              <span className="text-xs text-muted-foreground">OpenAI - Most capable</span>
+                            </div>
+                          </SelectItem>
+                          <SelectItem value="gpt-4-turbo">
+                            <div className="flex flex-col">
+                              <span>GPT-4 Turbo</span>
+                              <span className="text-xs text-muted-foreground">OpenAI - Fast & capable</span>
+                            </div>
+                          </SelectItem>
+                          <SelectItem value="gpt-3.5-turbo">
+                            <div className="flex flex-col">
+                              <span>GPT-3.5 Turbo</span>
+                              <span className="text-xs text-muted-foreground">OpenAI - Fast & economical</span>
+                            </div>
+                          </SelectItem>
+                          <SelectItem value="llama2">
+                            <div className="flex flex-col">
+                              <span>Llama 2</span>
+                              <span className="text-xs text-muted-foreground">Local - Ollama</span>
+                            </div>
+                          </SelectItem>
+                          <SelectItem value="mistral">
+                            <div className="flex flex-col">
+                              <span>Mistral</span>
+                              <span className="text-xs text-muted-foreground">Local - Ollama</span>
+                            </div>
+                          </SelectItem>
+                          <SelectItem value="codellama">
+                            <div className="flex flex-col">
+                              <span>Code Llama</span>
+                              <span className="text-xs text-muted-foreground">Local - Code focused</span>
+                            </div>
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <div className="mt-2 flex items-center justify-between">
+                        <p className="text-xs text-muted-foreground">
+                          {aiSettings.model?.startsWith('gpt') ? 'Using OpenAI API' : 'Using Local LLM (Ollama)'}
+                        </p>
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          onClick={() => navigate('/llm-settings')}
+                          className="text-xs h-6"
+                        >
+                          Configure Models →
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <Separator />
+
+                  {/* Response Style Settings */}
                   <div className="space-y-4">
                     <div>
                       <h3 className="text-sm font-medium mb-3 flex items-center gap-2">

@@ -1122,17 +1122,92 @@ Return only the JSON object, no other text.`;
     return `${measure.charAt(0).toUpperCase() + measure.slice(1)} by ${dimension.charAt(0).toUpperCase() + dimension.slice(1)}`;
   }
   
-  // Save chart widget to database
+  // Save chart widget to database - with duplicate prevention
   private async saveChartWidget(chartConfig: any, query: string): Promise<number | null> {
     try {
       const { db } = await import('../db');
       const { widgets } = await import('../../shared/schema');
+      const { sql } = await import('drizzle-orm');
+      
+      const widgetTitle = chartConfig.title || 'AI Generated Chart';
+      const dashboardId = 1;
+      
+      // Step 1: Check if a similar active widget already exists
+      const existingWidgets = await db
+        .select()
+        .from(widgets)
+        .where(sql`${widgets.dashboardId} = ${dashboardId} 
+                   AND ${widgets.title} = ${widgetTitle} 
+                   AND ${widgets.isActive} = true`)
+        .limit(1);
+      
+      // If an active widget with the same title exists, update it instead of creating a new one
+      if (existingWidgets.length > 0) {
+        const existingWidget = existingWidgets[0];
+        console.log('[Max AI] Updating existing widget:', existingWidget.id);
+        
+        // Update the existing widget with new data
+        await db
+          .update(widgets)
+          .set({
+            config: {
+              chartType: chartConfig.type || 'bar',
+              dataSource: 'dynamic',
+              showLegend: true,
+              colorScheme: 'multi',
+              description: chartConfig.title,
+              createdByMaxAI: true,
+              userQuery: query,
+              chartConfig: {
+                type: chartConfig.type || 'bar',
+                title: chartConfig.title || 'AI Generated Chart',
+                data: chartConfig.data || [],
+                configuration: chartConfig.configuration || {}
+              }
+            },
+            updatedAt: new Date()
+          })
+          .where(sql`${widgets.id} = ${existingWidget.id}`);
+        
+        return existingWidget.id;
+      }
+      
+      // Step 2: Deactivate any old widgets with the same title (cleanup)
+      await db
+        .update(widgets)
+        .set({ isActive: false, updatedAt: new Date() })
+        .where(sql`${widgets.dashboardId} = ${dashboardId} 
+                   AND ${widgets.title} = ${widgetTitle}`);
+      
+      // Step 3: Create the new widget
+      // Calculate position to avoid overlap (find empty spot)
+      const activeWidgets = await db
+        .select({ position: widgets.position })
+        .from(widgets)
+        .where(sql`${widgets.dashboardId} = ${dashboardId} AND ${widgets.isActive} = true`);
+      
+      // Simple grid positioning - find first available spot
+      let x = 0, y = 0;
+      const positions = activeWidgets.map(w => w.position as any);
+      
+      // Find first empty grid position (6-column grid)
+      for (let row = 0; row < 10; row++) {
+        for (let col = 0; col <= 6; col += 6) {
+          const positionTaken = positions.some(p => p.x === col && p.y === row * 4);
+          if (!positionTaken) {
+            x = col;
+            y = row * 4;
+            break;
+          }
+        }
+        if (x !== 0 || y !== 0) break;
+      }
       
       const widgetRecord = {
-        dashboardId: 1,
+        dashboardId,
         type: chartConfig.type || 'bar',
-        title: chartConfig.title || 'AI Generated Chart',
-        position: { x: 0, y: 0, w: 6, h: 4 },
+        title: widgetTitle,
+        position: { x, y, w: 6, h: 4 },
         config: {
           chartType: chartConfig.type || 'bar',
           dataSource: 'dynamic',
@@ -1152,7 +1227,16 @@ Return only the JSON object, no other text.`;
       };
       
       const [savedWidget] = await db.insert(widgets).values(widgetRecord).returning();
-      console.log('[Max AI] Chart widget saved with ID:', savedWidget.id);
+      console.log('[Max AI] New chart widget created with ID:', savedWidget.id);
+      
+      // Step 4: Clean up very old inactive widgets (older than 7 days)
+      const oneWeekAgo = new Date();
+      oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+      
+      await db
+        .delete(widgets)
+        .where(sql`${widgets.isActive} = false AND ${widgets.updatedAt} < ${oneWeekAgo}`);
+      
       return savedWidget.id;
     } catch (error) {
       console.error('[Max AI] Error saving widget:', error);

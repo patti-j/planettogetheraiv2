@@ -1,0 +1,11 @@
+{
+    "export_timestamp": "2025-11-06T19:53:16+00:00",
+    "export_mode": "--schema-only",
+    "export_file": "dev_export_schema_20251106_195308_efae8d9.sql",
+    "file_size": "163K",
+    "git_sha": "efae8d9",
+    "source": "development",
+    "database_url": "dev_database",
+    "exported_by": "runner",
+    "tables_included": "all"
+}

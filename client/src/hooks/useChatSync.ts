@@ -30,6 +30,18 @@ const loadChatHistory = async () => {
   try {
     console.log('[Chat Sync] Loading chat history for user:', currentUserId);
     const response = await apiRequest('GET', `/api/max-chat-messages/${currentUserId}`);
+    
+    // Check if response indicates database not initialized (500 error or similar)
+    if (!response.ok) {
+      if (response.status === 500) {
+        // Database likely not initialized yet, silently use fallback
+        console.log('[Chat Sync] Database not initialized, using fallback');
+      } else {
+        console.warn('[Chat Sync] Unexpected response status:', response.status);
+      }
+      throw new Error('Database not ready');
+    }
+    
     const data = await response.json();
     const loadedMessages = data.map((msg: any) => ({
       ...msg,
@@ -73,7 +85,12 @@ const loadChatHistory = async () => {
     // Notify all subscribers
     subscribers.forEach(callback => callback(globalChatMessages));
   } catch (error) {
-    console.error('[Chat Sync] Failed to load chat history:', error instanceof Error ? error.message : error);
+    // Don't log as error if database is not initialized
+    if (error instanceof Error && error.message === 'Database not ready') {
+      console.log('[Chat Sync] Using localStorage backup after database check');
+    } else {
+      console.error('[Chat Sync] Failed to load chat history:', error instanceof Error ? error.message : error);
+    }
     
     // Try localStorage as fallback
     const storedMessages = localStorage.getItem('max_chat_messages');

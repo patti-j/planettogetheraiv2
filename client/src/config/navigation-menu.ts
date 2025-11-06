@@ -136,6 +136,7 @@ export const navigationGroups: NavigationGroup[] = [
       { icon: Upload, label: "Master Data Setup", href: "/data-import", feature: "systems-management", action: "view", color: "bg-green-600" },
       { icon: FileText, label: "Master Data Editor", href: "/master-data", feature: "systems-management", action: "view", color: "bg-emerald-600" },
       { icon: MapPin, label: "Planning Area Management", href: "/planning-area-management", feature: "systems-management", action: "view", color: "bg-teal-600" },
+      { icon: GitBranch, label: "Resource Planning Assignment", href: "/resource-planning-assignment", feature: "systems-management", action: "view", color: "bg-cyan-600" },
       { icon: Search, label: "Database Explorer", href: "/database-explorer", feature: "systems-management", action: "view", color: "bg-blue-600" },
       { icon: Database, label: "Data Schema View", href: "/data-schema", feature: "systems-management", action: "view", color: "bg-indigo-600" },
       { icon: FileText, label: "Table Field Documentation", href: "/table-field-viewer", feature: "systems-management", action: "view", color: "bg-slate-600" },
