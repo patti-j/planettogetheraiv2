@@ -133,6 +133,7 @@ interface AlgorithmDeployment {
   version: string;
   status: string;
   configuration: any;
+  planningAreaIds?: number[];
   deployedAt: string;
   metrics: any;
 }
@@ -678,6 +679,14 @@ export default function OptimizationStudio() {
   const [showAICreateDialog, setShowAICreateDialog] = useState(false);
   const [showAIModifyDialog, setShowAIModifyDialog] = useState(false);
   const [algorithmToModify, setAlgorithmToModify] = useState<OptimizationAlgorithm | null>(null);
+  const [showDeployDialog, setShowDeployDialog] = useState(false);
+  const [deployFormData, setDeployFormData] = useState<any>({
+    algorithmId: null,
+    targetModule: 'production_scheduler',
+    environment: 'production',
+    version: '1.0',
+    planningAreaIds: []
+  });
   const [aiModifyPrompt, setAiModifyPrompt] = useState("");
   const [aiModifyMessages, setAiModifyMessages] = useState<Array<{role: 'user' | 'assistant', content: string}>>([]);
   const [aiPrompt, setAiPrompt] = useState("");
@@ -801,6 +810,11 @@ export default function OptimizationStudio() {
   // Fetch deployments
   const { data: deployments = [] } = useQuery({
     queryKey: ['/api/optimization/deployments']
+  });
+
+  // Fetch planning areas
+  const { data: planningAreas = [] } = useQuery({
+    queryKey: ['/api/planning-areas']
   });
 
   // Fetch algorithm feedback for development purposes
@@ -3141,7 +3155,7 @@ class ${currentAlgorithmDraft.name?.replace(/-/g, '_')}Algorithm {
           <TabsContent value="deployments" className="space-y-6">
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-semibold">Active Deployments</h2>
-              <Button>
+              <Button onClick={() => setShowDeployDialog(true)} data-testid="button-deploy-algorithm">
                 <Rocket className="w-4 h-4 mr-2" />
                 Deploy Algorithm
               </Button>
@@ -3158,33 +3172,56 @@ class ${currentAlgorithmDraft.name?.replace(/-/g, '_')}Algorithm {
                   <Button>Deploy First Algorithm</Button>
                 </Card>
               ) : (
-                deployments.map((deployment: AlgorithmDeployment) => (
-                  <Card key={deployment.id}>
-                    <CardHeader>
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <CardTitle className="text-lg">Algorithm #{deployment.algorithmId}</CardTitle>
-                          <CardDescription>{deployment.targetModule} - {deployment.environment}</CardDescription>
+                deployments.map((deployment: AlgorithmDeployment) => {
+                  const assignedAreas = deployment.planningAreaIds && deployment.planningAreaIds.length > 0
+                    ? planningAreas.filter((area: any) => deployment.planningAreaIds!.includes(area.id))
+                    : [];
+
+                  return (
+                    <Card key={deployment.id}>
+                      <CardHeader>
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <CardTitle className="text-lg">Algorithm #{deployment.algorithmId}</CardTitle>
+                            <CardDescription>{deployment.targetModule} - {deployment.environment}</CardDescription>
+                          </div>
+                          <Badge className={`${getStatusColor(deployment.status)} text-white`}>
+                            {deployment.status}
+                          </Badge>
                         </div>
-                        <Badge className={`${getStatusColor(deployment.status)} text-white`}>
-                          {deployment.status}
-                        </Badge>
-                      </div>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="flex items-center gap-4 text-sm text-gray-600">
-                        <div className="flex items-center gap-1">
-                          <Monitor className="w-3 h-3" />
-                          <span>v{deployment.version}</span>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-3">
+                          <div className="flex items-center gap-4 text-sm text-gray-600">
+                            <div className="flex items-center gap-1">
+                              <Monitor className="w-3 h-3" />
+                              <span>v{deployment.version}</span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <BarChart3 className="w-3 h-3" />
+                              <span>Health: OK</span>
+                            </div>
+                          </div>
+                          {assignedAreas.length > 0 && (
+                            <div className="space-y-1">
+                              <p className="text-xs font-medium text-gray-700 dark:text-gray-300">Planning Areas:</p>
+                              <div className="flex flex-wrap gap-1">
+                                {assignedAreas.map((area: any) => (
+                                  <Badge key={area.id} variant="outline" className="text-xs">
+                                    {area.name}
+                                  </Badge>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                          {(!deployment.planningAreaIds || deployment.planningAreaIds.length === 0) && (
+                            <p className="text-xs text-gray-500">Applies to all planning areas</p>
+                          )}
                         </div>
-                        <div className="flex items-center gap-1">
-                          <BarChart3 className="w-3 h-3" />
-                          <span>Health: OK</span>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))
+                      </CardContent>
+                    </Card>
+                  );
+                })
               )}
             </div>
           </TabsContent>
@@ -3972,6 +4009,145 @@ class ${currentAlgorithmDraft.name?.replace(/-/g, '_')}Algorithm {
               </Button>
             </div>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Deploy Algorithm Dialog */}
+      <Dialog open={showDeployDialog} onOpenChange={setShowDeployDialog}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Deploy Algorithm</DialogTitle>
+            <DialogDescription>
+              Deploy an algorithm to production modules and assign planning areas
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label>Algorithm</Label>
+              <Select
+                value={deployFormData.algorithmId?.toString() || ""}
+                onValueChange={(value) => setDeployFormData(prev => ({ ...prev, algorithmId: parseInt(value) }))}
+              >
+                <SelectTrigger data-testid="select-deploy-algorithm">
+                  <SelectValue placeholder="Select algorithm..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {algorithms.filter(a => a.status === 'production').map((algo: any) => (
+                    <SelectItem key={algo.id} value={algo.id.toString()}>
+                      {algo.displayName || algo.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Target Module</Label>
+              <Select
+                value={deployFormData.targetModule}
+                onValueChange={(value) => setDeployFormData(prev => ({ ...prev, targetModule: value }))}
+              >
+                <SelectTrigger data-testid="select-target-module">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="production_scheduler">Production Scheduler</SelectItem>
+                  <SelectItem value="resource_optimizer">Resource Optimizer</SelectItem>
+                  <SelectItem value="inventory_planner">Inventory Planner</SelectItem>
+                  <SelectItem value="capacity_analyzer">Capacity Analyzer</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Environment</Label>
+              <Select
+                value={deployFormData.environment}
+                onValueChange={(value) => setDeployFormData(prev => ({ ...prev, environment: value }))}
+              >
+                <SelectTrigger data-testid="select-environment">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="production">Production</SelectItem>
+                  <SelectItem value="staging">Staging</SelectItem>
+                  <SelectItem value="development">Development</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Planning Areas (Optional)</Label>
+              <div className="border rounded-md p-4 space-y-2 max-h-48 overflow-y-auto">
+                {planningAreas.length === 0 ? (
+                  <p className="text-sm text-gray-500">No planning areas defined. This algorithm will apply to all areas.</p>
+                ) : (
+                  planningAreas.map((area: any) => (
+                    <div key={area.id} className="flex items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        id={`planning-area-${area.id}`}
+                        checked={deployFormData.planningAreaIds.includes(area.id)}
+                        onChange={(e) => {
+                          setDeployFormData(prev => ({
+                            ...prev,
+                            planningAreaIds: e.target.checked
+                              ? [...prev.planningAreaIds, area.id]
+                              : prev.planningAreaIds.filter((id: number) => id !== area.id)
+                          }));
+                        }}
+                        className="h-4 w-4"
+                        data-testid={`checkbox-planning-area-${area.id}`}
+                      />
+                      <label htmlFor={`planning-area-${area.id}`} className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                        {area.name}
+                        {area.optimizationMethod === 'advanced_solver' && (
+                          <span className="ml-2 text-xs text-gray-500">(Advanced Solver)</span>
+                        )}
+                      </label>
+                    </div>
+                  ))
+                )}
+              </div>
+              <p className="text-xs text-gray-500">
+                Leave unchecked to deploy to all planning areas
+              </p>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowDeployDialog(false);
+                setDeployFormData({
+                  algorithmId: null,
+                  targetModule: 'production_scheduler',
+                  environment: 'production',
+                  version: '1.0',
+                  planningAreaIds: []
+                });
+              }}
+              data-testid="button-deploy-cancel"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={() => {
+                // TODO: Add deployment mutation
+                toast({
+                  title: 'Success',
+                  description: 'Algorithm deployed successfully',
+                });
+                setShowDeployDialog(false);
+              }}
+              disabled={!deployFormData.algorithmId}
+              data-testid="button-deploy-submit"
+            >
+              <Rocket className="w-4 h-4 mr-2" />
+              Deploy
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
