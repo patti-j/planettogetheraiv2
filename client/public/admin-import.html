@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Production Data Import - Admin Only</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 40px;
+            max-width: 500px;
+            width: 100%;
+        }
+        
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+        
+        .warning {
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            color: #856404;
+            padding: 12px;
+            border-radius: 8px;
+            margin: 20px 0;
+            font-size: 14px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+            font-weight: 500;
+        }
+        
+        input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e1e1e1;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+        
+        input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 14px 28px;
+            font-size: 16px;
+            font-weight: 600;
+            border-radius: 8px;
+            cursor: pointer;
+            width: 100%;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        button:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+        }
+        
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        
+        .result {
+            margin-top: 20px;
+            padding: 16px;
+            border-radius: 8px;
+            display: none;
+        }
+        
+        .result.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .result.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .spinner {
+            display: none;
+            text-align: center;
+            margin: 20px 0;
+        }
+        
+        .spinner.active {
+            display: block;
+        }
+        
+        .spinner::after {
+            content: "";
+            display: inline-block;
+            width: 30px;
+            height: 30px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .status {
+            color: #666;
+            font-size: 14px;
+            margin-top: 10px;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 Production Data Import</h1>
+        <p class="status">One-time setup tool for PlanetTogether SCM + APS</p>
+        
+        <div class="warning">
+            ⚠️ <strong>WARNING:</strong> This will import production data into your database. 
+            Only run this ONCE after deployment. Running multiple times may cause data duplication.
+        </div>
+        
+        <form id="importForm">
+            <div class="form-group">
+                <label for="setupKey">Production Setup Key:</label>
+                <input 
+                    type="password" 
+                    id="setupKey" 
+                    name="setupKey" 
+                    placeholder="Enter your PRODUCTION_SETUP_KEY"
+                    required
+                    autocomplete="off"
+                />
+            </div>
+            
+            <button type="submit" id="importBtn">
+                Import Production Data
+            </button>
+        </form>
+        
+        <div class="spinner" id="spinner"></div>
+        <div class="result" id="result"></div>
+    </div>
+    
+    <script>
+        document.getElementById('importForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const setupKey = document.getElementById('setupKey').value;
+            const button = document.getElementById('importBtn');
+            const spinner = document.getElementById('spinner');
+            const result = document.getElementById('result');
+            
+            // Reset and show loading state
+            result.style.display = 'none';
+            result.className = 'result';
+            spinner.classList.add('active');
+            button.disabled = true;
+            button.textContent = 'Importing...';
+            
+            try {
+                // Get the current origin
+                const currentOrigin = window.location.origin;
+                
+                const response = await fetch(`${currentOrigin}/api/admin/import-production-data`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Setup-Key': setupKey,
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    credentials: 'same-origin'
+                });
+                
+                const data = await response.json();
+                
+                spinner.classList.remove('active');
+                result.style.display = 'block';
+                
+                if (response.ok && data.success) {
+                    result.className = 'result success';
+                    result.innerHTML = `
+                        <strong>✅ Success!</strong><br>
+                        ${data.message}<br>
+                        <br>
+                        <strong>Import Details:</strong><br>
+                        Tables imported: ${data.details?.tablesImported || 'N/A'}<br>
+                        Total rows: ${data.details?.totalRows || 'N/A'}<br>
+                        <br>
+                        You can now <a href="/login" style="color: #155724; font-weight: bold;">login</a> with:<br>
+                        Username: admin<br>
+                        Password: admin123
+                    `;
+                    button.textContent = 'Import Complete';
+                } else {
+                    result.className = 'result error';
+                    result.innerHTML = `
+                        <strong>❌ Import Failed</strong><br>
+                        ${data.error || data.message || 'Unknown error occurred'}<br>
+                        <br>
+                        Please check:<br>
+                        • Your PRODUCTION_SETUP_KEY is correct<br>
+                        • You're running this on the production site<br>
+                        • The database hasn't already been imported
+                    `;
+                    button.disabled = false;
+                    button.textContent = 'Retry Import';
+                }
+            } catch (error) {
+                spinner.classList.remove('active');
+                result.style.display = 'block';
+                result.className = 'result error';
+                result.innerHTML = `
+                    <strong>❌ Connection Error</strong><br>
+                    ${error.message}<br>
+                    <br>
+                    Please ensure you're running this on your production site.
+                `;
+                button.disabled = false;
+                button.textContent = 'Retry Import';
+            }
+        });
+    </script>
+</body>
+</html>
