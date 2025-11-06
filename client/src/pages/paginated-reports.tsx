@@ -13,7 +13,7 @@ import * as XLSX from 'xlsx';
 
 // Import the new focused components
 import { DataSourceSelector } from '@/components/reports/DataSourceSelector';
-import { ColumnConfigurator } from '@/components/reports/ColumnConfigurator';
+import { ColumnChooser } from '@/components/reports/ColumnChooser';
 import { FormatRulesPanel, type FormatRule } from '@/components/reports/FormatRulesPanel';
 import { ReportPreview } from '@/components/reports/ReportPreview';
 import { ExportSettings, ExportDialog, type ExportConfig } from '@/components/reports/ExportSettings';
@@ -28,6 +28,7 @@ export default function PaginatedReports() {
   
   // Column configuration state
   const [selectedColumns, setSelectedColumns] = useState<string[]>([]);
+  const [columnOrder, setColumnOrder] = useState<string[]>([]);
   const [columnWidths, setColumnWidths] = useState<Record<string, number>>({});
   const [groupingEnabled, setGroupingEnabled] = useState(false);
   const [groupingColumns, setGroupingColumns] = useState<string[]>([]);
@@ -420,7 +421,9 @@ export default function PaginatedReports() {
   useEffect(() => {
     if (tableSchema) {
       // Always reset columns when schema changes (which happens when table changes)
+      const allColumns = tableSchema.map(col => col.columnName);
       const defaultColumns = tableSchema.slice(0, 5).map(col => col.columnName);
+      setColumnOrder(allColumns);
       setSelectedColumns(defaultColumns);
       // Also reset column filters when changing tables
       setColumnFilters({});
@@ -817,18 +820,73 @@ export default function PaginatedReports() {
             </TabsContent>
             
             <TabsContent value="columns" className="space-y-4 p-4">
-              <ColumnConfigurator
-                tableSchema={tableSchema || null}
-                selectedColumns={selectedColumns}
-                onColumnToggle={handleColumnToggle}
-                onColumnsReorder={handleColumnsReorder}
-                groupingEnabled={groupingEnabled}
-                onGroupingToggle={setGroupingEnabled}
-                groupingColumns={groupingColumns}
-                onGroupingColumnToggle={handleGroupingColumnToggle}
-                includeTotals={includeTotals}
-                onTotalsToggle={setIncludeTotals}
-              />
+              <div className="space-y-4">
+                {/* Column Chooser */}
+                <div className="flex justify-between items-center">
+                  <h3 className="text-sm font-medium">Column Selection</h3>
+                  <ColumnChooser
+                    allColumns={tableSchema?.map(col => col.columnName) || []}
+                    selectedColumns={selectedColumns}
+                    onColumnsChange={setSelectedColumns}
+                    columnOrder={columnOrder}
+                    onColumnOrderChange={setColumnOrder}
+                  />
+                </div>
+                
+                {/* Additional Options */}
+                <div className="border rounded-lg p-4 space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-1">
+                      <label className="text-sm font-medium">Include Totals Row</label>
+                      <p className="text-xs text-muted-foreground">
+                        Show a totals row at the bottom of the report with sum of numeric columns
+                      </p>
+                    </div>
+                    <Button
+                      variant={includeTotals ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => setIncludeTotals(!includeTotals)}
+                    >
+                      {includeTotals ? "Enabled" : "Disabled"}
+                    </Button>
+                  </div>
+                  
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-1">
+                      <label className="text-sm font-medium">Enable Grouping</label>
+                      <p className="text-xs text-muted-foreground">
+                        Group rows by one or more columns with aggregations
+                      </p>
+                    </div>
+                    <Button
+                      variant={groupingEnabled ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => setGroupingEnabled(!groupingEnabled)}
+                    >
+                      {groupingEnabled ? "Enabled" : "Disabled"}
+                    </Button>
+                  </div>
+                  
+                  {groupingEnabled && (
+                    <div className="pl-4 space-y-2">
+                      <label className="text-sm font-medium">Select Grouping Columns:</label>
+                      <div className="grid grid-cols-2 gap-2 max-h-40 overflow-y-auto">
+                        {selectedColumns.map(col => (
+                          <label key={col} className="flex items-center space-x-2">
+                            <input
+                              type="checkbox"
+                              checked={groupingColumns.includes(col)}
+                              onChange={() => handleGroupingColumnToggle(col)}
+                              className="rounded border-gray-300"
+                            />
+                            <span className="text-sm truncate">{col}</span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
             </TabsContent>
             
             <TabsContent value="format" className="space-y-4 p-4">
@@ -858,7 +916,7 @@ export default function PaginatedReports() {
           <ReportPreview
             data={data}
             loading={isLoading}
-            selectedColumns={selectedColumns}
+            selectedColumns={columnOrder.filter(col => selectedColumns.includes(col))}
             formatRules={formatRules}
             groupingEnabled={groupingEnabled}
             groupingColumns={groupingColumns}
