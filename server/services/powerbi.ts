@@ -2228,7 +2228,38 @@ export class PowerBIService {
       );
 
       // Skip the first 'skip' rows to implement pagination
-      const items = (result || []).slice(skip, skip + pageSize);
+      const rawItems = (result || []).slice(skip, skip + pageSize);
+      
+      // Clean up column names by removing brackets
+      const items = rawItems.map((row: any) => {
+        const cleanRow: any = {};
+        Object.entries(row).forEach(([key, value]) => {
+          // Remove brackets from column names
+          // Handles patterns like [ColumnName] or [TableName[ColumnName]]
+          let cleanKey = key;
+          
+          if (key.startsWith('[') && key.endsWith(']')) {
+            // Simple bracket removal for [ColumnName]
+            cleanKey = key.slice(1, -1);
+          } else if (key.includes('[') && key.includes(']')) {
+            // Handle complex patterns like [TableName[ColumnName]]
+            const matches = key.match(/\[([^\[\]]+)\]$/);
+            if (matches && matches[1]) {
+              cleanKey = matches[1];
+            } else {
+              // Fallback: just remove all brackets
+              cleanKey = key.replace(/[\[\]]/g, '');
+              // If it has table prefix like "TableName.ColumnName", take the part after the last dot
+              if (cleanKey.includes('.')) {
+                cleanKey = cleanKey.split('.').pop() || cleanKey;
+              }
+            }
+          }
+          
+          cleanRow[cleanKey] = value;
+        });
+        return cleanRow;
+      });
 
       // Get total count with a separate query
       const countQuery = `EVALUATE ROW("Count", COUNTROWS('${tableName}'))`;
