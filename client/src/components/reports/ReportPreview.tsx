@@ -94,50 +94,33 @@ export const ReportPreview = memo(({
 
   // Format data type for display
   const formatDataType = useCallback((dataType: string): string => {
+    // Return empty string if we don't know the type
+    if (!dataType) return '';
+    
     const type = dataType.toLowerCase();
-    if (type.includes('varchar') || type.includes('char')) return 'Text';
     if (type.includes('int')) return 'Number';
     if (type.includes('decimal') || type.includes('numeric') || type.includes('float')) return 'Decimal';
     if (type.includes('date') || type.includes('time')) return 'Date/Time';
     if (type.includes('bit') || type.includes('bool')) return 'Boolean';
     if (type.includes('money')) return 'Currency';
-    return dataType;
+    if (type.includes('varchar') || type.includes('char') || type.includes('text')) return 'Text';
+    
+    // If we don't recognize the type, return empty string
+    return '';
   }, []);
 
-  // Filter data based on column filters and global search
+  // Use server-side filtered data directly (no local filtering)
   const filteredData = useMemo(() => {
     if (!data?.items) return null;
     
-    let filtered = [...data.items];
-    
-    // Apply column filters
-    Object.entries(columnFilters).forEach(([column, filterValue]) => {
-      if (filterValue) {
-        filtered = filtered.filter(item => {
-          const value = item[column];
-          if (value === null || value === undefined) return false;
-          return String(value).toLowerCase().includes(filterValue.toLowerCase());
-        });
-      }
-    });
-    
-    // Apply global search (already handled server-side, but kept for consistency)
-    if (searchTerm) {
-      filtered = filtered.filter(item =>
-        selectedColumns.some(col => {
-          const value = item[col];
-          if (value === null || value === undefined) return false;
-          return String(value).toLowerCase().includes(searchTerm.toLowerCase());
-        })
-      );
-    }
-    
+    // Return server data as-is - all filtering happens on the server
     return {
       ...data,
-      items: filtered,
-      total: filtered.length
+      items: data.items,
+      total: data.totalCount || data.total || data.items.length,
+      totalPages: Math.ceil((data.totalCount || data.total || data.items.length) / pageSize)
     };
-  }, [data, columnFilters, searchTerm, selectedColumns]);
+  }, [data, pageSize]);
 
   // Check if there are any active filters
   const hasActiveFilters = useMemo(() => {
@@ -349,19 +332,8 @@ export const ReportPreview = memo(({
           </div>
         )}
         
-        {/* Search and filter controls */}
-        <div className="flex gap-2 mt-4">
-          <div className="relative flex-1 max-w-sm">
-            <Input
-              placeholder="Search all columns..."
-              value={searchTerm}
-              onChange={(e) => onSearchChange(e.target.value)}
-              className="pl-8"
-              data-testid="input-search"
-            />
-            <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
-          </div>
-          
+        {/* Page size control only - removed table-level search */}
+        <div className="flex justify-end mt-4">
           <Select
             value={String(pageSize)}
             onValueChange={(value) => onPageSizeChange(Number(value))}
@@ -543,12 +515,12 @@ export const ReportPreview = memo(({
           </ScrollArea>
         </div>
         
-        {/* Pagination controls - Fixed at bottom */}
-        {filteredData && filteredData.totalPages > 1 && (
+        {/* Pagination controls - Always show to display total count */}
+        {filteredData && (
           <div className="flex-shrink-0 border-t bg-background px-4 py-3">
             <div className="flex items-center justify-between">
               <div className="text-sm text-gray-600">
-                Showing {((page - 1) * pageSize) + 1} to {Math.min(page * pageSize, filteredData.total)} of {filteredData.total} results
+                Page {page} of {filteredData.totalPages} • Showing {((page - 1) * pageSize) + 1} to {Math.min(page * pageSize, filteredData.total)} of {filteredData.total} total rows
               </div>
               <div className="flex gap-2">
                 <Button
