@@ -1,4 +1,4 @@
-import { memo, useState, useCallback, useEffect, useMemo } from 'react';
+import { memo, useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,6 +9,81 @@ import { Badge } from "@/components/ui/badge";
 import { ChevronLeft, ChevronRight, Search, Filter, ChevronDown, ChevronRight as ChevronRightIcon, Loader2, X } from "lucide-react";
 import { FormatRule } from './FormatRulesPanel';
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
+
+// Debounced filter input component
+const DebouncedFilterInput = memo(({ 
+  column, 
+  value, 
+  onChange, 
+  onClear 
+}: { 
+  column: string; 
+  value: string; 
+  onChange: (column: string, value: string) => void;
+  onClear?: (column: string) => void;
+}) => {
+  const [localValue, setLocalValue] = useState(value);
+  const timeoutRef = useRef<NodeJS.Timeout>();
+  
+  useEffect(() => {
+    setLocalValue(value);
+  }, [value]);
+  
+  const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const newValue = e.target.value;
+    setLocalValue(newValue);
+    
+    // Clear previous timeout
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+    }
+    
+    // Set new timeout for debounced update
+    timeoutRef.current = setTimeout(() => {
+      onChange(column, newValue);
+    }, 500); // 500ms debounce delay
+  }, [column, onChange]);
+  
+  const handleClear = useCallback(() => {
+    setLocalValue('');
+    if (onClear) {
+      onClear(column);
+    }
+  }, [column, onClear]);
+  
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    };
+  }, []);
+  
+  return (
+    <div className="relative">
+      <Input
+        placeholder="Filter..."
+        value={localValue}
+        onChange={handleChange}
+        className="h-8 text-sm pl-7 pr-7"
+        data-testid={`filter-input-${column}`}
+      />
+      <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3 w-3 text-muted-foreground pointer-events-none" />
+      {localValue && onClear && (
+        <button
+          onClick={handleClear}
+          className="absolute right-2 top-1/2 -translate-y-1/2 hover:text-destructive"
+          data-testid={`clear-filter-input-${column}`}
+        >
+          <X className="h-3 w-3" />
+        </button>
+      )}
+    </div>
+  );
+});
+
+DebouncedFilterInput.displayName = 'DebouncedFilterInput';
 
 interface TableColumn {
   columnName: string;
@@ -448,25 +523,12 @@ export const ReportPreview = memo(({
                               className="p-1"
                               style={{ width: columnWidths[column] || 150 }}
                             >
-                              <div className="relative">
-                                <Input
-                                  placeholder="Filter..."
-                                  value={columnFilters[column] || ''}
-                                  onChange={(e) => onColumnFilterChange(column, e.target.value)}
-                                  className="h-8 text-sm pl-7 pr-7"
-                                  data-testid={`filter-input-${column}`}
-                                />
-                                <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3 w-3 text-muted-foreground pointer-events-none" />
-                                {columnFilters[column] && onClearColumnFilter && (
-                                  <button
-                                    onClick={() => onClearColumnFilter(column)}
-                                    className="absolute right-2 top-1/2 -translate-y-1/2 hover:text-destructive"
-                                    data-testid={`clear-filter-input-${column}`}
-                                  >
-                                    <X className="h-3 w-3" />
-                                  </button>
-                                )}
-                              </div>
+                              <DebouncedFilterInput
+                                column={column}
+                                value={columnFilters[column] || ''}
+                                onChange={onColumnFilterChange}
+                                onClear={onClearColumnFilter}
+                              />
                             </TableHead>
                           ))}
                         </TableRow>
