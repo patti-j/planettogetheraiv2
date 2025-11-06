@@ -416,11 +416,16 @@ export default function PaginatedReports() {
     return { groups: Array.from(groups.values()) };
   }, [groupingEnabled, groupingColumns, data]);
   
-  // Initialize selected columns when schema loads
+  // Reset selected columns when table changes
   useEffect(() => {
-    if (tableSchema && selectedColumns.length === 0) {
+    if (tableSchema) {
+      // Always reset columns when schema changes (which happens when table changes)
       const defaultColumns = tableSchema.slice(0, 5).map(col => col.columnName);
       setSelectedColumns(defaultColumns);
+      // Also reset column filters when changing tables
+      setColumnFilters({});
+      // Reset pagination
+      setPage(1);
     }
   }, [tableSchema]);
   
