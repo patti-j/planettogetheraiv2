@@ -556,12 +556,10 @@ export default function PaginatedReports() {
       // First, fetch all data if we have more pages
       let allData = data.items;
       if (data.totalPages > 1) {
-        // Fetch all data for export
-        const allDataUrl = sourceType === 'sql' && selectedTable
-          ? `/api/paginated-reports/export-data?schema=${selectedTable.schemaName}&table=${selectedTable.tableName}&filters=${encodeURIComponent(JSON.stringify(columnFilters))}&sortBy=${sortBy}&sortOrder=${sortOrder}&distinct=${useDistinct}&selectedColumns=${encodeURIComponent(JSON.stringify(selectedColumns))}`
-          : null;
+        // Fetch all data for export based on source type
+        if (sourceType === 'sql' && selectedTable) {
+          const allDataUrl = `/api/paginated-reports/export-data?schema=${selectedTable.schemaName}&table=${selectedTable.tableName}&filters=${encodeURIComponent(JSON.stringify(columnFilters))}&sortBy=${sortBy}&sortOrder=${sortOrder}&distinct=${useDistinct}&selectedColumns=${encodeURIComponent(JSON.stringify(selectedColumns))}`;
           
-        if (allDataUrl) {
           const token = localStorage.getItem('auth_token');
           const response = await fetch(allDataUrl, {
             headers: {
@@ -573,6 +571,50 @@ export default function PaginatedReports() {
           if (response.ok) {
             const exportData = await response.json();
             allData = exportData.items || allData;
+          }
+        } else if (sourceType === 'powerbi' && selectedWorkspace && selectedDataset && selectedPowerBITable) {
+          // Fetch all Power BI data for export
+          const token = localStorage.getItem('auth_token');
+          allData = [];
+          let currentPage = 1;
+          let hasMoreData = true;
+          
+          while (hasMoreData) {
+            const response = await fetch('/api/powerbi/dataset-data', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': token ? `Bearer ${token}` : ''
+              },
+              credentials: 'include',
+              body: JSON.stringify({
+                workspaceId: selectedWorkspace,
+                datasetId: selectedDataset,
+                tableName: selectedPowerBITable,
+                columns: selectedColumns.length > 0 ? selectedColumns : undefined,
+                filters: columnFilters,
+                page: currentPage,
+                pageSize: 1000, // Fetch in larger chunks for export
+                sortBy: sortBy || null,
+                sortOrder: sortOrder || 'asc',
+                distinct: useDistinct
+              })
+            });
+            
+            if (!response.ok) {
+              throw new Error(`Failed to fetch Power BI data: ${response.statusText}`);
+            }
+            
+            const pageData = await response.json();
+            
+            if (pageData.items && pageData.items.length > 0) {
+              allData = [...allData, ...pageData.items];
+              currentPage++;
+              // Check if we have all data
+              hasMoreData = pageData.items.length === 1000 && currentPage <= (pageData.totalPages || 1);
+            } else {
+              hasMoreData = false;
+            }
           }
         }
       }
@@ -642,7 +684,7 @@ export default function PaginatedReports() {
     } finally {
       setIsExporting(false);
     }
-  }, [data, selectedColumns, selectedTable, exportConfig, includeTotals, totals, sourceType, columnFilters, sortBy, sortOrder, tableSchema]);
+  }, [data, selectedColumns, selectedTable, exportConfig, includeTotals, totals, sourceType, columnFilters, sortBy, sortOrder, tableSchema, useDistinct, selectedWorkspace, selectedDataset, selectedPowerBITable]);
   
   const exportToExcel = useCallback(async () => {
     if (!data?.items) return;
@@ -659,12 +701,10 @@ export default function PaginatedReports() {
       // First, fetch all data if we have more pages
       let allData = data.items;
       if (data.totalPages > 1) {
-        // Fetch all data for export
-        const allDataUrl = sourceType === 'sql' && selectedTable
-          ? `/api/paginated-reports/export-data?schema=${selectedTable.schemaName}&table=${selectedTable.tableName}&filters=${encodeURIComponent(JSON.stringify(columnFilters))}&sortBy=${sortBy}&sortOrder=${sortOrder}&distinct=${useDistinct}&selectedColumns=${encodeURIComponent(JSON.stringify(selectedColumns))}`
-          : null;
+        // Fetch all data for export based on source type
+        if (sourceType === 'sql' && selectedTable) {
+          const allDataUrl = `/api/paginated-reports/export-data?schema=${selectedTable.schemaName}&table=${selectedTable.tableName}&filters=${encodeURIComponent(JSON.stringify(columnFilters))}&sortBy=${sortBy}&sortOrder=${sortOrder}&distinct=${useDistinct}&selectedColumns=${encodeURIComponent(JSON.stringify(selectedColumns))}`;
           
-        if (allDataUrl) {
           const token = localStorage.getItem('auth_token');
           const response = await fetch(allDataUrl, {
             headers: {
@@ -676,6 +716,50 @@ export default function PaginatedReports() {
           if (response.ok) {
             const exportData = await response.json();
             allData = exportData.items || allData;
+          }
+        } else if (sourceType === 'powerbi' && selectedWorkspace && selectedDataset && selectedPowerBITable) {
+          // Fetch all Power BI data for export
+          const token = localStorage.getItem('auth_token');
+          allData = [];
+          let currentPage = 1;
+          let hasMoreData = true;
+          
+          while (hasMoreData) {
+            const response = await fetch('/api/powerbi/dataset-data', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': token ? `Bearer ${token}` : ''
+              },
+              credentials: 'include',
+              body: JSON.stringify({
+                workspaceId: selectedWorkspace,
+                datasetId: selectedDataset,
+                tableName: selectedPowerBITable,
+                columns: selectedColumns.length > 0 ? selectedColumns : undefined,
+                filters: columnFilters,
+                page: currentPage,
+                pageSize: 1000, // Fetch in larger chunks for export
+                sortBy: sortBy || null,
+                sortOrder: sortOrder || 'asc',
+                distinct: useDistinct
+              })
+            });
+            
+            if (!response.ok) {
+              throw new Error(`Failed to fetch Power BI data: ${response.statusText}`);
+            }
+            
+            const pageData = await response.json();
+            
+            if (pageData.items && pageData.items.length > 0) {
+              allData = [...allData, ...pageData.items];
+              currentPage++;
+              // Check if we have all data
+              hasMoreData = pageData.items.length === 1000 && currentPage <= (pageData.totalPages || 1);
+            } else {
+              hasMoreData = false;
+            }
           }
         }
       }
@@ -796,7 +880,7 @@ export default function PaginatedReports() {
     } finally {
       setIsExporting(false);
     }
-  }, [data, selectedColumns, columnWidths, exportConfig, includeTotals, totals, formatRules, sourceType, selectedTable, columnFilters, sortBy, sortOrder, tableSchema, useDistinct]);
+  }, [data, selectedColumns, columnWidths, exportConfig, includeTotals, totals, formatRules, sourceType, selectedTable, columnFilters, sortBy, sortOrder, tableSchema, useDistinct, selectedWorkspace, selectedDataset, selectedPowerBITable]);
   
   const exportToPDF = useCallback(async () => {
     if (!data?.items) return;
@@ -816,12 +900,10 @@ export default function PaginatedReports() {
       // First, fetch all data if we have more pages
       let allData = data.items;
       if (data.totalPages > 1) {
-        // Fetch all data for export
-        const allDataUrl = sourceType === 'sql' && selectedTable
-          ? `/api/paginated-reports/export-data?schema=${selectedTable.schemaName}&table=${selectedTable.tableName}&filters=${encodeURIComponent(JSON.stringify(columnFilters))}&sortBy=${sortBy}&sortOrder=${sortOrder}&distinct=${useDistinct}&selectedColumns=${encodeURIComponent(JSON.stringify(columnsToExport))}`
-          : null;
+        // Fetch all data for export based on source type
+        if (sourceType === 'sql' && selectedTable) {
+          const allDataUrl = `/api/paginated-reports/export-data?schema=${selectedTable.schemaName}&table=${selectedTable.tableName}&filters=${encodeURIComponent(JSON.stringify(columnFilters))}&sortBy=${sortBy}&sortOrder=${sortOrder}&distinct=${useDistinct}&selectedColumns=${encodeURIComponent(JSON.stringify(columnsToExport))}`;
           
-        if (allDataUrl) {
           const token = localStorage.getItem('auth_token');
           const response = await fetch(allDataUrl, {
             headers: {
@@ -835,6 +917,50 @@ export default function PaginatedReports() {
             allData = exportData.items || allData;
           } else {
             throw new Error(`Failed to fetch export data: ${response.statusText}`);
+          }
+        } else if (sourceType === 'powerbi' && selectedWorkspace && selectedDataset && selectedPowerBITable) {
+          // Fetch all Power BI data for export
+          const token = localStorage.getItem('auth_token');
+          allData = [];
+          let currentPage = 1;
+          let hasMoreData = true;
+          
+          while (hasMoreData) {
+            const response = await fetch('/api/powerbi/dataset-data', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': token ? `Bearer ${token}` : ''
+              },
+              credentials: 'include',
+              body: JSON.stringify({
+                workspaceId: selectedWorkspace,
+                datasetId: selectedDataset,
+                tableName: selectedPowerBITable,
+                columns: columnsToExport,
+                filters: columnFilters,
+                page: currentPage,
+                pageSize: 1000, // Fetch in larger chunks for export
+                sortBy: sortBy || null,
+                sortOrder: sortOrder || 'asc',
+                distinct: useDistinct
+              })
+            });
+            
+            if (!response.ok) {
+              throw new Error(`Failed to fetch Power BI data: ${response.statusText}`);
+            }
+            
+            const pageData = await response.json();
+            
+            if (pageData.items && pageData.items.length > 0) {
+              allData = [...allData, ...pageData.items];
+              currentPage++;
+              // Check if we have all data
+              hasMoreData = pageData.items.length === 1000 && currentPage <= (pageData.totalPages || 1);
+            } else {
+              hasMoreData = false;
+            }
           }
         }
       }
@@ -1035,7 +1161,7 @@ export default function PaginatedReports() {
     } finally {
       setIsExporting(false);
     }
-  }, [data, selectedColumns, exportConfig, includeTotals, totals, sourceType, selectedTable, columnFilters, sortBy, sortOrder, tableSchema, useDistinct]);
+  }, [data, selectedColumns, exportConfig, includeTotals, totals, sourceType, selectedTable, columnFilters, sortBy, sortOrder, tableSchema, useDistinct, selectedWorkspace, selectedDataset, selectedPowerBITable]);
   
   // Main export handler
   const handleExport = useCallback(async (format: 'csv' | 'excel' | 'pdf') => {
