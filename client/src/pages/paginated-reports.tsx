@@ -411,7 +411,7 @@ export default function PaginatedReports() {
     // TODO: Replace with server-side grouping
     const groups = new Map<string, any>();
     
-    data.items.forEach(item => {
+    data.items.forEach((item: any) => {
       const groupKey = groupingColumns.map(col => item[col]).join('_');
       if (!groups.has(groupKey)) {
         groups.set(groupKey, {
@@ -586,7 +586,7 @@ export default function PaginatedReports() {
       }
       
       // Add data
-      allData.forEach(item => {
+      allData.forEach((item: any) => {
         rows.push(columnsToExport.map(col => {
           const value = item[col];
           // Properly escape values
@@ -688,7 +688,7 @@ export default function PaginatedReports() {
       wsData.push(columnsToExport);
       
       // Add data
-      allData.forEach(item => {
+      allData.forEach((item: any) => {
         wsData.push(columnsToExport.map(col => item[col] || ''));
       });
       
@@ -716,7 +716,7 @@ export default function PaginatedReports() {
         const headerRowCount = exportConfig.includeHeaders && exportConfig.customHeader ? 3 : 1;
         
         // Iterate through data rows to apply format rules
-        allData.forEach((item, rowIndex) => {
+        allData.forEach((item: any, rowIndex: number) => {
           const actualRow = headerRowCount + rowIndex + 1; // Excel rows are 1-indexed
           
           columnsToExport.forEach((col, colIndex) => {
@@ -873,7 +873,7 @@ export default function PaginatedReports() {
         const pageData = allData.slice(startIdx, endIdx);
         
         // Prepare table data for this page
-        const tableData = pageData.map(item =>
+        const tableData = pageData.map((item: any) =>
           columnsToExport.map(col => {
             const value = item[col];
             if (value === null || value === undefined) return '';
