@@ -12,6 +12,7 @@ import {
   calendars, maintenancePeriods,
   plantKpiTargets, plantKpiPerformance, autonomousOptimization,
   // Optimization Studio tables
+  planningAreas,
   optimizationAlgorithms, optimizationProfiles,
   algorithmTests, algorithmDeployments, algorithmFeedback,
   algorithmFeedbackComments, algorithmFeedbackVotes,
@@ -40,6 +41,7 @@ import {
   type PlantKpiPerformance, type InsertPlantKpiPerformance,
   type AutonomousOptimization, type InsertAutonomousOptimization,
   // Optimization Studio types
+  type PlanningArea, type InsertPlanningArea,
   type OptimizationAlgorithm, type InsertOptimizationAlgorithm,
   type OptimizationProfile, type InsertOptimizationProfile,
   type AlgorithmTest, type InsertAlgorithmTest,
@@ -315,6 +317,14 @@ export interface IStorage {
   deleteSavedForecast(id: number): Promise<boolean>;
 
   // Optimization Studio
+  // Planning Areas
+  getPlanningAreas(): Promise<PlanningArea[]>;
+  getPlanningArea(id: number): Promise<PlanningArea | undefined>;
+  createPlanningArea(data: InsertPlanningArea): Promise<PlanningArea>;
+  updatePlanningArea(id: number, data: Partial<InsertPlanningArea>): Promise<PlanningArea | undefined>;
+  deletePlanningArea(id: number): Promise<boolean>;
+  
+  // Algorithms
   getOptimizationAlgorithms(category?: string, status?: string): Promise<OptimizationAlgorithm[]>;
   getStandardAlgorithms(): Promise<OptimizationAlgorithm[]>;
   getAlgorithmTests(): Promise<AlgorithmTest[]>;
@@ -2136,6 +2146,66 @@ export class DatabaseStorage implements IStorage {
   // ============================================
   // Optimization Studio Methods
   // ============================================
+
+  // Planning Areas
+  async getPlanningAreas(): Promise<PlanningArea[]> {
+    try {
+      return await db.select()
+        .from(planningAreas)
+        .orderBy(planningAreas.name);
+    } catch (error) {
+      console.error('Error fetching planning areas:', error);
+      return [];
+    }
+  }
+
+  async getPlanningArea(id: number): Promise<PlanningArea | undefined> {
+    try {
+      const [planningArea] = await db.select()
+        .from(planningAreas)
+        .where(eq(planningAreas.id, id));
+      return planningArea;
+    } catch (error) {
+      console.error('Error fetching planning area:', error);
+      return undefined;
+    }
+  }
+
+  async createPlanningArea(data: InsertPlanningArea): Promise<PlanningArea> {
+    try {
+      const [created] = await db.insert(planningAreas)
+        .values(data)
+        .returning();
+      return created;
+    } catch (error) {
+      console.error('Error creating planning area:', error);
+      throw error;
+    }
+  }
+
+  async updatePlanningArea(id: number, data: Partial<InsertPlanningArea>): Promise<PlanningArea | undefined> {
+    try {
+      const [updated] = await db.update(planningAreas)
+        .set({ ...data, updatedAt: new Date() })
+        .where(eq(planningAreas.id, id))
+        .returning();
+      return updated;
+    } catch (error) {
+      console.error('Error updating planning area:', error);
+      return undefined;
+    }
+  }
+
+  async deletePlanningArea(id: number): Promise<boolean> {
+    try {
+      await db.delete(planningAreas)
+        .where(eq(planningAreas.id, id));
+      return true;
+    } catch (error) {
+      console.error('Error deleting planning area:', error);
+      return false;
+    }
+  }
 
   async getOptimizationAlgorithms(category?: string, status?: string): Promise<OptimizationAlgorithm[]> {
     try {

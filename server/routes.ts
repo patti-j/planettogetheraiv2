@@ -11550,6 +11550,51 @@ router.post("/api/paginated-reports/grouped", enhancedAuth, async (req, res) => 
 // Optimization Studio Routes
 // ============================================
 
+// ===== Planning Areas =====
+// Get all planning areas
+router.get("/api/planning-areas", async (req, res) => {
+  try {
+    const planningAreas = await storage.getPlanningAreas();
+    res.json(planningAreas);
+  } catch (error) {
+    console.error("Error fetching planning areas:", error);
+    res.status(500).json({ error: "Failed to fetch planning areas" });
+  }
+});
+
+// Create planning area
+router.post("/api/planning-areas", enhancedAuth, async (req, res) => {
+  try {
+    const planningArea = await storage.createPlanningArea(req.body);
+    res.json(planningArea);
+  } catch (error) {
+    console.error("Error creating planning area:", error);
+    res.status(500).json({ error: "Failed to create planning area" });
+  }
+});
+
+// Update planning area
+router.patch("/api/planning-areas/:id", enhancedAuth, async (req, res) => {
+  try {
+    const planningArea = await storage.updatePlanningArea(parseInt(req.params.id), req.body);
+    res.json(planningArea);
+  } catch (error) {
+    console.error("Error updating planning area:", error);
+    res.status(500).json({ error: "Failed to update planning area" });
+  }
+});
+
+// Delete planning area
+router.delete("/api/planning-areas/:id", enhancedAuth, async (req, res) => {
+  try {
+    await storage.deletePlanningArea(parseInt(req.params.id));
+    res.json({ success: true });
+  } catch (error) {
+    console.error("Error deleting planning area:", error);
+    res.status(500).json({ error: "Failed to delete planning area" });
+  }
+});
+
 // Get all optimization algorithms (with optional status filter for Production Scheduler)
 router.get("/api/optimization/algorithms", async (req, res) => {
   try {
