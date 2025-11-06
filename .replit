@@ -4,7 +4,7 @@ hidden = [".config", ".git", "generated-icon.png", "node_modules", "dist"]
 
 [nix]
 channel = "stable-25_05"
-packages = ["freetds", "glibcLocales", "jq", "redis", "unixODBC", "unzip"]
+packages = ["freetds", "glibcLocales", "jq", "redis", "unixODBC", "unzip", "nano"]
 
 [deployment]
 deploymentTarget = "autoscale"
