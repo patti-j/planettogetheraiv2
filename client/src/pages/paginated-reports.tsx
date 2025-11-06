@@ -542,12 +542,19 @@ export default function PaginatedReports() {
   
   // Column management
   const handleColumnToggle = useCallback((column: string) => {
-    setSelectedColumns(prev => 
-      prev.includes(column) 
+    setSelectedColumns(prev => {
+      const isRemoving = prev.includes(column);
+      
+      // If removing a column that is currently being sorted, clear the sort
+      if (isRemoving && sortBy === column) {
+        setSortBy('');
+      }
+      
+      return isRemoving 
         ? prev.filter(c => c !== column)
-        : [...prev, column]
-    );
-  }, []);
+        : [...prev, column];
+    });
+  }, [sortBy]);
   
   const handleColumnsReorder = useCallback((newColumns: string[]) => {
     setSelectedColumns(newColumns);
