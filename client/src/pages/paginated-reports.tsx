@@ -529,7 +529,7 @@ export default function PaginatedReports() {
             schema: selectedTable.schemaName,
             table: selectedTable.tableName,
             groupByColumns: groupingColumns,
-            aggregationTypes: aggregationTypes,
+            aggregations: aggregationTypes,
             searchTerm: '',
             sortBy,
             sortOrder,
@@ -1668,7 +1668,13 @@ export default function PaginatedReports() {
                     <Button
                       variant={groupingEnabled ? "default" : "outline"}
                       size="sm"
-                      onClick={() => setGroupingEnabled(!groupingEnabled)}
+                      onClick={() => {
+                        setGroupingEnabled(!groupingEnabled);
+                        // Clear grouping columns when disabling grouping
+                        if (groupingEnabled) {
+                          setGroupingColumns([]);
+                        }
+                      }}
                     >
                       {groupingEnabled ? "Enabled" : "Disabled"}
                     </Button>
