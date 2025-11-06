@@ -18,6 +18,15 @@ import { FormatRulesPanel, type FormatRule } from '@/components/reports/FormatRu
 import { ReportPreview } from '@/components/reports/ReportPreview';
 import { ExportSettings, ExportDialog, type ExportConfig } from '@/components/reports/ExportSettings';
 
+interface TableColumn {
+  columnName: string;
+  dataType: string;
+  isNullable: boolean;
+  maxLength?: number;
+  precision?: number;
+  scale?: number;
+}
+
 export default function PaginatedReports() {
   // Data source state
   const [sourceType, setSourceType] = useState<'sql' | 'powerbi'>('sql');
@@ -99,7 +108,7 @@ export default function PaginatedReports() {
     return null;
   }, [sourceType, selectedTable, selectedWorkspace, selectedDataset, selectedPowerBITable]);
     
-  const { data: tableSchema } = useQuery({
+  const { data: tableSchema } = useQuery<TableColumn[]>({
     queryKey: schemaUrl ? [schemaUrl] : [],
     enabled: !!schemaUrl
   });
