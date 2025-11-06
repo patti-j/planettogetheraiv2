@@ -859,6 +859,68 @@ export class PowerBIService {
     }
   }
 
+  // Execute DAX query against a Power BI dataset
+  private async executeDAXQuery(
+    accessToken: string,
+    workspaceId: string,
+    datasetId: string,
+    daxQuery: string
+  ): Promise<any[]> {
+    const queryUrl = `https://api.powerbi.com/v1.0/myorg/groups/${workspaceId}/datasets/${datasetId}/executeQueries`;
+    
+    try {
+      const response = await fetch(queryUrl, {
+        method: 'POST',
+        headers: {
+          "Authorization": `Bearer ${accessToken}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          queries: [{ query: daxQuery }],
+          serializerSettings: { includeNulls: true }
+        })
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error(`[PowerBI] DAX query execution failed: ${errorText}`);
+        
+        // Try to parse error for more details
+        try {
+          const errorJson = JSON.parse(errorText);
+          if (errorJson.error && errorJson.error.message) {
+            throw new Error(`Power BI query error: ${errorJson.error.message}`);
+          }
+        } catch (e) {
+          // Not JSON, use raw error
+        }
+        
+        throw new Error(`Failed to execute DAX query: ${errorText}`);
+      }
+
+      const result = await response.json();
+      
+      // Check for query-level errors
+      if (result.results && result.results[0]) {
+        if (result.results[0].error) {
+          const errorMsg = result.results[0].error.message || 'Unknown query error';
+          console.error(`[PowerBI] DAX query error: ${errorMsg}`);
+          throw new Error(`Query error: ${errorMsg}`);
+        }
+        
+        // Extract rows from the first table in the results
+        if (result.results[0].tables && result.results[0].tables[0]) {
+          return result.results[0].tables[0].rows || [];
+        }
+      }
+      
+      return [];
+    } catch (error) {
+      console.error(`[PowerBI] Error executing DAX query:`, error);
+      throw error;
+    }
+  }
+
   // Execute DAX query against a dataset to retrieve table data
   async queryDatasetTable(
     accessToken: string, 

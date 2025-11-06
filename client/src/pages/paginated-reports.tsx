@@ -120,7 +120,11 @@ export default function PaginatedReports() {
           sortOrder,
           filters: JSON.stringify(columnFilters),
         });
+        const token = localStorage.getItem('auth-token');
         const response = await fetch(`/api/paginated-reports?${params}`, {
+          headers: {
+            'Authorization': token ? `Bearer ${token}` : ''
+          },
           credentials: 'include'
         });
         if (!response.ok) throw new Error('Failed to fetch data');
@@ -178,7 +182,13 @@ export default function PaginatedReports() {
     queryKey: totalsUrl ? [totalsUrl, columnFilters, selectedColumns] : [],
     queryFn: async () => {
       if (sourceType === 'sql' && selectedTable && totalsUrl) {
-        const response = await fetch(totalsUrl, { credentials: 'include' });
+        const token = localStorage.getItem('auth-token');
+        const response = await fetch(totalsUrl, { 
+          headers: {
+            'Authorization': token ? `Bearer ${token}` : ''
+          },
+          credentials: 'include' 
+        });
         if (!response.ok) throw new Error('Failed to fetch totals');
         return response.json();
       } else if (sourceType === 'powerbi' && selectedWorkspace && selectedDataset && selectedPowerBITable) {
@@ -264,7 +274,13 @@ export default function PaginatedReports() {
         });
         
         const countUrl = `/api/paginated-reports/count?${countParams}`;
-        const countResponse = await fetch(countUrl, { credentials: 'include' });
+        const token = localStorage.getItem('auth-token');
+        const countResponse = await fetch(countUrl, { 
+          headers: {
+            'Authorization': token ? `Bearer ${token}` : ''
+          },
+          credentials: 'include' 
+        });
         const { count } = await countResponse.json();
         totalRows = count || 0;
 
@@ -282,7 +298,12 @@ export default function PaginatedReports() {
           });
           
           const url = `/api/paginated-reports?${params}`;
-          const response = await fetch(url, { credentials: 'include' });
+          const response = await fetch(url, { 
+            headers: {
+              'Authorization': token ? `Bearer ${token}` : ''
+            },
+            credentials: 'include' 
+          });
           
           if (!response.ok) {
             throw new Error(`Failed to fetch page ${currentPage}`);
