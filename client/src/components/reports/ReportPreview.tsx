@@ -37,8 +37,6 @@ interface ReportPreviewProps {
   totals: Record<string, any>;
   columnWidths: Record<string, number>;
   onColumnResize: (column: string, width: number) => void;
-  searchTerm: string;
-  onSearchChange: (term: string) => void;
   sortBy: string;
   sortOrder: 'asc' | 'desc';
   onSort: (column: string) => void;
@@ -67,8 +65,6 @@ export const ReportPreview = memo(({
   totals,
   columnWidths,
   onColumnResize,
-  searchTerm,
-  onSearchChange,
   sortBy,
   sortOrder,
   onSort,

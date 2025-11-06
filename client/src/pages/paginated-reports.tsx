@@ -36,8 +36,7 @@ export default function PaginatedReports() {
   // Format rules state
   const [formatRules, setFormatRules] = useState<FormatRule[]>([]);
   
-  // Search and filter state
-  const [searchTerm, setSearchTerm] = useState('');
+  // Sort and filter state
   const [sortBy, setSortBy] = useState('');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
   const [columnFilters, setColumnFilters] = useState<Record<string, string>>({});
@@ -77,7 +76,6 @@ export default function PaginatedReports() {
         table: selectedTable.tableName,
         page: page.toString(),
         pageSize: pageSize.toString(),
-        searchTerm,
         sortBy,
         sortOrder,
         filters: JSON.stringify(columnFilters)
@@ -88,7 +86,7 @@ export default function PaginatedReports() {
       return 'powerbi-data'; // This is just a key for React Query
     }
     return null;
-  }, [sourceType, selectedTable, selectedWorkspace, selectedDataset, selectedPowerBITable, page, pageSize, searchTerm, sortBy, sortOrder, columnFilters]);
+  }, [sourceType, selectedTable, selectedWorkspace, selectedDataset, selectedPowerBITable, page, pageSize, sortBy, sortOrder, columnFilters]);
   
   // Fetch table schema - using the correct endpoint format
   const schemaUrl = useMemo(() => {
@@ -107,7 +105,7 @@ export default function PaginatedReports() {
   
   // Fetch data - handle both SQL and Power BI
   const { data, isLoading } = useQuery({
-    queryKey: dataUrl ? [dataUrl, page, pageSize, sortBy, sortOrder, columnFilters, selectedColumns, searchTerm] : [],
+    queryKey: dataUrl ? [dataUrl, page, pageSize, sortBy, sortOrder, columnFilters, selectedColumns] : [],
     queryFn: async () => {
       if (sourceType === 'sql' && selectedTable) {
         // Regular GET request for SQL data
@@ -116,7 +114,6 @@ export default function PaginatedReports() {
           table: selectedTable.tableName,
           page: page.toString(),
           pageSize: pageSize.toString(),
-          searchTerm,
           sortBy,
           sortOrder,
           filters: JSON.stringify(columnFilters),
@@ -146,7 +143,6 @@ export default function PaginatedReports() {
             tableName: selectedPowerBITable,
             columns: selectedColumns.length > 0 ? selectedColumns : undefined,
             filters: columnFilters,
-            searchTerm,
             page,
             pageSize,
             sortBy,
@@ -169,7 +165,6 @@ export default function PaginatedReports() {
       const params = new URLSearchParams({
         schema: selectedTable.schemaName,
         table: selectedTable.tableName,
-        searchTerm,
         filters: JSON.stringify(columnFilters),
       });
       return `/api/paginated-reports/totals?${params}`;
@@ -177,7 +172,7 @@ export default function PaginatedReports() {
       return 'powerbi-totals'; // Key for React Query
     }
     return null;
-  }, [includeTotals, sourceType, selectedTable, selectedWorkspace, selectedDataset, selectedPowerBITable, searchTerm, columnFilters]);
+  }, [includeTotals, sourceType, selectedTable, selectedWorkspace, selectedDataset, selectedPowerBITable, columnFilters]);
 
   const { data: serverTotals } = useQuery({
     queryKey: totalsUrl ? [totalsUrl, columnFilters, selectedColumns] : [],
@@ -270,7 +265,6 @@ export default function PaginatedReports() {
         const countParams = new URLSearchParams({
           schema: selectedTable.schemaName,
           table: selectedTable.tableName,
-          searchTerm,
           filters: JSON.stringify(columnFilters),
         });
         
@@ -292,7 +286,6 @@ export default function PaginatedReports() {
             table: selectedTable.tableName,
             page: currentPage.toString(),
             pageSize: chunkSize.toString(),
-            searchTerm,
             sortBy,
             sortOrder,
             filters: JSON.stringify(columnFilters),
@@ -341,7 +334,6 @@ export default function PaginatedReports() {
               tableName: selectedPowerBITable,
               columns: selectedColumns,
               filters: columnFilters,
-              searchTerm,
               page: currentPage,
               pageSize: chunkSize,
               sortBy,
@@ -393,7 +385,7 @@ export default function PaginatedReports() {
       console.error('Error fetching all data:', error);
       throw error;
     }
-  }, [sourceType, selectedTable, selectedWorkspace, selectedDataset, selectedPowerBITable, selectedColumns, searchTerm, sortBy, sortOrder, columnFilters]);
+  }, [sourceType, selectedTable, selectedWorkspace, selectedDataset, selectedPowerBITable, selectedColumns, sortBy, sortOrder, columnFilters]);
   
   // Group data (client-side for now, should be moved to server)
   const groupedData = useMemo(() => {
@@ -870,8 +862,6 @@ export default function PaginatedReports() {
             totals={totals}
             columnWidths={columnWidths}
             onColumnResize={handleColumnResize}
-            searchTerm={searchTerm}
-            onSearchChange={setSearchTerm}
             sortBy={sortBy}
             sortOrder={sortOrder}
             onSort={handleSort}
