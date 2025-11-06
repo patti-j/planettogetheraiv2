@@ -110,7 +110,13 @@ The system uses a modular agent architecture designed for role-based access cont
     - Grouping and aggregation with subtotals
     - Conditional formatting with visual rules
     - Save/load report configurations
-    - Full export support (CSV, Excel, PDF) with customization options
+    - **Enhanced Export Capabilities**:
+      - CSV: Full data export with proper escaping and formatting
+      - Excel: All data export with conditional formatting preserved (colors, fonts, weights)
+      - PDF: Paginated export respecting report preview settings with proper page breaks
+      - All formats fetch complete datasets (not just current page)
+      - Export loading indicators and progress tracking
+      - Automatic column selection fallback (uses all columns if none selected)
     - Server-side totals and grouping for accurate calculations across entire datasets
     - Keyboard shortcuts (Ctrl+S save, Ctrl+O load, Ctrl+P print, Ctrl+E export)
     - Print preview with page break indicators
