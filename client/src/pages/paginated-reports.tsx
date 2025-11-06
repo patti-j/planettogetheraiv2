@@ -244,12 +244,17 @@ export default function PaginatedReports() {
   // Function to fetch ALL data in chunks (for export)
   const fetchAllData = useCallback(async () => {
     // Check for required selections based on source type
-    if (sourceType === 'sql' && (!selectedTable || selectedColumns.length === 0)) {
-      throw new Error('No table or columns selected');
+    if (sourceType === 'sql' && !selectedTable) {
+      throw new Error('No table selected');
     }
-    if (sourceType === 'powerbi' && (!selectedWorkspace || !selectedDataset || !selectedPowerBITable || selectedColumns.length === 0)) {
-      throw new Error('Power BI configuration incomplete or no columns selected');
+    if (sourceType === 'powerbi' && (!selectedWorkspace || !selectedDataset || !selectedPowerBITable)) {
+      throw new Error('Power BI configuration incomplete');
     }
+    
+    // If no columns selected, use all columns from schema
+    const columnsToFetch = selectedColumns.length > 0 
+      ? selectedColumns 
+      : (tableSchema?.map(col => col.columnName) || []);
 
     const chunkSize = 100; // Fetch 100 rows at a time
     let allData: any[] = [];
@@ -333,7 +338,7 @@ export default function PaginatedReports() {
               workspaceId: selectedWorkspace,
               datasetId: selectedDataset,
               tableName: selectedPowerBITable,
-              columns: selectedColumns,
+              columns: columnsToFetch,
               filters: columnFilters,
               page: currentPage,
               pageSize: chunkSize,
@@ -375,7 +380,7 @@ export default function PaginatedReports() {
       // Filter data to only include selected columns and respect column order
       const filteredData = allData.map(row => {
         const filteredRow: Record<string, any> = {};
-        selectedColumns.forEach(col => {
+        columnsToFetch.forEach(col => {
           filteredRow[col] = row[col];
         });
         return filteredRow;
@@ -386,7 +391,7 @@ export default function PaginatedReports() {
       console.error('Error fetching all data:', error);
       throw error;
     }
-  }, [sourceType, selectedTable, selectedWorkspace, selectedDataset, selectedPowerBITable, selectedColumns, sortBy, sortOrder, columnFilters]);
+  }, [sourceType, selectedTable, selectedWorkspace, selectedDataset, selectedPowerBITable, selectedColumns, sortBy, sortOrder, columnFilters, tableSchema]);
   
   // Group data (client-side for now, should be moved to server)
   const groupedData = useMemo(() => {
@@ -523,7 +528,14 @@ export default function PaginatedReports() {
   
   // Export functions with all data support
   const exportToCSV = useCallback(async () => {
-    if (!data?.items || selectedColumns.length === 0) return;
+    if (!data?.items) return;
+    
+    // If no columns selected, use all columns from schema
+    const columnsToExport = selectedColumns.length > 0 
+      ? selectedColumns 
+      : (tableSchema?.map(col => col.columnName) || []);
+      
+    if (columnsToExport.length === 0) return;
     
     setIsExporting(true);
     try {
@@ -561,12 +573,12 @@ export default function PaginatedReports() {
           rows.push([exportConfig.customHeader]);
           rows.push([]);
         }
-        rows.push(selectedColumns);
+        rows.push(columnsToExport);
       }
       
       // Add data
       allData.forEach(item => {
-        rows.push(selectedColumns.map(col => {
+        rows.push(columnsToExport.map(col => {
           const value = item[col];
           // Properly escape values
           if (value === null || value === undefined) return '';
@@ -579,7 +591,7 @@ export default function PaginatedReports() {
       
       // Add totals
       if (includeTotals && totals) {
-        rows.push(selectedColumns.map(col => totals[col] || ''));
+        rows.push(columnsToExport.map(col => totals[col] || ''));
       }
       
       // Add footer
@@ -613,10 +625,17 @@ export default function PaginatedReports() {
     } finally {
       setIsExporting(false);
     }
-  }, [data, selectedColumns, selectedTable, exportConfig, includeTotals, totals, sourceType, columnFilters, sortBy, sortOrder]);
+  }, [data, selectedColumns, selectedTable, exportConfig, includeTotals, totals, sourceType, columnFilters, sortBy, sortOrder, tableSchema]);
   
   const exportToExcel = useCallback(async () => {
-    if (!data?.items || selectedColumns.length === 0) return;
+    if (!data?.items) return;
+    
+    // If no columns selected, use all columns from schema
+    const columnsToExport = selectedColumns.length > 0 
+      ? selectedColumns 
+      : (tableSchema?.map(col => col.columnName) || []);
+      
+    if (columnsToExport.length === 0) return;
     
     setIsExporting(true);
     try {
@@ -654,16 +673,16 @@ export default function PaginatedReports() {
       }
       
       // Add column headers
-      wsData.push(selectedColumns);
+      wsData.push(columnsToExport);
       
       // Add data
       allData.forEach(item => {
-        wsData.push(selectedColumns.map(col => item[col] || ''));
+        wsData.push(columnsToExport.map(col => item[col] || ''));
       });
       
       // Add totals
       if (includeTotals && totals) {
-        wsData.push(selectedColumns.map(col => totals[col] || ''));
+        wsData.push(columnsToExport.map(col => totals[col] || ''));
       }
       
       // Add footer
@@ -688,7 +707,7 @@ export default function PaginatedReports() {
         allData.forEach((item, rowIndex) => {
           const actualRow = headerRowCount + rowIndex + 1; // Excel rows are 1-indexed
           
-          selectedColumns.forEach((col, colIndex) => {
+          columnsToExport.forEach((col, colIndex) => {
             const cellAddress = XLSX.utils.encode_cell({ r: actualRow - 1, c: colIndex });
             const value = item[col];
             
@@ -743,7 +762,7 @@ export default function PaginatedReports() {
       }
       
       // Apply column widths
-      const colWidths = selectedColumns.map(col => ({
+      const colWidths = columnsToExport.map(col => ({
         wch: Math.max(10, Math.min(50, (columnWidths[col] || 150) / 10))
       }));
       worksheet['!cols'] = colWidths;
@@ -759,10 +778,17 @@ export default function PaginatedReports() {
     } finally {
       setIsExporting(false);
     }
-  }, [data, selectedColumns, columnWidths, exportConfig, includeTotals, totals, formatRules, sourceType, selectedTable, columnFilters, sortBy, sortOrder]);
+  }, [data, selectedColumns, columnWidths, exportConfig, includeTotals, totals, formatRules, sourceType, selectedTable, columnFilters, sortBy, sortOrder, tableSchema]);
   
   const exportToPDF = useCallback(async () => {
-    if (!data?.items || selectedColumns.length === 0) return;
+    if (!data?.items) return;
+    
+    // If no columns selected, use all columns from schema
+    const columnsToExport = selectedColumns.length > 0 
+      ? selectedColumns 
+      : (tableSchema?.map(col => col.columnName) || []);
+      
+    if (columnsToExport.length === 0) return;
     
     setIsExporting(true);
     try {
@@ -835,7 +861,7 @@ export default function PaginatedReports() {
         
         // Prepare table data for this page
         const tableData = pageData.map(item =>
-          selectedColumns.map(col => {
+          columnsToExport.map(col => {
             const value = item[col];
             if (value === null || value === undefined) return '';
             if (typeof value === 'number') {
@@ -848,7 +874,7 @@ export default function PaginatedReports() {
         // Add totals row only on the last page
         if (pageNum === totalDataPages - 1 && includeTotals && totals) {
           tableData.push(
-            selectedColumns.map(col => {
+            columnsToExport.map(col => {
               const value = totals[col];
               if (value === null || value === undefined) return '';
               if (typeof value === 'number') {
@@ -861,7 +887,7 @@ export default function PaginatedReports() {
         
         // Generate table for this page
         doc.autoTable({
-          head: [selectedColumns],
+          head: [columnsToExport],
           body: tableData,
           startY: yPos,
           margin: {
@@ -914,7 +940,7 @@ export default function PaginatedReports() {
     } finally {
       setIsExporting(false);
     }
-  }, [data, selectedColumns, exportConfig, includeTotals, totals, pageSize, sourceType, selectedTable, columnFilters, sortBy, sortOrder]);
+  }, [data, selectedColumns, exportConfig, includeTotals, totals, pageSize, sourceType, selectedTable, columnFilters, sortBy, sortOrder, tableSchema]);
   
   // Main export handler
   const handleExport = useCallback(async (format: 'csv' | 'excel' | 'pdf') => {
