@@ -51,6 +51,7 @@ interface ReportPreviewProps {
   onColumnFilterChange?: (column: string, value: string) => void;
   onClearColumnFilter?: (column: string) => void;
   onClearAllFilters?: () => void;
+  sourceType?: 'sql' | 'powerbi';
 }
 
 export const ReportPreview = memo(({
@@ -77,7 +78,8 @@ export const ReportPreview = memo(({
   columnFilters = {},
   onColumnFilterChange,
   onClearColumnFilter,
-  onClearAllFilters
+  onClearAllFilters,
+  sourceType
 }: ReportPreviewProps) => {
   const [resizingColumn, setResizingColumn] = useState<string | null>(null);
   const [startX, setStartX] = useState(0);
@@ -407,7 +409,7 @@ export const ReportPreview = memo(({
                                     </span>
                                   )}
                                 </div>
-                                {schema && (
+                                {schema && sourceType !== 'powerbi' && (
                                   <span className="text-xs text-muted-foreground mt-0.5">
                                     {formatDataType(schema.dataType)}
                                   </span>

@@ -866,6 +866,7 @@ export default function PaginatedReports() {
             includeTotals={includeTotals}
             totals={totals}
             columnWidths={columnWidths}
+            sourceType={sourceType}
             onColumnResize={handleColumnResize}
             sortBy={sortBy}
             sortOrder={sortOrder}
