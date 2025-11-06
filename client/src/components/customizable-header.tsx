@@ -44,7 +44,8 @@ import {
   Package, Factory, TrendingUp, Plus, X, GripVertical, Edit2,
   Clock, Target, AlertTriangle, MessageSquare, HelpCircle, ChevronDown,
   Bot, Sparkles, Globe, Database, Shield, Brain, Briefcase, Maximize, Minimize, Building2,
-  MoreHorizontal, Minus, Equal, Layout, Menu, SplitSquareHorizontal, SplitSquareVertical, Square
+  MoreHorizontal, Minus, Equal, Layout, Menu, SplitSquareHorizontal, SplitSquareVertical, Square,
+  ChevronLeft, ChevronRight
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
@@ -507,7 +508,7 @@ export function CustomizableHeader({ className }: CustomizableHeaderProps) {
         "relative flex items-center px-4 py-2 border-b bg-background",
         className
       )}>
-        {/* Fixed left section - Logo */}
+        {/* Fixed left section - Logo and Navigation */}
         <div className="flex items-center gap-2 flex-shrink-0">
           <Button
             variant="ghost"
@@ -517,6 +518,31 @@ export function CustomizableHeader({ className }: CustomizableHeaderProps) {
             <img src={companyLogo} alt="PlanetTogether" className="h-6 w-6 object-contain" />
             {showHeaderText && <span className="hidden lg:inline font-semibold">PlanetTogether</span>}
           </Button>
+          
+          {/* Back/Forward Navigation */}
+          <div className="flex items-center gap-1">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => window.history.back()}
+              className="h-8 w-8 p-0"
+              title="Go back"
+              data-testid="button-navigate-back"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => window.history.forward()}
+              className="h-8 w-8 p-0"
+              title="Go forward"
+              data-testid="button-navigate-forward"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
+          
           <div className="h-6 w-px bg-border mx-2" />
         </div>
 
