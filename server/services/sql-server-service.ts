@@ -282,10 +282,11 @@ class SQLServerService {
         }
       }
       
-      // Add filter conditions
+      // Add filter conditions with LIKE for partial matching
       Object.entries(filters).forEach(([column, value]) => {
         if (value) {
-          whereConditions.push(`[${column}] = @filter_${column}`);
+          // Use LIKE for partial matching to be consistent with getTableData
+          whereConditions.push(`CAST([${column}] AS NVARCHAR(MAX)) LIKE @filter_${column}`);
         }
       });
       
@@ -316,7 +317,8 @@ class SQLServerService {
       
       Object.entries(filters).forEach(([column, value]) => {
         if (value) {
-          request.input(`filter_${column}`, sql.NVarChar, value);
+          // Use wildcards for partial matching
+          request.input(`filter_${column}`, sql.NVarChar, `%${value}%`);
         }
       });
       
@@ -367,7 +369,8 @@ class SQLServerService {
       
       Object.entries(filters).forEach(([column, value]) => {
         if (value) {
-          whereConditions.push(`[${column}] = @filter_${column}`);
+          // Use LIKE for partial matching to be consistent with other methods
+          whereConditions.push(`CAST([${column}] AS NVARCHAR(MAX)) LIKE @filter_${column}`);
         }
       });
       
@@ -425,7 +428,7 @@ class SQLServerService {
       }
       Object.entries(filters).forEach(([column, value]) => {
         if (value) {
-          countRequest.input(`filter_${column}`, sql.NVarChar, value);
+          countRequest.input(`filter_${column}`, sql.NVarChar, `%${value}%`);
         }
       });
       
@@ -452,7 +455,7 @@ class SQLServerService {
       }
       Object.entries(filters).forEach(([column, value]) => {
         if (value) {
-          dataRequest.input(`filter_${column}`, sql.NVarChar, value);
+          dataRequest.input(`filter_${column}`, sql.NVarChar, `%${value}%`);
         }
       });
       
