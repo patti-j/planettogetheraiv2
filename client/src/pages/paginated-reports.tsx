@@ -79,7 +79,8 @@ export default function PaginatedReports() {
         pageSize: pageSize.toString(),
         searchTerm,
         sortBy,
-        sortOrder
+        sortOrder,
+        filters: JSON.stringify(columnFilters)
       });
       return `/api/paginated-reports?${params}`;
     } else if (sourceType === 'powerbi' && selectedWorkspace && selectedDataset && selectedPowerBITable) {
@@ -87,7 +88,7 @@ export default function PaginatedReports() {
       return 'powerbi-data'; // This is just a key for React Query
     }
     return null;
-  }, [sourceType, selectedTable, selectedWorkspace, selectedDataset, selectedPowerBITable, page, pageSize, searchTerm, sortBy, sortOrder]);
+  }, [sourceType, selectedTable, selectedWorkspace, selectedDataset, selectedPowerBITable, page, pageSize, searchTerm, sortBy, sortOrder, columnFilters]);
   
   // Fetch table schema - using the correct endpoint format
   const schemaUrl = useMemo(() => {
@@ -106,7 +107,7 @@ export default function PaginatedReports() {
   
   // Fetch data - handle both SQL and Power BI
   const { data, isLoading } = useQuery({
-    queryKey: dataUrl ? [dataUrl, columnFilters, selectedColumns] : [],
+    queryKey: dataUrl ? [dataUrl, page, pageSize, sortBy, sortOrder, columnFilters, selectedColumns, searchTerm] : [],
     queryFn: async () => {
       if (sourceType === 'sql' && selectedTable) {
         // Regular GET request for SQL data
