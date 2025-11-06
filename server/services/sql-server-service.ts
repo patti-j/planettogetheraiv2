@@ -121,7 +121,7 @@ class SQLServerService {
     filters: Record<string, string> = {},
     distinct: boolean = false,
     selectedColumns: string[] = [],
-    aggregationTypes: Record<string, 'sum' | 'avg' | 'count' | 'min' | 'max'> = {}
+    aggregationTypes: Record<string, 'sum' | 'avg' | 'count' | 'min' | 'max' | 'none'> = {}
   ): Promise<{
     items: any[];
     total: number;
@@ -172,7 +172,13 @@ class SQLServerService {
         // Add numeric columns with aggregation
         selectedNumericCols.forEach(col => {
           const aggType = aggregationTypes[col] || 'sum'; // Default to SUM
-          selectParts.push(`${aggType.toUpperCase()}([${col}]) as [${col}]`);
+          if (aggType === 'none') {
+            // Don't aggregate, treat as group by column
+            selectParts.push(`[${col}]`);
+            groupByColumns.push(col);
+          } else {
+            selectParts.push(`${aggType.toUpperCase()}([${col}]) as [${col}]`);
+          }
         });
         
         columns = selectParts.join(', ');
@@ -193,7 +199,13 @@ class SQLServerService {
           
           numericColumns.forEach(col => {
             const aggType = aggregationTypes[col] || 'sum';
-            selectParts.push(`${aggType.toUpperCase()}([${col}]) as [${col}]`);
+            if (aggType === 'none') {
+              // Don't aggregate, treat as group by column
+              selectParts.push(`[${col}]`);
+              groupByColumns.push(col);
+            } else {
+              selectParts.push(`${aggType.toUpperCase()}([${col}]) as [${col}]`);
+            }
           });
           
           columns = selectParts.join(', ');

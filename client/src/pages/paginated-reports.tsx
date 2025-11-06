@@ -54,7 +54,7 @@ export default function PaginatedReports() {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [useDistinct, setUseDistinct] = useState(true); // Enabled by default
-  const [aggregationTypes, setAggregationTypes] = useState<Record<string, 'sum' | 'avg' | 'count' | 'min' | 'max'>>({});
+  const [aggregationTypes, setAggregationTypes] = useState<Record<string, 'sum' | 'avg' | 'count' | 'min' | 'max' | 'none'>>({});
   
   // Helper function to detect numeric columns
   const getNumericColumns = useCallback((schema: TableColumn[] | null): string[] => {
@@ -134,7 +134,7 @@ export default function PaginatedReports() {
       const numericCols = getNumericColumns(tableSchema);
       
       setAggregationTypes(prev => {
-        const newAggregationTypes: Record<string, 'sum' | 'avg' | 'count' | 'min' | 'max'> = {};
+        const newAggregationTypes: Record<string, 'sum' | 'avg' | 'count' | 'min' | 'max' | 'none'> = {};
         
         // Initialize with 'sum' for all numeric columns that are selected
         numericCols.forEach(col => {
@@ -723,7 +723,7 @@ export default function PaginatedReports() {
         }
         // Add column headers with aggregation types if applicable
         const headersWithAggregation = columnsToExport.map(col => {
-          if (useDistinct && aggregationTypes[col]) {
+          if (useDistinct && aggregationTypes[col] && aggregationTypes[col] !== 'none') {
             return `${col} (${aggregationTypes[col].toUpperCase()})`;
           }
           return col;
@@ -877,7 +877,7 @@ export default function PaginatedReports() {
       
       // Add column headers with aggregation types if applicable
       const headersWithAggregation = columnsToExport.map(col => {
-        if (useDistinct && aggregationTypes[col]) {
+        if (useDistinct && aggregationTypes[col] && aggregationTypes[col] !== 'none') {
           return `${col} (${aggregationTypes[col].toUpperCase()})`;
         }
         return col;
@@ -1120,7 +1120,7 @@ export default function PaginatedReports() {
       
       // Prepare table data with aggregation types in headers
       const tableHeaders = columnsToExport.map(col => {
-        if (useDistinct && aggregationTypes[col]) {
+        if (useDistinct && aggregationTypes[col] && aggregationTypes[col] !== 'none') {
           return `${col} (${aggregationTypes[col].toUpperCase()})`;
         }
         return col;
@@ -1442,14 +1442,14 @@ export default function PaginatedReports() {
                               <span className="text-sm truncate flex-1" title={col}>{col}</span>
                               <Select
                                 value={aggregationTypes[col] || 'sum'}
-                                onValueChange={(value: 'sum' | 'avg' | 'count' | 'min' | 'max') => {
+                                onValueChange={(value: 'sum' | 'avg' | 'count' | 'min' | 'max' | 'none') => {
                                   setAggregationTypes(prev => ({
                                     ...prev,
                                     [col]: value
                                   }));
                                 }}
                               >
-                                <SelectTrigger className="w-24 h-7 text-xs">
+                                <SelectTrigger className="w-32 h-7 text-xs">
                                   <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -1458,6 +1458,7 @@ export default function PaginatedReports() {
                                   <SelectItem value="min">MIN</SelectItem>
                                   <SelectItem value="max">MAX</SelectItem>
                                   <SelectItem value="count">COUNT</SelectItem>
+                                  <SelectItem value="none">Don't Summarize</SelectItem>
                                 </SelectContent>
                               </Select>
                             </div>
