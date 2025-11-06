@@ -251,16 +251,38 @@ class SQLServerService {
         const validatedSortBy = sortBy.replace(/[^a-zA-Z0-9_]/g, '');
         const validatedSortOrder = sortOrder === 'desc' ? 'DESC' : 'ASC';
         
-        // Check if column exists
+        // Check if column exists in schema
         const columnExists = schema.some(col => col.columnName === validatedSortBy);
-        if (columnExists) {
+        
+        // When using distinct with GROUP BY, check if column is in selected columns and groupByColumns
+        if (distinct && groupByColumns.length > 0) {
+          const isInSelectedColumns = selectedColumns.includes(validatedSortBy);
+          const isInGroupBy = groupByColumns.includes(validatedSortBy);
+          
+          // Only allow ORDER BY for columns that are either in GROUP BY or aggregated (and selected)
+          if (columnExists && isInSelectedColumns && (isInGroupBy || numericColumns.includes(validatedSortBy))) {
+            orderByClause = `ORDER BY [${validatedSortBy}] ${validatedSortOrder}`;
+          }
+        } else if (columnExists) {
+          // For non-aggregated queries, just check if column exists
           orderByClause = `ORDER BY [${validatedSortBy}] ${validatedSortOrder}`;
         }
       }
       
-      // Default order by first column if no sort specified
-      if (!orderByClause && schema.length > 0) {
-        orderByClause = `ORDER BY [${schema[0].columnName}] ASC`;
+      // Default order by first selected column if no sort specified (and it's in the GROUP BY if applicable)
+      if (!orderByClause && selectedColumns.length > 0) {
+        const firstSelectedCol = selectedColumns[0];
+        if (distinct && groupByColumns.length > 0) {
+          // For aggregated queries, only use first column if it's in GROUP BY
+          if (groupByColumns.includes(firstSelectedCol)) {
+            orderByClause = `ORDER BY [${firstSelectedCol}] ASC`;
+          } else if (groupByColumns.length > 0) {
+            // Otherwise use the first GROUP BY column
+            orderByClause = `ORDER BY [${groupByColumns[0]}] ASC`;
+          }
+        } else {
+          orderByClause = `ORDER BY [${firstSelectedCol}] ASC`;
+        }
       }
 
       // Build GROUP BY clause for aggregation
