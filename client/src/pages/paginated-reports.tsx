@@ -120,7 +120,7 @@ export default function PaginatedReports() {
           sortOrder,
           filters: JSON.stringify(columnFilters),
         });
-        const token = localStorage.getItem('auth-token');
+        const token = localStorage.getItem('auth_token');
         const response = await fetch(`/api/paginated-reports?${params}`, {
           headers: {
             'Authorization': token ? `Bearer ${token}` : ''
@@ -131,7 +131,7 @@ export default function PaginatedReports() {
         return response.json();
       } else if (sourceType === 'powerbi' && selectedWorkspace && selectedDataset && selectedPowerBITable) {
         // POST request for Power BI data
-        const token = localStorage.getItem('auth-token');
+        const token = localStorage.getItem('auth_token');
         const response = await fetch('/api/powerbi/dataset-data', {
           method: 'POST',
           headers: {
@@ -182,7 +182,7 @@ export default function PaginatedReports() {
     queryKey: totalsUrl ? [totalsUrl, columnFilters, selectedColumns] : [],
     queryFn: async () => {
       if (sourceType === 'sql' && selectedTable && totalsUrl) {
-        const token = localStorage.getItem('auth-token');
+        const token = localStorage.getItem('auth_token');
         const response = await fetch(totalsUrl, { 
           headers: {
             'Authorization': token ? `Bearer ${token}` : ''
@@ -192,7 +192,7 @@ export default function PaginatedReports() {
         if (!response.ok) throw new Error('Failed to fetch totals');
         return response.json();
       } else if (sourceType === 'powerbi' && selectedWorkspace && selectedDataset && selectedPowerBITable) {
-        const token = localStorage.getItem('auth-token');
+        const token = localStorage.getItem('auth_token');
         const response = await fetch('/api/powerbi/dataset-totals', {
           method: 'POST',
           headers: { 
@@ -274,7 +274,7 @@ export default function PaginatedReports() {
         });
         
         const countUrl = `/api/paginated-reports/count?${countParams}`;
-        const token = localStorage.getItem('auth-token');
+        const token = localStorage.getItem('auth_token');
         const countResponse = await fetch(countUrl, { 
           headers: {
             'Authorization': token ? `Bearer ${token}` : ''
@@ -326,7 +326,7 @@ export default function PaginatedReports() {
         // Fetch Power BI data in chunks
         // Note: Power BI might not return total count upfront, so we'll fetch until no more data
         while (hasMoreData) {
-          const token = localStorage.getItem('auth-token');
+          const token = localStorage.getItem('auth_token');
           const response = await fetch('/api/powerbi/dataset-data', {
             method: 'POST',
             headers: {
