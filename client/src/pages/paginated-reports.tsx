@@ -90,7 +90,8 @@ export default function PaginatedReports() {
         sortBy,
         sortOrder,
         filters: JSON.stringify(columnFilters),
-        distinct: useDistinct.toString()
+        distinct: useDistinct.toString(),
+        selectedColumns: JSON.stringify(selectedColumns)
       });
       return `/api/paginated-reports?${params}`;
     } else if (sourceType === 'powerbi' && selectedWorkspace && selectedDataset && selectedPowerBITable) {
@@ -98,7 +99,7 @@ export default function PaginatedReports() {
       return 'powerbi-data'; // This is just a key for React Query
     }
     return null;
-  }, [sourceType, selectedTable, selectedWorkspace, selectedDataset, selectedPowerBITable, page, pageSize, sortBy, sortOrder, columnFilters, useDistinct]);
+  }, [sourceType, selectedTable, selectedWorkspace, selectedDataset, selectedPowerBITable, page, pageSize, sortBy, sortOrder, columnFilters, useDistinct, selectedColumns]);
   
   // Fetch table schema - using the correct endpoint format
   const schemaUrl = useMemo(() => {
@@ -129,7 +130,8 @@ export default function PaginatedReports() {
           sortBy,
           sortOrder,
           filters: JSON.stringify(columnFilters),
-          distinct: useDistinct.toString()
+          distinct: useDistinct.toString(),
+          selectedColumns: JSON.stringify(selectedColumns)
         });
         const token = localStorage.getItem('auth_token');
         const response = await fetch(`/api/paginated-reports?${params}`, {
@@ -556,7 +558,7 @@ export default function PaginatedReports() {
       if (data.totalPages > 1) {
         // Fetch all data for export
         const allDataUrl = sourceType === 'sql' && selectedTable
-          ? `/api/paginated-reports/export-data?schema=${selectedTable.schemaName}&table=${selectedTable.tableName}&filters=${encodeURIComponent(JSON.stringify(columnFilters))}&sortBy=${sortBy}&sortOrder=${sortOrder}&distinct=${useDistinct}`
+          ? `/api/paginated-reports/export-data?schema=${selectedTable.schemaName}&table=${selectedTable.tableName}&filters=${encodeURIComponent(JSON.stringify(columnFilters))}&sortBy=${sortBy}&sortOrder=${sortOrder}&distinct=${useDistinct}&selectedColumns=${encodeURIComponent(JSON.stringify(selectedColumns))}`
           : null;
           
         if (allDataUrl) {
@@ -659,7 +661,7 @@ export default function PaginatedReports() {
       if (data.totalPages > 1) {
         // Fetch all data for export
         const allDataUrl = sourceType === 'sql' && selectedTable
-          ? `/api/paginated-reports/export-data?schema=${selectedTable.schemaName}&table=${selectedTable.tableName}&filters=${encodeURIComponent(JSON.stringify(columnFilters))}&sortBy=${sortBy}&sortOrder=${sortOrder}&distinct=${useDistinct}`
+          ? `/api/paginated-reports/export-data?schema=${selectedTable.schemaName}&table=${selectedTable.tableName}&filters=${encodeURIComponent(JSON.stringify(columnFilters))}&sortBy=${sortBy}&sortOrder=${sortOrder}&distinct=${useDistinct}&selectedColumns=${encodeURIComponent(JSON.stringify(selectedColumns))}`
           : null;
           
         if (allDataUrl) {
@@ -813,7 +815,7 @@ export default function PaginatedReports() {
       if (data.totalPages > 1) {
         // Fetch all data for export
         const allDataUrl = sourceType === 'sql' && selectedTable
-          ? `/api/paginated-reports/export-data?schema=${selectedTable.schemaName}&table=${selectedTable.tableName}&filters=${encodeURIComponent(JSON.stringify(columnFilters))}&sortBy=${sortBy}&sortOrder=${sortOrder}&distinct=${useDistinct}`
+          ? `/api/paginated-reports/export-data?schema=${selectedTable.schemaName}&table=${selectedTable.tableName}&filters=${encodeURIComponent(JSON.stringify(columnFilters))}&sortBy=${sortBy}&sortOrder=${sortOrder}&distinct=${useDistinct}&selectedColumns=${encodeURIComponent(JSON.stringify(selectedColumns))}`
           : null;
           
         if (allDataUrl) {

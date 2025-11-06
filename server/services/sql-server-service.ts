@@ -119,7 +119,8 @@ class SQLServerService {
     sortBy: string = '',
     sortOrder: 'asc' | 'desc' = 'asc',
     filters: Record<string, string> = {},
-    distinct: boolean = false
+    distinct: boolean = false,
+    selectedColumns: string[] = []
   ): Promise<{
     items: any[];
     total: number;
@@ -137,7 +138,11 @@ class SQLServerService {
       
       // Get table schema to build search conditions
       const schema = await this.getTableSchema(validatedSchema, validatedTable);
-      const columns = schema.map(col => `[${col.columnName}]`).join(', ');
+      
+      // Use selected columns if provided, otherwise all columns
+      const columns = selectedColumns.length > 0 
+        ? selectedColumns.filter(col => schema.some(s => s.columnName === col)).map(col => `[${col}]`).join(', ')
+        : schema.map(col => `[${col.columnName}]`).join(', ');
       
       // Build WHERE clause for search and filters
       let whereConditions: string[] = [];
