@@ -22,6 +22,8 @@ response=$(curl -X POST "$PROD_URL/api/admin/import-production-data" \
   -H "Content-Type: application/json" \
   -H "X-Setup-Key: $SETUP_KEY" \
   -H "X-Requested-With: XMLHttpRequest" \
+  -H "Origin: $PROD_URL" \
+  -H "Referer: $PROD_URL/admin" \
   -L \
   --connect-timeout 30 \
   --max-time 300 \
