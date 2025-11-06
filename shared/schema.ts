@@ -2266,6 +2266,18 @@ export const algorithmTests = pgTable("algorithm_tests", {
   createdAt: timestamp("created_at").defaultNow()
 });
 
+// Planning Areas - Organizational units for optimization
+export const planningAreas = pgTable("planning_areas", {
+  id: serial("id").primaryKey(),
+  name: varchar("name", { length: 100 }).notNull().unique(),
+  description: text("description"),
+  optimizationMethod: varchar("optimization_method", { length: 50 }).default("optimization_studio").notNull(), // 'optimization_studio' or 'advanced_solver'
+  isActive: boolean("is_active").default(true),
+  createdBy: integer("created_by").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow()
+});
+
 export const algorithmDeployments = pgTable("algorithm_deployments", {
   id: serial("id").primaryKey(),
   algorithmId: integer("algorithm_id").references(() => optimizationAlgorithms.id).notNull(),
@@ -2274,6 +2286,7 @@ export const algorithmDeployments = pgTable("algorithm_deployments", {
   version: varchar("version", { length: 20 }).notNull(),
   status: varchar("status", { length: 20 }).default("pending"),
   configuration: jsonb("configuration").default(sql`'{}'::jsonb`),
+  planningAreaIds: jsonb("planning_area_ids").default(sql`'[]'::jsonb`), // Array of planning area IDs this deployment applies to
   deployedBy: integer("deployed_by").references(() => users.id),
   deployedAt: timestamp("deployed_at"),
   metrics: jsonb("metrics").default(sql`'{}'::jsonb`),
@@ -2477,6 +2490,11 @@ export const governanceDeployments = pgTable("governance_deployments", {
 });
 
 // Schema validation for Optimization Studio tables
+export const insertPlanningAreaSchema = createInsertSchema(planningAreas)
+  .omit({ id: true, createdAt: true, updatedAt: true });
+export type InsertPlanningArea = z.infer<typeof insertPlanningAreaSchema>;
+export type PlanningArea = typeof planningAreas.$inferSelect;
+
 export const insertOptimizationAlgorithmSchema = createInsertSchema(optimizationAlgorithms)
   .omit({ id: true, createdAt: true, updatedAt: true });
 export type InsertOptimizationAlgorithm = z.infer<typeof insertOptimizationAlgorithmSchema>;
