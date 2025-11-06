@@ -120,7 +120,8 @@ class SQLServerService {
     sortOrder: 'asc' | 'desc' = 'asc',
     filters: Record<string, string> = {},
     distinct: boolean = false,
-    selectedColumns: string[] = []
+    selectedColumns: string[] = [],
+    aggregationTypes: Record<string, 'sum' | 'avg' | 'count' | 'min' | 'max'> = {}
   ): Promise<{
     items: any[];
     total: number;
@@ -139,10 +140,67 @@ class SQLServerService {
       // Get table schema to build search conditions
       const schema = await this.getTableSchema(validatedSchema, validatedTable);
       
-      // Use selected columns if provided, otherwise all columns
-      const columns = selectedColumns.length > 0 
-        ? selectedColumns.filter(col => schema.some(s => s.columnName === col)).map(col => `[${col}]`).join(', ')
-        : schema.map(col => `[${col.columnName}]`).join(', ');
+      // Detect numeric columns for aggregation
+      const numericTypes = ['int', 'bigint', 'smallint', 'tinyint', 'decimal', 'numeric', 'float', 'real', 'money', 'smallmoney'];
+      const numericColumns = schema.filter(col => 
+        numericTypes.some(type => col.dataType.toLowerCase().includes(type))
+      ).map(col => col.columnName);
+      
+      const textColumns = schema.filter(col => 
+        !numericTypes.some(type => col.dataType.toLowerCase().includes(type))
+      ).map(col => col.columnName);
+      
+      // Build column list based on whether we're using aggregation
+      let columns: string;
+      let groupByColumns: string[] = [];
+      
+      if (distinct && selectedColumns.length > 0) {
+        // When distinct is enabled, use GROUP BY with aggregation for numeric columns
+        const selectedTextCols = selectedColumns.filter(col => textColumns.includes(col));
+        const selectedNumericCols = selectedColumns.filter(col => numericColumns.includes(col));
+        
+        groupByColumns = selectedTextCols;
+        
+        // Build SELECT clause with aggregations
+        const selectParts = [];
+        
+        // Add text columns (grouped)
+        selectedTextCols.forEach(col => {
+          selectParts.push(`[${col}]`);
+        });
+        
+        // Add numeric columns with aggregation
+        selectedNumericCols.forEach(col => {
+          const aggType = aggregationTypes[col] || 'sum'; // Default to SUM
+          selectParts.push(`${aggType.toUpperCase()}([${col}]) as [${col}]`);
+        });
+        
+        columns = selectParts.join(', ');
+      } else if (selectedColumns.length > 0) {
+        // Regular column selection without aggregation
+        columns = selectedColumns.filter(col => schema.some(s => s.columnName === col))
+          .map(col => `[${col}]`).join(', ');
+      } else {
+        // All columns
+        if (distinct) {
+          // When distinct with no column selection, group by text columns and aggregate numeric ones
+          groupByColumns = textColumns;
+          
+          const selectParts = [];
+          textColumns.forEach(col => {
+            selectParts.push(`[${col}]`);
+          });
+          
+          numericColumns.forEach(col => {
+            const aggType = aggregationTypes[col] || 'sum';
+            selectParts.push(`${aggType.toUpperCase()}([${col}]) as [${col}]`);
+          });
+          
+          columns = selectParts.join(', ');
+        } else {
+          columns = schema.map(col => `[${col.columnName}]`).join(', ');
+        }
+      }
       
       // Build WHERE clause for search and filters
       let whereConditions: string[] = [];
@@ -193,21 +251,42 @@ class SQLServerService {
         orderByClause = `ORDER BY [${schema[0].columnName}] ASC`;
       }
 
+      // Build GROUP BY clause for aggregation
+      const groupByClause = distinct && groupByColumns.length > 0
+        ? `GROUP BY ${groupByColumns.map(col => `[${col}]`).join(', ')}`
+        : '';
+
       // Get total count
-      const countQuery = distinct 
-        ? `
+      let countQuery: string;
+      if (distinct && groupByColumns.length > 0) {
+        // Count grouped results
+        countQuery = `
+          SELECT COUNT(*) as total
+          FROM (
+            SELECT ${groupByColumns.map(col => `[${col}]`).join(', ')}
+            FROM [${validatedSchema}].[${validatedTable}]
+            ${whereClause}
+            ${groupByClause}
+          ) AS GroupedCount
+        `;
+      } else if (distinct) {
+        // Fallback to DISTINCT if no grouping columns (shouldn't happen normally)
+        countQuery = `
           SELECT COUNT(*) as total
           FROM (
             SELECT DISTINCT ${columns}
             FROM [${validatedSchema}].[${validatedTable}]
             ${whereClause}
           ) AS DistinctCount
-        `
-        : `
+        `;
+      } else {
+        // Regular count
+        countQuery = `
           SELECT COUNT(*) as total
           FROM [${validatedSchema}].[${validatedTable}]
           ${whereClause}
         `;
+      }
 
       const countRequest = pool.request();
       if (searchTerm) {
@@ -225,14 +304,39 @@ class SQLServerService {
       const total = countResult.recordset[0].total;
 
       // Get paginated data
-      const dataQuery = `
-        SELECT ${distinct ? 'DISTINCT' : ''} ${columns}
-        FROM [${validatedSchema}].[${validatedTable}]
-        ${whereClause}
-        ${orderByClause}
-        OFFSET @offset ROWS
-        FETCH NEXT @pageSize ROWS ONLY
-      `;
+      let dataQuery: string;
+      if (distinct && groupByColumns.length > 0) {
+        // Use GROUP BY with aggregation
+        dataQuery = `
+          SELECT ${columns}
+          FROM [${validatedSchema}].[${validatedTable}]
+          ${whereClause}
+          ${groupByClause}
+          ${orderByClause}
+          OFFSET @offset ROWS
+          FETCH NEXT @pageSize ROWS ONLY
+        `;
+      } else if (distinct) {
+        // Fallback to DISTINCT
+        dataQuery = `
+          SELECT DISTINCT ${columns}
+          FROM [${validatedSchema}].[${validatedTable}]
+          ${whereClause}
+          ${orderByClause}
+          OFFSET @offset ROWS
+          FETCH NEXT @pageSize ROWS ONLY
+        `;
+      } else {
+        // Regular query
+        dataQuery = `
+          SELECT ${columns}
+          FROM [${validatedSchema}].[${validatedTable}]
+          ${whereClause}
+          ${orderByClause}
+          OFFSET @offset ROWS
+          FETCH NEXT @pageSize ROWS ONLY
+        `;
+      }
 
       const dataRequest = pool.request()
         .input('offset', sql.Int, offset)

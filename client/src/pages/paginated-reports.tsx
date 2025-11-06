@@ -52,7 +52,8 @@ export default function PaginatedReports() {
   const [columnFilters, setColumnFilters] = useState<Record<string, string>>({});
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
-  const [useDistinct, setUseDistinct] = useState(false);
+  const [useDistinct, setUseDistinct] = useState(true); // Enabled by default
+  const [aggregationTypes, setAggregationTypes] = useState<Record<string, 'sum' | 'avg' | 'count' | 'min' | 'max'>>({});
   
   // Export state
   const [showExportDialog, setShowExportDialog] = useState(false);
@@ -91,7 +92,8 @@ export default function PaginatedReports() {
         sortOrder,
         filters: JSON.stringify(columnFilters),
         distinct: useDistinct.toString(),
-        selectedColumns: JSON.stringify(selectedColumns)
+        selectedColumns: JSON.stringify(selectedColumns),
+        aggregationTypes: JSON.stringify(aggregationTypes)
       });
       return `/api/paginated-reports?${params}`;
     } else if (sourceType === 'powerbi' && selectedWorkspace && selectedDataset && selectedPowerBITable) {
@@ -118,7 +120,7 @@ export default function PaginatedReports() {
   
   // Fetch data - handle both SQL and Power BI
   const { data, isLoading } = useQuery({
-    queryKey: dataUrl ? [dataUrl, page, pageSize, sortBy, sortOrder, columnFilters, selectedColumns, useDistinct] : [],
+    queryKey: dataUrl ? [dataUrl, page, pageSize, sortBy, sortOrder, columnFilters, selectedColumns, useDistinct, aggregationTypes] : [],
     queryFn: async () => {
       if (sourceType === 'sql' && selectedTable) {
         // Regular GET request for SQL data

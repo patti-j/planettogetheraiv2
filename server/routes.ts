@@ -11347,6 +11347,7 @@ router.get("/api/paginated-reports", enhancedAuth, async (req, res) => {
     const filters = req.query.filters ? JSON.parse(req.query.filters as string) : {};
     const distinct = req.query.distinct === 'true';
     const selectedColumns = req.query.selectedColumns ? JSON.parse(req.query.selectedColumns as string) : [];
+    const aggregationTypes = req.query.aggregationTypes ? JSON.parse(req.query.aggregationTypes as string) : {};
 
     const data = await sqlServerService.getTableData(
       schema,
@@ -11358,7 +11359,8 @@ router.get("/api/paginated-reports", enhancedAuth, async (req, res) => {
       sortOrder,
       filters,
       distinct,
-      selectedColumns
+      selectedColumns,
+      aggregationTypes
     );
 
     res.json(data);
@@ -11415,6 +11417,7 @@ router.get("/api/paginated-reports/export-data", enhancedAuth, async (req, res) 
     const filters = req.query.filters ? JSON.parse(req.query.filters as string) : {};
     const distinct = req.query.distinct === 'true';
     const selectedColumns = req.query.selectedColumns ? JSON.parse(req.query.selectedColumns as string) : [];
+    const aggregationTypes = req.query.aggregationTypes ? JSON.parse(req.query.aggregationTypes as string) : {};
     
     if (!table || !schema) {
       return res.status(400).json({ error: "Schema and table name are required" });
@@ -11442,7 +11445,8 @@ router.get("/api/paginated-reports/export-data", enhancedAuth, async (req, res) 
       sortOrder,
       filters,
       distinct,
-      selectedColumns
+      selectedColumns,
+      aggregationTypes
     );
 
     res.json(allData);
