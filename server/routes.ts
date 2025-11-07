@@ -9393,7 +9393,7 @@ Include diverse examples:
 
 CRITICAL: Always include all required fields with valid non-null values. Use current date for date fields. Use realistic manufacturing names.`;
 
-        // the newest OpenAI model is "gpt-5" which was released August 7, 2025. do not change this unless explicitly requested by the user
+        // Using GPT-4 Turbo for best performance and JSON generation
         const apiPromise = fetch('https://api.openai.com/v1/chat/completions', {
           method: 'POST',
           headers: {
@@ -9401,7 +9401,7 @@ CRITICAL: Always include all required fields with valid non-null values. Use cur
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            model: 'gpt-5',
+            model: 'gpt-4-turbo-preview',
             messages: [
               { role: 'system', content: systemPrompt },
               { role: 'user', content: userPrompt }
@@ -9412,7 +9412,7 @@ CRITICAL: Always include all required fields with valid non-null values. Use cur
         });
 
         const timeoutPromise = new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('Request timeout')), 30000)
+          setTimeout(() => reject(new Error('Request timeout')), 60000)
         );
 
         const openaiResponse = await Promise.race([apiPromise, timeoutPromise]) as Response;
