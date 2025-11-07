@@ -1,7 +1,7 @@
 # PlanetTogether - Manufacturing SCM + APS System
 
 ## Overview
-PlanetTogether is an AI-first Factory Optimization Platform, a full-stack manufacturing SCM + APS system. Its core purpose is to leverage AI for optimized production planning, dynamic resource allocation, and intelligent dashboarding, providing complete supply chain visibility through a visual Gantt chart interface. The system is designed for enterprise-grade production deployment in pharmaceutical, chemical, and industrial manufacturing, emphasizing real-time optimization, data integrity, and comprehensive reporting. It supports multi-agent functionality, modular federation, and advanced AI integration for scheduling and system intelligence.
+PlanetTogether is an AI-first Factory Optimization Platform, a full-stack manufacturing SCM + APS system. Its core purpose is to leverage AI for optimized production planning, dynamic resource allocation, and intelligent dashboarding, providing complete supply chain visibility through a visual Gantt chart interface. The system is designed for enterprise-grade production deployment in pharmaceutical, chemical, and industrial manufacturing, emphasizing real-time optimization, data integrity, and comprehensive reporting. It supports multi-agent functionality, modular federation, and advanced AI integration for scheduling and system intelligence, aiming to be a global control tower for autonomous optimization and real-time plant monitoring.
 
 ## User Preferences
 Preferred communication style: Simple, everyday language.
@@ -22,42 +22,13 @@ Note on concurrent work:
 The system prioritizes user experience, data integrity, performance, accessibility, and consistency, with a focus on quality assurance.
 
 ### Agent Architecture
-The system uses a modular agent architecture designed for role-based access control and independent agent deployment. Core components include:
--   **Agent Services**: Base interface for agents, production scheduling logic, agent registry, and client-server communication bridge.
--   **Agent Registry Pattern**: Manages available agents based on user permissions.
--   **Agent Bridge Communication**: Enables server-side agents to trigger client-side actions and supports real-time bidirectional communication.
--   **Delegation Architecture**: Max AI delegates to specialized, self-contained agents for specific logic, allowing independent deployment and updates.
-
-#### Agent Training Document and Service Implementation Synchronization
+The system uses a modular agent architecture designed for role-based access control and independent agent deployment. It features an Agent Registry Pattern for managing available agents, Agent Bridge Communication for real-time bidirectional interaction, and a Delegation Architecture where Max AI delegates to specialized, self-contained agents.
 
 **CRITICAL**: Each agent has two synchronized files that MUST be kept in sync:
-1. **Training Document** (`server/training/agents/[agent-name].md`) - Defines the agent's knowledge, personality, and behavior specifications
-2. **Service Implementation** (`server/services/agents/[agent-name].service.ts`) - Implements the actual code based on the training document
+1. **Training Document** (`server/training/agents/[agent-name].md`) - Defines the agent's knowledge, personality, and behavior specifications.
+2. **Service Implementation** (`server/services/agents/[agent-name].service.ts`) - Implements the actual code based on the training document.
 
-**The Relationship:**
-- **Training Document (`.md`)** = The blueprint/specification that defines:
-  - Agent identity and communication style
-  - Core knowledge and terminology understanding
-  - Trigger phrases that activate features
-  - Response templates and formatting rules
-  - Database tables and relationships to query
-
-- **Service Implementation (`.ts`)** = The engine that executes:
-  - Trigger arrays derived from .md specifications
-  - Handler methods implementing described functionality
-  - Database queries using knowledge from .md
-  - Response formatting following .md style guidelines
-
-**Synchronization Rules:**
-- When adding new capabilities to `.ts`, document them in `.md`
-- When updating communication style in `.md`, update response formatting in `.ts`
-- When adding trigger phrases in `.md`, add them to triggers array in `.ts`
-- When changing database queries in `.ts`, update query examples in `.md`
-
-**Example: Production Scheduling Agent**
-- Training: `server/training/agents/production-scheduling-agent.md`
-- Implementation: `server/services/agents/production-scheduling-agent.service.ts`
-- Must stay synchronized for features like job queries, algorithm execution, and response formatting
+These files must be synchronized for features like trigger arrays, handler methods, database queries, and response formatting.
 
 ### Frontend
 -   **Framework**: React 18 with TypeScript.
@@ -65,107 +36,36 @@ The system uses a modular agent architecture designed for role-based access cont
 -   **Styling**: Tailwind CSS.
 -   **State Management**: TanStack Query (React Query).
 -   **Routing**: Wouter.
--   **Gantt Chart**: Bryntum Scheduler Pro for production scheduling visualization.
+-   **Gantt Chart**: Bryntum Scheduler Pro.
 -   **UI/UX Decisions**: Consistent color schemes, professional modal designs, responsive layouts, standardized button styling, intuitive navigation, integrated workflow for dashboard and widget creation, Excel-like cell editing, user-configurable layouts with persistence, and centralized layout density controls.
 
 ### Backend
 -   **Framework**: Express.js with TypeScript.
 -   **Database**: PostgreSQL with Drizzle ORM.
 -   **API Design**: RESTful API with JSON responses, role-based authentication.
--   **Authentication System**: Unified role-based permissions system with JWT authentication, supporting explicit logouts in development.
--   **AI Integration**: OpenAI GPT-4o for NLP, intelligent data generation, custom metric calculation, AI-powered modifications, and dynamic content creation. Utilizes OpenAI structured outputs with Zod schemas and retry logic for data generation. Agents provide concise initial responses.
+-   **Authentication System**: Unified role-based permissions system with JWT authentication.
+-   **AI Integration**: OpenAI GPT-4o for NLP, intelligent data generation, custom metric calculation, AI-powered modifications, and dynamic content creation, utilizing structured outputs with Zod schemas and retry logic.
 -   **Hint System Service**: Intelligent contextual hints with user interaction tracking.
--   **Power BI Integration**: Complete feature parity with SQL Server for grouped data, using DAX SUMMARIZE queries for aggregation and proper DISTINCT handling.
+-   **Power BI Integration**: Complete feature parity with SQL Server for grouped data, using DAX SUMMARIZE queries.
 
 ### Core System Design & Features
 -   **Navigation**: Unified layout with consistent header/navigation, organized into 11 functional groups.
 -   **Data Model**: Comprehensive database schema using PT tables, including SAP-compliant production version architecture.
 -   **Inventory Management**: Stock-centric system tracking specific records.
 -   **Master Data Management**: Unified interface with AI-powered modification and validation.
--   **Algorithm Requirements Management System**: Manages optimization algorithms, including functional/policy requirements, priorities, validation, and API for CRUD operations.
--   **Production Scheduling**: Visual Gantt chart with operation sequencer and algorithms (ASAP, ALAP, Drum/TOC). Includes auto-save, calendar management, theme switching, and enhanced version control with snapshots, rollback, and comprehensive version comparison (metrics, resource usage, time span analysis).
+-   **Algorithm Requirements Management System**: Manages optimization algorithms (functional/policy requirements, priorities, validation, API for CRUD).
+-   **Production Scheduling**: Visual Gantt chart with operation sequencer and algorithms (ASAP, ALAP, Drum/TOC), auto-save, calendar management, theme switching, and enhanced version control with snapshots, rollback, and comprehensive version comparison.
 -   **Dashboarding & Analytics**: UI Design Studio for custom visualizations, AI-powered dashboard generation, and a drag-and-drop designer.
 -   **Role-Based Access Control**: Unified permission system with feature-action permissions.
 -   **AI Workflow Automation**: Natural language-powered workflow creation with template library, visual builder, and execution tracking.
 -   **AI Agents Control Panel**: Centralized management interface for all AI agents.
 -   **AI Automation Rules System**: Comprehensive system for automatic resolution of recurring issues from AI recommendations, with inline enablement, advanced options, rule management, and safety features.
--   **AI Recommendations Resolution**: Interactive resolution workflows with "Resolve Now" and "Show Plan First" options, including plan previews.
+-   **AI Recommendations Resolution**: Interactive resolution workflows with "Resolve Now" and "Show Plan First" options.
 -   **Global Control Tower**: Enhanced with KPI target management, weighted performance tracking, autonomous optimization, and real-time plant monitoring.
 -   **Production Scheduler Architecture**: Hybrid iframe/React architecture loading Bryntum Scheduler Pro via a backend API route.
 -   **Voice Chat**: Integrates real-time voice chat with OpenAI's gpt-realtime-mini model using WebSocket and SSE.
 -   **Demand Forecasting**: Native React-based forecasting application with SQL Server integration, dynamic table/column selection, and time-series forecasting with Recharts visualization, including intermittent demand handling.
--   **Advanced Paginated Reports Designer**: Professional report builder inspired by Power BI with:
-    - Split-pane layout with data fields sidebar and preview editor
-    - Resizable columns with drag handles for precise control
-    - **Include totals row** feature for automatic calculation of sums for numeric columns
-    - **Advanced Column Chooser**: Dual-panel drag-and-drop interface for column selection
-      - Hidden and Shown columns panels for intuitive management
-      - Drag-and-drop between panels for quick column visibility toggling
-      - Multi-select with Shift/Ctrl click support
-      - Arrow buttons for moving multiple selected columns
-      - Double-click to quickly move columns between panels
-      - Search functionality for finding columns quickly
-      - Column reordering within shown panel maintains display order
-      - Preserves column order when toggling visibility
-    - **Smart Aggregation with "Show distinct rows"** (enabled by default):
-      - Automatically groups by text columns and aggregates numeric columns
-      - Customizable aggregation types per column (SUM, AVG, MIN, MAX, COUNT)
-      - Visual indicators showing aggregation type in column headers
-      - Aggregation supported for both SQL Server and Power BI data sources
-      - Intelligent totals calculation that avoids double-aggregation
-      - Export headers automatically include aggregation type (e.g., "Revenue (SUM)")
-    - Report templates (Invoice, Financial Statement, Summary Report)
-    - Grouping and aggregation with subtotals
-    - Conditional formatting with visual rules
-    - Save/load report configurations
-    - **Enhanced Export Capabilities**:
-      - CSV: Full data export with proper escaping and formatting
-      - Excel: All data export with conditional formatting preserved (colors, fonts, weights)
-      - PDF: Paginated export respecting report preview settings with proper page breaks
-      - All formats fetch complete datasets (not just current page)
-      - Export loading indicators and progress tracking
-      - Automatic column selection fallback (uses all columns if none selected)
-      - Aggregation-aware exports with proper column headers showing aggregation types
-    - Server-side totals and grouping for accurate calculations across entire datasets
-    - Keyboard shortcuts (Ctrl+S save, Ctrl+O load, Ctrl+P print, Ctrl+E export)
-    - Print preview with page break indicators
-    - Full SQL Server and Power BI dataset support with pagination, filtering, sorting
-    - Power BI-specific features:
-      - Column data type display hidden for Power BI sources
-      - Proper filtered count queries ensuring accurate pagination totals
-      - Automatic column selection reset when switching tables
-      - DAX query support for aggregation with SUMMARIZE and ADDCOLUMNS functions
-
-## Important Implementation Notes
-
-### Agent File Synchronization (CRITICAL)
-**Each AI agent requires TWO synchronized files that MUST be kept in sync:**
-- **Training Document** (`server/training/agents/[agent-name].md`): Defines specifications
-- **Service Implementation** (`server/services/agents/[agent-name].service.ts`): Executes the code
-
-**When modifying agents, ALWAYS update both files:**
-- Adding new features → Update both .md documentation AND .ts implementation
-- Changing response style → Update .md guidelines AND .ts formatting code
-- Adding triggers → Update .md trigger list AND .ts triggers array
-- Modifying queries → Update .md examples AND .ts database code
-
-**Failure to synchronize these files will cause:**
-- Agent confusion (implementation differs from specification)
-- Missing features (documented but not implemented)
-- Unexpected behavior (implemented but not documented)
-
-### Production Scheduling Agent Capabilities
-The Production Scheduling Agent (`production-scheduling-agent.service.ts`) can:
-- Query all job data from `ptjobs` table with detailed information
-- Show jobs by priority, status, due dates, completion
-- Execute ASAP and ALAP scheduling algorithms with intelligent suggestions
-- Interactive optimization: detects current state and suggests opposite algorithm
-- Provides detailed algorithm insights when asked
-- Manage resources and capabilities
-- Create and load schedule versions
-- Compare schedule versions with metrics and differences
-- Delete schedule versions (single, range, or list)
-- Uses professional language with bullet points for lists
+-   **Advanced Paginated Reports Designer**: Professional report builder with split-pane layout, resizable columns, "include totals row," an advanced column chooser, smart aggregation with "show distinct rows" (default), report templates, grouping and aggregation with subtotals, conditional formatting, save/load configurations, enhanced export capabilities (CSV, Excel, PDF with complete datasets and aggregation-aware headers), server-side totals and grouping, keyboard shortcuts, print preview, and full SQL Server/Power BI dataset support (pagination, filtering, sorting, DAX queries).
 
 ## External Dependencies
 -   **Database Provider**: Neon Database (serverless PostgreSQL)
