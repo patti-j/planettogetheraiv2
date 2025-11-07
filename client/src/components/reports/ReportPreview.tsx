@@ -354,7 +354,7 @@ export const ReportPreview = memo(({
                 
                 {/* Show item count */}
                 <span className="text-sm text-gray-500">
-                  ({groupItems.length} {groupItems.length === 1 ? 'row' : 'rows'})
+                  ({group.itemCount !== undefined ? group.itemCount : groupItems.length} {(group.itemCount !== undefined ? group.itemCount : groupItems.length) === 1 ? 'row' : 'rows'})
                 </span>
               </div>
               

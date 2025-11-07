@@ -535,6 +535,7 @@ class SQLServerService {
       // Build SELECT clause with aggregations
       const selectClauses = [
         ...groupByColumns.map(col => `[${col}]`),
+        'COUNT(*) as group_row_count', // Add count of rows in each group
         ...Object.entries(aggregations).map(([col, aggType]) => {
           switch (aggType) {
             case 'sum':
@@ -632,6 +633,7 @@ class SQLServerService {
           groupValues,
           aggregates,
           items: [], // Items would be fetched separately if needed
+          itemCount: row.group_row_count || 0, // Use the actual count from the query
           expanded: false
         };
       });

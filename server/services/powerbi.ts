@@ -2209,6 +2209,9 @@ export class PowerBIService {
         summarizeArgs.push(`'${tableName}'[${col}]`);
       });
       
+      // Add row count for the group
+      summarizeArgs.push(`"group_row_count"`, `COUNTROWS('${tableName}')`);
+      
       // Then add aggregated columns
       Object.entries(aggregations).forEach(([col, aggType]) => {
         let aggFunction = '';
@@ -2302,6 +2305,8 @@ export class PowerBIService {
           // Check if it's a group column or aggregate
           if (groupByColumns.includes(cleanKey)) {
             groupValues[cleanKey] = value;
+          } else if (cleanKey === 'group_row_count') {
+            // Skip - we'll handle this separately
           } else {
             // It's an aggregate - extract the column name
             Object.keys(aggregations).forEach(col => {
@@ -2318,6 +2323,7 @@ export class PowerBIService {
           groupValues,
           aggregates,
           items: [], // Items would be fetched separately if needed
+          itemCount: row['[group_row_count]'] || row.group_row_count || 0, // Use the actual count from the query
           expanded: false
         };
       });
