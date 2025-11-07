@@ -694,11 +694,20 @@ export class DatabaseStorage implements IStorage {
   // Recent Pages
   async saveRecentPage(data: InsertRecentPage): Promise<void> {
     try {
+      // First, delete any existing entry for this user and path to prevent duplicates
+      await db.delete(recentPages)
+        .where(and(
+          eq(recentPages.userId, data.userId),
+          eq(recentPages.path, data.path)
+        ));
+      
       // Convert visitedAt to Date if it's a string
       const pageData = {
         ...data,
         visitedAt: data.visitedAt ? new Date(data.visitedAt) : new Date()
       };
+      
+      // Insert the new entry
       await db.insert(recentPages).values(pageData);
     } catch (error) {
       console.error('Error saving recent page:', error);
