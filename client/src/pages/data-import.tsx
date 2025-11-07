@@ -1283,7 +1283,7 @@ Create authentic manufacturing data that reflects this company's operations.`;
   // AI Generation Mutation
   const aiGenerationMutation = useMutation({
     mutationFn: async (generationData: any) => {
-      const response = await fetch('/api/data-import/generate-sample-data', {
+      const response = await fetch('/api/master-data/bulk-generate', {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
