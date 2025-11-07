@@ -415,6 +415,9 @@ export interface IStorage {
   getDdmrpAlerts(activeOnly?: boolean): Promise<DdmrpAlert[]>;
   createDdmrpAlert(data: InsertDdmrpAlert): Promise<DdmrpAlert>;
   acknowledgeDdmrpAlert(id: number, userId: number): Promise<DdmrpAlert | undefined>;
+  
+  // Data Validation
+  runDataValidation(): Promise<any>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -4043,6 +4046,166 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error('Error acknowledging DDMRP alert:', error);
       return undefined;
+    }
+  }
+
+  // Data Validation
+  async runDataValidation(): Promise<any> {
+    const startTime = Date.now();
+    const issues: any[] = [];
+
+    try {
+      // 1. Check resources without capabilities
+      try {
+        const resourcesWithoutCaps = await db.select({
+          id: ptResources.id,
+          name: ptResources.name,
+          resourceType: ptResources.resourceType
+        })
+        .from(ptResources)
+        .where(eq(ptResources.active, true));
+
+        // Get resource capabilities
+        const resourceCaps = await db.select().from(ptResourceCapabilities);
+        const resourceCapMap = new Map();
+        resourceCaps.forEach(rc => {
+          if (!resourceCapMap.has(rc.resourceId)) {
+            resourceCapMap.set(rc.resourceId, []);
+          }
+          resourceCapMap.get(rc.resourceId).push(rc);
+        });
+
+        for (const resource of resourcesWithoutCaps) {
+          const caps = resourceCapMap.get(resource.id);
+          if (!caps || caps.length === 0) {
+            issues.push({
+              id: `resource-no-caps-${resource.id}`,
+              severity: 'warning',
+              category: 'Resources',
+              title: `Resource "${resource.name}" has no capabilities assigned`,
+              description: `Active resource lacks capability assignments, limiting scheduling options.`,
+              affectedRecords: 1,
+              details: [{
+                name: resource.name,
+                description: `Type: ${resource.resourceType || 'N/A'} | No capabilities defined`
+              }],
+              recommendation: 'Assign capabilities to this resource to enable scheduling and resource matching.'
+            });
+          }
+        }
+      } catch (error) {
+        console.error('Resources validation error:', error);
+      }
+
+      // 2. Check jobs without operations
+      try {
+        const allJobs = await db.select({
+          id: ptJobs.id,
+          name: ptJobs.name,
+          scheduledStatus: ptJobs.scheduledStatus
+        }).from(ptJobs);
+
+        const allOperations = await db.select({
+          jobId: ptJobOperations.jobId
+        }).from(ptJobOperations);
+
+        const jobsWithOps = new Set(allOperations.map(op => op.jobId));
+
+        for (const job of allJobs) {
+          if (!jobsWithOps.has(job.id)) {
+            issues.push({
+              id: `job-no-ops-${job.id}`,
+              severity: 'critical',
+              category: 'Production Orders',
+              title: `Job "${job.name}" has no operations defined`,
+              description: `Cannot schedule or execute a job without operations.`,
+              affectedRecords: 1,
+              details: [{
+                name: job.name,
+                description: `Status: ${job.scheduledStatus || 'Not scheduled'} | No operations`
+              }],
+              recommendation: 'Add operations to this job to enable scheduling and execution.'
+            });
+          }
+        }
+      } catch (error) {
+        console.error('Jobs validation error:', error);
+      }
+
+      // 3. Check data integrity - inactive resources assigned to jobs
+      try {
+        const inactiveResources = await db.select({
+          id: ptResources.id,
+          name: ptResources.name
+        })
+        .from(ptResources)
+        .where(eq(ptResources.active, false));
+
+        const inactiveIds = new Set(inactiveResources.map(r => r.id));
+
+        if (inactiveIds.size > 0) {
+          const assignedOps = await db.select({
+            id: ptJobOperations.id,
+            operationName: ptJobOperations.operationName,
+            jobId: ptJobOperations.jobId
+          })
+          .from(ptJobOperations);
+
+          const resourceAssignments = await db.select().from(ptResourceCapabilities);
+          
+          for (const op of assignedOps) {
+            const assignments = resourceAssignments.filter(ra => 
+              ra.operationId === op.id && inactiveIds.has(ra.resourceId)
+            );
+            
+            if (assignments.length > 0) {
+              issues.push({
+                id: `inactive-resource-${op.id}`,
+                severity: 'warning',
+                category: 'Data Integrity',
+                title: `Operation has inactive resource assignments`,
+                description: `Operation "${op.operationName}" references ${assignments.length} inactive resource(s).`,
+                affectedRecords: assignments.length,
+                details: assignments.map(a => ({
+                  name: `Operation ${op.operationName}`,
+                  description: `Assigned to inactive resource ID ${a.resourceId}`
+                })),
+                recommendation: 'Update resource assignments to use active resources only.'
+              });
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Data integrity validation error:', error);
+      }
+
+      const executionTime = Date.now() - startTime;
+      
+      // Calculate summary statistics
+      const criticalIssues = issues.filter(i => i.severity === 'critical').length;
+      const warnings = issues.filter(i => i.severity === 'warning').length;
+      const infoItems = issues.filter(i => i.severity === 'info').length;
+      
+      // Calculate data integrity score
+      const dataIntegrityScore = Math.max(0, Math.min(100, 
+        100 - (criticalIssues * 10) - (warnings * 3) - (infoItems * 1)
+      ));
+
+      return {
+        summary: {
+          totalChecks: 3,
+          criticalIssues,
+          warnings,
+          infoItems,
+          dataIntegrityScore
+        },
+        issues,
+        executionTime,
+        timestamp: new Date().toISOString()
+      };
+    } catch (error) {
+      console.error('Data validation error:', error);
+      throw new Error('Failed to run data validation');
     }
   }
 }
