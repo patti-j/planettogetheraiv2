@@ -548,7 +548,7 @@ export default function PaginatedReports() {
             ...group,
             groupKey: JSON.stringify(group.groupValues),
             expanded: expandedGroups.has(JSON.stringify(group.groupValues)),
-            items: groupDetails[JSON.stringify(group.groupValues)] || []
+            items: group.items || groupDetails[JSON.stringify(group.groupValues)] || []
           })) || []
         };
       } else if (sourceType === 'powerbi' && selectedWorkspace && selectedDataset && selectedPowerBITable) {
@@ -584,7 +584,7 @@ export default function PaginatedReports() {
             ...group,
             groupKey: JSON.stringify(group.groupValues),
             expanded: expandedGroups.has(JSON.stringify(group.groupValues)),
-            items: groupDetails[JSON.stringify(group.groupValues)] || []
+            items: group.items || groupDetails[JSON.stringify(group.groupValues)] || []
           })) || []
         };
       }
