@@ -9475,10 +9475,19 @@ CRITICAL: Always include all required fields with valid non-null values. Use cur
     const totalGenerated = Object.values(results).reduce((sum: number, result: any) => 
       sum + (result.success ? result.count : 0), 0);
     
+    // Convert results object to importResults array for frontend compatibility
+    const importResults = Object.entries(results).map(([entityType, result]: [string, any]) => ({
+      entityType,
+      success: result.success,
+      count: result.count || 0,
+      error: result.error
+    })).filter(r => r.success && r.count > 0);
+    
     res.json({
       success: true,
-      message: `Bulk generation completed: ${totalGenerated} total records generated across ${entityTypes.length} entity types`,
+      message: `Bulk generation completed: ${totalGenerated} total records generated across ${importResults.length} entity types`,
       results,
+      importResults,  // Frontend expects this array
       totalRecords: totalGenerated
     });
 
