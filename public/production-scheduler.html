@@ -1252,8 +1252,42 @@
                     // Debug: Log what's available
                     if (typeof bryntum !== 'undefined') {
                         console.log('  bryntum object found, contents:', Object.keys(bryntum || {}));
+                        
+                        // Check all possible locations where SchedulerPro might be
                         if (bryntum.schedulerpro) {
                             console.log('  bryntum.schedulerpro found, contents:', Object.keys(bryntum.schedulerpro || {}));
+                            
+                            // Check if SchedulerPro is a class in schedulerpro namespace
+                            for (const key of Object.keys(bryntum.schedulerpro)) {
+                                const value = bryntum.schedulerpro[key];
+                                if (typeof value === 'function' && key.includes('Scheduler')) {
+                                    console.log(`    Found potential SchedulerPro class: bryntum.schedulerpro.${key}`);
+                                    
+                                    // Try to use it as SchedulerPro
+                                    if (!intervalCleared) {
+                                        clearInterval(checkInterval);
+                                        intervalCleared = true;
+                                        if (timeoutHandle) {
+                                            clearTimeout(timeoutHandle);
+                                        }
+                                        console.log(`✅ Using bryntum.schedulerpro.${key} as SchedulerPro`);
+                                        window.SchedulerPro = value;
+                                        callback();
+                                        return;
+                                    }
+                                }
+                            }
+                        }
+                        
+                        // Also check root bryntum for any Scheduler classes
+                        for (const key of Object.keys(bryntum)) {
+                            if (key.toLowerCase().includes('scheduler')) {
+                                console.log(`  Found scheduler-related namespace: bryntum.${key}`);
+                                const namespace = bryntum[key];
+                                if (namespace && typeof namespace === 'object') {
+                                    console.log(`    Contents of bryntum.${key}:`, Object.keys(namespace).slice(0, 10));
+                                }
+                            }
                         }
                     }
                 }
