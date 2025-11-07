@@ -716,10 +716,26 @@ export class DatabaseStorage implements IStorage {
 
   async getRecentPages(userId: number): Promise<RecentPage[]> {
     try {
-      return await db.select().from(recentPages)
+      const pages = await db.select().from(recentPages)
         .where(eq(recentPages.userId, userId))
         .orderBy(desc(recentPages.visitedAt))
-        .limit(20);
+        .limit(50); // Get more initially to handle duplicates
+      
+      // Remove duplicates, keeping only the most recent entry for each path
+      const uniquePagesMap = new Map<string, RecentPage>();
+      for (const page of pages) {
+        const existingPage = uniquePagesMap.get(page.path);
+        if (!existingPage || new Date(page.visitedAt) > new Date(existingPage.visitedAt)) {
+          uniquePagesMap.set(page.path, page);
+        }
+      }
+      
+      // Convert map to array, sort by visitedAt, and take first 20
+      const uniquePages = Array.from(uniquePagesMap.values())
+        .sort((a, b) => new Date(b.visitedAt).getTime() - new Date(a.visitedAt).getTime())
+        .slice(0, 20);
+      
+      return uniquePages;
     } catch (error) {
       console.error('Error fetching recent pages:', error);
       return [];
