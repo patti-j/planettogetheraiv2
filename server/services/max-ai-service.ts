@@ -3811,7 +3811,7 @@ Respond with JSON format:
           jo.cycle_hrs as duration,
           jo.setup_hours as setupTime,
           jo.post_processing_hours as teardownTime,
-          jo.manually_scheduled as manuallyScheduled,
+          false as manuallyScheduled,
           jr.default_resource_id as resourceId,
           j.priority as jobPriority,
           j.need_date_time as jobDueDate

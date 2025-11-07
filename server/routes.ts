@@ -5523,7 +5523,6 @@ router.patch("/api/pt-operations/schedule", async (req, res) => {
           SET 
             scheduled_start = ${op.start},
             scheduled_end = ${op.end},
-            manually_scheduled = ${op.manuallyScheduled || false},
             updated_at = NOW()
           WHERE id = ${op.id}
         `;
