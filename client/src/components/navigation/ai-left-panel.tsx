@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useLocation } from 'wouter';
-import { Sparkles, TrendingUp, Lightbulb, Activity, ChevronLeft, ChevronRight, Play, RefreshCw, MessageSquare, Send, User, GripVertical, Settings, Volume2, VolumeX, Palette, Zap, Shield, Bell, X, Copy, Check, ChevronDown, Square, BookOpen, History, Monitor, Layers, Calendar, Factory, Wrench, Package, Target, Truck, DollarSign, MessageCircle, Paperclip, FileText, Image, File, Mic, MicOff, StopCircle, CheckCircle, Loader2, Brain } from 'lucide-react';
+import { Sparkles, TrendingUp, Lightbulb, Activity, ChevronLeft, ChevronRight, Play, RefreshCw, MessageSquare, Send, User, GripVertical, Settings, Volume2, VolumeX, Palette, Zap, Shield, Bell, X, Copy, Check, ChevronDown, Square, BookOpen, Bookmark, History, Monitor, Layers, Calendar, Factory, Wrench, Package, Target, Truck, DollarSign, MessageCircle, Paperclip, FileText, Image, File, Mic, MicOff, StopCircle, CheckCircle, Loader2, Brain } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -1912,9 +1912,11 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
                                 )}
                                 title={(message as any).markedForPlaybook ? "Remove from playbook" : "Add to playbook"}
                               >
-                                <BookOpen className={cn(
+                                <Bookmark className={cn(
                                   "h-3 w-3",
-                                  (message as any).markedForPlaybook ? "text-yellow-600 dark:text-yellow-400" : ""
+                                  (message as any).markedForPlaybook 
+                                    ? "text-yellow-600 dark:text-yellow-400 fill-yellow-600 dark:fill-yellow-400" 
+                                    : "text-muted-foreground"
                                 )} />
                               </Button>
                             )}
