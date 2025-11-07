@@ -867,9 +867,12 @@ export class AISchedulingRecommendationsService {
       console.log(`📝 Applying recommendation: ${recommendationId}`);
       
       // Get the recommendation from database
-      const recommendation = await db.query.agentRecommendations.findFirst({
-        where: eq(agentRecommendations.id, parseInt(recommendationId))
-      });
+      const recommendations = await db.select()
+        .from(agentRecommendations)
+        .where(eq(agentRecommendations.id, parseInt(recommendationId)))
+        .limit(1);
+      
+      const recommendation = recommendations[0];
       
       if (!recommendation) {
         console.error(`❌ Recommendation not found: ${recommendationId}`);
@@ -897,22 +900,22 @@ export class AISchedulingRecommendationsService {
         
         console.log('✅ ALAP scheduling completed successfully');
         
-        // Mark recommendation as applied
+        // Mark recommendation as completed
         await db.update(agentRecommendations)
           .set({ 
-            status: 'applied',
-            resolvedAt: new Date()
+            status: 'completed',
+            implementedAt: new Date()
           })
           .where(eq(agentRecommendations.id, parseInt(recommendationId)));
         
         return true;
       }
       
-      // For other action types, just mark as applied
+      // For other action types, just mark as completed
       await db.update(agentRecommendations)
         .set({ 
-          status: 'applied',
-          resolvedAt: new Date()
+          status: 'completed',
+          implementedAt: new Date()
         })
         .where(eq(agentRecommendations.id, parseInt(recommendationId)));
       
