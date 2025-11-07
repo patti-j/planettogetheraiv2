@@ -6076,30 +6076,33 @@
                 // The working event listener is at line 3198
             });
             
-            The following block from lines 4903-5158 contained duplicate scheduling logic:*/
-                            console.log('⏳ Running Drum/TOC scheduling...');
-                            // Use the working custom Drum/TOC implementation
-                            await drumScheduling();
-                            console.log('✅ Drum/TOC scheduling complete');
-                            if (scheduler.toast) {
-                                scheduler.toast('Drum/TOC scheduling complete');
-                            }
-                            break;
-                            
-                        default:
-                            console.warn('❌ Unknown algorithm:', algorithm);
-                    }
-                    
-                } catch (error) {
-                    console.error('❌ Error applying scheduling algorithm:', error);
-                    if (window.scheduler && window.scheduler.toast) {
-                        window.scheduler.toast({
-                            html: `Error: ${error.message}`,
-                            style: 'background-color: #ff4444'
-                        });
-                    }
-                }
-            });
+            The following block from lines 4903-5158 contained duplicate scheduling logic:
+            
+            // All the duplicate code below has been commented out:
+            //                 console.log('⏳ Running Drum/TOC scheduling...');
+            //                 // Use the working custom Drum/TOC implementation
+            //                 await drumScheduling();
+            //                 console.log('✅ Drum/TOC scheduling complete');
+            //                 if (scheduler.toast) {
+            //                     scheduler.toast('Drum/TOC scheduling complete');
+            //                 }
+            //                 break;
+            //                 
+            //             default:
+            //                 console.warn('❌ Unknown algorithm:', algorithm);
+            //         }
+            //         
+            //     } catch (error) {
+            //         console.error('❌ Error applying scheduling algorithm:', error);
+            //         if (window.scheduler && window.scheduler.toast) {
+            //             window.scheduler.toast({
+            //                 html: `Error: ${error.message}`,
+            //                 style: 'background-color: #ff4444'
+            //             });
+            //         }
+            //     }
+            // });
+            */
             
             // END OF SCHEDULING ALGORITHM HANDLER
             
