@@ -84,7 +84,8 @@ export async function setupVite(app: Express, server: Server) {
 }
 
 export function serveStatic(app: Express) {
-  const distPath = path.resolve(import.meta.dirname, "public");
+  const distPath = path.resolve(import.meta.dirname, "..", "dist", "public");
+  const publicPath = path.resolve(import.meta.dirname, "..", "public");
 
   if (!fs.existsSync(distPath)) {
     throw new Error(
@@ -92,7 +93,13 @@ export function serveStatic(app: Express) {
     );
   }
 
+  // Serve built client files from dist/public
   app.use(express.static(distPath));
+  
+  // Also serve static assets from public directory (fonts, scheduler files, etc.)
+  if (fs.existsSync(publicPath)) {
+    app.use(express.static(publicPath));
+  }
 
   // fall through to index.html if the file doesn't exist
   app.use("*", (_req, res) => {

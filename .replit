@@ -8,7 +8,7 @@ packages = ["freetds", "glibcLocales", "jq", "redis", "unixODBC", "unzip", "nano
 
 [deployment]
 deploymentTarget = "autoscale"
-build = ["npm", "run", "build"]
+build = ["bash", "-c", "npm run build && cp -r public/* dist/public/ 2>/dev/null || true"]
 run = ["node", "dist/index.js"]
 
 [workflows]
