@@ -76,29 +76,6 @@ These files must be synchronized for features like trigger arrays, handler metho
 -   **Database Configuration**: Production uses PRODUCTION_DATABASE_URL, development uses DATABASE_URL
 -   **Required Secrets**: PRODUCTION_DATABASE_URL, JWT_SECRET, SESSION_SECRET, OPENAI_API_KEY
 
-## Recent Updates - November 7, 2024
-
-### Production Deployment & Scheduler Fixes
-**Fixed Critical Issues:**
-1. **Production Deployment**: Resolved "await is only valid in async functions" error by removing orphaned JavaScript code from production-scheduler.html
-2. **Scheduler Algorithm Sequencing**: Fixed ASAP/ALAP algorithms to properly respect operation sequences (operations 1-9 must complete in order)
-3. **Save Functionality**: Added missing bulk operations endpoint (`PUT /api/schedules/:scheduleId/operations/bulk`) to persist schedule changes
-4. **Version History**: Migrated schedule_versions table and 9 missing ptjoboperations columns to production database
-
-**Data Migration:**
-- Successfully migrated complete brewery dataset to production: 5 plants, 18 resources, 5 jobs (IPA, Lager, Stout, Wheat Beer, Porter), 45 operations
-- All operations now properly sequenced with 9 brewing steps per job
-
-**Algorithm Improvements:**
-- Implemented proper ASAP (As Soon As Possible) algorithm with operation sequencing and resource constraints
-- Implemented ALAP (As Late As Possible) algorithm for just-in-time scheduling
-- Both algorithms now enforce proper operation dependencies and prevent overlapping on same resource
-- Removed Theory of Constraints (DBR) option from algorithm dropdown per user request
-
-**User Management:**
-- Verified all three users in production database (patti/password123, Jim/planettogether, admin/admin123)
-- All users have Administrator role with full 196 permissions
-
 ## External Dependencies
 -   **Database Provider**: Neon Database (serverless PostgreSQL)
 -   **AI/ML**: OpenAI API (GPT-4o, Whisper, TTS-1, gpt-realtime-mini)
