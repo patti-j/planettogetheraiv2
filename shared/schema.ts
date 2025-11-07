@@ -3359,6 +3359,198 @@ export const automationExecutions = pgTable("automation_executions", {
   };
 });
 
+// ============================================
+// Routing Intelligence Tables
+// ============================================
+
+// Store evidence/artifacts used to generate routing data
+export const routingEvidence = pgTable("routing_evidence", {
+  id: serial("id").primaryKey(),
+  
+  // Type and source
+  evidenceType: varchar("evidence_type", { length: 50 }).notNull(), // historical, video, document, survey, sensor
+  fileName: varchar("file_name", { length: 255 }),
+  fileUrl: text("file_url"), // S3 or storage URL
+  mimeType: varchar("mime_type", { length: 100 }),
+  fileSize: integer("file_size"), // bytes
+  
+  // Context
+  jobId: integer("job_id").references(() => ptJobs.id),
+  resourceId: integer("resource_id").references(() => ptResources.id),
+  productId: integer("product_id").references(() => ptProducts.id),
+  
+  // Processing status
+  status: varchar("status", { length: 50 }).default("pending"), // pending, processing, completed, failed
+  processingStartedAt: timestamp("processing_started_at"),
+  processingCompletedAt: timestamp("processing_completed_at"),
+  processingError: text("processing_error"),
+  
+  // Extracted data
+  extractedData: jsonb("extracted_data"), // Structured data from processing
+  confidence: real("confidence"), // 0-1 confidence score
+  
+  // Metadata
+  uploadedBy: integer("uploaded_by").references(() => users.id).notNull(),
+  notes: text("notes"),
+  tags: text().array(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow()
+}, (table) => {
+  return {
+    jobIdIdx: index("routing_evidence_job_id_idx").on(table.jobId),
+    evidenceTypeIdx: index("routing_evidence_type_idx").on(table.evidenceType),
+    statusIdx: index("routing_evidence_status_idx").on(table.status)
+  };
+});
+
+// Draft routing templates generated from evidence
+export const routingDrafts = pgTable("routing_drafts", {
+  id: serial("id").primaryKey(),
+  
+  // Reference
+  jobId: integer("job_id").references(() => ptJobs.id),
+  templateName: varchar("template_name", { length: 255 }).notNull(),
+  version: integer("version").default(1),
+  
+  // Generated routing data
+  operations: jsonb("operations").notNull(), // Array of operation sequences
+  estimatedCycleTime: integer("estimated_cycle_time"), // minutes
+  resourceRequirements: jsonb("resource_requirements"),
+  
+  // Provenance
+  generationMethod: varchar("generation_method", { length: 100 }), // ai_synthesis, historical_analysis, video_extraction, manual
+  evidenceIds: integer().array(), // References to routing_evidence
+  
+  // Confidence and validation
+  confidenceScore: real("confidence_score").default(0.5), // 0-1
+  validationStatus: varchar("validation_status", { length: 50 }).default("draft"), // draft, validated, adopted, rejected
+  validationNotes: text("validation_notes"),
+  
+  // Adoption tracking
+  adoptedAt: timestamp("adopted_at"),
+  adoptedBy: integer("adopted_by").references(() => users.id),
+  adoptedToJobOperationId: integer("adopted_to_job_operation_id").references(() => ptJobOperations.id),
+  
+  // Metadata
+  createdBy: integer("created_by").references(() => users.id).notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow()
+}, (table) => {
+  return {
+    jobIdIdx: index("routing_drafts_job_id_idx").on(table.jobId),
+    validationStatusIdx: index("routing_drafts_validation_status_idx").on(table.validationStatus),
+    confidenceScoreIdx: index("routing_drafts_confidence_idx").on(table.confidenceScore)
+  };
+});
+
+// Validation runs comparing draft routes to actual production
+export const routingValidationRuns = pgTable("routing_validation_runs", {
+  id: serial("id").primaryKey(),
+  
+  draftId: integer("draft_id").references(() => routingDrafts.id).notNull(),
+  
+  // Comparison data
+  actualDataSource: varchar("actual_data_source", { length: 100 }), // sensor, historical, manual_entry
+  actualDataPeriod: jsonb("actual_data_period"), // {start_date, end_date}
+  
+  // Metrics comparison
+  plannedMetrics: jsonb("planned_metrics"), // From draft
+  actualMetrics: jsonb("actual_metrics"), // From production
+  deviations: jsonb("deviations"), // Calculated differences
+  
+  // Validation results
+  validationScore: real("validation_score"), // 0-1
+  passedValidation: boolean("passed_validation"),
+  failureReasons: text().array(),
+  
+  // Recommendations
+  improvementSuggestions: jsonb("improvement_suggestions"),
+  
+  // Metadata
+  validatedBy: integer("validated_by").references(() => users.id).notNull(),
+  validatedAt: timestamp("validated_at").defaultNow(),
+  notes: text("notes")
+}, (table) => {
+  return {
+    draftIdIdx: index("routing_validation_draft_id_idx").on(table.draftId),
+    validationScoreIdx: index("routing_validation_score_idx").on(table.validationScore)
+  };
+});
+
+// Continuous improvement suggestions for routing
+export const routingImprovementSuggestions = pgTable("routing_improvement_suggestions", {
+  id: serial("id").primaryKey(),
+  
+  draftId: integer("draft_id").references(() => routingDrafts.id),
+  jobOperationId: integer("job_operation_id").references(() => ptJobOperations.id),
+  
+  // Suggestion details
+  suggestionType: varchar("suggestion_type", { length: 100 }).notNull(), // time_reduction, resource_optimization, sequence_change, quality_improvement
+  title: varchar("title", { length: 255 }).notNull(),
+  description: text("description").notNull(),
+  
+  // Impact analysis
+  expectedImpact: jsonb("expected_impact"), // {time_saved, cost_reduction, quality_improvement}
+  confidence: real("confidence").default(0.5),
+  priority: varchar("priority", { length: 20 }).default("medium"), // low, medium, high, critical
+  
+  // Source
+  source: varchar("source", { length: 100 }), // ai_analysis, user_feedback, validation_run, sensor_anomaly
+  sourceDetails: jsonb("source_details"),
+  
+  // Action tracking
+  status: varchar("status", { length: 50 }).default("pending"), // pending, accepted, rejected, implemented
+  reviewedBy: integer("reviewed_by").references(() => users.id),
+  reviewedAt: timestamp("reviewed_at"),
+  implementedAt: timestamp("implemented_at"),
+  
+  // Feedback
+  userFeedback: text("user_feedback"),
+  actualImpact: jsonb("actual_impact"), // Measured after implementation
+  
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow()
+}, (table) => {
+  return {
+    draftIdIdx: index("routing_improvement_draft_id_idx").on(table.draftId),
+    jobOperationIdIdx: index("routing_improvement_job_op_idx").on(table.jobOperationId),
+    statusIdx: index("routing_improvement_status_idx").on(table.status),
+    priorityIdx: index("routing_improvement_priority_idx").on(table.priority)
+  };
+});
+
+// Create insert schemas and types for Routing Intelligence tables
+export const insertRoutingEvidenceSchema = createInsertSchema(routingEvidence).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true
+});
+export type InsertRoutingEvidence = z.infer<typeof insertRoutingEvidenceSchema>;
+export type RoutingEvidence = typeof routingEvidence.$inferSelect;
+
+export const insertRoutingDraftSchema = createInsertSchema(routingDrafts).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true
+});
+export type InsertRoutingDraft = z.infer<typeof insertRoutingDraftSchema>;
+export type RoutingDraft = typeof routingDrafts.$inferSelect;
+
+export const insertRoutingValidationRunSchema = createInsertSchema(routingValidationRuns).omit({
+  id: true,
+  validatedAt: true
+});
+export type InsertRoutingValidationRun = z.infer<typeof insertRoutingValidationRunSchema>;
+export type RoutingValidationRun = typeof routingValidationRuns.$inferSelect;
+
+export const insertRoutingImprovementSuggestionSchema = createInsertSchema(routingImprovementSuggestions).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true
+});
+export type InsertRoutingImprovementSuggestion = z.infer<typeof insertRoutingImprovementSuggestionSchema>;
+export type RoutingImprovementSuggestion = typeof routingImprovementSuggestions.$inferSelect;
+
 // Create insert schemas and types for automation tables
 export const insertAutomationRuleSchema = createInsertSchema(automationRules).omit({
   id: true,
