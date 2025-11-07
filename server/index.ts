@@ -104,7 +104,7 @@ app.get('/health', (req, res) => {
 });
 
 // Root health check for deployment (Replit checks the / endpoint)
-app.get('/', (req, res) => {
+app.get('/', (req, res, next) => {
   // If this is an API health check (no Accept header for HTML), return JSON
   if (!req.headers.accept || !req.headers.accept.includes('text/html')) {
     return res.status(200).json({ 
