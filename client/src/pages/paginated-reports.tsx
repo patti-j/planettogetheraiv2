@@ -139,6 +139,65 @@ export default function PaginatedReports() {
     enabled: !!schemaUrl
   });
 
+  // Reset selected columns and grouping columns when data source or table changes
+  useEffect(() => {
+    // Clear columns when switching data sources or tables
+    setSelectedColumns([]);
+    setGroupingColumns([]);
+    setColumnOrder([]);
+    setColumnWidths({});
+    setAggregationTypes({});
+    setColumnFilters({});
+    setSortBy('');
+    setSortOrder('asc');
+    setPage(1);
+    setExpandedGroups(new Set());
+    setGroupDetails({});
+    
+    // Also reset grouping if enabled
+    if (groupingEnabled) {
+      setGroupingEnabled(false);
+    }
+  }, [sourceType, selectedTable, selectedWorkspace, selectedDataset, selectedPowerBITable]);
+
+  // Validate selected columns against table schema
+  useEffect(() => {
+    if (tableSchema && tableSchema.length > 0) {
+      const validColumns = tableSchema.map(col => col.columnName);
+      
+      // Filter selectedColumns to only include valid columns from current schema
+      setSelectedColumns(prev => prev.filter(col => validColumns.includes(col)));
+      
+      // Filter groupingColumns to only include valid columns from current schema
+      setGroupingColumns(prev => prev.filter(col => validColumns.includes(col)));
+      
+      // Filter columnOrder to only include valid columns
+      setColumnOrder(prev => prev.filter(col => validColumns.includes(col)));
+      
+      // Clean up columnFilters to only include valid columns
+      setColumnFilters(prev => {
+        const cleanedFilters: Record<string, string> = {};
+        Object.keys(prev).forEach(key => {
+          if (validColumns.includes(key)) {
+            cleanedFilters[key] = prev[key];
+          }
+        });
+        return cleanedFilters;
+      });
+      
+      // Clean up aggregationTypes to only include valid columns
+      setAggregationTypes(prev => {
+        const cleanedAggTypes: Record<string, 'sum' | 'avg' | 'count' | 'min' | 'max' | 'none'> = {};
+        Object.keys(prev).forEach(key => {
+          if (validColumns.includes(key)) {
+            cleanedAggTypes[key] = prev[key];
+          }
+        });
+        return cleanedAggTypes;
+      });
+    }
+  }, [tableSchema]);
+
   // Initialize aggregation types when useDistinct changes or columns change
   useEffect(() => {
     if (useDistinct && tableSchema) {
