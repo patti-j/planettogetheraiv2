@@ -14206,6 +14206,17 @@ router.get("/api/items", requireAuth, async (req, res) => {
   }
 });
 
+// Get jobs for job selection
+router.get("/api/jobs", requireAuth, async (req, res) => {
+  try {
+    const jobs = await storage.getPtJobsWithDetails();
+    res.json(jobs);
+  } catch (error: any) {
+    console.error("Error fetching jobs:", error);
+    res.status(500).json({ error: "Failed to fetch jobs" });
+  }
+});
+
 // Get resources for resource selection
 router.get("/api/resources", requireAuth, async (req, res) => {
   try {

@@ -175,6 +175,7 @@ export interface IStorage {
   deleteCapability(id: number): Promise<boolean>;
   
   // Advanced PT Data Access  
+  getPtJobsWithDetails(): Promise<any[]>;
   getPtResourcesWithDetails(): Promise<any[]>;
   getPtOperationsWithDetails(): Promise<any[]>;
   getPtDependencies(): Promise<any[]>;
@@ -1212,6 +1213,31 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Advanced PT Data Access
+  async getPtJobsWithDetails(): Promise<any[]> {
+    try {
+      const jobs = await db.select({
+        id: ptJobs.id,
+        jobNumber: ptJobs.externalId,
+        name: ptJobs.name,
+        description: ptJobs.description,
+        priority: ptJobs.priority,
+        status: ptJobs.scheduledStatus,
+        needDate: ptJobs.needDateTime,
+        releaseDate: ptJobs.manufacturingReleaseDate,
+        createdAt: ptJobs.createdAt,
+        updatedAt: ptJobs.updatedAt
+      })
+      .from(ptJobs)
+      .orderBy(desc(ptJobs.createdAt))
+      .limit(1000);
+      
+      return jobs;
+    } catch (error) {
+      console.error('Error fetching PT jobs:', error);
+      return [];
+    }
+  }
+
   async getPtResourcesWithDetails(): Promise<any[]> {
     try {
       const resources = await db.select({
