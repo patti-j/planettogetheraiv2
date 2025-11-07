@@ -67,6 +67,7 @@ import DataMap from "@/pages/data-map";
 import DataRelationships from "@/pages/data-relationships";
 import DataSchema from "@/pages/data-schema";
 import DataValidation from "@/pages/data-validation";
+import { RoutingIntelligence } from "@/pages/routing-intelligence";
 import DemandForecasting from "@/pages/demand-forecasting";
 import DemandForecastingSimple from "@/pages/demand-forecasting-simple";
 import DesignStudio from "@/pages/design-studio";
@@ -417,6 +418,7 @@ export default function ApplicationApp() {
               <Route path="/data-relationships" component={DataRelationships} />
               <Route path="/data-map" component={DataMap} />
               <Route path="/data-validation" component={DataValidation} />
+              <Route path="/routing-intelligence" component={RoutingIntelligence} />
               
               {/* Shop Floor Operations Routes */}
               <Route path="/disruption-management" component={DisruptionManagement} />
