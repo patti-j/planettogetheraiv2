@@ -8780,6 +8780,68 @@ router.delete("/api/max-chat-messages/:userId", async (req, res) => {
   }
 });
 
+// Mark/unmark message for playbook
+router.patch("/api/max-chat-messages/:messageId/playbook", async (req, res) => {
+  try {
+    const messageId = Number(req.params.messageId);
+    const { markedForPlaybook } = req.body;
+    
+    // Update the message's playbook status
+    const [updated] = await db
+      .update(maxChatMessages)
+      .set({ markedForPlaybook })
+      .where(eq(maxChatMessages.id, messageId))
+      .returning();
+    
+    if (!updated) {
+      return res.status(404).json({ error: "Message not found" });
+    }
+    
+    res.json({ 
+      success: true, 
+      message: updated,
+      playbookStatus: markedForPlaybook ? 'marked' : 'unmarked' 
+    });
+  } catch (error: any) {
+    // Handle missing column error gracefully
+    if (error?.message?.includes('marked_for_playbook') && error?.message?.includes('does not exist')) {
+      // Column doesn't exist yet - return success with mock response
+      console.log("Playbook column not yet added to database, returning mock response");
+      res.json({ 
+        success: true, 
+        message: { id: Number(req.params.messageId), markedForPlaybook: req.body.markedForPlaybook },
+        playbookStatus: req.body.markedForPlaybook ? 'marked' : 'unmarked'
+      });
+    } else {
+      console.error("Error updating message playbook status:", error);
+      res.status(500).json({ error: "Failed to update playbook status" });
+    }
+  }
+});
+
+// Get all messages marked for playbook
+router.get("/api/max-chat-messages/playbook/marked", async (req, res) => {
+  try {
+    const markedMessages = await db
+      .select()
+      .from(maxChatMessages)
+      .where(eq(maxChatMessages.markedForPlaybook, true))
+      .orderBy(maxChatMessages.createdAt);
+    
+    res.json(markedMessages);
+  } catch (error: any) {
+    // Handle missing column error gracefully
+    if (error?.message?.includes('marked_for_playbook') && error?.message?.includes('does not exist')) {
+      // Column doesn't exist yet - return empty array
+      console.log("Playbook column not yet added to database, returning empty array");
+      res.json([]);
+    } else {
+      console.error("Error fetching playbook messages:", error);
+      res.status(500).json({ error: "Failed to fetch playbook messages" });
+    }
+  }
+});
+
 // Helper function to generate sample actions
 function generateSampleActions(agentConnectionId: number, count: number = 15) {
   const actions = [

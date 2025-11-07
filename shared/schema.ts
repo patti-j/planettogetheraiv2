@@ -1286,6 +1286,7 @@ export const maxChatMessages = pgTable("max_chat_messages", {
   agentId: varchar("agent_id", { length: 100 }), // Which agent sent this message (e.g., 'max', 'production_scheduling', 'quality_analysis')
   agentName: varchar("agent_name", { length: 255 }), // Display name of the agent
   source: varchar("source", { length: 20 }), // 'header', 'panel', or 'floating'
+  markedForPlaybook: boolean("marked_for_playbook").default(false), // Flag to indicate if message should be added to agent playbook
   createdAt: timestamp("created_at").defaultNow(),
 });
 
