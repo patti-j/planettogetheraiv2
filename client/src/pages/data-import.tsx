@@ -1380,15 +1380,19 @@ Create authentic manufacturing data that reflects this company's operations.`;
   });
 
   const executeAIGeneration = () => {
-    // Get company info from user preferences
-    const companyInfo = (userPreferences as any)?.companyInfo || {};
+    // Use the AI prompt as company context for generation
+    const recordCounts: Record<string, number> = {};
+    const dataTypesToGenerate = selectedDataTypes.length > 0 ? selectedDataTypes : recommendedDataTypes;
+    
+    // Convert selected data types to record counts
+    dataTypesToGenerate.forEach((dataType: string) => {
+      recordCounts[dataType] = aiSampleSize || 10;
+    });
     
     const generationData = {
-      prompt: aiPrompt,
-      companyInfo: companyInfo,
-      selectedDataTypes: selectedDataTypes.length > 0 ? selectedDataTypes : recommendedDataTypes,
-      sampleSize: aiSampleSize,
-      deleteExistingData: deleteExistingData
+      recordCounts,
+      companyInfo: aiPrompt, // Use the prompt text as company context
+      replaceExisting: deleteExistingData
     };
     aiGenerationMutation.mutate(generationData);
   };
