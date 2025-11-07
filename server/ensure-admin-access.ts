@@ -112,22 +112,22 @@ export async function ensureAdminAccess() {
           .limit(1);
         
         if (existingPermission.length === 0) {
-          const [newPermission] = await db.insert(permissions).values({
-            name: `${feature}:${action}`,  // Add the required name field
+          const insertedPermissions = await db.insert(permissions).values({
+            name: `${feature}:${action}`,
             feature: feature,
             action: action,
-            description: `${action} ${feature}`,
-            isActive: true
-          }).returning();
+            description: `${action} ${feature}`
+          }).onConflictDoNothing().returning();
           
-          // Assign this permission to Administrator role
-          await db.insert(rolePermissions).values({
-            roleId: adminRole[0].id,
-            permissionId: newPermission.id,
-            grantedBy: adminUser[0].id
-          }).onConflictDoNothing();
-          
-          permissionCount++;
+          // If the insert succeeded, assign permission to Administrator role
+          if (insertedPermissions.length > 0) {
+            const newPermission = insertedPermissions[0];
+            await db.insert(rolePermissions).values({
+              roleId: adminRole[0].id,
+              permissionId: newPermission.id
+            }).onConflictDoNothing();
+            permissionCount++;
+          }
         } else {
           // Ensure this permission is assigned to Administrator role
           const existingRolePermission = await db.select().from(rolePermissions)
@@ -140,8 +140,7 @@ export async function ensureAdminAccess() {
           if (existingRolePermission.length === 0) {
             await db.insert(rolePermissions).values({
               roleId: adminRole[0].id,
-              permissionId: existingPermission[0].id,
-              grantedBy: adminUser[0].id
+              permissionId: existingPermission[0].id
             }).onConflictDoNothing();
             permissionCount++;
           }
