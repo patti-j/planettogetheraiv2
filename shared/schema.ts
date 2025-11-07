@@ -3377,7 +3377,7 @@ export const routingEvidence = pgTable("routing_evidence", {
   // Context
   jobId: integer("job_id").references(() => ptJobs.id),
   resourceId: integer("resource_id").references(() => ptResources.id),
-  productId: integer("product_id").references(() => ptItems.id), // Reference to items/products
+  productId: integer("product_id"), // Product/Item ID (no FK as items table doesn't exist yet)
   
   // Processing status
   status: varchar("status", { length: 50 }).default("pending"), // pending, processing, completed, failed
