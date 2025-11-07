@@ -12,27 +12,36 @@ neonConfig.webSocketConstructor = ws;
 // Function to get database URL - handles both development and production
 function getDatabaseUrl(): string {
   // Check if running in Replit deployment (production)
-  if (process.env.REPLIT_DEPLOYMENT === '1') {
-    // In production, try to read from Replit's secure storage
+  if (process.env.REPLIT_DEPLOYMENT === '1' || process.env.NODE_ENV === 'production') {
+    // In production, check for PRODUCTION_DATABASE_URL first (Replit Secrets)
+    if (process.env.PRODUCTION_DATABASE_URL) {
+      console.log('Using PRODUCTION_DATABASE_URL from environment in production');
+      return process.env.PRODUCTION_DATABASE_URL;
+    }
+    
+    // Fallback to DATABASE_URL if available
+    if (process.env.DATABASE_URL) {
+      console.log('Using DATABASE_URL from environment in production');
+      return process.env.DATABASE_URL;
+    }
+    
+    // Otherwise, try to read from secure file storage
     try {
-      // First check if DATABASE_URL is available in environment
-      if (process.env.DATABASE_URL) {
-        console.log('Using DATABASE_URL from environment in production');
-        return process.env.DATABASE_URL;
-      }
-      
-      // Otherwise, try to read from secure file storage
       const dbUrl = fs.readFileSync('/tmp/replitdb', 'utf8').trim();
       if (dbUrl) {
         console.log('Using database URL from secure storage in production');
         return dbUrl;
       }
     } catch (error) {
-      console.error('Failed to read production database URL:', error);
+      console.error('Failed to read production database URL from file:', error);
     }
+    
+    throw new Error(
+      "PRODUCTION_DATABASE_URL or DATABASE_URL must be set in production environment",
+    );
   }
   
-  // In development or if production fallback
+  // In development
   if (!process.env.DATABASE_URL) {
     throw new Error(
       "DATABASE_URL must be set. Did you forget to provision a database?",
