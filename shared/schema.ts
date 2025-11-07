@@ -3377,7 +3377,7 @@ export const routingEvidence = pgTable("routing_evidence", {
   // Context
   jobId: integer("job_id").references(() => ptJobs.id),
   resourceId: integer("resource_id").references(() => ptResources.id),
-  productId: integer("product_id").references(() => ptProducts.id),
+  productId: integer("product_id").references(() => ptItems.id), // Reference to items/products
   
   // Processing status
   status: varchar("status", { length: 50 }).default("pending"), // pending, processing, completed, failed
@@ -3387,7 +3387,7 @@ export const routingEvidence = pgTable("routing_evidence", {
   
   // Extracted data
   extractedData: jsonb("extracted_data"), // Structured data from processing
-  confidence: real("confidence"), // 0-1 confidence score
+  confidence: numeric("confidence", { precision: 4, scale: 3 }), // 0-1 confidence score
   
   // Metadata
   uploadedBy: integer("uploaded_by").references(() => users.id).notNull(),
@@ -3422,7 +3422,7 @@ export const routingDrafts = pgTable("routing_drafts", {
   evidenceIds: integer().array(), // References to routing_evidence
   
   // Confidence and validation
-  confidenceScore: real("confidence_score").default(0.5), // 0-1
+  confidenceScore: numeric("confidence_score", { precision: 4, scale: 3 }).default("0.5"), // 0-1
   validationStatus: varchar("validation_status", { length: 50 }).default("draft"), // draft, validated, adopted, rejected
   validationNotes: text("validation_notes"),
   
@@ -3459,7 +3459,7 @@ export const routingValidationRuns = pgTable("routing_validation_runs", {
   deviations: jsonb("deviations"), // Calculated differences
   
   // Validation results
-  validationScore: real("validation_score"), // 0-1
+  validationScore: numeric("validation_score", { precision: 4, scale: 3 }), // 0-1
   passedValidation: boolean("passed_validation"),
   failureReasons: text().array(),
   
@@ -3491,7 +3491,7 @@ export const routingImprovementSuggestions = pgTable("routing_improvement_sugges
   
   // Impact analysis
   expectedImpact: jsonb("expected_impact"), // {time_saved, cost_reduction, quality_improvement}
-  confidence: real("confidence").default(0.5),
+  confidence: numeric("confidence", { precision: 4, scale: 3 }).default("0.5"),
   priority: varchar("priority", { length: 20 }).default("medium"), // low, medium, high, critical
   
   // Source

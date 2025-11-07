@@ -80,7 +80,13 @@ import {
   type DdmrpBufferHistory, type InsertDdmrpBufferHistory,
   type DdmrpDemandHistory, type InsertDdmrpDemandHistory,
   type DdmrpSupplyOrder, type InsertDdmrpSupplyOrder,
-  type DdmrpAlert, type InsertDdmrpAlert
+  type DdmrpAlert, type InsertDdmrpAlert,
+  // Routing Intelligence types
+  routingEvidence, routingDrafts, routingValidationRuns, routingImprovementSuggestions,
+  type RoutingEvidence, type InsertRoutingEvidence,
+  type RoutingDraft, type InsertRoutingDraft,
+  type RoutingValidationRun, type InsertRoutingValidationRun,
+  type RoutingImprovementSuggestion, type InsertRoutingImprovementSuggestion
 } from "@shared/schema";
 import { eq, and, desc, sql, ilike } from "drizzle-orm";
 import { db } from "./db";
@@ -418,6 +424,26 @@ export interface IStorage {
   
   // Data Validation
   runDataValidation(): Promise<any>;
+  
+  // Routing Intelligence
+  getRoutingEvidence(filters?: { jobId?: number; evidenceType?: string; status?: string }): Promise<RoutingEvidence[]>;
+  getRoutingEvidenceById(id: number): Promise<RoutingEvidence | undefined>;
+  createRoutingEvidence(data: InsertRoutingEvidence): Promise<RoutingEvidence>;
+  updateRoutingEvidence(id: number, data: Partial<InsertRoutingEvidence>): Promise<RoutingEvidence | undefined>;
+  deleteRoutingEvidence(id: number): Promise<boolean>;
+  
+  getRoutingDrafts(filters?: { jobId?: number; validationStatus?: string }): Promise<RoutingDraft[]>;
+  getRoutingDraftById(id: number): Promise<RoutingDraft | undefined>;
+  createRoutingDraft(data: InsertRoutingDraft): Promise<RoutingDraft>;
+  updateRoutingDraft(id: number, data: Partial<InsertRoutingDraft>): Promise<RoutingDraft | undefined>;
+  deleteRoutingDraft(id: number): Promise<boolean>;
+  
+  getRoutingValidationRuns(draftId: number): Promise<RoutingValidationRun[]>;
+  createRoutingValidationRun(data: InsertRoutingValidationRun): Promise<RoutingValidationRun>;
+  
+  getRoutingImprovementSuggestions(filters?: { draftId?: number; status?: string; priority?: string }): Promise<RoutingImprovementSuggestion[]>;
+  createRoutingImprovementSuggestion(data: InsertRoutingImprovementSuggestion): Promise<RoutingImprovementSuggestion>;
+  updateRoutingImprovementSuggestion(id: number, data: Partial<InsertRoutingImprovementSuggestion>): Promise<RoutingImprovementSuggestion | undefined>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -4206,6 +4232,181 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error('Data validation error:', error);
       throw new Error('Failed to run data validation');
+    }
+  }
+
+  // Routing Intelligence Methods
+  async getRoutingEvidence(filters?: { jobId?: number; evidenceType?: string; status?: string }): Promise<RoutingEvidence[]> {
+    try {
+      let query = db.select().from(routingEvidence);
+      
+      if (filters?.jobId) {
+        query = query.where(eq(routingEvidence.jobId, filters.jobId));
+      }
+      if (filters?.evidenceType) {
+        query = query.where(eq(routingEvidence.evidenceType, filters.evidenceType));
+      }
+      if (filters?.status) {
+        query = query.where(eq(routingEvidence.status, filters.status));
+      }
+      
+      return await query.orderBy(desc(routingEvidence.createdAt));
+    } catch (error) {
+      console.error('Error fetching routing evidence:', error);
+      return [];
+    }
+  }
+
+  async getRoutingEvidenceById(id: number): Promise<RoutingEvidence | undefined> {
+    try {
+      const [evidence] = await db.select().from(routingEvidence)
+        .where(eq(routingEvidence.id, id));
+      return evidence || undefined;
+    } catch (error) {
+      console.error('Error fetching routing evidence by ID:', error);
+      return undefined;
+    }
+  }
+
+  async createRoutingEvidence(data: InsertRoutingEvidence): Promise<RoutingEvidence> {
+    const [evidence] = await db.insert(routingEvidence).values(data).returning();
+    return evidence;
+  }
+
+  async updateRoutingEvidence(id: number, data: Partial<InsertRoutingEvidence>): Promise<RoutingEvidence | undefined> {
+    try {
+      const [updated] = await db.update(routingEvidence)
+        .set({ ...data, updatedAt: new Date() })
+        .where(eq(routingEvidence.id, id))
+        .returning();
+      return updated || undefined;
+    } catch (error) {
+      console.error('Error updating routing evidence:', error);
+      return undefined;
+    }
+  }
+
+  async deleteRoutingEvidence(id: number): Promise<boolean> {
+    try {
+      const result = await db.delete(routingEvidence)
+        .where(eq(routingEvidence.id, id));
+      return true;
+    } catch (error) {
+      console.error('Error deleting routing evidence:', error);
+      return false;
+    }
+  }
+
+  async getRoutingDrafts(filters?: { jobId?: number; validationStatus?: string }): Promise<RoutingDraft[]> {
+    try {
+      let query = db.select().from(routingDrafts);
+      
+      if (filters?.jobId) {
+        query = query.where(eq(routingDrafts.jobId, filters.jobId));
+      }
+      if (filters?.validationStatus) {
+        query = query.where(eq(routingDrafts.validationStatus, filters.validationStatus));
+      }
+      
+      return await query.orderBy(desc(routingDrafts.createdAt));
+    } catch (error) {
+      console.error('Error fetching routing drafts:', error);
+      return [];
+    }
+  }
+
+  async getRoutingDraftById(id: number): Promise<RoutingDraft | undefined> {
+    try {
+      const [draft] = await db.select().from(routingDrafts)
+        .where(eq(routingDrafts.id, id));
+      return draft || undefined;
+    } catch (error) {
+      console.error('Error fetching routing draft by ID:', error);
+      return undefined;
+    }
+  }
+
+  async createRoutingDraft(data: InsertRoutingDraft): Promise<RoutingDraft> {
+    const [draft] = await db.insert(routingDrafts).values(data).returning();
+    return draft;
+  }
+
+  async updateRoutingDraft(id: number, data: Partial<InsertRoutingDraft>): Promise<RoutingDraft | undefined> {
+    try {
+      const [updated] = await db.update(routingDrafts)
+        .set({ ...data, updatedAt: new Date() })
+        .where(eq(routingDrafts.id, id))
+        .returning();
+      return updated || undefined;
+    } catch (error) {
+      console.error('Error updating routing draft:', error);
+      return undefined;
+    }
+  }
+
+  async deleteRoutingDraft(id: number): Promise<boolean> {
+    try {
+      const result = await db.delete(routingDrafts)
+        .where(eq(routingDrafts.id, id));
+      return true;
+    } catch (error) {
+      console.error('Error deleting routing draft:', error);
+      return false;
+    }
+  }
+
+  async getRoutingValidationRuns(draftId: number): Promise<RoutingValidationRun[]> {
+    try {
+      return await db.select().from(routingValidationRuns)
+        .where(eq(routingValidationRuns.draftId, draftId))
+        .orderBy(desc(routingValidationRuns.validatedAt));
+    } catch (error) {
+      console.error('Error fetching routing validation runs:', error);
+      return [];
+    }
+  }
+
+  async createRoutingValidationRun(data: InsertRoutingValidationRun): Promise<RoutingValidationRun> {
+    const [run] = await db.insert(routingValidationRuns).values(data).returning();
+    return run;
+  }
+
+  async getRoutingImprovementSuggestions(filters?: { draftId?: number; status?: string; priority?: string }): Promise<RoutingImprovementSuggestion[]> {
+    try {
+      let query = db.select().from(routingImprovementSuggestions);
+      
+      if (filters?.draftId) {
+        query = query.where(eq(routingImprovementSuggestions.draftId, filters.draftId));
+      }
+      if (filters?.status) {
+        query = query.where(eq(routingImprovementSuggestions.status, filters.status));
+      }
+      if (filters?.priority) {
+        query = query.where(eq(routingImprovementSuggestions.priority, filters.priority));
+      }
+      
+      return await query.orderBy(desc(routingImprovementSuggestions.createdAt));
+    } catch (error) {
+      console.error('Error fetching routing improvement suggestions:', error);
+      return [];
+    }
+  }
+
+  async createRoutingImprovementSuggestion(data: InsertRoutingImprovementSuggestion): Promise<RoutingImprovementSuggestion> {
+    const [suggestion] = await db.insert(routingImprovementSuggestions).values(data).returning();
+    return suggestion;
+  }
+
+  async updateRoutingImprovementSuggestion(id: number, data: Partial<InsertRoutingImprovementSuggestion>): Promise<RoutingImprovementSuggestion | undefined> {
+    try {
+      const [updated] = await db.update(routingImprovementSuggestions)
+        .set({ ...data, updatedAt: new Date() })
+        .where(eq(routingImprovementSuggestions.id, id))
+        .returning();
+      return updated || undefined;
+    } catch (error) {
+      console.error('Error updating routing improvement suggestion:', error);
+      return undefined;
     }
   }
 }
