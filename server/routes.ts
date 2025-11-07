@@ -14217,6 +14217,17 @@ router.get("/api/jobs", requireAuth, async (req, res) => {
   }
 });
 
+// Get PT jobs (alias for /api/jobs for compatibility)
+router.get("/api/pt-jobs", requireAuth, async (req, res) => {
+  try {
+    const jobs = await storage.getPtJobsWithDetails();
+    res.json(jobs);
+  } catch (error: any) {
+    console.error("Error fetching PT jobs:", error);
+    res.status(500).json({ error: "Failed to fetch PT jobs" });
+  }
+});
+
 // Get resources for resource selection
 router.get("/api/resources", requireAuth, async (req, res) => {
   try {
