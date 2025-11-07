@@ -6024,23 +6024,43 @@
                 scheduler.project.suspendAutoCommit();
                 
                 try {
-                    for (const optEvent of result.events) {
+                    // Handle both optimization results from server (with operations array)
+                    // and local results (with events array)
+                    const operations = result.operations || result.events || [];
+                    console.log(`🔄 Applying ${operations.length} optimized operations to scheduler...`);
+                    
+                    for (const optEvent of operations) {
                         const event = scheduler.eventStore.getById(optEvent.id);
-                        if (event && optEvent.changed) {
-                            event.set({
-                                startDate: new Date(optEvent.startDate),
-                                endDate: new Date(optEvent.endDate),
-                                resourceId: optEvent.resourceId
-                            });
-                            event.manuallyScheduled = true;
-                            event.cls = (event.cls || '') + ' optimized-event';
+                        if (event) {
+                            // Map algorithm fields to Bryntum event fields
+                            // Server algorithms return scheduled_start/scheduled_end or startTime/endTime
+                            // Bryntum expects startDate/endDate
+                            const startTime = optEvent.scheduled_start || optEvent.startTime || optEvent.startDate;
+                            const endTime = optEvent.scheduled_end || optEvent.endTime || optEvent.endDate;
+                            
+                            if (startTime && endTime) {
+                                event.set({
+                                    startDate: new Date(startTime),
+                                    endDate: new Date(endTime),
+                                    resourceId: optEvent.resourceId || event.resourceId
+                                });
+                                event.manuallyScheduled = true;
+                                event.cls = (event.cls || '') + ' optimized-event';
+                                console.log(`✅ Updated event ${event.name}: ${new Date(startTime).toLocaleString()} - ${new Date(endTime).toLocaleString()}`);
+                            } else {
+                                console.warn(`⚠️ Skipping event ${event.name} - missing time data`);
+                            }
+                        } else {
+                            console.warn(`⚠️ Event ${optEvent.id} not found in scheduler store`);
                         }
                     }
                     
                     scheduler.project.resumeAutoCommit();
                     await scheduler.project.commitAsync();
+                    console.log('✅ Optimization results applied successfully!');
                 } catch (error) {
                     scheduler.project.resumeAutoCommit();
+                    console.error('❌ Error applying optimization results:', error);
                     throw error;
                 }
             }
