@@ -331,44 +331,42 @@
             filter: invert(1) hue-rotate(-180deg);
         }
         
-        /* Dependency lines styling - SOLID and DARK */
+        /* Dependency lines styling */
         .b-sch-dependency {
-            stroke: #2d3748 !important; /* Very dark gray */
-            stroke-width: 2.5 !important;
-            opacity: 1 !important;
-            stroke-dasharray: none !important; /* SOLID lines */
+            stroke: #666 !important;
+            stroke-width: 2 !important;
+            opacity: 0.8 !important;
         }
         
         .b-sch-dependency-arrow {
-            fill: #2d3748 !important;
-            stroke: #2d3748 !important;
+            fill: #666 !important;
+            stroke: #666 !important;
         }
         
         .b-sch-dependency:hover {
-            stroke: #1a202c !important; /* Almost black on hover */
+            stroke: #333 !important;
             stroke-width: 3 !important;
             opacity: 1 !important;
         }
         
         .b-sch-dependency-arrow:hover {
-            fill: #1a202c !important;
-            stroke: #1a202c !important;
+            fill: #333 !important;
+            stroke: #333 !important;
         }
         
-        /* Visual-only dependencies - SOLID dark lines */
+        /* Visual-only dependencies - solid lines with lighter color */
         .b-sch-dependency.b-inactive,
         .b-sch-dependency.visual-dependency {
-            stroke: #2d3748 !important; /* Dark gray */
-            stroke-width: 2.5 !important;
-            opacity: 0.9 !important;
-            stroke-dasharray: none !important; /* SOLID - no dashes */
+            stroke: #999 !important;
+            stroke-width: 1.5 !important;
+            opacity: 0.6 !important;
         }
         
         .b-sch-dependency.b-inactive .b-sch-dependency-arrow,
         .b-sch-dependency.visual-dependency .b-sch-dependency-arrow {
-            fill: #2d3748 !important;
-            stroke: #2d3748 !important;
-            opacity: 0.9 !important;
+            fill: #999 !important;
+            stroke: #999 !important;
+            opacity: 0.6 !important;
         }
         
         /* Critical path dependency styling */
@@ -1008,49 +1006,6 @@
         .scheduler-notification {
             transition: all 0.3s ease-out;
         }
-        
-        /* Dependency line styling */
-        /* Make dependency lines darker and solid in light mode */
-        .b-sch-dependency,
-        .b-sch-dependency-line {
-            stroke: #2d3748 !important; /* Very dark gray for excellent visibility */
-            stroke-width: 2.5 !important;
-            opacity: 1 !important;
-            stroke-dasharray: none !important; /* Solid lines */
-        }
-        
-        /* Visual-only dependency styling - solid lines, slightly darker */
-        .visual-dependency,
-        .visual-dependency .b-sch-dependency-line {
-            stroke: #1a202c !important; /* Almost black for maximum visibility */
-            stroke-width: 2.5 !important;
-            stroke-dasharray: none !important; /* SOLID lines - no dashes */
-            opacity: 0.9 !important;
-        }
-        
-        /* Inactive dependency styling - ensure they don't interfere */
-        .b-inactive.b-sch-dependency,
-        .b-sch-dependency.b-inactive {
-            pointer-events: none !important;
-            stroke: #2d3748 !important; /* Dark solid lines */
-            stroke-dasharray: none !important; /* SOLID lines */
-            opacity: 0.85 !important;
-        }
-        
-        /* Dark theme dependency lines */
-        .dark-theme .b-sch-dependency,
-        .dark-theme .b-sch-dependency-line {
-            stroke: #cbd5e0 !important; /* Light gray for dark theme */
-            opacity: 1 !important;
-            stroke-dasharray: none !important; /* Solid lines */
-        }
-        
-        .dark-theme .visual-dependency,
-        .dark-theme .visual-dependency .b-sch-dependency-line {
-            stroke: #e2e8f0 !important; /* Very light for dark theme */
-            stroke-dasharray: none !important; /* SOLID lines */
-            opacity: 0.95 !important;
-        }
     </style>
 </head>
 <body>
@@ -1161,31 +1116,10 @@
     </div>
 
     <!-- Load Bryntum Scheduler Pro UMD -->
-    <script id="bryntum-script" src="/schedulerpro.umd.js?v=633"></script>
+    <script src="/schedulerpro.umd.js?v=633"></script>
     
     <script>
         console.log('🔥 SCHEDULER SCRIPT STARTING...');
-        
-        // Store authentication token globally
-        let globalAuthToken = null;
-        
-        // Listen for authentication token from parent window
-        window.addEventListener('message', function(event) {
-            if (event.data?.type === 'SET_AUTH_TOKEN' && event.data?.token) {
-                console.log('🔐 Received auth token from parent window');
-                globalAuthToken = event.data.token;
-                // Also store in localStorage for persistence
-                localStorage.setItem('auth_token', event.data.token);
-            }
-        });
-        
-        // Helper function to get authentication token
-        function getAuthToken() {
-            // First check global token (from postMessage), then localStorage, then parent window
-            return globalAuthToken || 
-                   localStorage.getItem('auth_token') || 
-                   window.parent?.localStorage?.getItem('auth_token');
-        }
         
         // Global error handler to catch any errors
         window.onerror = function(msg, url, lineNo, columnNo, error) {
@@ -1205,87 +1139,6 @@
             }
             return true;
         };
-        
-        // Wait for Bryntum library to be available
-        function waitForBryntum(callback) {
-            let timeoutHandle = null;
-            let intervalCleared = false;
-            
-            const checkInterval = setInterval(() => {
-                // Check multiple possible locations for SchedulerPro (from UMD bundle)
-                if (typeof bryntum !== 'undefined' && bryntum.schedulerpro && bryntum.schedulerpro.SchedulerPro) {
-                    if (!intervalCleared) {
-                        clearInterval(checkInterval);
-                        intervalCleared = true;
-                        if (timeoutHandle) {
-                            clearTimeout(timeoutHandle);
-                        }
-                        console.log('✅ Bryntum SchedulerPro loaded at bryntum.schedulerpro.SchedulerPro');
-                        // Make SchedulerPro globally available for easier access
-                        window.SchedulerPro = bryntum.schedulerpro.SchedulerPro;
-                        callback();
-                    }
-                } else if (typeof SchedulerPro !== 'undefined') {
-                    // Check if SchedulerPro is directly on window
-                    if (!intervalCleared) {
-                        clearInterval(checkInterval);
-                        intervalCleared = true;
-                        if (timeoutHandle) {
-                            clearTimeout(timeoutHandle);
-                        }
-                        console.log('✅ Bryntum SchedulerPro loaded directly on window');
-                        window.SchedulerPro = SchedulerPro;
-                        callback();
-                    }
-                } else if (typeof window.SchedulerPro !== 'undefined') {
-                    // Already available
-                    if (!intervalCleared) {
-                        clearInterval(checkInterval);
-                        intervalCleared = true;
-                        if (timeoutHandle) {
-                            clearTimeout(timeoutHandle);
-                        }
-                        console.log('✅ Bryntum SchedulerPro already available on window');
-                        callback();
-                    }
-                } else {
-                    console.log('⏳ Waiting for Bryntum SchedulerPro to load...');
-                    // Debug: Log what's available
-                    if (typeof bryntum !== 'undefined') {
-                        console.log('  bryntum object found, contents:', Object.keys(bryntum || {}));
-                        if (bryntum.schedulerpro) {
-                            console.log('  bryntum.schedulerpro found, contents:', Object.keys(bryntum.schedulerpro || {}));
-                        }
-                    }
-                }
-            }, 100);
-            
-            // Timeout after 10 seconds - but only show error if we still don't have Bryntum
-            timeoutHandle = setTimeout(() => {
-                if (!intervalCleared) {
-                    clearInterval(checkInterval);
-                    intervalCleared = true;
-                    
-                    // Double-check if Bryntum is really not loaded before showing error
-                    if (typeof window.SchedulerPro === 'undefined' && 
-                        (typeof bryntum === 'undefined' || !bryntum.schedulerpro?.SchedulerPro)) {
-                        console.error('❌ Bryntum SchedulerPro failed to load after 10 seconds');
-                        const loadingOverlay = document.getElementById('loadingOverlay');
-                        // Only show error if loading overlay is visible and empty
-                        if (loadingOverlay && loadingOverlay.style.display !== 'none' && !loadingOverlay.querySelector('.loading-spinner')) {
-                            loadingOverlay.innerHTML = `
-                                <div style="color: red; font-size: 16px; padding: 20px; background: white; border-radius: 8px;">
-                                    <h3>Loading Error</h3>
-                                    <p>Bryntum Scheduler Pro failed to load. Please refresh the page.</p>
-                                </div>
-                            `;
-                        }
-                    } else {
-                        console.log('✅ Bryntum already loaded, timeout cleared');
-                    }
-                }
-            }, 10000);
-        }
         
         // --- Planning area filter: robust wiring + safe filtering ---
         // Bind once, unconditionally
@@ -1325,112 +1178,6 @@
             setTimeout(() => sch.zoomToFit({ leftMargin: 50, rightMargin: 50 }), 100);
         }
         
-        // Function to render PT dependencies as visual-only SVG lines
-        function renderPTDependencyLines(scheduler, dependencies) {
-            try {
-                console.log(`🎨 Rendering ${dependencies.length} PT dependency lines...`);
-                
-                // Wait for scheduler to be fully rendered
-                setTimeout(() => {
-                    // Get scheduler element
-                    const schedulerEl = scheduler.element;
-                    
-                    // Remove any existing dependency container
-                    const existingSvg = document.querySelector('.pt-dependency-overlay');
-                    if (existingSvg) {
-                        existingSvg.remove();
-                    }
-                    
-                    // Create SVG container as overlay OUTSIDE Bryntum's DOM
-                    const svgContainer = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-                    svgContainer.setAttribute('class', 'pt-dependency-overlay');
-                    svgContainer.style.position = 'absolute';
-                    svgContainer.style.top = '0';
-                    svgContainer.style.left = '0';
-                    svgContainer.style.width = '100%';
-                    svgContainer.style.height = '100%';
-                    svgContainer.style.pointerEvents = 'none';
-                    svgContainer.style.zIndex = '100';
-                    
-                    // Find the scheduler's main container and add as sibling
-                    const schedulerWrapper = schedulerEl.closest('.scheduler-container') || schedulerEl.parentElement;
-                    schedulerWrapper.style.position = 'relative';
-                    schedulerWrapper.appendChild(svgContainer);
-                    
-                    // Draw each dependency as a line
-                    let linesDrawn = 0;
-                    dependencies.forEach(dep => {
-                        const fromEvent = scheduler.eventStore.getById(dep.from);
-                        const toEvent = scheduler.eventStore.getById(dep.to);
-                        
-                        if (fromEvent && toEvent) {
-                            // Get event elements
-                            const fromEl = scheduler.getElementFromEventRecord(fromEvent);
-                            const toEl = scheduler.getElementFromEventRecord(toEvent);
-                            
-                            if (fromEl && toEl) {
-                                // Get positions
-                                const fromRect = fromEl.getBoundingClientRect();
-                                const toRect = toEl.getBoundingClientRect();
-                                const containerRect = svgContainer.getBoundingClientRect();
-                                
-                                // Calculate line coordinates (from right edge of source to left edge of target)
-                                const x1 = fromRect.right - containerRect.left;
-                                const y1 = fromRect.top + fromRect.height / 2 - containerRect.top;
-                                const x2 = toRect.left - containerRect.left;
-                                const y2 = toRect.top + toRect.height / 2 - containerRect.top;
-                                
-                                // Create SVG path for dependency line with arrow
-                                const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-                                
-                                // Create curved line path
-                                const midX = (x1 + x2) / 2;
-                                const d = `M ${x1} ${y1} C ${midX} ${y1}, ${midX} ${y2}, ${x2} ${y2}`;
-                                
-                                path.setAttribute('d', d);
-                                path.setAttribute('stroke', '#2d3748'); // Dark gray
-                                path.setAttribute('stroke-width', '2.5');
-                                path.setAttribute('fill', 'none');
-                                path.setAttribute('marker-end', 'url(#arrowhead)');
-                                path.setAttribute('class', 'pt-dependency-line');
-                                
-                                svgContainer.appendChild(path);
-                                linesDrawn++;
-                            }
-                        }
-                    });
-                    
-                    // Add arrowhead marker definition if not exists
-                    if (!svgContainer.querySelector('#arrowhead')) {
-                        const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
-                        const marker = document.createElementNS('http://www.w3.org/2000/svg', 'marker');
-                        marker.setAttribute('id', 'arrowhead');
-                        marker.setAttribute('markerWidth', '10');
-                        marker.setAttribute('markerHeight', '10');
-                        marker.setAttribute('refX', '9');
-                        marker.setAttribute('refY', '3');
-                        marker.setAttribute('orient', 'auto');
-                        
-                        const polygon = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
-                        polygon.setAttribute('points', '0 0, 10 3, 0 6');
-                        polygon.setAttribute('fill', '#2d3748');
-                        
-                        marker.appendChild(polygon);
-                        defs.appendChild(marker);
-                        svgContainer.appendChild(defs);
-                    }
-                    
-                    console.log(`✅ PT dependency lines rendered successfully: ${linesDrawn} lines drawn`);
-                }, 500); // Wait 500ms for scheduler to render
-                
-            } catch (error) {
-                console.error('❌ Error rendering PT dependency lines:', error);
-            }
-        }
-        
-        // Make function globally accessible
-        window.renderPTDependencyLines = renderPTDependencyLines;
-        
         // Wait for DOM to load
         // Guard to prevent multiple initialization attempts
         let schedulerInitialized = false;
@@ -1445,98 +1192,109 @@
             }
             schedulerInitialized = true;
             
-            // Wait for Bryntum library to load before proceeding
-            waitForBryntum(async () => {
-                try {
-                    console.log('📊 Bryntum loaded successfully, starting scheduler initialization...');
-                    console.log('✅ Bryntum SchedulerPro loaded successfully', window.SchedulerPro);
-                    
-                    // Notify parent window that scheduler is ready
+            try {
+                console.log('📊 Checking if Bryntum is loaded...');
+                
+                // Check for SchedulerPro in the UMD bundle
+                const SchedulerPro =
+                    window.bryntum?.schedulerpro?.SchedulerPro || // normal UMD nested
+                    window.bryntum?.SchedulerPro;                 // flat fallback
+                
+                if (!SchedulerPro) {
+                    console.error('❌ Bryntum SchedulerPro library not loaded!');
+                    console.error('Bryntum UMD not found on window.bryntum');
+                    // Notify parent of error
                     if (window.parent !== window) {
-                        window.parent.postMessage({ type: 'SCHEDULER_READY' }, '*');
-                        console.log('📤 Sent SCHEDULER_READY message to parent');
+                        window.parent.postMessage({ type: 'SCHEDULER_ERROR', error: 'Bryntum library not loaded' }, '*');
                     }
-                    
-                    // Set today's date to September 3, 2025
-                    const today = new Date(2025, 8, 3); // September 3, 2025
-                    today.setHours(8, 0, 0, 0); // Start at 8 AM
-                    
-                    // Helper to create a date relative to September 3, 2025
-                    function createDate(hoursFromNow) {
-                        const date = new Date(2025, 8, 3); // September 3, 2025
-                        date.setHours(8 + hoursFromNow, 0, 0, 0); // Start at 8 AM
-                        return date;
+                    // Hide loading overlay when directly accessed
+                    const loadingOverlay = document.getElementById('loadingOverlay');
+                    if (loadingOverlay) {
+                        loadingOverlay.style.display = 'none';
                     }
-                    
-                    // Planning area filter state
-                    let selectedPlanningArea = 'all';
-                    let lastScheduledArea = '';
-                    let allPlanningAreas = [];
-                    
-                    // Load all planning areas for the dropdown (once on startup)
-                    async function loadPlanningAreas() {
-                        try {
-                            // Get auth token using helper function
-                            const authToken = getAuthToken();
-                            const authHeaders = authToken ? { 'Authorization': `Bearer ${authToken}` } : {};
-                            
-                            const response = await fetch('/api/resources', { headers: authHeaders });
-                            if (response.ok) {
-                                const allResources = await response.json();
-                                const areas = new Set();
-                                allResources.forEach(resource => {
-                                    if (resource.planning_area) {
-                                        areas.add(resource.planning_area);
-                                    }
-                                });
-                                allPlanningAreas = Array.from(areas).sort();
-                                
-                                // Populate dropdown
-                                const dropdown = document.getElementById('planningAreaFilter');
-                                allPlanningAreas.forEach(area => {
-                                    const option = document.createElement('option');
-                                    option.value = area;
-                                    option.textContent = area;
-                                    option.setAttribute('data-testid', `option-planning-area-${area}`);
-                                    dropdown.appendChild(option);
-                                });
-                                
-                                console.log('✅ Planning areas loaded:', allPlanningAreas);
-                            }
-                        } catch (error) {
-                            console.error('Error loading planning areas:', error);
-                        }
-                    }
-                    
-                    // Load planning areas first
-                    await loadPlanningAreas();
-                    
-                    // NOTE: Click listener for applyPlanningAreaFilter button is already
-                    // attached via document.addEventListener at line 1145-1150
-                    // No need for duplicate listener here
-                    console.log('✅ Planning area filter button handler already attached via document click delegation');
-                    
-                    // Fetch real PT operations and resources from the backend
-                    let resources = [];
-                    let ptOperations = [];
-                    let resourceCapabilities = {};
-                    let fetchedDependencies = []; // Store dependencies at a higher scope
-                    
+                    return;
+                }
+                
+                // Make SchedulerPro available on window for the rest of the code
+                window.SchedulerPro = SchedulerPro;
+                console.log('✅ Bryntum SchedulerPro loaded successfully', SchedulerPro);
+                
+                // Notify parent window that scheduler is ready
+                if (window.parent !== window) {
+                    window.parent.postMessage({ type: 'SCHEDULER_READY' }, '*');
+                    console.log('📤 Sent SCHEDULER_READY message to parent');
+                }
+                
+                // Set today's date to September 3, 2025
+                const today = new Date(2025, 8, 3); // September 3, 2025
+                today.setHours(8, 0, 0, 0); // Start at 8 AM
+                
+                // Helper to create a date relative to September 3, 2025
+                function createDate(hoursFromNow) {
+                    const date = new Date(2025, 8, 3); // September 3, 2025
+                    date.setHours(8 + hoursFromNow, 0, 0, 0); // Start at 8 AM
+                    return date;
+                }
+                
+                // Planning area filter state
+                let selectedPlanningArea = 'all';
+                let lastScheduledArea = '';
+                let allPlanningAreas = [];
+                
+                // Load all planning areas for the dropdown (once on startup)
+                async function loadPlanningAreas() {
                     try {
-                        // Get auth token using helper function
-                        const authToken = getAuthToken();
-                        const authHeaders = authToken ? { 'Authorization': `Bearer ${authToken}` } : {};
-                        
-                        // Fetch resources, PT operations, jobs, and dependencies from the backend APIs
-                        // NOTE: Dependencies are for visual display only - ALAP uses sequence numbers for scheduling
-                        const timestamp = Date.now(); // Cache-busting timestamp
-                        const [resourcesResponse, operationsResponse, dependenciesResponse, capabilitiesResponse, jobsResponse] = await Promise.all([
-                            fetch('/api/resources?_=' + timestamp, { headers: authHeaders }),
-                            fetch('/api/pt-operations?_=' + timestamp, { headers: authHeaders }), 
-                            fetch('/api/pt-dependencies?_=' + timestamp, { headers: authHeaders }), // Keep for visual dependency lines
-                            fetch('/api/resources-with-capabilities?_=' + timestamp, { headers: authHeaders }),
-                            fetch('/api/jobs?_=' + timestamp, { headers: authHeaders }) // CRITICAL: Fetch jobs directly to get real priorities
-                        ]);
+                        const response = await fetch('/api/resources');
+                        if (response.ok) {
+                            const allResources = await response.json();
+                            const areas = new Set();
+                            allResources.forEach(resource => {
+                                if (resource.planning_area) {
+                                    areas.add(resource.planning_area);
+                                }
+                            });
+                            allPlanningAreas = Array.from(areas).sort();
+                            
+                            // Populate dropdown
+                            const dropdown = document.getElementById('planningAreaFilter');
+                            allPlanningAreas.forEach(area => {
+                                const option = document.createElement('option');
+                                option.value = area;
+                                option.textContent = area;
+                                option.setAttribute('data-testid', `option-planning-area-${area}`);
+                                dropdown.appendChild(option);
+                            });
+                            
+                            console.log('✅ Planning areas loaded:', allPlanningAreas);
+                        }
+                    } catch (error) {
+                        console.error('Error loading planning areas:', error);
+                    }
+                }
+                
+                // Load planning areas first
+                await loadPlanningAreas();
+                
+                // NOTE: Click listener for applyPlanningAreaFilter button is already
+                // attached via document.addEventListener at line 1145-1150
+                // No need for duplicate listener here
+                console.log('✅ Planning area filter button handler already attached via document click delegation');
+                
+                // Fetch real PT operations and resources from the backend
+                let resources = [];
+                let ptOperations = [];
+                let resourceCapabilities = {};
+                let fetchedDependencies = []; // Store dependencies at a higher scope
+                
+                try {
+                    // Fetch resources, PT operations, and dependencies from the backend APIs
+                    // NOTE: Dependencies are for visual display only - ALAP uses sequence numbers for scheduling
+                    const [resourcesResponse, operationsResponse, dependenciesResponse, capabilitiesResponse] = await Promise.all([
+                        fetch('/api/resources'),
+                        fetch('/api/pt-operations'),
+                        fetch('/api/pt-dependencies'), // Keep for visual dependency lines
+                        fetch('/api/resources-with-capabilities')
+                    ]);
                     
                     if (resourcesResponse.ok) {
                         resources = await resourcesResponse.json();
@@ -1624,30 +1382,6 @@
                         if (ptOperations.length > 0) {
                             console.log('✅ First PT operation sample:', ptOperations[0]);
                         }
-                        
-                        // 🔴 CRITICAL DEBUG: Check job priorities from API
-                        console.log('🔴 API JOB PRIORITY DEBUG - First 5 operations:', 
-                            ptOperations.slice(0, 5).map(op => ({
-                                name: op.name,
-                                jobName: op.jobName,
-                                jobPriority: op.jobPriority,
-                                jobPriorityType: typeof op.jobPriority,
-                                priority: op.priority,
-                                allFields: Object.keys(op)
-                            }))
-                        );
-                        
-                        // Check specifically for IPA operations
-                        const ipaOps = ptOperations.filter(op => op.jobName?.includes('IPA'));
-                        if (ipaOps.length > 0) {
-                            console.log('🔴 IPA operations found:', 
-                                ipaOps.map(op => ({
-                                    name: op.name,
-                                    jobName: op.jobName,
-                                    jobPriority: op.jobPriority
-                                }))
-                            );
-                        }
                     } else {
                         console.error('❌ Failed to fetch PT operations:', operationsResponse.status);
                     }
@@ -1680,33 +1414,6 @@
                         console.warn('Failed to fetch dependencies, using empty array');
                     }
                     
-                    // Process jobs to get real priorities
-                    let jobPriorityMap = new Map();
-                    if (jobsResponse && jobsResponse.ok) {
-                        const jobs = await jobsResponse.json();
-                        console.log('✅ Jobs fetched successfully:', jobs.length);
-                        
-                        // Build simple job priority map from real jobs data
-                        jobs.forEach(job => {
-                            const priority = job.priority || 999;
-                            // Map by various possible job ID fields
-                            if (job.id) jobPriorityMap.set(String(job.id), priority);
-                            if (job.external_id) jobPriorityMap.set(String(job.external_id), priority);
-                            if (job.batch_id) jobPriorityMap.set(String(job.batch_id), priority);
-                            if (job.name) jobPriorityMap.set(job.name, priority);
-                            
-                            console.log(`📊 Job ${job.name || job.id}: Priority ${priority}`);
-                        });
-                        
-                        console.log('✅ Job priority map built with', jobPriorityMap.size, 'entries');
-                        console.log('Job priorities:', Array.from(jobPriorityMap.entries()));
-                    } else {
-                        console.warn('Failed to fetch jobs, will use fallback priorities');
-                    }
-                    
-                    // Store job priority map globally for ASAP algorithm
-                    window.jobPriorityMap = jobPriorityMap;
-                    
                     // Process resource capabilities
                     if (capabilitiesResponse && capabilitiesResponse.ok) {
                         const capabilitiesData = await capabilitiesResponse.json();
@@ -1723,17 +1430,17 @@
                         console.log('🍺 Fermenter Tank 2 capabilities:', resourceCapabilities[6]);
                         console.log('🍺 Fermenter Tank 3 capabilities:', resourceCapabilities[7]);
                     }
-                    } catch (error) {
-                        console.error('❌ Error fetching data:', error);
-                        // No fallback - let resources stay empty rather than showing wrong equipment
-                        resources = [];
-                    }
+                } catch (error) {
+                    console.error('❌ Error fetching data:', error);
+                    // No fallback - let resources stay empty rather than showing wrong equipment
+                    resources = [];
+                }
 
-                    // Map resources to create resource lookup by both ID and name
-                    const resourceMap = new Map();
-                    const resourceByName = new Map();
-                    const originalIdMap = new Map(); // Map original numeric IDs to new string IDs
-                    resources.forEach(resource => {
+                // Map resources to create resource lookup by both ID and name
+                const resourceMap = new Map();
+                const resourceByName = new Map();
+                const originalIdMap = new Map(); // Map original numeric IDs to new string IDs
+                resources.forEach(resource => {
                     resourceMap.set(resource.id, resource);
                     resourceMap.set(resource.name, resource);
                     // Also create a name-based lookup for better matching
@@ -1768,12 +1475,9 @@
                 // Transform PT operations into Bryntum events format
                 // CRITICAL: Load operations but DON'T use overlapping scheduled times
                 let events = ptOperations.map((operation, index) => {
-                    // Log job names and priorities for debugging  
-                    if (index < 5) {
-                        console.log(`🔴 PRIORITY DEBUG - Operation ${index}: ${operation.name}`);
-                        console.log(`  📊 API jobPriority field: ${operation.jobPriority} (type: ${typeof operation.jobPriority})`);
-                        console.log(`  📊 API priority field: ${operation.priority} (type: ${typeof operation.priority})`);
-                        console.log(`  📊 Full operation:`, operation);
+                    // Log job names for debugging
+                    if (index < 5 || operation.jobName) {
+                        console.log(`Operation ${operation.name}: Job = ${operation.jobName || 'NO JOB NAME'}`);
                     }
                     
                     // First try to find a matching resource based on capability
@@ -1835,11 +1539,9 @@
                         manuallyScheduled: false, // Allow automatic scheduling
                         draggable: true, // Allow dragging to schedule
                         // Additional PT operation data
-                        jobId: operation.job_id || operation.jobId, // Use numeric job_id for priority lookup
-                        jobExternalId: operation.job_external_id || operation.jobExternalId || operation.batch_id, // Store batch ID separately
-                        jobName: operation.job_name || operation.jobName,
-                        jobPriority: Number(operation.job_priority || operation.jobPriority), // Map from API field job_priority
-                        jobDueDate: operation.job_due_date || operation.dueDate, // CRITICAL: Add job Need-By date for ALAP scheduling
+                        jobId: operation.jobExternalId || operation.jobId || operation.job_id, // Use jobExternalId for dependency generation
+                        jobName: operation.jobName,
+                        jobDueDate: operation.dueDate, // CRITICAL: Add job Need-By date for ALAP scheduling
                         operationName: operation.name,
                         resourceName: operation.resourceName,
                         isUnscheduled: isUnscheduled,
@@ -1847,14 +1549,6 @@
                         ptData: operation // Keep original PT data for algorithms
                     };
                 }); // Include all operations, even unscheduled ones
-                
-                // DEBUG: Check what events have after mapping
-                console.log('🔴 PRIORITY DEBUG - First 3 events after mapping:', events.slice(0, 3).map(e => ({
-                    name: e.name,
-                    jobName: e.jobName,
-                    jobPriority: e.jobPriority,
-                    jobPriorityType: typeof e.jobPriority
-                })));
                 
                 // LOG IMMEDIATELY to verify code is running
                 console.log('🚀 SCHEDULER LOADED - Total events:', events.length);
@@ -1970,8 +1664,8 @@
                     // Map dependencies with inactive flag to prevent constraint enforcement
                     dependencies = fetchedDependencies.map(dep => ({
                         id: String(dep.id),
-                        from: dep.source_operation_id || dep.from,  // Map database field to Bryntum field
-                        to: dep.target_operation_id || dep.to,      // Map database field to Bryntum field
+                        from: dep.from,
+                        to: dep.to,
                         type: dep.type || 2, // 2 = Finish-to-Start
                         lag: dep.lag || 0,
                         lagUnit: dep.lagUnit || 'hour',
@@ -1994,10 +1688,10 @@
                 let resourceColumnWidth = 200;
                 
                 if (isMobile) {
-                    viewPreset = 'dayAndWeek';  // Use correct preset for mobile
+                    viewPreset = 'weekAndDay';  // Wider view for mobile
                     resourceColumnWidth = 120;
                 } else if (isTablet) {
-                    viewPreset = 'dayAndWeek';  // Use correct preset for tablet
+                    viewPreset = 'weekAndDay';
                     resourceColumnWidth = 150;
                 }
                 
@@ -2009,159 +1703,7 @@
                 // Create scheduler instance with ASAP scheduling
                 // Make scheduler globally accessible for Max AI
                 // Use SchedulerPro from the ES module (now available on window)
-                // Add conflict resolution handler before creating scheduler
-                // This will automatically resolve dependency conflicts
-                const handleSchedulingConflict = (conflict) => {
-                    console.log('🔧 Auto-resolving scheduling conflict');
-                    
-                    // Always choose to ignore dependency conflicts
-                    if (conflict && conflict.resolutions) {
-                        // Look for resolution that removes or deactivates the dependency
-                        for (const resolution of conflict.resolutions) {
-                            if (resolution.description && 
-                                (resolution.description.toLowerCase().includes('deactivate dependency') ||
-                                 resolution.description.toLowerCase().includes('remove dependency'))) {
-                                console.log('  → Auto-selected: Ignoring dependency constraint');
-                                resolution.resolve();
-                                return;
-                            }
-                        }
-                        
-                        // If no dependency resolution, remove constraints
-                        for (const resolution of conflict.resolutions) {
-                            if (resolution.description && 
-                                resolution.description.toLowerCase().includes('remove') &&
-                                resolution.description.toLowerCase().includes('constraint')) {
-                                console.log('  → Auto-selected: Removing date constraint');
-                                resolution.resolve();
-                                return;
-                            }
-                        }
-                        
-                        // Last resort: cancel
-                        for (const resolution of conflict.resolutions) {
-                            if (resolution.description && 
-                                resolution.description.toLowerCase().includes('cancel')) {
-                                console.log('  → Cancelling operation');
-                                resolution.resolve();
-                                return;
-                            }
-                        }
-                    }
-                };
-
-                // Create a visual-only dependency store - OPTIONAL feature
-                // Dependencies are visual-only and do not constrain scheduling
-                let visualDependencyStore = null;
-                
-                try {
-                    // Check if DependencyStore is available in bryntum namespace
-                    let DependencyStore = null;
-                    
-                    // Check various possible locations for DependencyStore
-                    if (window.bryntum?.schedulerpro?.DependencyStore) {
-                        DependencyStore = window.bryntum.schedulerpro.DependencyStore;
-                        console.log('✅ Found DependencyStore at window.bryntum.schedulerpro.DependencyStore');
-                    } else if (window.bryntum?.gantt?.DependencyStore) {
-                        DependencyStore = window.bryntum.gantt.DependencyStore;
-                        console.log('✅ Found DependencyStore at window.bryntum.gantt.DependencyStore');
-                    } else if (typeof SchedulerPro !== 'undefined' && SchedulerPro.DependencyStore) {
-                        DependencyStore = SchedulerPro.DependencyStore;
-                        console.log('✅ Found DependencyStore at SchedulerPro.DependencyStore');
-                    } else if (window.bryntum?.scheduler?.DependencyStore) {
-                        DependencyStore = window.bryntum.scheduler.DependencyStore;
-                        console.log('✅ Found DependencyStore at window.bryntum.scheduler.DependencyStore');
-                    } else {
-                        // Try to create a simple store if DependencyStore not found
-                        console.log('⚠️ DependencyStore class not found in standard locations');
-                        console.log('  Attempting to use basic Store class for visual dependencies...');
-                        
-                        // Use basic Store which is available in all Bryntum packages
-                        if (window.bryntum?.data?.Store || window.bryntum?.store?.Store) {
-                            DependencyStore = window.bryntum.data?.Store || window.bryntum.store?.Store;
-                            console.log('✅ Using basic Store class for visual dependencies');
-                        } else {
-                            console.log('⚠️ No Store class found - visual dependencies will be disabled');
-                            console.log('  Available on bryntum:', window.bryntum ? Object.keys(window.bryntum) : 'bryntum not found');
-                        }
-                    }
-                    
-                    // Create store only if we found a Store class
-                    if (DependencyStore) {
-                        visualDependencyStore = new DependencyStore({
-                            // Define fields with active always defaulting to false
-                            fields: [
-                                { name: 'from', type: 'string' },
-                                { name: 'to', type: 'string' },
-                                { name: 'type', type: 'int', defaultValue: 2 },  // Changed to 'int' per Bryntum requirement
-                                { name: 'lag', type: 'int', defaultValue: 0 },    // Changed to 'int' per Bryntum requirement
-                                { name: 'lagUnit', type: 'string', defaultValue: 'day' },
-                                { name: 'cls', type: 'string', defaultValue: 'b-inactive' },
-                                // Force active to false - visual only
-                                { name: 'active', type: 'boolean', defaultValue: false }
-                            ],
-                            data: [] // Start with empty, will load after scheduler is initialized
-                        });
-                    } else {
-                        // Create a simple array-based store as fallback
-                        console.log('⚠️ Creating simple array-based dependency store as fallback');
-                        visualDependencyStore = {
-                            data: [],
-                            records: [],
-                            count: 0,
-                            add: function(items) {
-                                const itemsArray = Array.isArray(items) ? items : [items];
-                                this.data.push(...itemsArray);
-                                this.records = this.data;
-                                this.count = this.data.length;
-                                return itemsArray;
-                            },
-                            removeAll: function() {
-                                this.data = [];
-                                this.records = [];
-                                this.count = 0;
-                            },
-                            toJSON: function() {
-                                return this.data;
-                            },
-                            getById: function(id) {
-                                return this.data.find(d => d.id === id);
-                            }
-                        };
-                    }
-                
-                    if (visualDependencyStore) {
-                        // Override add/update methods to force dependencies to be inactive
-                        const originalAdd = visualDependencyStore.add;
-                        visualDependencyStore.add = function(records, silent) {
-                            // Ensure all records are inactive
-                            const processedRecords = Array.isArray(records) ? records : [records];
-                            processedRecords.forEach(r => {
-                                if (r) {
-                                    r.active = false;
-                                    r.cls = 'b-inactive';
-                                }
-                            });
-                            return originalAdd.call(this, records, silent);
-                        };
-                        
-                        // Make visual dependency store globally accessible
-                        window.visualDependencyStore = visualDependencyStore;
-                        console.log('✅ Visual dependency store created successfully');
-                    } else {
-                        console.warn('⚠️ Visual dependency store not created - DependencyStore not available');
-                        window.visualDependencyStore = null;
-                    }
-                } catch (error) {
-                    console.error('❌ Error creating visual dependency store:', error);
-                    console.warn('⚠️ Continuing without visual dependencies');
-                    window.visualDependencyStore = null;
-                }
-                
-                // CRITICAL FIX: Simply skip the ProjectModel completely and use basic scheduler
-                // We'll load data directly into the scheduler after creation
-                
-                window.scheduler = new SchedulerPro({
+                window.scheduler = new window.SchedulerPro({
                     appendTo: 'scheduler',
                     
                     columns: schedulerColumns,
@@ -2189,19 +1731,11 @@
                             return true;
                         },
                         
-                        // Hook into project load - dependencies handled separately
-                        projectChange: ({ project }) => {
-                            // Engine's dependency store is null (visual-only design)
-                            // Visual dependencies are managed in window.visualDependencyStore
-                            console.log('🔧 Project loaded - using visual-only dependency system');
-                        },
-                        
                         // Allow inactive (visual-only) dependencies, block active (constraining) dependencies
                         beforeDependencyAdd: ({ dependency }) => {
                             // Always mark dependencies as inactive for visual display only
                             if (dependency && !dependency.inactive) {
                                 dependency.inactive = true;
-                                dependency.active = false;
                                 console.log('📋 Dependency marked as inactive (visual-only):', dependency.id);
                             }
                             
@@ -2213,18 +1747,11 @@
                             // Ensure dependency remains inactive during updates
                             if (dependency && !dependency.inactive) {
                                 dependency.inactive = true;
-                                dependency.active = false;
                                 console.log('📋 Dependency update - enforced inactive flag:', dependency.id);
                             }
                             
                             // Allow the update now that inactive flag is set
                             return true;
-                        },
-                        
-                        // Hook before any scheduling propagation
-                        beforeProjectPropagate: ({ project }) => {
-                            // Engine's dependency store is null - visual dependencies don't affect propagation
-                            console.log('📊 Propagating schedule (visual dependencies don\'t constrain)');
                         }
                     },
                     
@@ -2254,64 +1781,37 @@
                     // Disable sync storage to prevent errors
                     syncDataOnLoad: false,
 
-                    // Simplified project configuration without custom class
+                    // Single project configuration with strict no-overlap constraints
                     project: {
                         autoLoad: false,
                         autoSync: false,
-                        silenceInitialCommit: true,
+                        silenceInitialCommit: true, // Prevent initial save attempts
                         
-                        // Store configurations with custom fields
-                        eventStore: {
-                            data: [],
-                            autoLoad: false,
-                            // Define custom fields to preserve from API
-                            fields: [
-                                'jobId',
-                                'jobExternalId',
-                                'jobName',
-                                { name: 'jobPriority', type: 'number', defaultValue: 999 },
-                                'jobDueDate',
-                                'operationName',
-                                'resourceName',
-                                'isUnscheduled',
-                                { name: 'sequence_number', type: 'number', defaultValue: 0 },
-                                'ptData'
-                            ]
-                        },
-                        resourceStore: {
-                            data: [],
-                            autoLoad: false
-                        },
-                        assignmentStore: {
-                            data: [],
-                            autoLoad: false
-                        },
-                        // Enable dependency store for visual-only dependencies
-                        dependencyStore: {
-                            data: [],
-                            autoLoad: false
-                        },
+                        // Note: inline data will be loaded after fetching from API
+                        // resources, events, dependencies will be provided via loadInlineData()
                         
-                        // Disable ALL automatic scheduling
-                        autoCalculateStartDate: false,
-                        autoCalculateEndDate: false,
-                        autoCalculate: false,
-                        recalculateAfterLoad: false,
-                        autoSchedule: false,
-                        delayCalculation: true,
+                        // Enable automatic scheduling dates
+                        autoCalculateStartDate: true,
+                        autoCalculateEndDate: true,
+                        autoCalculate: false,          // DISABLED - Only recalculate when explicitly triggered
+                        recalculateAfterLoad: false,  // DISABLED - Don't auto-recalculate after loading
                         
-                        // Constraint configuration
-                        constraintsMode: 'none',
-                        manuallyScheduled: false
+                        // CRITICAL: Constraint configuration 
+                        // We use 'none' to prevent all constraint conflicts including dependencies
+                        // Our algorithms handle date constraints programmatically
+                        constraintsMode: 'none',    // 'none' = no constraint enforcement, just visual lines
+                        manuallyScheduled: false,    // Allow engine to move tasks to resolve conflicts
+                        
+                        // Scheduling engine configuration
+                        schedulingDirection: 'none', // DISABLED - No default scheduling direction
+                        allowDependencyLag: true,     // Allow lag times between dependencies
+                        calculateCriticalPath: true   // Enable critical path calculation
                     },
 
                     features: {
-                        // Dependencies feature ENABLED - using PT dependencies for visualization
-                        // Dependencies are loaded directly into scheduler's dependency store as inactive
-                        dependencies: {
-                            disabled: false
-                            // No need to specify store - will use project.dependencyStore automatically
-                        },
+                        // Dependencies feature ENABLED for visual display
+                        // Conflict handlers suppress any constraint conflicts
+                        dependencies: true,
                         
                         // Enable drag and drop with tooltip
                         eventDrag: {
@@ -2493,11 +1993,6 @@
                                 const jobInfo = eventRecord.jobName || eventRecord.data?.jobName || '';
                                 const jobDisplay = jobInfo ? `<strong style="color: #0066cc;">Job: ${jobInfo}</strong><br>` : '';
                                 
-                                // Check if operation is actually scheduled (has resource and valid dates)
-                                const hasResource = eventRecord.assignments && eventRecord.assignments.length > 0;
-                                const hasValidDates = eventRecord.startDate && eventRecord.endDate;
-                                const isCurrentlyUnscheduled = !hasResource || !hasValidDates;
-                                
                                 return `
                                     <div style="padding: 10px; min-width: 200px;">
                                         ${jobDisplay}
@@ -2508,7 +2003,7 @@
                                             Duration: ${eventRecord.duration} ${eventRecord.durationUnit}<br>
                                             Progress: ${eventRecord.percentDone}%
                                         </div>
-                                        ${isCurrentlyUnscheduled ? '<br><span style="color: orange; font-weight: bold;">⚠️ Unscheduled - Drag to a resource to schedule</span>' : ''}
+                                        ${eventRecord.isUnscheduled ? '<br><span style="color: orange; font-weight: bold;">⚠️ Unscheduled - Drag to a resource to schedule</span>' : ''}
                                     </div>
                                 `;
                             }
@@ -2582,7 +2077,7 @@
                             eventRecord.constraintType = 'startnoearlierthan';
                             eventRecord.constraintDate = eventRecord.startDate;
                             console.log(`✅ Operation "${eventRecord.name}" scheduled to resource: ${targetResourceRecord.name}`);
-                            window.updateStatus(); // Update metrics
+                            updateStatus(); // Update metrics
                         } else if (!eventRecord.isUnscheduled && targetResourceRecord.id === 'unscheduled') {
                             // Mark as unscheduled if dragged back to unscheduled
                             eventRecord.isUnscheduled = true;
@@ -2590,68 +2085,13 @@
                             eventRecord.constraintType = null;
                             eventRecord.constraintDate = null;
                             console.log(`⚠️ Operation "${eventRecord.name}" moved to unscheduled`);
-                            window.updateStatus(); // Update metrics
+                            updateStatus(); // Update metrics
                         }
                     });
                 });
                 
-                // Add event listeners to automatically handle scheduling conflicts
-                scheduler.project.on({
-                    schedulingconflict: (event) => {
-                        console.log('📋 Scheduling conflict detected:', event.conflict);
-                        
-                        // Automatically resolve the conflict
-                        const conflict = event.conflict;
-                        if (conflict && conflict.resolutions && conflict.resolutions.length > 0) {
-                            // Find resolution to deactivate or remove dependency
-                            for (const resolution of conflict.resolutions) {
-                                const desc = (resolution.description || '').toLowerCase();
-                                if (desc.includes('deactivate dependency') || 
-                                    desc.includes('remove dependency')) {
-                                    console.log('  → Auto-resolving: Ignoring dependency');
-                                    resolution.resolve();
-                                    return false; // Prevent default dialog
-                                }
-                            }
-                            
-                            // Otherwise remove constraints
-                            for (const resolution of conflict.resolutions) {
-                                const desc = (resolution.description || '').toLowerCase();
-                                if (desc.includes('remove') && desc.includes('constraint')) {
-                                    console.log('  → Auto-resolving: Removing constraint');
-                                    resolution.resolve();
-                                    return false; // Prevent default dialog
-                                }
-                            }
-                            
-                            // Default: cancel
-                            const cancelResolution = conflict.resolutions.find(r => 
-                                (r.description || '').toLowerCase().includes('cancel'));
-                            if (cancelResolution) {
-                                console.log('  → Auto-resolving: Cancelling');
-                                cancelResolution.resolve();
-                                return false; // Prevent default dialog
-                            }
-                        }
-                    },
-                    
-                    beforeschedulingconflictdialog: (event) => {
-                        // Prevent the dialog from showing
-                        console.log('  → Suppressing conflict dialog');
-                        return false;
-                    }
-                });
-                
-                // Handle dependency validation if visual store exists
-                // Note: Engine's dependency store is intentionally null (visual-only design)
-                if (window.visualDependencyStore) {
-                    // Visual dependencies don't need validation since they don't constrain
-                    console.log('  → Using visual-only dependency store (no constraints)');
-                }
-                
                 // Enhanced status update function using real PT data
-                // Make it globally accessible for loadSchedule and other functions
-                window.updateStatus = function() {
+                function updateStatus() {
                     const operationCount = scheduler.eventStore.count || 0;
                     document.getElementById('operationCount').textContent = `${operationCount} operations scheduled`;
                     
@@ -2749,105 +2189,11 @@
                 //     maxAIBtn.textContent = '🤖 Max AI';
                 // });
                 
-                // Function to reload schedule data from database
-                async function refreshScheduleData() {
-                    console.log('🔄 Refreshing schedule data from database...');
-                    
-                    try {
-                        // Get auth headers
-                        const authHeaders = getAuthHeaders();
-                        const timestamp = new Date().getTime();
-                        
-                        // Fetch updated data
-                        const [operationsResponse, depsResponse, resourcesResponse, jobsResponse] = await Promise.all([
-                            fetch('/api/pt-operations?_=' + timestamp, { headers: authHeaders }), 
-                            fetch('/api/pt-dependencies?_=' + timestamp, { headers: authHeaders }),
-                            fetch('/api/resources-with-capabilities?_=' + timestamp, { headers: authHeaders }),
-                            fetch('/api/jobs?_=' + timestamp, { headers: authHeaders })
-                        ]);
-                        
-                        if (operationsResponse.ok && jobsResponse.ok) {
-                            const operations = await operationsResponse.json();
-                            const jobs = await jobsResponse.json();
-                            
-                            // Clear current event store
-                            scheduler.eventStore.removeAll();
-                            
-                            // Process and load new operations
-                            const events = operations.map(op => {
-                                const job = jobs.find(j => j.id === op.job_id);
-                                const resourceMapping = resourceMappings[op.resource_id] || 
-                                    (op.resource_id && op.resource_id !== '0' ? op.resource_id : 'unscheduled');
-                                
-                                return {
-                                    id: op.id,
-                                    name: op.name || `Operation ${op.sequence_number}`,
-                                    startDate: op.scheduled_start ? new Date(op.scheduled_start) : new Date(),
-                                    endDate: op.scheduled_end ? new Date(op.scheduled_end) : 
-                                        new Date(new Date().getTime() + (parseFloat(op.cycle_hrs || 1) * 3600000)),
-                                    resourceId: resourceMapping,
-                                    jobId: op.job_id,
-                                    jobName: job?.name || 'Unknown Job',
-                                    priority: job?.priority || 999,
-                                    jobPriority: job?.priority || 999,
-                                    eventColor: priorityColors[job?.priority] || priorityColors['default'],
-                                    durationUnit: 'hour',
-                                    duration: parseFloat(op.cycle_hrs || 1),
-                                    percentDone: 0,
-                                    resizable: true,
-                                    draggable: true,
-                                    manuallyScheduled: false
-                                };
-                            });
-                            
-                            // Load new events into scheduler
-                            scheduler.eventStore.add(events);
-                            
-                            // Force scheduler to refresh its view
-                            scheduler.refresh();
-                            
-                            // Update status display
-                            window.updateStatus();
-                            
-                            // Update gantt chart if it exists
-                            if (window.gantt) {
-                                await loadGanttData();
-                            }
-                            
-                            console.log('✅ Schedule refreshed with', events.length, 'operations');
-                            showNotification('Schedule data refreshed', 'success');
-                            
-                            // Update version history
-                            loadVersionHistory();
-                            
-                            // Also refresh saved schedules dropdown if it exists
-                            if (typeof loadSavedSchedulesDropdown === 'function') {
-                                loadSavedSchedulesDropdown();
-                            }
-                        } else {
-                            console.error('Failed to refresh schedule data');
-                            showNotification('Failed to refresh schedule', 'error');
-                        }
-                    } catch (error) {
-                        console.error('Error refreshing schedule:', error);
-                        showNotification('Error refreshing schedule', 'error');
-                    }
-                }
-                
                 // Listen for messages from parent window (main app's Max AI panel)
                 window.addEventListener('message', (event) => {
-                    console.log('[Scheduler] Received message:', event.data);
-                    
                     // Handle algorithm run requests from parent
                     if (event.data && event.data.type === 'RUN_ALGORITHM') {
-                        console.log('[Scheduler] Running algorithm:', event.data.algorithm);
                         runSchedulerAlgorithm(event.data.algorithm);
-                    }
-                    // Handle refresh requests after agent updates database
-                    else if (event.data && (event.data.type === 'REFRESH_SCHEDULE' || 
-                                           event.data.type === 'REFRESH_VIEW')) {
-                        console.log('[Scheduler] Refreshing schedule data...');
-                        refreshScheduleData();
                     }
                 });
                 
@@ -3122,8 +2468,9 @@
                 }
                 
                 // Function to run scheduler algorithms from quick actions
-                async function runSchedulerAlgorithm(algorithm) {
+                function runSchedulerAlgorithm(algorithm) {
                     const algorithmDropdown = document.getElementById('schedulingAlgorithm');
+                    const applyButton = document.getElementById('applyScheduling');
                     
                     // Map algorithm names to dropdown values
                     const algorithmMap = {
@@ -3134,19 +2481,17 @@
                         'DRUM_TOC': 'drum'
                     };
                     
-                    // Use the shared applySelectedAlgorithm function directly
+                    // Set the dropdown value and trigger the algorithm
                     if (algorithmMap[algorithm]) {
                         algorithmDropdown.value = algorithmMap[algorithm];
+                        applyButton.click();
                         
-                        // Call the shared function directly instead of clicking the button
-                        console.log(`🤖 Agent triggering ${algorithm} algorithm...`);
-                        const success = await window.applySelectedAlgorithm(algorithmMap[algorithm]);
-                        
-                        if (success) {
-                            console.log(`✅ ${algorithm} algorithm applied successfully by agent!`);
-                        } else {
-                            console.error(`❌ Failed to apply ${algorithm} algorithm`);
-                        }
+                        // Max AI feedback removed - handled by main app's AI panel
+                        // const aiMsg = document.createElement('div');
+                        // aiMsg.className = 'max-ai-message assistant';
+                        // aiMsg.textContent = `✅ ${algorithm.replace(/_/g, ' ')} algorithm applied successfully!`;
+                        // maxMessages.appendChild(aiMsg);
+                        // maxMessages.scrollTop = maxMessages.scrollHeight;
                     }
                 }
                 
@@ -3408,142 +2753,102 @@
                     console.log('Zoom to fit applied with 50px margins');
                 });
                 
-                // Shared function to apply selected algorithm - can be called by both button and agent
-                async function applySelectedAlgorithm(algorithmName) {
-                    const algorithm = algorithmName || document.getElementById('schedulingAlgorithm').value;
+                // Apply Scheduling Algorithm button
+                document.getElementById('applyScheduling').addEventListener('click', () => {
+                    const algorithm = document.getElementById('schedulingAlgorithm').value;
                     document.getElementById('loadingOverlay').style.display = 'flex';
                     
-                    try {
-                        const project = scheduler.project;
-                        let message = '';
-                        let color = 'green';
-                        
-                        console.log(`🚀 Applying ${algorithm} algorithm...`);
-                        
-                        switch(algorithm) {
-                            case 'asap':
-                                // ASAP - As Soon As Possible (Forward Scheduling)
-                                await asapScheduling();
-                                message = 'ASAP scheduling applied - operations scheduled as early as possible!';
-                                break;
+                    // Store current view settings to maintain consistent timeline
+                    const currentZoomLevel = scheduler.zoomLevel;
+                    const currentStartDate = scheduler.startDate;
+                    const currentEndDate = scheduler.endDate;
+                    
+                    requestAnimationFrame(() => {
+                        setTimeout(async () => {
+                            try {
+                                const project = scheduler.project;
+                                let message = '';
+                                let color = 'green';
                                 
-                            case 'alap':
-                                // ALAP - As Late As Possible (Backward Scheduling)
-                                await alapScheduling();
-                                message = 'ALAP scheduling applied - operations scheduled as late as possible!';
-                                color = 'blue';
-                                break;
+                                switch(algorithm) {
+                                    case 'asap':
+                                        // ASAP - As Soon As Possible (Forward Scheduling)
+                                        await asapScheduling();
+                                        message = 'ASAP scheduling applied - operations scheduled as early as possible!';
+                                        break;
+                                        
+                                    case 'alap':
+                                        // ALAP - As Late As Possible (Backward Scheduling)
+                                        await alapScheduling();
+                                        message = 'ALAP scheduling applied - operations scheduled as late as possible!';
+                                        color = 'blue';
+                                        break;
+                                        
+                                    case 'criticalPath':
+                                        // Critical Path Method
+                                        await criticalPathScheduling();
+                                        message = 'Critical Path identified and optimized!';
+                                        color = 'orange';
+                                        break;
+                                        
+                                    case 'levelResources':
+                                        // Resource Leveling
+                                        await levelResourcesScheduling();
+                                        message = 'Resources leveled - workload balanced across resources!';
+                                        color = 'purple';
+                                        break;
+                                        
+                                    case 'drum':
+                                        // Drum (Theory of Constraints)
+                                        await drumScheduling();
+                                        message = 'Drum scheduling applied - optimized around bottleneck!';
+                                        color = 'brown';
+                                        break;
+                                }
                                 
-                            case 'criticalPath':
-                                // Critical Path Method
-                                await criticalPathScheduling();
-                                message = 'Critical Path identified and optimized!';
-                                color = 'orange';
-                                break;
+                                // Refresh the scheduler
+                                scheduler.refresh();
                                 
-                            case 'levelResources':
-                                // Resource Leveling
-                                await levelResourcesScheduling();
-                                message = 'Resources leveled - workload balanced across resources!';
-                                color = 'purple';
-                                break;
+                                // Apply zoom to fit after algorithm is applied
+                                scheduler.zoomToFit({
+                                    leftMargin: 50,   // Margin in pixels between first event start and first visible date
+                                    rightMargin: 50   // Margin in pixels between last event end and last visible date
+                                });
+                                console.log('Zoom to fit applied after ' + algorithm + ' scheduling');
                                 
-                            case 'drum':
-                                // Drum (Theory of Constraints)
-                                await drumScheduling();
-                                message = 'Drum scheduling applied - optimized around bottleneck!';
-                                color = 'brown';
-                                break;
+                                // Hide loading and show success message
+                                document.getElementById('loadingOverlay').style.display = 'none';
+                                updateStatus();
                                 
-                            default:
-                                console.warn('Unknown algorithm:', algorithm);
-                                return false;
-                        }
-                        
-                        console.log('✅ Algorithm execution complete, committing changes...');
-                        
-                        // Commit the project changes
-                        await scheduler.project.commitAsync();
-                        
-                        console.log('✅ Changes committed, refreshing view...');
-                        
-                        // Refresh scheduler view
-                        scheduler.refresh();
-                        
-                        // Apply zoom to fit after algorithm is applied
-                        scheduler.zoomToFit({
-                            leftMargin: 50,   // Margin in pixels between first event start and first visible date
-                            rightMargin: 50   // Margin in pixels between last event end and last visible date
-                        });
-                        console.log('Zoom to fit applied after ' + algorithm + ' scheduling');
-                        
-                        // Save the optimized schedule to database
-                        console.log('📝 Saving optimized schedule to database...');
-                        const saveResult = await window.saveSchedule();
-                        if (!saveResult) {
-                            console.error('Failed to save schedule to database');
-                        }
-                        
-                        // Create version history entry for the optimization
-                        try {
-                            console.log('📝 Creating version history entry...');
-                            const authToken = getAuthToken();
-                            const versionData = {
-                                scheduleName: 'Main Schedule',
-                                changeType: 'optimization',
-                                changeDescription: `${message}`,
-                                comment: `Algorithm: ${algorithm.toUpperCase()}`,
-                                userId: 5 // Hardcoded for now, should ideally get from auth context
-                            };
-                            
-                            const versionResponse = await fetch('/api/schedules/1/versions', {
-                                method: 'POST',
-                                headers: {
-                                    'Content-Type': 'application/json',
-                                    'Authorization': authToken ? `Bearer ${authToken}` : ''
-                                },
-                                body: JSON.stringify(versionData)
-                            });
-                            
-                            if (versionResponse.ok) {
-                                console.log('✅ Version history entry created successfully');
-                            } else {
-                                console.error('Failed to create version history entry:', await versionResponse.text());
+                                // Show message in status bar
+                                const statusElement = document.getElementById('operationCount');
+                                const originalText = statusElement.textContent;
+                                statusElement.innerHTML = `<span style="color: ${color}; font-weight: bold;">${message}</span>`;
+                                
+                                setTimeout(() => {
+                                    statusElement.textContent = originalText;
+                                    updateStatus();
+                                }, 3000);
+                                
+                            } catch (error) {
+                                console.error('Scheduling error:', error);
+                                document.getElementById('loadingOverlay').style.display = 'none';
+                                
+                                const statusElement = document.getElementById('operationCount');
+                                const originalText = statusElement.textContent;
+                                statusElement.innerHTML = `<span style="color: red;">Scheduling failed - ${error.message}</span>`;
+                                
+                                setTimeout(() => {
+                                    statusElement.textContent = originalText;
+                                    updateStatus();
+                                }, 3000);
                             }
-                        } catch (error) {
-                            console.error('Failed to create version history entry:', error);
-                        }
-                        
-                        // Show success message with appropriate color
-                        showAlgorithmSuccess(message, color);
-                        
-                        // Notify parent that algorithm completed
-                        if (window.parent !== window) {
-                            window.parent.postMessage({
-                                type: 'ALGORITHM_COMPLETE',
-                                data: { algorithm, message }
-                            }, '*');
-                        }
-                        
-                        return true;
-                    } catch (error) {
-                        console.error('Algorithm error:', error);
-                        return false;
-                    } finally {
-                        document.getElementById('loadingOverlay').style.display = 'none';
-                    }
-                }
-                
-                // Make the function globally available
-                window.applySelectedAlgorithm = applySelectedAlgorithm;
-                
-                // Apply Scheduling Algorithm button - just calls the shared function
-                document.getElementById('applyScheduling').addEventListener('click', async () => {
-                    await applySelectedAlgorithm();
+                        }, 300);
+                    });
                 });
                 
-                // Save schedule to database - make it globally available
-                window.saveSchedule = async function() {
+                // Save schedule to database
+                async function saveSchedule() {
                     try {
                         const events = [...scheduler.eventStore.records].filter(e => e.resourceId !== 'unscheduled');
                         const operations = events.map(event => ({
@@ -3554,14 +2859,10 @@
                         
                         console.log(`💾 Saving schedule to database (${operations.length} operations)...`);
                         
-                        // Get auth token using helper function
-                        const authToken = getAuthToken();
-                        
                         const response = await fetch('/api/pt-operations/schedule', {
                             method: 'PATCH',
                             headers: {
-                                'Content-Type': 'application/json',
-                                'Authorization': authToken ? `Bearer ${authToken}` : ''
+                                'Content-Type': 'application/json'
                             },
                             body: JSON.stringify({ operations })
                         });
@@ -3572,32 +2873,19 @@
                         
                         const result = await response.json();
                         console.log(`✅ Schedule saved: ${result.updated}/${result.total} operations updated`);
-                        
-                        // Notify parent window that schedule was updated
-                        if (window.parent !== window) {
-                            window.parent.postMessage({
-                                type: 'SCHEDULE_UPDATED',
-                                data: { savedOperations: result.updated, totalOperations: result.total }
-                            }, '*');
-                        }
-                        
                         return true;
                     } catch (error) {
                         console.error('❌ Failed to save schedule:', error);
                         return false;
                     }
                 }
-                
-                // Alias for backwards compatibility
-                const saveSchedule = window.saveSchedule;
 
                 // Shared helper functions for job extraction and sorting
                 function getJobKey(ev) {
-                    // Use numeric jobId for priority mapping since that's what the priority map uses
-                    // The priority map is keyed by job.id from the ptjobs table
-                    return ev.jobId ?? ev.job_id ??
-                           ev.ptData?.jobId ?? ev.ptData?.job_id ??
-                           ev.data?.jobId ?? ev.data?.job_id ?? null;
+                    return ev.jobId ?? ev.jobID ?? ev.job_id ??
+                           ev.jobName ?? ev.job_name ??
+                           ev.ptData?.jobId ?? ev.ptData?.jobName ??
+                           ev.data?.jobId ?? ev.data?.jobName ?? null;
                 }
 
                 function getJobPriority(ev) {
@@ -3619,84 +2907,16 @@
                            ev.ptData?.sequence_number ?? ev.ptData?.sequenceNumber ?? 0;
                 }
 
-                // Process rank tiebreaker for when sequences are missing or tied
-                function processRank(name = '') {
-                    const n = name.toLowerCase();
-                    if (n.includes('mill')) return 10;
-                    if (n.includes('mash') || n.includes('decoction')) return 20;
-                    if (n.includes('lauter')) return 30;
-                    if (n.includes('boil') || n.includes('kettle')) return 40;
-                    if (n.includes('ferment')) return 50;
-                    if (n.includes('bright') || n.includes('condition')) return 60;
-                    if (n.includes('packag') || n.includes('bottl') || n.includes('cann')) return 70;
-                    return 999;
-                }
-
-                // Enhanced sequence sorting key that includes process rank as tiebreaker
-                function sequenceSortKey(ev) {
-                    const seq = Number(getSequence(ev) || 0);
-                    return seq * 100 + processRank(ev.name || ev.operationName || '');
-                }
-
                 // Runtime test functions - can be run in DevTools console
                 // Make these globally accessible for testing
                 window.getJobKey = getJobKey;
                 window.getJobPriority = getJobPriority;
                 window.getSequence = getSequence;
-                window.processRank = processRank;
-                window.sequenceSortKey = sequenceSortKey;
-                
-                // Validation function to check for Boil-before-Fermentation violations
-                window.checkBoilBeforeFerment = function () {
-                    const bad = [];
-                    const byJob = new Map();
-                    
-                    // Group events by job
-                    scheduler.eventStore.records.forEach(e => {
-                        const k = getJobKey(e);
-                        if (!k || !e.startDate || !e.endDate) return;
-                        (byJob.get(k) || byJob.set(k, []).get(k)).push(e);
-                    });
-                    
-                    // Check each job for boil/fermentation ordering violations
-                    byJob.forEach((ops, job) => {
-                        // Find the last boil operation (highest end date)
-                        const boil = ops.filter(o => /boil|kettle/i.test(o.name))
-                            .sort((a, b) => a.startDate - b.startDate).pop();
-                        
-                        // Find the first fermentation operation (lowest start date)
-                        const ferm = ops.filter(o => /ferment/i.test(o.name))
-                            .sort((a, b) => a.startDate - b.startDate)[0];
-                        
-                        // Check if boil ends after fermentation starts (violation)
-                        if (boil && ferm && boil.endDate > ferm.startDate) {
-                            bad.push({ 
-                                job: job, 
-                                boil: boil.name, 
-                                boilEnd: boil.endDate, 
-                                ferm: ferm.name, 
-                                fermStart: ferm.startDate,
-                                overlap: new Date(boil.endDate - ferm.startDate).getTime() / (1000 * 60 * 60) // hours
-                            });
-                        }
-                    });
-                    
-                    // Report results
-                    if (bad.length > 0) {
-                        console.error('❌ Boil-before-Fermentation violations found:');
-                        console.table(bad);
-                    } else {
-                        console.log('✅ No Boil-before-Fermentation violations found');
-                    }
-                    
-                    return bad.length === 0;
-                };
                 
                 // Test A: Verify no engine dependencies (only visual dependencies)
                 window.testNoDependencies = function() {
-                    // Use visual dependency store since engine store is intentionally null
-                    const engineDeps = 0; // Always 0 - we don't use engine dependencies
-                    const visualDeps = window.visualDependencyStore?.count || 0;
+                    const engineDeps = scheduler.project.dependencyStore?.count || 0;
+                    const visualDeps = scheduler.features?.dependencies?.store?.count || 0;
                     console.assert(engineDeps === 0, 'Project dependencyStore should be empty');
                     console.log('✅ Test A - Dependencies Check:');
                     console.log('  Engine dependencies:', engineDeps, '(should be 0)');
@@ -3778,63 +2998,26 @@
                 // Left compaction helper for forward scheduling (ASAP)
                 async function compactLeftPerResource() {
                     const { resourceStore, eventStore } = scheduler;
-                    console.log('📦 Starting left compaction to remove gaps...');
-                    let totalMoved = 0;
-                    
                     for (const res of resourceStore.records) {
-                        // Skip the unscheduled resource
-                        if (res.id === 'unscheduled') continue;
-                        
                         const evs = eventStore.records
                             .filter(e => String(e.resourceId) === String(res.id))
                             .filter(e => e.startDate && e.endDate)
                             .sort((a, b) => a.startDate - b.startDate);
                         
-                        if (evs.length <= 1) continue; // Nothing to compact
-                        
-                        console.log(`  Compacting ${evs.length} operations on ${res.name}...`);
-                        
-                        // Process each event starting from the second one
-                        for (let i = 1; i < evs.length; i++) {
+                        let cursor = evs.length ? new Date(evs[0].startDate) : null;
+                        for (let i = 0; i < evs.length; i++) {
                             const cur = evs[i];
-                            const prev = evs[i - 1];
+                            if (i === 0) continue;
                             const dur = cur.endDate - cur.startDate;
-                            
-                            // Check if there's a gap between previous end and current start
-                            if (cur.startDate > prev.endDate) {
-                                // We can move this operation earlier to close the gap
-                                const newStart = new Date(prev.endDate);
-                                const newEnd = new Date(newStart.getTime() + dur);
-                                
-                                // IMPORTANT: Check that moving won't create overlaps with later operations
-                                let canMove = true;
-                                
-                                // The move is safe because we're processing in order and only moving left
-                                // to the end of the previous operation, which can't create overlaps
-                                
-                                if (canMove) {
-                                    console.log(`    Moving "${cur.name}" from ${cur.startDate.toLocaleString()} to ${newStart.toLocaleString()}`);
-                                    cur.set({ 
-                                        startDate: newStart, 
-                                        endDate: newEnd,
-                                        manuallyScheduled: false
-                                    });
-                                    totalMoved++;
-                                    
-                                    // Update the event in our sorted array so subsequent operations see the new time
-                                    evs[i] = cur;
-                                }
+                            // Slide left up to the previous event's end
+                            const prevEnd = evs[i - 1].endDate;
+                            if (cur.startDate > prevEnd) {
+                                cur.set({ startDate: new Date(prevEnd), endDate: new Date(prevEnd.getTime() + dur) });
                             }
                         }
                     }
-                    
-                    if (totalMoved > 0) {
-                        console.log(`  ✅ Compaction complete: moved ${totalMoved} operations to close gaps`);
-                        await scheduler.project.commitAsync();
-                        await scheduler.project.propagate();
-                    } else {
-                        console.log('  ✅ No gaps found - schedule already compact');
-                    }
+                    await scheduler.project.commitAsync();
+                    await scheduler.project.propagate();
                 }
 
                 // Scheduling Algorithm Implementations
@@ -3901,20 +3084,12 @@
                     // ============================================================================
                     // Note: Using shared getJobKey, getJobNumber, and getSequence functions defined above
                     
-                    // Get job priority from the job priority map
-                    const getJobPriorityForOperation = (event) => {
-                        // Get job key from operation
-                        const jobKey = getJobKey(event);
-                        if (!jobKey) return 999; // Orphan operations get lowest priority
-                        
-                        // Look up priority in the job priority map we built from ptjobs table
-                        const priority = window.jobPriorityMap?.get(String(jobKey)) || 999;
-                        
-                        if (priority === 999) {
-                            console.log('⚠️ No priority found for job', jobKey, 'in job priority map');
-                        }
-                        
-                        return priority;
+                    // Get the job priority (1=highest priority, 5=lowest priority)
+                    const getPriority = (event) => {
+                        return event.jobPriority || event.job_priority || 
+                               event.ptData?.jobPriority || event.ptData?.job_priority ||
+                               event.data?.jobPriority || event.data?.job_priority ||
+                               999; // Default low priority if not found
                     };
                     
                     // Get the manufacturing release date for a job (if specified)
@@ -3943,21 +3118,8 @@
                     // Group operations by job and sort by sequence number
                     const jobOperations = new Map(); // jobKey -> array of events sorted by sequence
                     
-                    // Debug: Log what we're grouping by
-                    console.log('🔍 Grouping operations by job...');
-                    
                     for (const ev of events) {
                         const key = getJobKey(ev);
-                        const priority = getJobPriorityForOperation(ev);
-                        
-                        // Debug logging for first few operations
-                        if (events.indexOf(ev) < 3) {
-                            console.log(`  Operation: ${ev.name}`);
-                            console.log(`    jobKey: ${key}`);
-                            console.log(`    jobPriority: ${ev.jobPriority}`);
-                            console.log(`    priority from job map: ${priority}`);
-                        }
-                        
                         if (!key) {
                             // Handle orphan operations (no job ID)
                             if (!jobOperations.has('_orphans_')) {
@@ -3973,21 +3135,13 @@
                         jobOperations.get(key).push(ev);
                     }
                     
-                    // Sort each job's operations by sequence number (with process rank as tiebreaker)
+                    // Sort each job's operations by sequence number
                     for (const [jobKey, operations] of jobOperations.entries()) {
-                        operations.sort((a, b) => sequenceSortKey(a) - sequenceSortKey(b));
+                        operations.sort((a, b) => getSequence(a) - getSequence(b));
                         console.log(`  Job "${jobKey}": ${operations.length} operations (sequences ${operations.map(op => getSequence(op)).join(', ')})`);
                     }
                     
                     // ASAP: Sort jobs by PRIORITY ASC (1 before 5) so Priority 1 finishes first
-                    console.log('📊 Before sorting - Job priorities:');
-                    for (const [jobKey, operations] of jobOperations.entries()) {
-                        if (jobKey !== '_orphans_') {
-                            const priority = getJobPriorityForOperation(operations[0]);
-                            console.log(`  ${jobKey}: Priority ${priority}`);
-                        }
-                    }
-                    
                     const sortedJobs = Array.from(jobOperations.entries()).sort(([keyA, opsA], [keyB, opsB]) => {
                         // Skip orphans - they go last
                         if (keyA === '_orphans_') return 1;
@@ -3996,11 +3150,8 @@
                         // Sort by job PRIORITY ascending
                         // Priority 1 (highest) should schedule first and finish first
                         // Priority 5 (lowest) should schedule last and finish last
-                        const priorityA = getJobPriorityForOperation(opsA[0]);
-                        const priorityB = getJobPriorityForOperation(opsB[0]);
-                        
-                        // Debug log for sorting
-                        console.log(`  Comparing ${keyA} (pri ${priorityA}) vs ${keyB} (pri ${priorityB})`);
+                        const priorityA = getJobPriority(opsA[0]);
+                        const priorityB = getJobPriority(opsB[0]);
                         
                         if (priorityA !== priorityB) {
                             return priorityA - priorityB; // Ascending: 1, 2, 3, 4, 5
@@ -4024,9 +3175,8 @@
                         if (jobKey === '_orphans_') {
                             console.log(`  ${index + 1}. Orphan operations: ${operations.length} operations`);
                         } else {
-                            const priority = parseInt(getJobPriorityForOperation(operations[0]));
-                            const jobName = operations[0].jobName || jobKey;
-                            console.log(`  ${index + 1}. Priority ${priority}: Batch ${jobKey} (${jobName}) - ${operations.length} operations`);
+                            const priority = parseInt(getPriority(operations[0]));
+                            console.log(`  ${index + 1}. Priority ${priority}: Job ${jobKey} - ${operations.length} operations`);
                         }
                     });
                     
@@ -4052,13 +3202,7 @@
                         timeline.sort((a, b) => a.start.getTime() - b.start.getTime());
                         
                         // Check if we can fit before the first operation
-                        // CRITICAL FIX: Must check that we can start at or after earliestPossibleStart
-                        // AND still finish before the first operation starts
-                        const firstOpStart = timeline[0].start.getTime();
-                        const earliestTime = earliestPossibleStart.getTime();
-                        
-                        if (earliestTime + duration <= firstOpStart) {
-                            // We can fit before the first operation, starting at earliest possible time
+                        if (timeline[0].start.getTime() - earliestPossibleStart.getTime() >= duration) {
                             return earliestPossibleStart;
                         }
                         
@@ -4070,19 +3214,19 @@
                             
                             // Check if this gap is big enough and respects earliest start
                             if (gapSize >= duration) {
-                                // The operation must start at or after earliestPossibleStart
-                                const actualStart = Math.max(gapStart.getTime(), earliestPossibleStart.getTime());
-                                
-                                // Check if starting at actualStart, we can still fit within the gap
-                                if (actualStart + duration <= gapEnd.getTime()) {
-                                    return new Date(actualStart);
+                                // If gap starts after or at earliest possible start, use gap start
+                                if (gapStart.getTime() >= earliestPossibleStart.getTime()) {
+                                    return gapStart;
+                                }
+                                // If gap ends late enough to fit operation after earliest start
+                                else if (earliestPossibleStart.getTime() + duration <= gapEnd.getTime()) {
+                                    return earliestPossibleStart;
                                 }
                             }
                         }
                         
                         // No gaps found, schedule after the last operation
                         const lastEnd = timeline[timeline.length - 1].end;
-                        // CRITICAL: Must respect earliestPossibleStart constraint for sequence order
                         return new Date(Math.max(lastEnd.getTime(), earliestPossibleStart.getTime()));
                     }
                     
@@ -4091,33 +3235,13 @@
                     // NOTE: Dependencies are NOT used for scheduling logic, only visual display
                     // ============================================================================
                     for (const [jobKey, operations] of sortedJobs) {
-                        // CRITICAL: Skip orphan operations entirely - they have no job context
-                        if (jobKey === '_orphans_') {
-                            console.warn(`\n⚠️ Skipping ${operations.length} orphan operations (no job ID)`);
-                            console.warn('🗑️ Orphan operations will be hidden to prevent scheduling conflicts');
-                            
-                            // Move orphan operations out of the visible schedule
-                            operations.forEach(ev => {
-                                const farFuture = new Date('2099-12-31');
-                                ev.set({
-                                    startDate: farFuture,
-                                    endDate: new Date(farFuture.getTime() + 3600000),
-                                    manuallyScheduled: false,
-                                    hidden: true
-                                });
-                                console.log(`  🗑️ Orphan operation "${ev.name}" moved out of scheduling range`);
-                            });
-                            continue; // Skip to next job
-                        }
-                        
-                        const jobName = operations[0].jobName || '';
-                        console.log(`\n🏭 Processing Batch ${jobKey} (${jobName}) with ${operations.length} operations`);
+                        console.log(`\n🏭 Processing Job: ${jobKey} with ${operations.length} operations`);
                         
                         // Determine the start date for this job
                         let jobStartDate = today; // Default to today
                         
                         // Check if this job has a manufacturing release date
-                        if (operations.length > 0) {
+                        if (operations.length > 0 && jobKey !== '_orphans_') {
                             const releaseDate = getManufacturingReleaseDate(operations[0]);
                             if (releaseDate) {
                                 jobStartDate = releaseDate;
@@ -4138,15 +3262,12 @@
                             // Calculate Earliest Start Time
                             // For first operation in job: use job start date (today or release date)
                             // For subsequent operations: must start after previous operation ends
-                            // CRITICAL: Operations within a job MUST be scheduled in strict sequence order
                             // ========================================================================
                             let earliestStart = previousOperationEnd || jobStartDate;
                             
                             console.log(`  📋 Operation "${event.name}" (seq ${sequence})`);
                             if (previousOperationEnd) {
                                 console.log(`     Must start after previous operation ends: ${previousOperationEnd.toLocaleString()}`);
-                                // ENFORCE: This operation cannot start before the previous one ends
-                                // This ensures operations within a job maintain their sequence order
                             } else {
                                 console.log(`     First operation, can start at: ${earliestStart.toLocaleString()}`);
                             }
@@ -4164,8 +3285,6 @@
                                 const resourceId = resource.id;
                                 
                                 // Find the earliest slot using bin packing algorithm
-                                // IMPORTANT: The slot MUST respect the earliestStart constraint
-                                // to maintain operation sequence within the job
                                 const slotStart = findEarliestSlot(resourceId, durationMs, earliestStart);
                                 const slotEnd = new Date(slotStart.getTime() + durationMs);
                                 
@@ -4173,50 +3292,26 @@
                                 console.log(`     Sequence requires after: ${earliestStart.toLocaleString()}`);
                                 console.log(`     Found optimal slot: ${slotStart.toLocaleString()} to ${slotEnd.toLocaleString()}`);
                                 
-                                // VALIDATION: Ensure the slot respects sequence constraints
-                                if (slotStart.getTime() < earliestStart.getTime()) {
-                                    console.error(`❌ ERROR: Slot start (${slotStart.toLocaleString()}) is before earliest allowed (${earliestStart.toLocaleString()})`);
-                                    console.error(`   This violates sequence order for job ${jobKey}`);
-                                    // Force the slot to respect the sequence constraint
-                                    const correctedStart = new Date(earliestStart);
-                                    const correctedEnd = new Date(correctedStart.getTime() + durationMs);
-                                    console.log(`   🔧 Correcting to: ${correctedStart.toLocaleString()} to ${correctedEnd.toLocaleString()}`);
-                                    event.setStartDate(correctedStart, true);
-                                    event.set({
-                                        endDate: correctedEnd,
-                                        manuallyScheduled: false
-                                    });
-                                    // Update timeline with corrected slot
-                                    if (!resourceTimelines.has(resourceId)) {
-                                        resourceTimelines.set(resourceId, []);
-                                    }
-                                    resourceTimelines.get(resourceId).push({
-                                        start: correctedStart,
-                                        end: correctedEnd,
-                                        eventId: event.id,
-                                        eventName: event.name
-                                    });
-                                    previousOperationEnd = correctedEnd;
-                                } else {
-                                    // Update the event with the packed times
-                                    event.setStartDate(slotStart, true); // true = keep duration
-                                    event.set({
-                                        endDate: slotEnd,
-                                        manuallyScheduled: false
-                                    });
-                                    // Add this time slot to the resource timeline
-                                    if (!resourceTimelines.has(resourceId)) {
-                                        resourceTimelines.set(resourceId, []);
-                                    }
-                                    resourceTimelines.get(resourceId).push({
-                                        start: slotStart,
-                                        end: slotEnd,
-                                        eventId: event.id,
-                                        eventName: event.name
-                                    });
-                                    // Update previous operation end for next operation in sequence
-                                    previousOperationEnd = slotEnd;
+                                // Update the event with the packed times
+                                event.setStartDate(slotStart, true); // true = keep duration
+                                event.set({
+                                    endDate: slotEnd,
+                                    manuallyScheduled: false
+                                });
+                                
+                                // Add this time slot to the resource timeline
+                                if (!resourceTimelines.has(resourceId)) {
+                                    resourceTimelines.set(resourceId, []);
                                 }
+                                resourceTimelines.get(resourceId).push({
+                                    start: slotStart,
+                                    end: slotEnd,
+                                    eventId: event.id,
+                                    eventName: event.name
+                                });
+                                
+                                // Update previous operation end for next operation in sequence
+                                previousOperationEnd = slotEnd;
                                 
                                 console.log(`  ✅ Packed "${event.name}" on ${resource.name}: ${slotStart.toLocaleString()} to ${slotEnd.toLocaleString()}`);
                             } else {
@@ -4267,49 +3362,24 @@
                     const originalDeps = window.originalDependencies || [];
                     console.log(`🔍 Found ${originalDeps.length} original dependencies to restore`);
                     
-                    // Restore to visual dependency store, not project store
-                    if (originalDeps.length > 0 && window.visualDependencyStore) {
-                        const depStore = window.visualDependencyStore;
-                        depStore.removeAll();
-                        depStore.add(
+                    if (originalDeps.length > 0 && scheduler.features?.dependencies?.store) {
+                        scheduler.features.dependencies.store.removeAll();
+                        scheduler.features.dependencies.store.add(
                             originalDeps.map(({ id, from, to, type = 2, lag = 0, lagUnit = 'hour' }) => ({
-                                id: String(id), 
-                                fromEvent: from,  // Bryntum uses fromEvent/toEvent
-                                toEvent: to,      // not from/to
-                                type: type,
-                                lag: lag,
-                                lagUnit: lagUnit,
-                                inactive: true,
-                                cls: 'visual-dependency'
+                                id: String(id), from, to, type, lag, lagUnit
                             }))
                         );
-                        console.log(`🎨 Restored ${depStore.count} visual-only dependency lines to visual store`);
+                        console.log(`🎨 Restored ${scheduler.features.dependencies.store.count} visual-only dependency lines`);
                     } else if (originalDeps.length === 0) {
                         console.log('⚠️ No original dependencies to restore');
                     }
                     
                     console.log('\n✅ ASAP scheduling completed using job priority and sequence order');
                     
-                    // Dependencies are already loaded in Bryntum's dependency store
-                    if (window.originalDependencies && window.originalDependencies.length > 0) {
-                        console.log('✅ PT dependencies are displayed natively by Bryntum after ASAP scheduling');
-                    }
-                    
-                    // DISABLED: Compaction was causing overlaps
-                    // The bin packing algorithm already creates an optimal schedule without gaps
-                    // console.log('📦 Applying left compaction to remove gaps...');
-                    // await compactLeftPerResource();
-                    // console.log('✅ Left compaction complete - gaps removed');
-                    console.log('✅ Bin packing algorithm already created optimal schedule without gaps');
-                    
-                    // Auto-fit view to show all scheduled operations
-                    console.log('🔍 Auto-fitting view to show all operations...');
-                    setTimeout(() => {
-                        if (scheduler.zoomToFit) {
-                            scheduler.zoomToFit({ leftMargin: 50, rightMargin: 50 });
-                            console.log('✅ View auto-fitted to content');
-                        }
-                    }, 100);
+                    // Apply left compaction to remove gaps
+                    console.log('📦 Applying left compaction to remove gaps...');
+                    await compactLeftPerResource();
+                    console.log('✅ Left compaction complete - gaps removed');
                     
                     // Verify no overlaps using the assertion function
                     if (assertNoOverlaps(scheduler)) {
@@ -4360,7 +3430,6 @@
                 }
                 
                 // Backward packer helper - finds the latest free slot on resource working backwards
-                // CRITICAL: latestEnd is the absolute latest the operation can END (due to sequence constraints)
                 function findLatestFreeSlotOnResource(resource, latestEnd, durationMs, excludeEvent) {
                     const { eventStore, assignmentStore } = scheduler;
 
@@ -4409,8 +3478,6 @@
                     }
 
                     // 4) Walk from the right to find the latest gap that fits
-                    // CRITICAL: We start from latestEnd which is the absolute latest this operation can end
-                    // due to sequence constraints (must finish before successor starts)
                     const cal = resource.calendar || resource.project?.calendar;
                     let right = new Date(latestEnd);
 
@@ -4418,13 +3485,7 @@
                     if (cal?.isNonWorkingTime?.(right)) right = cal.skipNonWorkingTime(right, false);
 
                     // Helper to return a working-time adjusted slot
-                    // IMPORTANT: The returned slot MUST respect the latestEnd constraint
                     function finish(start, end) {
-                        // CRITICAL SEQUENCE FIX: Never allow end to exceed latestEnd
-                        if (end.getTime() > latestEnd.getTime()) {
-                            end = new Date(latestEnd);
-                        }
-                        
                         // Snap again if needed
                         if (cal?.isNonWorkingTime?.(end)) end = cal.skipNonWorkingTime(end, false);
                         let s = new Date(end.getTime() - durationMs);
@@ -4485,46 +3546,12 @@
                     const scheduler = window.scheduler;
                     const { project, eventStore, dependencyStore, assignmentStore, resourceStore } = scheduler;
                     
-                    // Helper function to get job priority from the PTJOBS table via jobPriorityMap
-                    const getJobPriorityForOperation = (event) => {
-                        if (!event) return 999; // Default to lowest priority
-                        
-                        // Get job key from operation (job_id)
-                        const jobKey = getJobKey(event);
-                        if (!jobKey) {
-                            console.log('⚠️ No job key found for operation:', event.name);
-                            return 999; // Orphan operations get lowest priority
-                        }
-                        
-                        // Look up priority in the job priority map we built from ptjobs table
-                        const priority = window.jobPriorityMap?.get(String(jobKey)) || 999;
-                        
-                        if (priority === 999) {
-                            console.log(`⚠️ No priority found for job ${jobKey} in job priority map`);
-                            console.log('   Available keys in map:', Array.from(window.jobPriorityMap?.keys() || []));
-                        } else {
-                            console.log(`✅ Found priority ${priority} for job ${jobKey}`);
-                        }
-                        
-                        return priority;
-                    };
-                    
-                    // 🔧 CRITICAL: Disable ALL auto-scheduling features to prevent interference
+                    // 🔧 CRITICAL: Temporarily clear dependencies to prevent conflicts during ALAP
                     const originalAutoSync = project.autoSync;
                     const originalValidateConstraintInterval = project.validateConstraintInterval;
-                    const originalSuspendEvents = eventStore.suspendEvents;
-                    const originalAutoRescheduleTasks = scheduler.autoRescheduleTasks;
                     
-                    // Completely disable Bryntum's automatic scheduling
                     project.autoSync = false; // Prevent automatic syncing during changes
                     project.validateConstraintInterval = false; // Disable constraint validation during scheduling
-                    eventStore.suspendEvents = true; // Suspend event store notifications
-                    scheduler.autoRescheduleTasks = false; // CRITICAL: Disable auto-rescheduling
-                    
-                    // Disable the scheduling engine completely
-                    if (project.schedulingEngine) {
-                        project.schedulingEngine.disabled = true;
-                    }
                     
                     // No need to clear dependencies - they're only in the feature store for visual display
                     console.log('🎨 Dependencies are visual-only, no clearing needed for ALAP scheduling');
@@ -4623,9 +3650,9 @@
                         jobOperations.get(key).push(ev);
                     }
                     
-                    // Sort each job's operations by sequence number (with process rank as tiebreaker)
+                    // Sort each job's operations by sequence number
                     for (const [jobKey, operations] of jobOperations.entries()) {
-                        operations.sort((a, b) => sequenceSortKey(a) - sequenceSortKey(b));
+                        operations.sort((a, b) => getSequence(a) - getSequence(b));
                         console.log(`  Job "${jobKey}": ${operations.length} operations (seq ${getSequence(operations[0])} to ${getSequence(operations[operations.length - 1])})`);
                     }
                     
@@ -4657,8 +3684,8 @@
                         // Sort by job PRIORITY descending
                         // Priority 5 (lowest) should schedule first (gets latest position/finishes last)
                         // Priority 1 (highest) should schedule last (gets earliest position/finishes first)
-                        const priorityA = getJobPriorityForOperation(opsA[0]);
-                        const priorityB = getJobPriorityForOperation(opsB[0]);
+                        const priorityA = getJobPriority(opsA[0]);
+                        const priorityB = getJobPriority(opsB[0]);
                         
                         if (priorityA !== priorityB) {
                             return priorityB - priorityA; // DESCENDING: 5, 4, 3, 2, 1
@@ -4670,28 +3697,16 @@
                     
                     console.log('📊 ALAP Job scheduling order (descending by priority for backward scheduling):');
                     sortedJobs.forEach(([jobKey, ops], index) => {
-                        const priority = getJobPriorityForOperation(ops[0]);
+                        const priority = getJobPriority(ops[0]);
                         const due = jobDueMap.get(jobKey) || globalFallback;
-                        const dueStr = due ? due.toLocaleDateString() : 'No due date';
-                        const jobName = ops[0]?.jobName || jobKey;
-                        console.log(`  ${index + 1}. Priority ${priority}: ${jobName} (Job ID: ${jobKey}, Due: ${dueStr}) - schedules ${index === 0 ? 'FIRST (placed later/finishes last)' : index === sortedJobs.length - 1 ? 'LAST (placed earlier/finishes first)' : 'in middle'}`);
+                        console.log(`  ${index + 1}. Priority ${priority}: ${jobKey} (Due: ${due.toLocaleDateString()}) - schedules ${index === 0 ? 'FIRST (placed later/finishes last)' : index === sortedJobs.length - 1 ? 'LAST (placed earlier/finishes first)' : 'in middle'}`);
                     });
-                    
-                    // Track all scheduled intervals manually to prevent conflicts
-                    const manualBusyIntervals = new Map(); // resourceId -> Array of {start, end, operationId}
                     
                     // Process each job completely
                     for (const [jobKey, operations] of sortedJobs) {
                         console.log(`\n🏭 Processing Job: ${jobKey}`);
                         const jobDue = jobDueMap.get(jobKey) || globalFallback;
                         console.log(`  Due: ${jobDue.toLocaleString()}`);
-                        
-                        // CRITICAL: Sort operations by sequence ASCENDING first (with process rank as tiebreaker)
-                        // Then we'll process them in reverse order for backward scheduling
-                        operations.sort((a, b) => {
-                            return sequenceSortKey(a) - sequenceSortKey(b); // Sort ascending with process rank tiebreaker
-                        });
-                        
                         console.log(`  Operations: ${operations.length} (sequences ${operations.map(op => getSequence(op)).join(', ')})`);
                         
                         // Schedule backward from last operation (highest sequence)
@@ -4723,49 +3738,23 @@
                             // Calculate start date based on duration
                             let startDate, actualEndDate;
                             
-                            // CRITICAL FIX: ALL operations must check resource availability, not just the last one
-                            // BUT they must also respect sequence constraints (can't end after successor starts)
                             if (resource) {
-                                // Find the latest free slot on the resource that respects sequence constraints
-                                // endDate is the absolute latest this operation can end (due to sequence)
+                                // Find latest free slot on the resource
                                 const slot = findLatestFreeSlotOnResource(resource, endDate, durationMs, operation);
                                 startDate = slot.start;
                                 actualEndDate = slot.end;
-                                
-                                // VALIDATION: Ensure we're not violating sequence constraints
-                                if (actualEndDate.getTime() > endDate.getTime()) {
-                                    console.error(`❌ ERROR: Operation "${operation.name}" end time ${actualEndDate.toLocaleString()} exceeds sequence constraint ${endDate.toLocaleString()}`);
-                                    // Force it to respect the constraint
-                                    actualEndDate = endDate;
-                                    startDate = new Date(actualEndDate.getTime() - durationMs);
-                                }
-                                
-                                console.log(`  📦 Found slot for "${operation.name}" on "${resource.name}": ${startDate.toLocaleString()} to ${actualEndDate.toLocaleString()}`);
                             } else {
-                                // No resource assigned - simple backward calculation
+                                // No resource - simple backward calculation
                                 actualEndDate = endDate;
                                 startDate = new Date(endDate.getTime() - durationMs);
-                                console.log(`  ⚠️ No resource for "${operation.name}" - scheduled ${startDate.toLocaleString()} to ${actualEndDate.toLocaleString()}`);
                             }
                             
-                            // CRITICAL: Use direct property setting to avoid triggering auto-reschedule
-                            operation.startDate = startDate;
-                            operation.endDate = actualEndDate;
-                            operation.manuallyScheduled = false;
-                            
-                            // Immediately track this interval as busy to prevent overlap
-                            if (resource) {
-                                const resourceId = String(resource.id);
-                                if (!manualBusyIntervals.has(resourceId)) {
-                                    manualBusyIntervals.set(resourceId, []);
-                                }
-                                manualBusyIntervals.get(resourceId).push({
-                                    start: startDate,
-                                    end: actualEndDate,
-                                    operationId: operation.id
-                                });
-                                console.log(`  📌 Marked interval busy on ${resource.name}: ${startDate.toLocaleString()} - ${actualEndDate.toLocaleString()}`);
-                            }
+                            // Set the dates on the operation
+                            operation.set({
+                                startDate: startDate,
+                                endDate: actualEndDate,
+                                manuallyScheduled: false
+                            });
                             
                             console.log(`  ⬅️ Scheduled: ${operation.name} @ ${resource?.name || 'no-resource'}`);
                             console.log(`     ${startDate.toLocaleString()} to ${actualEndDate.toLocaleString()}`);
@@ -4776,74 +3765,53 @@
                         
                         console.log(`  ✅ Job ${jobKey} complete - scheduled ${operations.length} operations by sequence`);
                         
-                        // 🔧 IMPORTANT: Do NOT commit mid-process to avoid triggering reschedules
-                        // We'll commit everything at once after all jobs are placed
+                        // 🔧 CRITICAL: Commit changes after each job to ensure resource conflicts are visible
+                        // This ensures findLatestFreeSlotOnResource sees the updated schedules
+                        await project.commitAsync();
+                        console.log(`  📝 Committed job ${jobKey} to stores`);
                     }
                     
-                    // Handle any orphan operations (no job ID) - FILTER THEM OUT
+                    // Handle any orphan operations (no job ID)
                     const orphans = allEvents.filter(ev => !getJobKey(ev));
                     if (orphans.length > 0) {
-                        console.warn(`\n⚠️ Found ${orphans.length} orphan operations (no job ID) - EXCLUDING FROM SCHEDULE`);
-                        console.warn('🗑️ Orphan operations will be hidden to prevent scheduling conflicts');
-                        
-                        // CRITICAL: Remove orphan operations from the scheduler entirely
-                        // They have no job context and cannot be properly scheduled
+                        console.warn(`\n⚠️ Found ${orphans.length} orphan operations (no job ID)`);
+                        // Schedule orphans to start from current date
+                        const baseDate = new Date();
                         orphans.forEach(ev => {
-                            // Hide the orphan operation by moving it far in the future
-                            // This prevents it from interfering with real scheduling
-                            const farFuture = new Date('2099-12-31');
+                            const durationMs = ev.durationMS ?? (ev.duration * 60 * 60 * 1000);
                             ev.set({
-                                startDate: farFuture,
-                                endDate: new Date(farFuture.getTime() + 3600000), // 1 hour duration
-                                manuallyScheduled: false,
-                                hidden: true // Mark as hidden
+                                startDate: baseDate,
+                                endDate: new Date(baseDate.getTime() + durationMs),
+                                manuallyScheduled: false
                             });
-                            console.log(`  🗑️ Orphan operation "${ev.name}" moved out of scheduling range`);
                         });
                     }
                     
-                    // 🔧 CRITICAL: Commit all changes at once BEFORE restoring settings
-                    console.log('📝 Committing all ALAP scheduled operations...');
+                    // Commit and propagate with backward direction
                     await project.commitAsync();
-                    console.log('✅ All operations committed');
+                    await project.propagate();
                     
                     // Restore to Forward for normal operation
                     project.direction = 'Forward';
                     project.schedulingDirection = 'forward';
                     
-                    // 🔧 CRITICAL: Restore all auto-scheduling settings
+                    // 🔧 CRITICAL: Restore validation settings and dependencies
                     project.autoSync = originalAutoSync;
                     project.validateConstraintInterval = originalValidateConstraintInterval;
-                    eventStore.suspendEvents = originalSuspendEvents;
-                    scheduler.autoRescheduleTasks = originalAutoRescheduleTasks;
-                    
-                    // Re-enable the scheduling engine
-                    if (project.schedulingEngine) {
-                        project.schedulingEngine.disabled = false;
-                    }
                     
                     // Restore visual-only dependencies to feature store (not project store)
                     console.log('🔍 Restoring visual dependencies...');
                     const originalDeps = window.originalDependencies || [];
                     console.log(`🔍 Found ${originalDeps.length} original dependencies to restore`);
                     
-                    // Restore to visual dependency store, not project store
-                    if (originalDeps.length > 0 && window.visualDependencyStore) {
-                        const depStore = window.visualDependencyStore;
-                        depStore.removeAll();
-                        depStore.add(
+                    if (originalDeps.length > 0 && scheduler.features?.dependencies?.store) {
+                        scheduler.features.dependencies.store.removeAll();
+                        scheduler.features.dependencies.store.add(
                             originalDeps.map(({ id, from, to, type = 2, lag = 0, lagUnit = 'hour' }) => ({
-                                id: String(id), 
-                                fromEvent: from,  // Bryntum uses fromEvent/toEvent
-                                toEvent: to,      // not from/to
-                                type: type,
-                                lag: lag,
-                                lagUnit: lagUnit,
-                                inactive: true,
-                                cls: 'visual-dependency'
+                                id: String(id), from, to, type, lag, lagUnit
                             }))
                         );
-                        console.log(`🎨 Restored ${depStore.count} visual-only dependency lines to visual store`);
+                        console.log(`🎨 Restored ${scheduler.features.dependencies.store.count} visual-only dependency lines`);
                     } else if (originalDeps.length === 0) {
                         console.log('⚠️ No original dependencies to restore');
                     }
@@ -4868,34 +3836,7 @@
                                 const cur = evs[i];
                                 const next = evs[i + 1];
                                 const dur = cur.endDate - cur.startDate;
-                                
-                                // --- FIX: Compute the job-sequence successor bound ---
-                                const curJob = getJobKey(cur);
-                                const curSeq = getSequence(cur);
-
-                                // Find earliest successor in the same job with a higher sequence
-                                const successor = eventStore.records
-                                    .filter(e =>
-                                        getJobKey(e) === curJob &&
-                                        getSequence(e) > curSeq &&
-                                        e.startDate && e.endDate)
-                                    .sort((a, b) => getSequence(a) - getSequence(b))[0];
-
-                                // The rightmost end we allow is the min of:
-                                //  - next event on this resource
-                                //  - the successor's start in the same job (if any)
-                                const boundFromResource = next.startDate;
-                                const boundFromJob = successor ? successor.startDate : null;
-                                const latestEnd = boundFromJob
-                                    ? new Date(Math.min(boundFromResource.getTime(), boundFromJob.getTime()))
-                                    : boundFromResource;
-                                
-                                // Debug logging for sequence constraint enforcement
-                                if (boundFromJob && boundFromJob.getTime() < boundFromResource.getTime()) {
-                                    console.log(`  🔒 Constraining "${cur.name}" end by job successor "${successor.name}" at ${boundFromJob.toLocaleString()}`);
-                                }
-                                // --- End of FIX ---
-                                
+                                const latestEnd = next.startDate;
                                 const slot = findLatestFreeSlotOnResource(res, latestEnd, dur, cur);
                                 cur.set({ startDate: slot.start, endDate: slot.end, manuallyScheduled: false });
                             }
@@ -5075,7 +4016,7 @@
                     
                     // Force a refresh to recalculate utilization
                     setTimeout(() => {
-                        window.updateStatus();
+                        updateStatus();
                     }, 100);
                 }
                 
@@ -5197,23 +4138,14 @@
                     const originalDeps = window.originalDependencies || [];
                     console.log(`🔍 Found ${originalDeps.length} original dependencies to restore`);
                     
-                    // Restore to visual dependency store, not project store
-                    if (originalDeps.length > 0 && window.visualDependencyStore) {
-                        const depStore = window.visualDependencyStore;
-                        depStore.removeAll();
-                        depStore.add(
+                    if (originalDeps.length > 0 && scheduler.features?.dependencies?.store) {
+                        scheduler.features.dependencies.store.removeAll();
+                        scheduler.features.dependencies.store.add(
                             originalDeps.map(({ id, from, to, type = 2, lag = 0, lagUnit = 'hour' }) => ({
-                                id: String(id), 
-                                fromEvent: from,  // Bryntum uses fromEvent/toEvent
-                                toEvent: to,      // not from/to
-                                type: type,
-                                lag: lag,
-                                lagUnit: lagUnit,
-                                inactive: true,
-                                cls: 'visual-dependency'
+                                id: String(id), from, to, type, lag, lagUnit
                             }))
                         );
-                        console.log(`🎨 Restored ${depStore.count} visual-only dependency lines to visual store`);
+                        console.log(`🎨 Restored ${scheduler.features.dependencies.store.count} visual-only dependency lines`);
                     } else if (originalDeps.length === 0) {
                         console.log('⚠️ No original dependencies to restore');
                     }
@@ -5251,7 +4183,7 @@
                 }
                 
                 // Initialize status updates
-                window.updateStatus();
+                updateStatus();
                 
                 // CRITICAL: Helper function to wait for scheduler to be ready
                 // This eliminates the need for arbitrary timeouts
@@ -5346,7 +4278,7 @@
                         project.autoCalculate = wasAutoCalculate;
                         
                         console.log('✅ ASAP scheduling complete');
-                        window.updateStatus(); // Use updateStatus instead of updateSchedulerStatus
+                        updateStatus(); // Use updateStatus instead of updateSchedulerStatus
                     } catch (error) {
                         console.error('❌ ASAP scheduling error:', error);
                     } finally {
@@ -5388,7 +4320,7 @@
                         project.autoCalculate = wasAutoCalculate;
                         
                         console.log('✅ ALAP scheduling complete');
-                        window.updateStatus(); // Use updateStatus instead of updateSchedulerStatus
+                        updateStatus(); // Use updateStatus instead of updateSchedulerStatus
                     } catch (error) {
                         console.error('❌ ALAP scheduling error:', error);
                     } finally {
@@ -5402,7 +4334,7 @@
                     // Apply the selected algorithm
                     await applyAlgorithm(scheduler, algorithmId);
                     console.log(`✅ ${algorithmId} optimization complete`);
-                    window.updateStatus(); // Use updateStatus instead of updateSchedulerStatus
+                    updateStatus(); // Use updateStatus instead of updateSchedulerStatus
                 };
                 
                 console.log('[Scheduler] Helper function registered: window.waitForSchedulerReady(timeout)');
@@ -5465,88 +4397,27 @@
                     // Keep console logging for debugging if needed
                     console.log(`Loading: ${resources.length} resources, ${eventsForScheduler.length} events, ${assignments.length} assignments`);
                     
-                    // Transform PT operations to ensure they have the correct format for Bryntum
-                    const transformedEvents = eventsForScheduler.map(event => {
-                        // Ensure dates are Date objects - provide default if null
-                        let startDate = null;
-                        let endDate = null;
-                        
-                        // If operation has scheduled dates, use them
-                        if (event.startDate) {
-                            startDate = event.startDate instanceof Date ? event.startDate : new Date(event.startDate);
-                        }
-                        if (event.endDate) {
-                            endDate = event.endDate instanceof Date ? event.endDate : new Date(event.endDate);
-                        }
-                        
-                        // If no scheduled dates, create unscheduled placeholder dates for display
-                        // These will be replaced by ASAP/ALAP/Drum algorithms
-                        if (!startDate || !endDate) {
-                            const today = new Date();
-                            today.setHours(8, 0, 0, 0);  // Start at 8 AM
-                            startDate = new Date(today);
-                            // Use duration if available, otherwise default to 1 hour
-                            const durationHours = event.duration || 1;
-                            endDate = new Date(startDate.getTime() + durationHours * 60 * 60 * 1000);
-                        }
-                        
-                        return {
-                            id: event.id,
-                            name: event.name || 'Unnamed Operation',
-                            startDate: startDate,
-                            endDate: endDate,
-                            eventColor: event.eventColor || event.color || 'green',
-                            // Remove resourceId from event - it should come from assignments
-                            percentDone: event.percentDone || 0,
-                            duration: event.duration,
-                            durationUnit: event.durationUnit || 'hour',
-                            isUnscheduled: !event.startDate || !event.endDate,  // Flag unscheduled operations
-                            // CRITICAL: Preserve job information to prevent orphan treatment
-                            jobId: event.jobId,
-                            jobName: event.jobName,
-                            jobPriority: event.jobPriority,
-                            jobDueDate: event.jobDueDate,
-                            sequence_number: event.sequence_number,
-                            operationId: event.operationId,
-                            manually_scheduled: event.manually_scheduled
-                        };
-                    }); // Removed filter - keep all operations for scheduling
-                    
-                    console.log(`✅ Transformed ${transformedEvents.length} valid events with dates`);
-                    
-                    // Load data including dependencies (marked as inactive for visual-only)
-                    // Transform dependencies to ensure they're inactive/visual-only
-                    const visualDependencies = (fetchedDependencies || []).map(dep => ({
-                        id: String(dep.id),
-                        from: dep.from,
-                        to: dep.to,
-                        type: parseInt(dep.type) || 2,
-                        lag: parseInt(dep.lag) || 0,
-                        lagUnit: dep.lagUnit || 'hour',
-                        active: false,  // CRITICAL: Mark as inactive for visual-only
-                        cls: 'b-inactive visual-dependency'  // Add CSS class for styling
-                    }));
-                    
+                    // Load data WITHOUT dependencies to prevent engine constraints
+                    // Dependencies will be added to feature store for visual-only rendering
                     await scheduler.project.loadInlineData({
                         resourcesData: resources,
-                        eventsData: transformedEvents, // Use transformed events
-                        assignmentsData: assignments, // Assignments link events to resources
-                        dependenciesData: visualDependencies // Load inactive dependencies for visualization
+                        eventsData: eventsForScheduler, // Events without resourceId
+                        assignmentsData: assignments // Assignments link events to resources
                     });
                     
                     // Keep a copy globally
-                    window.originalDependencies = fetchedDependencies || [];
+                    window.originalDependencies = dependencies || [];
                     
-                    // Log dependency loading status
-                    console.log(`✅ Loaded ${visualDependencies.length} visual-only dependencies`);
-                    if (visualDependencies.length > 0) {
-                        const sampleDeps = visualDependencies.slice(0, 3);
-                        console.log('Sample dependencies:', sampleDeps.map(d => ({
-                            id: d.id,
-                            from: d.from,
-                            to: d.to,
-                            active: d.active
-                        })));
+                    // Draw dependency lines without letting the engine see them
+                    if (scheduler.features?.dependencies?.store) {
+                        scheduler.features.dependencies.store.removeAll();
+                        // Important: we only copy the fields needed for drawing lines
+                        scheduler.features.dependencies.store.add(
+                            window.originalDependencies.map(({ id, from, to, type = 2, lag = 0, lagUnit = 'hour' }) => ({
+                                id: String(id), from, to, type, lag, lagUnit
+                            }))
+                        );
+                        console.log(`🎨 Rendered ${scheduler.features.dependencies.store.count} visual-only dependency lines`);
                     }
                     
                     console.log(`✅ Loaded! Store has: ${scheduler.eventStore.count} events`);
@@ -5577,7 +4448,7 @@
                     console.log(`✅ Loaded ${scheduler.eventStore.count} operations on ${scheduler.resourceStore.count} resources`);
                     
                     // Update status bar
-                    window.updateStatus();
+                    updateStatus();
                     
                     // Zoom to fit after loading
                     if (scheduler.zoomToFit) {
@@ -5612,14 +4483,6 @@
                         }
                     }));
                     console.log('🎨 Paint event fired: Scheduler operations loaded and ready!');
-                    
-                    // Auto-zoom to fit whenever operations are loaded
-                    setTimeout(() => {
-                        if (scheduler.zoomToFit) {
-                            scheduler.zoomToFit({ leftMargin: 50, rightMargin: 50 });
-                            console.log('✅ Auto-zoomed to fit after operations loaded');
-                        }
-                    }, 200);
                 }
                 
                 if (eventCount === 0) {
@@ -5633,8 +4496,29 @@
                 // Users should manually click Apply button to run scheduling
                 console.log('ℹ️ Scheduler loaded. Click "Apply" button to run ASAP scheduling.');
                 
+                // Just fit to view without running ASAP automatically
+                setTimeout(() => {
+                    if (scheduler.zoomToFit) {
+                        scheduler.zoomToFit({
+                            leftMargin: 50,
+                            rightMargin: 50
+                        });
+                        console.log('✅ Zoomed to fit initial view');
+                    }
+                }, 500);
+                
                 // Periodic status refresh
-                setInterval(window.updateStatus, 30000); // Update every 30 seconds
+                setInterval(updateStatus, 30000); // Update every 30 seconds
+                
+                // Initial zoom to fit using Bryntum official documentation
+                // https://bryntum.com/products/schedulerpro/docs/api/Scheduler/view/mixin/TimelineZoomable#function-zoomToFit
+                setTimeout(() => {
+                    scheduler.zoomToFit({
+                        leftMargin: 50,   // Margin in pixels between first event start and first visible date
+                        rightMargin: 50   // Margin in pixels between last event end and last visible date
+                    });
+                    console.log('Initial zoom to fit applied - scheduler always loads in fit-to-view mode');
+                }, 750);
                 
                 // Hide loading overlay
                 document.getElementById('loadingOverlay').style.display = 'none';
@@ -5668,89 +4552,6 @@
                 // Listen for messages from Max AI
                 window.addEventListener('message', (event) => {
                     console.log('Production Scheduler received message:', event.data);
-                    
-                    // Handle algorithm execution from agent bridge
-                    if (event.data?.type === 'EXECUTE_SCHEDULING_ALGORITHM') {
-                        const algorithm = event.data.data?.algorithm;
-                        console.log('🤖 Agent Bridge requested algorithm execution:', algorithm);
-                        
-                        // Set the dropdown to the requested algorithm
-                        const algorithmSelect = document.getElementById('schedulingAlgorithm');
-                        if (algorithmSelect && algorithm) {
-                            algorithmSelect.value = algorithm;
-                            
-                            // Execute the algorithm
-                            setTimeout(() => {
-                                if (algorithm === 'asap' && window.asapScheduling) {
-                                    console.log('🚀 Executing ASAP algorithm via Agent Bridge');
-                                    window.asapScheduling();
-                                } else if (algorithm === 'alap' && window.alapScheduling) {
-                                    console.log('🚀 Executing ALAP algorithm via Agent Bridge');
-                                    window.alapScheduling();
-                                }
-                                
-                                // Send confirmation back to parent
-                                parent.postMessage({
-                                    type: 'ALGORITHM_EXECUTION_COMPLETE',
-                                    algorithm: algorithm,
-                                    success: true
-                                }, '*');
-                            }, 100);
-                        }
-                    }
-                    
-                    // Handle save schedule request from agent bridge
-                    if (event.data?.type === 'SAVE_SCHEDULE') {
-                        const name = event.data.data?.name;
-                        console.log('🤖 Agent Bridge requested schedule save:', name);
-                        
-                        // TODO: Implement save schedule functionality
-                        // For now, just acknowledge
-                        parent.postMessage({
-                            type: 'SCHEDULE_SAVE_COMPLETE',
-                            name: name,
-                            success: true
-                        }, '*');
-                    }
-                    
-                    // Handle load schedule request from agent bridge
-                    if (event.data?.type === 'LOAD_SCHEDULE') {
-                        const name = event.data.data?.name;
-                        console.log('🤖 Agent Bridge requested schedule load:', name);
-                        
-                        // TODO: Implement load schedule functionality
-                        // For now, just acknowledge
-                        parent.postMessage({
-                            type: 'SCHEDULE_LOAD_COMPLETE',
-                            name: name,
-                            success: true
-                        }, '*');
-                    }
-                    
-                    // Handle load version request from version history component
-                    if (event.data?.type === 'LOAD_VERSION') {
-                        const version = event.data.version;
-                        console.log('📚 Version History requested version load:', version);
-                        
-                        if (version && window.loadSelectedVersion) {
-                            window.loadSelectedVersion(version).then(() => {
-                                console.log('✅ Version loaded successfully');
-                                parent.postMessage({
-                                    type: 'VERSION_LOAD_COMPLETE',
-                                    versionId: version.id,
-                                    success: true
-                                }, '*');
-                            }).catch(error => {
-                                console.error('❌ Failed to load version:', error);
-                                parent.postMessage({
-                                    type: 'VERSION_LOAD_COMPLETE',
-                                    versionId: version.id,
-                                    success: false,
-                                    error: error.message
-                                }, '*');
-                            });
-                        }
-                    }
                     
                     // Handle scheduler commands from Max AI
                     if (event.data?.type === 'SCHEDULER_VIEW_CONTROL') {
@@ -5828,7 +4629,6 @@
                 const overlay = document.getElementById('loadingOverlay');
                 if (overlay) overlay.style.display = 'none';
             }
-            }); // End of waitForBryntum callback
         });
     </script>
     
@@ -5882,16 +4682,14 @@
                         priority: e.priority || 0
                     }));
                 
-                // Use visual dependency store instead of engine's (which is null)
-                const dependencies = window.visualDependencyStore ? 
-                    window.visualDependencyStore.records.map(d => ({
-                        id: String(d.id), // Convert to string
-                        fromEvent: String(d.fromEvent?.id || d.fromEvent), // Extract ID if it's an object
-                        toEvent: String(d.toEvent?.id || d.toEvent), // Extract ID if it's an object
-                        type: d.type || 2,
-                        lag: d.lag || 0,
-                        lagUnit: d.lagUnit || 'hour'
-                    })) : [];
+                const dependencies = scheduler.dependencyStore.records.map(d => ({
+                    id: String(d.id), // Convert to string
+                    fromEvent: String(d.fromEvent?.id || d.fromEvent), // Extract ID if it's an object
+                    toEvent: String(d.toEvent?.id || d.toEvent), // Extract ID if it's an object
+                    type: d.type || 2,
+                    lag: d.lag || 0,
+                    lagUnit: d.lagUnit || 'hour'
+                }));
                 
                 return {
                     version: `v_${Date.now()}`,
@@ -6077,32 +4875,29 @@
             });
             
             The following block from lines 4903-5158 contained duplicate scheduling logic:
-            
-            // All the duplicate code below has been commented out:
-            //                 console.log('⏳ Running Drum/TOC scheduling...');
-            //                 // Use the working custom Drum/TOC implementation
-            //                 await drumScheduling();
-            //                 console.log('✅ Drum/TOC scheduling complete');
-            //                 if (scheduler.toast) {
-            //                     scheduler.toast('Drum/TOC scheduling complete');
-            //                 }
-            //                 break;
-            //                 
-            //             default:
-            //                 console.warn('❌ Unknown algorithm:', algorithm);
-            //         }
-            //         
-            //     } catch (error) {
-            //         console.error('❌ Error applying scheduling algorithm:', error);
-            //         if (window.scheduler && window.scheduler.toast) {
-            //             window.scheduler.toast({
-            //                 html: `Error: ${error.message}`,
-            //                 style: 'background-color: #ff4444'
-            //             });
-            //         }
-            //     }
-            // });
-            */
+                            console.log('⏳ Running Drum/TOC scheduling...');
+                            // Use the working custom Drum/TOC implementation
+                            await drumScheduling();
+                            console.log('✅ Drum/TOC scheduling complete');
+                            if (scheduler.toast) {
+                                scheduler.toast('Drum/TOC scheduling complete');
+                            }
+                            break;
+                            
+                        default:
+                            console.warn('❌ Unknown algorithm:', algorithm);
+                    }
+                    
+                } catch (error) {
+                    console.error('❌ Error applying scheduling algorithm:', error);
+                    if (window.scheduler && window.scheduler.toast) {
+                        window.scheduler.toast({
+                            html: `Error: ${error.message}`,
+                            style: 'background-color: #ff4444'
+                        });
+                    }
+                }
+            });
             
             // END OF SCHEDULING ALGORITHM HANDLER
             
@@ -6377,8 +5172,8 @@
                         
                         console.log(`📝 Updating ${operations.length} scheduled operations in database...`);
                         
-                        // Get auth token using helper function
-                        const authToken = getAuthToken();
+                        // Get auth token from parent window or localStorage
+                        const authToken = window.parent?.localStorage?.getItem('auth_token') || localStorage.getItem('auth_token');
                         
                         // Update main database with new schedule times
                         const response = await fetch('/api/pt-operations/schedule', {
@@ -6401,126 +5196,16 @@
                             // Show success message
                             saveBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg><span>Schedule Updated!</span>';
                             
-                            // Create version history entry for the manual save
-                            try {
-                                console.log('📝 Creating version history entry for manual save...');
-                                const authToken = getAuthToken();
-                                
-                                // Get the current user's ID from the token
-                                let userId = null;
-                                try {
-                                    // Parse the JWT token to get the user ID
-                                    const tokenParts = authToken.split('.');
-                                    if (tokenParts.length === 3) {
-                                        const payload = JSON.parse(atob(tokenParts[1]));
-                                        userId = payload.id || payload.userId || payload.sub;
-                                        console.log('📝 Extracted userId from token:', userId);
-                                    }
-                                } catch (e) {
-                                    console.warn('Could not extract userId from token, will let server determine user');
-                                }
-                                
-                                const versionData = {
-                                    scheduleName: 'Main Schedule',
-                                    changeType: 'manual_save',
-                                    changeDescription: 'Schedule manually saved by user',
-                                    comment: `${result.updated} operations updated`,
-                                    userId: userId // Use extracted userId or let server determine from auth
-                                };
-                                
-                                console.log('📝 Sending version history request with data:', versionData);
-                                
-                                const versionResponse = await fetch('/api/schedules/1/versions', {
-                                    method: 'POST',
-                                    headers: {
-                                        'Content-Type': 'application/json',
-                                        'Authorization': authToken ? `Bearer ${authToken}` : ''
-                                    },
-                                    body: JSON.stringify(versionData)
-                                });
-                                
-                                console.log('📝 Version history response status:', versionResponse.status);
-                                
-                                if (versionResponse.ok) {
-                                    const versionResult = await versionResponse.json();
-                                    console.log('✅ Version history entry created for manual save:', versionResult);
-                                    
-                                    // Auto-load the newly created version if autoLoad flag is set
-                                    if (versionResult.autoLoad && versionResult.version) {
-                                        console.log('🔄 Auto-loading newly saved version...');
-                                        if (window.loadSelectedVersion) {
-                                            await window.loadSelectedVersion(versionResult.version);
-                                            console.log('✅ Manual save auto-loaded successfully');
-                                        }
-                                    }
-                                } else {
-                                    const errorText = await versionResponse.text();
-                                    console.error('❌ Failed to create version history entry:', errorText);
-                                    console.error('Response status:', versionResponse.status);
-                                }
-                            } catch (error) {
-                                console.error('❌ Exception creating version history entry:', error);
-                                console.error('Error stack:', error.stack);
-                            }
-                            
                             // Optional: Also save a version/snapshot for history
                             // This happens automatically with the existing saved-schedules system
                             try {
-                                // Safely extract schedule data with fallbacks
-                                let eventsData = [];
-                                let resourcesData = [];
-                                let dependenciesData = [];
-                                
-                                try {
-                                    // Try to get events data - fallback to manual extraction if toJSON fails
-                                    if (window.scheduler.eventStore.toJSON) {
-                                        eventsData = window.scheduler.eventStore.toJSON();
-                                    }
-                                } catch (e) {
-                                    console.warn('Could not serialize events with toJSON, using fallback:', e);
-                                    // Fallback: manually extract essential event data
-                                    eventsData = window.scheduler.eventStore.records.map(event => ({
-                                        id: event.id,
-                                        name: event.name,
-                                        startDate: event.startDate ? event.startDate.toISOString() : null,
-                                        endDate: event.endDate ? event.endDate.toISOString() : null,
-                                        resourceId: event.resourceId,
-                                        duration: event.duration,
-                                        durationUnit: event.durationUnit
-                                    }));
-                                }
-                                
-                                try {
-                                    // Try to get resources data - fallback to manual extraction if toJSON fails
-                                    if (window.scheduler.resourceStore.toJSON) {
-                                        resourcesData = window.scheduler.resourceStore.toJSON();
-                                    }
-                                } catch (e) {
-                                    console.warn('Could not serialize resources with toJSON, using fallback:', e);
-                                    // Fallback: manually extract essential resource data
-                                    resourcesData = window.scheduler.resourceStore.records.map(resource => ({
-                                        id: resource.id,
-                                        name: resource.name
-                                    }));
-                                }
-                                
-                                try {
-                                    // Try to get dependencies data if visual store exists
-                                    if (window.visualDependencyStore && window.visualDependencyStore.toJSON) {
-                                        dependenciesData = window.visualDependencyStore.toJSON();
-                                    }
-                                } catch (e) {
-                                    console.warn('Could not serialize dependencies:', e);
-                                    // Dependencies are optional, so just leave as empty array
-                                }
-                                
                                 const scheduleData = {
                                     name: `Auto-save - ${new Date().toLocaleString()}`,
                                     description: `Algorithm: ${document.getElementById('schedulingAlgorithm').options[document.getElementById('schedulingAlgorithm').selectedIndex].text}`,
                                     scheduleData: {
-                                        events: eventsData,
-                                        resources: resourcesData,
-                                        dependencies: dependenciesData
+                                        events: window.scheduler.eventStore.toJSON(),
+                                        resources: window.scheduler.resourceStore.toJSON(),
+                                        dependencies: window.scheduler.dependencyStore ? window.scheduler.dependencyStore.toJSON() : []
                                     },
                                     metadata: {
                                         algorithm: document.getElementById('schedulingAlgorithm').value,
@@ -6534,32 +5219,17 @@
                                     }
                                 };
                                 
-                                // Save as a proper version history entry (with dependencies)
-                                fetch('/api/schedules/1/versions', {
+                                // Save version in background (don't wait for response)
+                                fetch('/api/saved-schedules', {
                                     method: 'POST',
                                     headers: {
                                         'Content-Type': 'application/json',
                                         'Authorization': authToken ? `Bearer ${authToken}` : ''
                                     },
-                                    body: JSON.stringify({
-                                        changeType: 'optimization',
-                                        changeDescription: `Applied ${document.getElementById('schedulingAlgorithm').options[document.getElementById('schedulingAlgorithm').selectedIndex].text} algorithm`,
-                                        comment: `Auto-save after optimization - ${new Date().toLocaleString()}`,
-                                        userId: parseInt(localStorage.getItem('userId')) || 1
-                                    })
-                                }).then(async res => {
+                                    body: JSON.stringify(scheduleData)
+                                }).then(res => {
                                     if (res.ok) {
-                                        const result = await res.json();
-                                        console.log('✅ Schedule version saved with dependencies', result);
-                                        
-                                        // Auto-load the newly created version if autoLoad flag is set
-                                        if (result.autoLoad && result.version) {
-                                            console.log('🔄 Auto-loading newly created version...');
-                                            if (window.loadSelectedVersion) {
-                                                await window.loadSelectedVersion(result.version);
-                                                console.log('✅ Version auto-loaded successfully');
-                                            }
-                                        }
+                                        console.log('📚 Schedule version saved for history');
                                     }
                                 }).catch(err => {
                                     console.warn('Failed to save schedule version:', err);
@@ -6597,142 +5267,138 @@
                 }
             });
             
-            // Add Load Schedule functionality - opens version history panel
-            window.loadSchedule = function() {
-                console.log('📚 Opening version history panel for schedule loading...');
-                
-                // Send message to parent React app to open version history
-                // This will open the version history panel where each version has a Load button
-                if (window.parent !== window) {
-                    window.parent.postMessage({
-                        type: 'OPEN_VERSION_HISTORY',
-                        source: 'production-scheduler',
-                        message: 'User requested to load a schedule version'
-                    }, '*');
+            // Add Load Schedule functionality
+            window.loadSchedule = async function() {
+                try {
+                    // Get auth token
+                    const authToken = window.parent?.localStorage?.getItem('auth_token') || localStorage.getItem('auth_token');
                     
-                    // Show a toast notification if Bryntum is available
-                    if (window.scheduler && window.scheduler.bryntum) {
-                        window.scheduler.bryntum.Toast.show({
-                            html: 'Opening Version History panel...',
-                            color: 'b-blue',
-                            timeout: 2000
-                        });
-                    }
-                } else {
-                    // If not in iframe, inform user to use Version History panel
-                    if (window.scheduler && window.scheduler.bryntum) {
-                        window.scheduler.bryntum.MessageDialog.alert({
-                            title: 'Load from Version History',
-                            message: 'Please open the Version History panel from the toolbar to load a specific schedule version. Each version has its own Load button.'
-                        });
+                    // Fetch saved schedules from database
+                    const response = await fetch('/api/saved-schedules', {
+                        headers: {
+                            'Authorization': authToken ? `Bearer ${authToken}` : ''
+                        }
+                    });
+                    
+                    if (response.ok) {
+                        const schedules = await response.json();
+                        
+                        if (schedules.length === 0) {
+                            // Use Bryntum's MessageDialog instead of alert
+                            if (window.scheduler && window.scheduler.bryntum) {
+                                window.scheduler.bryntum.MessageDialog.alert({
+                                    title: 'No Schedules',
+                                    message: 'No saved schedules found'
+                                });
+                            } else {
+                                alert('No saved schedules found');
+                            }
+                            return;
+                        }
+                        
+                        // Use Bryntum's built-in combo selection dialog
+                        if (window.scheduler && window.scheduler.bryntum) {
+                            const { Combo, Popup } = window.scheduler.bryntum;
+                            
+                            // Prepare schedule items for the combo
+                            const scheduleItems = schedules.map((s, i) => ({
+                                id: i,
+                                text: `${s.name} - ${new Date(s.updatedAt).toLocaleDateString()} ${new Date(s.updatedAt).toLocaleTimeString()}`,
+                                schedule: s
+                            }));
+                            
+                            // Create a popup with a combo box
+                            const popup = new Popup({
+                                autoShow: true,
+                                centered: true,
+                                closable: true,
+                                modal: true,
+                                title: 'Select a schedule to load',
+                                width: 500,
+                                items: [
+                                    {
+                                        type: 'combo',
+                                        ref: 'scheduleCombo',
+                                        label: 'Schedule',
+                                        displayField: 'text',
+                                        valueField: 'id',
+                                        items: scheduleItems,
+                                        placeholder: 'Choose a schedule...',
+                                        style: 'margin: 20px'
+                                    }
+                                ],
+                                bbar: [
+                                    {
+                                        text: 'OK',
+                                        cls: 'b-blue',
+                                        onClick: async () => {
+                                            const combo = popup.widgetMap.scheduleCombo;
+                                            const selectedId = combo.value;
+                                            
+                                            if (selectedId !== null && selectedId !== undefined) {
+                                                const selectedItem = scheduleItems.find(item => item.id === selectedId);
+                                                if (selectedItem && selectedItem.schedule) {
+                                                    await loadSelectedSchedule(selectedItem.schedule);
+                                                }
+                                            }
+                                            popup.close();
+                                        }
+                                    },
+                                    {
+                                        text: 'Cancel',
+                                        onClick: () => popup.close()
+                                    }
+                                ]
+                            });
+                            
+                            return;
+                        } else {
+                            // Fallback to prompt if Bryntum widgets not available
+                            const scheduleList = schedules.map((s, i) => 
+                                `${i + 1}. ${s.name} (${new Date(s.updatedAt).toLocaleDateString()})`
+                            ).join('\n');
+                            
+                            const selection = prompt(`Select a schedule to load:\n\n${scheduleList}\n\nEnter number (1-${schedules.length}):`);
+                            
+                            if (selection) {
+                                const index = parseInt(selection) - 1;
+                                if (index >= 0 && index < schedules.length) {
+                                    await loadSelectedSchedule(schedules[index]);
+                                }
+                            }
+                        }
                     } else {
-                        alert('Please open the Version History panel from the toolbar to load a specific schedule version.');
+                        // Handle error or fallback to localStorage
+                        loadLocalSchedules();
                     }
+                } catch (error) {
+                    console.error('❌ Error loading schedules:', error);
+                    alert('Failed to load schedules. Please try again.');
                 }
             };
             
-            // Helper function to load a selected version from version history
-            async function loadSelectedVersion(selectedVersion) {
-                try {
-                    console.log('📚 Loading version:', selectedVersion);
+            // Helper function to load a selected schedule
+            async function loadSelectedSchedule(selectedSchedule) {
+                // Load the schedule using Bryntum's loadInlineData method
+                if (window.scheduler && window.scheduler.project) {
+                    // Load the project data
+                    await window.scheduler.project.loadInlineData(selectedSchedule.scheduleData);
                     
-                    // Parse the snapshot data from the version
-                    const snapshotData = typeof selectedVersion.snapshotData === 'string' 
-                        ? JSON.parse(selectedVersion.snapshotData) 
-                        : selectedVersion.snapshotData;
+                    // Restore metadata if available
+                    if (selectedSchedule.metadata) {
+                        if (selectedSchedule.metadata.algorithm) {
+                            document.getElementById('schedulingAlgorithm').value = selectedSchedule.metadata.algorithm;
+                        }
+                        if (selectedSchedule.metadata.constraints) {
+                            window.activeConstraints = selectedSchedule.metadata.constraints;
+                        }
+                    }
                     
-                    // Load the schedule data including dependencies
-                    if (window.scheduler && window.scheduler.project) {
-                        try {
-                            // First, we need to reload the operations to get the scheduled times from the version
-                            // The version contains operations with their scheduled start/end times
-                            const operations = snapshotData.operations || [];
-                            const dependencies = snapshotData.dependencies || [];
-                            
-                            console.log(`📚 Loading ${operations.length} operations and ${dependencies.length} dependencies from version`);
-                            
-                            // Update operations with their scheduled times from the version
-                            operations.forEach(op => {
-                                const event = window.scheduler.eventStore.getById(op.id);
-                                if (event && op.scheduledStart && op.scheduledEnd) {
-                                    event.startDate = new Date(op.scheduledStart);
-                                    event.endDate = new Date(op.scheduledEnd);
-                                    event.manuallyScheduled = op.manuallyScheduled || false;
-                                    console.log(`✅ Updated operation ${op.id} with times from version`);
-                                }
-                            });
-                            
-                            // Load dependencies if visual store exists
-                            if (window.visualDependencyStore && dependencies.length > 0) {
-                                console.log('📚 Loading dependencies into visual store...');
-                                window.visualDependencyStore.data = dependencies;
-                                console.log(`✅ Loaded ${dependencies.length} dependencies`);
-                            }
-                            
-                            // Refresh the scheduler view
-                            window.scheduler.refresh();
-                            
-                            console.log('✅ Version loaded successfully');
-                            
-                            // Show success message
-                            if (window.scheduler && window.scheduler.bryntum) {
-                                window.scheduler.bryntum.Toast.show({
-                                    html: `Loaded version ${selectedVersion.versionNumber} with ${dependencies.length} dependencies`,
-                                    color: 'b-green',
-                                    timeout: 3000
-                                });
-                            }
-                        } catch (loadError) {
-                            console.warn('Could not use loadInlineData, trying manual load:', loadError);
-                            
-                            // Fallback: manually load the data into stores
-                            try {
-                                // Clear existing data first
-                                window.scheduler.eventStore.removeAll();
-                                
-                                // Load events manually
-                                if (selectedSchedule.scheduleData.events && Array.isArray(selectedSchedule.scheduleData.events)) {
-                                    const events = selectedSchedule.scheduleData.events.map(event => {
-                                        // Ensure dates are properly parsed
-                                        return {
-                                            ...event,
-                                            startDate: event.startDate ? new Date(event.startDate) : null,
-                                            endDate: event.endDate ? new Date(event.endDate) : null
-                                        };
-                                    });
-                                    window.scheduler.eventStore.add(events);
-                                    loadSuccess = true;
-                                }
-                                
-                                // Resources should already be loaded from the API, so skip loading them
-                                // This prevents overwriting the current resource structure
-                                
-                                // Dependencies are visual-only and optional, skip them to avoid errors
-                            } catch (manualLoadError) {
-                                console.error('Manual load also failed:', manualLoadError);
-                                throw new Error('Could not load schedule data');
-                            }
-                        }
-                        
-                        if (!loadSuccess) {
-                            throw new Error('Failed to load schedule data');
-                        }
-                        
-                        // Restore metadata if available
-                        if (selectedSchedule.metadata) {
-                            if (selectedSchedule.metadata.algorithm) {
-                                document.getElementById('schedulingAlgorithm').value = selectedSchedule.metadata.algorithm;
-                            }
-                            if (selectedSchedule.metadata.constraints) {
-                                window.activeConstraints = selectedSchedule.metadata.constraints;
-                            }
-                        }
-                        
-                        // Store the schedule ID for future updates
-                        window.currentScheduleId = selectedSchedule.id;
-                        
-                        // Zoom to fit the entire schedule in view
-                        const events = window.scheduler.eventStore.records;
+                    // Store the schedule ID for future updates
+                    window.currentScheduleId = selectedSchedule.id;
+                    
+                    // Zoom to fit the entire schedule in view
+                    const events = window.scheduler.eventStore.records;
                     if (events && events.length > 0) {
                         // Find the earliest and latest dates in the schedule
                         let minDate = null;
@@ -6772,22 +5438,15 @@
                         }
                     }
                     
-                        // Update status
-                        document.getElementById('lastUpdate').textContent = `Loaded: ${selectedSchedule.name}`;
-                        window.updateStatus();
-                        
-                        console.log('✅ Schedule loaded successfully:', selectedSchedule.name);
-                    }
-                } catch (error) {
-                    console.error('❌ Error loading schedule:', error);
-                    alert(`Failed to load schedule: ${error.message || 'Unknown error'}. Please try again or select a different schedule.`);
+                    // Update status
+                    document.getElementById('lastUpdate').textContent = `Loaded: ${selectedSchedule.name}`;
+                    updateStatus();
+                    
+                    console.log('✅ Schedule loaded successfully:', selectedSchedule.name);
                 }
             }
             
-            // Helper function to load local schedules from localStorage - DEPRECATED
-            // This function is no longer used. Load button now opens the Version History panel
-            // where each version has its own Load button for better user experience
-            /*
+            // Helper function to load local schedules from localStorage
             async function loadLocalSchedules() {
                 try {
                     // Fallback to localStorage
@@ -6868,7 +5527,6 @@
                     alert('Failed to load local schedules. Please try again.');
                 }
             }
-            */
             
             // Add functionality for Refresh button - simply reload the page
             document.getElementById('refreshSchedule').addEventListener('click', () => {
