@@ -203,7 +203,7 @@ function DataImport() {
   const processImportData = async (data: any[], dataType: string) => {
     try {
       setIsImporting(true);
-      const authToken = localStorage.getItem('authToken');
+      const authToken = localStorage.getItem('auth_token');
       
       // Validate data size
       if (data.length > 50) {
@@ -981,7 +981,7 @@ function DataImport() {
       
       setIsSubmitting(true);
       try {
-        const authToken = localStorage.getItem('authToken');
+        const authToken = localStorage.getItem('auth_token');
         const endpoint = getApiEndpoint(selectedDataType);
         
         for (const entry of entries) {
@@ -1287,7 +1287,7 @@ Create authentic manufacturing data that reflects this company's operations.`;
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
         },
         body: JSON.stringify(generationData)
       });
@@ -1320,7 +1320,7 @@ Create authentic manufacturing data that reflects this company's operations.`;
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
         },
         body: JSON.stringify(modifyData)
       });
@@ -1812,7 +1812,7 @@ Create authentic manufacturing data that reflects this company's operations.`;
       }
       
       try {
-        const authToken = localStorage.getItem('authToken');
+        const authToken = localStorage.getItem('auth_token');
         const response = await fetch(`/api/data-management/${getTableName(dataType)}`, {
           method: 'POST',
           headers: { 
@@ -1915,7 +1915,7 @@ Create authentic manufacturing data that reflects this company's operations.`;
     const updateMutation = useMutation({
       mutationFn: async (updatedItem: any) => {
         console.log(`[updateMutation] Starting update for item:`, updatedItem);
-        const authToken = localStorage.getItem('authToken');
+        const authToken = localStorage.getItem('auth_token');
         const endpoint = getApiEndpoint(dataType);
         const url = `/api/${endpoint}/${updatedItem.id}`;
         console.log(`[updateMutation] Making PUT request to: ${url}`);
@@ -1972,7 +1972,7 @@ Create authentic manufacturing data that reflects this company's operations.`;
     // Create mutation
     const createMutation = useMutation({
       mutationFn: async (item: any) => {
-        const authToken = localStorage.getItem('authToken');
+        const authToken = localStorage.getItem('auth_token');
         const endpoint = getApiEndpoint(dataType);
         const response = await fetch(`/api/${endpoint}`, {
           method: 'POST',
@@ -2003,7 +2003,7 @@ Create authentic manufacturing data that reflects this company's operations.`;
     // Delete mutation
     const deleteMutation = useMutation({
       mutationFn: async (id: number) => {
-        const authToken = localStorage.getItem('authToken');
+        const authToken = localStorage.getItem('auth_token');
         const tableName = getTableName(dataType);
         const response = await fetch(`/api/data-management/${tableName}/bulk-delete`, {
           method: 'DELETE',
@@ -2032,7 +2032,7 @@ Create authentic manufacturing data that reflects this company's operations.`;
     // Bulk delete mutation using high-performance API
     const bulkDeleteMutation = useMutation({
       mutationFn: async (ids: string[]) => {
-        const authToken = localStorage.getItem('authToken');
+        const authToken = localStorage.getItem('auth_token');
         const response = await fetch(`/api/data-management/${getTableName(dataType)}/bulk-delete`, {
           method: 'DELETE',
           headers: { 
