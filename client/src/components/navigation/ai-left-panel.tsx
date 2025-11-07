@@ -616,6 +616,48 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
       console.error('Failed to copy text: ', err);
     }
   };
+  
+  // Playbook marking functionality
+  const togglePlaybookMark = async (message: ChatMessage) => {
+    try {
+      const currentStatus = (message as any).markedForPlaybook || false;
+      const newStatus = !currentStatus;
+      
+      const response = await fetch(`/api/max-chat-messages/${message.id}/playbook`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ markedForPlaybook: newStatus })
+      });
+      
+      if (response.ok) {
+        // Update the local message state
+        if (chatMessages && setChatMessages) {
+          setChatMessages(chatMessages.map(msg => 
+            msg.id === message.id 
+              ? { ...msg, markedForPlaybook: newStatus } as ChatMessage 
+              : msg
+          ));
+        }
+        
+        toast({
+          title: newStatus ? "Added to playbook" : "Removed from playbook",
+          description: newStatus 
+            ? "This message will be included in agent training." 
+            : "This message has been removed from agent training.",
+          duration: 2000
+        });
+      }
+    } catch (error) {
+      console.error('Failed to update playbook status:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update playbook status",
+        variant: "destructive"
+      });
+    }
+  };
 
 
   
@@ -1820,7 +1862,8 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
                           
                           <div className={cn(
                             "relative group",
-                            message.role === 'assistant' && "pr-8"
+                            message.role === 'assistant' && "pr-8",
+                            message.role === 'user' && "pr-8"
                           )}>
                             <div
                               className={cn(
@@ -1853,6 +1896,26 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
                                 ) : (
                                   <Copy className="h-3 w-3" />
                                 )}
+                              </Button>
+                            )}
+                            
+                            {/* Playbook marking button for user messages */}
+                            {message.role === 'user' && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => togglePlaybookMark(message)}
+                                className={cn(
+                                  "absolute top-1 right-1 h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity",
+                                  "bg-background/80 hover:bg-background border border-border/50",
+                                  (message as any).markedForPlaybook && "opacity-100 bg-yellow-100 dark:bg-yellow-900/30"
+                                )}
+                                title={(message as any).markedForPlaybook ? "Remove from playbook" : "Add to playbook"}
+                              >
+                                <BookOpen className={cn(
+                                  "h-3 w-3",
+                                  (message as any).markedForPlaybook ? "text-yellow-600 dark:text-yellow-400" : ""
+                                )} />
                               </Button>
                             )}
                           </div>

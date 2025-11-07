@@ -9,6 +9,7 @@ export interface ChatMessage {
   source?: 'header' | 'panel' | 'floating'; // Track where the message came from
   agentId?: string; // Which agent sent this message (e.g., 'max', 'production_scheduling', 'quality_analysis')
   agentName?: string; // Display name of the agent (e.g., 'Max', 'Production Scheduling Agent')
+  markedForPlaybook?: boolean; // Flag indicating if the message should be added to agent playbook
 }
 
 // Current user ID - will be loaded from auth
