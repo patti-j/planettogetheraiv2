@@ -2312,16 +2312,59 @@
                             // No need to specify store - will use project.dependencyStore automatically
                         },
                         
-                        // Enable drag and drop with tooltip
+                        // Enable drag and drop with tooltip and sequence constraints
                         eventDrag: {
                             showTooltip: true,
                             constrainDragToResource: false, // Allow dragging between resources
-                            // Validate that target resource has required capability AND no time overlap
+                            // Validate that drag preserves operation sequence AND resource capabilities
                             validatorFn({ draggedRecords, targetRecord, startDate, endDate }) {
                                 // Check each dragged operation
                                 for (const draggedRecord of draggedRecords) {
                                     const operationName = draggedRecord.name || draggedRecord.operationName || '';
                                     const requiredCapability = getRequiredCapability(operationName);
+                                    
+                                    // === SEQUENCE CONSTRAINT CHECK ===
+                                    // Operations must maintain their sequence order (1-9)
+                                    const draggedJobId = draggedRecord.jobId || draggedRecord.job_id || getJobKey(draggedRecord);
+                                    const draggedSequence = getSequence(draggedRecord);
+                                    
+                                    if (draggedJobId && draggedSequence) {
+                                        const events = [...scheduler.eventStore.records];
+                                        
+                                        // Find all operations for the same job
+                                        const jobOperations = events.filter(e => {
+                                            const jobId = e.jobId || e.job_id || getJobKey(e);
+                                            return jobId === draggedJobId && e.id !== draggedRecord.id;
+                                        });
+                                        
+                                        // Check if this move would violate sequence constraints
+                                        for (const op of jobOperations) {
+                                            const opSequence = getSequence(op);
+                                            
+                                            // Previous operations must end before this one starts
+                                            if (opSequence < draggedSequence && op.endDate) {
+                                                if (new Date(startDate) < new Date(op.endDate)) {
+                                                    console.warn(`❌ Cannot move operation ${draggedSequence} before operation ${opSequence} ends`);
+                                                    return {
+                                                        valid: false,
+                                                        message: `Operation ${draggedSequence} must start after operation ${opSequence} completes`
+                                                    };
+                                                }
+                                            }
+                                            
+                                            // This operation must end before later operations start
+                                            if (opSequence > draggedSequence && op.startDate) {
+                                                if (new Date(endDate) > new Date(op.startDate)) {
+                                                    console.warn(`❌ Cannot move operation ${draggedSequence} to overlap with operation ${opSequence}`);
+                                                    return {
+                                                        valid: false,
+                                                        message: `Operation ${draggedSequence} must complete before operation ${opSequence} starts`
+                                                    };
+                                                }
+                                            }
+                                        }
+                                    }
+                                    // === END SEQUENCE CONSTRAINT CHECK ===
                                     
                                     // 1. Check capability requirements - USE SIMPLE NAME MATCHING SINCE API IS BROKEN
                                     if (targetRecord) {
