@@ -48,7 +48,7 @@ export class AlgorithmRegistry {
    * Register default scheduling algorithms
    */
   private registerDefaultAlgorithms(): void {
-    // ASAP Algorithm
+    // ASAP Algorithm (with multiple aliases)
     this.register({
       id: 'forward-scheduling',
       name: 'ASAP Forward Scheduling',
@@ -56,11 +56,29 @@ export class AlgorithmRegistry {
       category: 'time-based',
       implementation: ASAPAlgorithm
     });
+    
+    // Register ASAP alias for convenience
+    this.register({
+      id: 'asap',
+      name: 'ASAP (As Soon As Possible)',
+      description: 'Schedules operations as soon as possible respecting dependencies and resource constraints',
+      category: 'time-based',
+      implementation: ASAPAlgorithm
+    });
 
-    // ALAP Algorithm
+    // ALAP Algorithm (with multiple aliases)
     this.register({
       id: 'backward-scheduling',
       name: 'ALAP Backward Scheduling',
+      description: 'Schedules operations as late as possible without violating deadlines',
+      category: 'time-based',
+      implementation: ALAPAlgorithm
+    });
+    
+    // Register ALAP alias for convenience
+    this.register({
+      id: 'alap',
+      name: 'ALAP (As Late As Possible)',
       description: 'Schedules operations as late as possible without violating deadlines',
       category: 'time-based',
       implementation: ALAPAlgorithm
