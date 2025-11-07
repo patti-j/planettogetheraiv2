@@ -15225,5 +15225,290 @@ router.post('/api/admin/import-production-data', async (req, res) => {
   }
 });
 
+// ============================================
+// Routing Intelligence API Endpoints
+// ============================================
+
+// Get all evidence artifacts
+router.get("/api/routing-intelligence/evidence", requireAuth, async (req, res) => {
+  try {
+    const { jobId, evidenceType, status } = req.query;
+    
+    const filters: any = {};
+    if (jobId) filters.jobId = parseInt(jobId as string);
+    if (evidenceType) filters.evidenceType = evidenceType as string;
+    if (status) filters.status = status as string;
+    
+    const evidence = await storage.getRoutingEvidence(filters);
+    res.json(evidence);
+  } catch (error) {
+    console.error('Error fetching routing evidence:', error);
+    res.status(500).json({ error: 'Failed to fetch routing evidence' });
+  }
+});
+
+// Get specific evidence by ID
+router.get("/api/routing-intelligence/evidence/:id", requireAuth, async (req, res) => {
+  try {
+    const evidence = await storage.getRoutingEvidenceById(parseInt(req.params.id));
+    if (!evidence) {
+      return res.status(404).json({ error: 'Evidence not found' });
+    }
+    res.json(evidence);
+  } catch (error) {
+    console.error('Error fetching evidence:', error);
+    res.status(500).json({ error: 'Failed to fetch evidence' });
+  }
+});
+
+// Upload new evidence
+router.post("/api/routing-intelligence/evidence", requireAuth, async (req, res) => {
+  try {
+    const data = {
+      ...req.body,
+      uploadedBy: req.user!.id
+    };
+    const evidence = await storage.createRoutingEvidence(data);
+    res.json(evidence);
+  } catch (error) {
+    console.error('Error creating evidence:', error);
+    res.status(500).json({ error: 'Failed to create evidence' });
+  }
+});
+
+// Update evidence processing status
+router.patch("/api/routing-intelligence/evidence/:id", requireAuth, async (req, res) => {
+  try {
+    const updated = await storage.updateRoutingEvidence(
+      parseInt(req.params.id),
+      req.body
+    );
+    if (!updated) {
+      return res.status(404).json({ error: 'Evidence not found' });
+    }
+    res.json(updated);
+  } catch (error) {
+    console.error('Error updating evidence:', error);
+    res.status(500).json({ error: 'Failed to update evidence' });
+  }
+});
+
+// Delete evidence
+router.delete("/api/routing-intelligence/evidence/:id", requireAuth, async (req, res) => {
+  try {
+    const success = await storage.deleteRoutingEvidence(parseInt(req.params.id));
+    if (!success) {
+      return res.status(404).json({ error: 'Evidence not found' });
+    }
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error deleting evidence:', error);
+    res.status(500).json({ error: 'Failed to delete evidence' });
+  }
+});
+
+// Get routing drafts
+router.get("/api/routing-intelligence/drafts", requireAuth, async (req, res) => {
+  try {
+    const { jobId, validationStatus } = req.query;
+    
+    const filters: any = {};
+    if (jobId) filters.jobId = parseInt(jobId as string);
+    if (validationStatus) filters.validationStatus = validationStatus as string;
+    
+    const drafts = await storage.getRoutingDrafts(filters);
+    res.json(drafts);
+  } catch (error) {
+    console.error('Error fetching routing drafts:', error);
+    res.status(500).json({ error: 'Failed to fetch routing drafts' });
+  }
+});
+
+// Get specific draft by ID
+router.get("/api/routing-intelligence/drafts/:id", requireAuth, async (req, res) => {
+  try {
+    const draft = await storage.getRoutingDraftById(parseInt(req.params.id));
+    if (!draft) {
+      return res.status(404).json({ error: 'Draft not found' });
+    }
+    res.json(draft);
+  } catch (error) {
+    console.error('Error fetching draft:', error);
+    res.status(500).json({ error: 'Failed to fetch draft' });
+  }
+});
+
+// Create new routing draft
+router.post("/api/routing-intelligence/drafts", requireAuth, async (req, res) => {
+  try {
+    const data = {
+      ...req.body,
+      createdBy: req.user!.id
+    };
+    const draft = await storage.createRoutingDraft(data);
+    res.json(draft);
+  } catch (error) {
+    console.error('Error creating draft:', error);
+    res.status(500).json({ error: 'Failed to create draft' });
+  }
+});
+
+// Update routing draft
+router.patch("/api/routing-intelligence/drafts/:id", requireAuth, async (req, res) => {
+  try {
+    const updated = await storage.updateRoutingDraft(
+      parseInt(req.params.id),
+      req.body
+    );
+    if (!updated) {
+      return res.status(404).json({ error: 'Draft not found' });
+    }
+    res.json(updated);
+  } catch (error) {
+    console.error('Error updating draft:', error);
+    res.status(500).json({ error: 'Failed to update draft' });
+  }
+});
+
+// Delete draft
+router.delete("/api/routing-intelligence/drafts/:id", requireAuth, async (req, res) => {
+  try {
+    const success = await storage.deleteRoutingDraft(parseInt(req.params.id));
+    if (!success) {
+      return res.status(404).json({ error: 'Draft not found' });
+    }
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error deleting draft:', error);
+    res.status(500).json({ error: 'Failed to delete draft' });
+  }
+});
+
+// Create validation run
+router.post("/api/routing-intelligence/validation-runs", requireAuth, async (req, res) => {
+  try {
+    const data = {
+      ...req.body,
+      validatedBy: req.user!.id
+    };
+    const run = await storage.createRoutingValidationRun(data);
+    res.json(run);
+  } catch (error) {
+    console.error('Error creating validation run:', error);
+    res.status(500).json({ error: 'Failed to create validation run' });
+  }
+});
+
+// Get validation runs for a draft
+router.get("/api/routing-intelligence/validation-runs/:draftId", requireAuth, async (req, res) => {
+  try {
+    const runs = await storage.getRoutingValidationRuns(parseInt(req.params.draftId));
+    res.json(runs);
+  } catch (error) {
+    console.error('Error fetching validation runs:', error);
+    res.status(500).json({ error: 'Failed to fetch validation runs' });
+  }
+});
+
+// Get improvement suggestions
+router.get("/api/routing-intelligence/improvement-suggestions", requireAuth, async (req, res) => {
+  try {
+    const { draftId, status, priority } = req.query;
+    
+    const filters: any = {};
+    if (draftId) filters.draftId = parseInt(draftId as string);
+    if (status) filters.status = status as string;
+    if (priority) filters.priority = priority as string;
+    
+    const suggestions = await storage.getRoutingImprovementSuggestions(filters);
+    res.json(suggestions);
+  } catch (error) {
+    console.error('Error fetching improvement suggestions:', error);
+    res.status(500).json({ error: 'Failed to fetch improvement suggestions' });
+  }
+});
+
+// Create improvement suggestion
+router.post("/api/routing-intelligence/improvement-suggestions", requireAuth, async (req, res) => {
+  try {
+    const suggestion = await storage.createRoutingImprovementSuggestion(req.body);
+    res.json(suggestion);
+  } catch (error) {
+    console.error('Error creating improvement suggestion:', error);
+    res.status(500).json({ error: 'Failed to create improvement suggestion' });
+  }
+});
+
+// Update improvement suggestion
+router.patch("/api/routing-intelligence/improvement-suggestions/:id", requireAuth, async (req, res) => {
+  try {
+    const updated = await storage.updateRoutingImprovementSuggestion(
+      parseInt(req.params.id),
+      req.body
+    );
+    if (!updated) {
+      return res.status(404).json({ error: 'Suggestion not found' });
+    }
+    res.json(updated);
+  } catch (error) {
+    console.error('Error updating improvement suggestion:', error);
+    res.status(500).json({ error: 'Failed to update improvement suggestion' });
+  }
+});
+
+// Generate routing from evidence using OpenAI
+router.post("/api/routing-intelligence/generate", requireAuth, async (req, res) => {
+  try {
+    const { jobId, evidenceIds, method = 'ai_synthesis' } = req.body;
+    
+    // This is a placeholder - in production, this would:
+    // 1. Fetch evidence by IDs
+    // 2. Process using appropriate method (AI synthesis, historical analysis, etc.)
+    // 3. Generate routing operations
+    // 4. Create a draft
+    
+    const mockDraft = {
+      jobId,
+      templateName: `Generated Route - ${new Date().toISOString()}`,
+      operations: [
+        {
+          sequence: 1,
+          name: 'Setup',
+          resourceType: 'Machine',
+          estimatedDuration: 30
+        },
+        {
+          sequence: 2,
+          name: 'Processing',
+          resourceType: 'Machine',
+          estimatedDuration: 120
+        },
+        {
+          sequence: 3,
+          name: 'Quality Check',
+          resourceType: 'Human',
+          estimatedDuration: 15
+        }
+      ],
+      estimatedCycleTime: 165,
+      resourceRequirements: {
+        machines: ['CNC-1', 'QC-Station'],
+        operators: 2
+      },
+      generationMethod: method,
+      evidenceIds,
+      confidenceScore: "0.75",
+      validationStatus: 'draft',
+      createdBy: req.user!.id
+    };
+    
+    const draft = await storage.createRoutingDraft(mockDraft);
+    res.json(draft);
+  } catch (error) {
+    console.error('Error generating routing:', error);
+    res.status(500).json({ error: 'Failed to generate routing' });
+  }
+});
+
 // Forced rebuild - all duplicate keys fixed
 export default router;
