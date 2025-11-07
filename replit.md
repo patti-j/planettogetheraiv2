@@ -67,6 +67,15 @@ These files must be synchronized for features like trigger arrays, handler metho
 -   **Demand Forecasting**: Native React-based forecasting application with SQL Server integration, dynamic table/column selection, and time-series forecasting with Recharts visualization, including intermittent demand handling.
 -   **Advanced Paginated Reports Designer**: Professional report builder with split-pane layout, resizable columns, "include totals row," an advanced column chooser, smart aggregation with "show distinct rows" (default), report templates, grouping and aggregation with subtotals, conditional formatting, save/load configurations, enhanced export capabilities (CSV, Excel, PDF with complete datasets and aggregation-aware headers), server-side totals and grouping, keyboard shortcuts, print preview, and full SQL Server/Power BI dataset support (pagination, filtering, sorting, DAX queries).
 
+## Production Deployment Configuration
+-   **Deployment Type**: Autoscale
+-   **Environment Variables Required**: NODE_ENV=production, REPLIT_DEPLOYMENT=1
+-   **Run Command**: `NODE_ENV=production REPLIT_DEPLOYMENT=1 node dist/index.js`
+-   **Build Command**: `npm run build`
+-   **Critical Fix (Nov 7, 2024)**: Must explicitly set NODE_ENV=production in run command to avoid server defaulting to development mode and looking for non-existent Vite dev server in production
+-   **Database Configuration**: Production uses PRODUCTION_DATABASE_URL, development uses DATABASE_URL
+-   **Required Secrets**: PRODUCTION_DATABASE_URL, JWT_SECRET, SESSION_SECRET, OPENAI_API_KEY
+
 ## External Dependencies
 -   **Database Provider**: Neon Database (serverless PostgreSQL)
 -   **AI/ML**: OpenAI API (GPT-4o, Whisper, TTS-1, gpt-realtime-mini)
