@@ -1429,8 +1429,8 @@ export class DatabaseStorage implements IStorage {
           r.name as resource_name
         FROM ptjoboperations jo
         LEFT JOIN ptjobs j ON jo.job_id = j.id
-        LEFT JOIN ptjobresources jr ON jo.id = jr.operation_id
-        LEFT JOIN ptresources r ON jr.default_resource_id = r.external_id
+        LEFT JOIN ptjobresources jr ON jo.id = jr.operation_id AND jr.is_primary = true
+        LEFT JOIN ptresources r ON jr.default_resource_id::integer = r.id
         WHERE jo.scheduled_start IS NOT NULL
         ORDER BY jo.scheduled_start, jo.id
         ${limit ? sql`LIMIT ${limit}` : sql``}
