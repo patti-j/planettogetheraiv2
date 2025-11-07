@@ -2804,9 +2804,10 @@ router.post("/api/generate-brewery-data", async (req, res) => {
       const timestamp = Date.now() + i;
       const jobExternalId = `JOB-${style.name.toUpperCase()}-COMPLETE-${timestamp}`;
       
-      // Insert new job
+      // Insert new job with random due date over next 30 days
       const dueDate = new Date();
-      dueDate.setDate(dueDate.getDate() + 7); // Due in 7 days
+      const randomDaysOut = Math.floor(Math.random() * 30) + 1; // Random 1-30 days
+      dueDate.setDate(dueDate.getDate() + randomDaysOut);
       
       console.log(`\nCreating new job: ${jobExternalId}`);
       
@@ -9348,7 +9349,7 @@ router.post("/api/master-data/bulk-generate", requireAuth, async (req, res) => {
         };
         
         const requiredFields: Record<string, string> = {
-          jobs: "REQUIRED: name (string), description (string), priority (number - use 2), status (string - use 'planned')",
+          jobs: "REQUIRED: name (string), description (string), priority (number - use 2), status (string - use 'planned'), needDateTime (date string - randomly distributed over next 30 days)",
           resources: "REQUIRED: name (string), description (string), resourceType (string - use 'machine'), capacity (number - use 100), status (string - use 'active')"
         };
         
@@ -9364,7 +9365,12 @@ Include diverse examples:
 - Proper manufacturing industry values
 - Varied priorities, statuses, and attributes
 
-CRITICAL: Always include all required fields with valid non-null values. Use current date for date fields. Use realistic manufacturing names.`;
+${entityType === 'jobs' ? `IMPORTANT for jobs: 
+- needDateTime field MUST be included and randomly distributed over the next 30 days from today
+- Generate dates between ${new Date().toISOString()} and ${new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()}
+- Each job should have a different needDateTime, spread evenly across the 30-day period` : ''}
+
+CRITICAL: Always include all required fields with valid non-null values. Use realistic manufacturing names.`;
 
         // Using GPT-4 Turbo for best performance and JSON generation
         const apiPromise = fetch('https://api.openai.com/v1/chat/completions', {
@@ -9411,13 +9417,25 @@ CRITICAL: Always include all required fields with valid non-null values. Use cur
                   const validatedData = { ...suggestion.data };
                   
                   // Entity-specific validation
-                  if (entityType === 'jobs' && typeof validatedData.priority === 'string') {
-                    const priorityMap: Record<string, number> = {
-                      'high': 1, 'urgent': 1, 'critical': 1,
-                      'medium': 2, 'normal': 2,
-                      'low': 3, 'minor': 3
-                    };
-                    validatedData.priority = priorityMap[validatedData.priority?.toLowerCase()] || 2;
+                  if (entityType === 'jobs') {
+                    // Handle priority field
+                    if (typeof validatedData.priority === 'string') {
+                      const priorityMap: Record<string, number> = {
+                        'high': 1, 'urgent': 1, 'critical': 1,
+                        'medium': 2, 'normal': 2,
+                        'low': 3, 'minor': 3
+                      };
+                      validatedData.priority = priorityMap[validatedData.priority?.toLowerCase()] || 2;
+                    }
+                    
+                    // Handle needDateTime - ensure random distribution over 30 days
+                    if (!validatedData.needDateTime || validatedData.needDateTime === null) {
+                      const randomDaysOut = Math.floor(Math.random() * 30) + 1;
+                      const needDate = new Date();
+                      needDate.setDate(needDate.getDate() + randomDaysOut);
+                      validatedData.needDateTime = needDate.toISOString();
+                      console.log(`[AI Bulk Generate] Added random needDateTime for job: ${validatedData.name} - ${randomDaysOut} days out`);
+                    }
                   }
                   
                   if (entityType === 'resources') {
