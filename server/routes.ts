@@ -2988,7 +2988,7 @@ router.get("/api/pt-operations", async (req, res) => {
       LEFT JOIN ptjobs j ON jo.job_id = j.id
       LEFT JOIN ptjobactivities ja ON ja.operation_id = jo.id
       LEFT JOIN ptjobresources jr ON jr.operation_id = jo.id AND jr.is_primary = true
-      LEFT JOIN ptresources r ON jr.default_resource_id = r.resource_id::text
+      LEFT JOIN ptresources r ON jr.default_resource_id = r.id::text
       LEFT JOIN ptplants p ON r.plant_id = p.id
       ORDER BY 
         jo.scheduled_start ASC NULLS LAST,
