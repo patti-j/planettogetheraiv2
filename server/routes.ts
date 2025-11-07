@@ -12368,6 +12368,93 @@ router.post("/api/optimization/algorithms/:name/run", async (req, res) => {
   }
 });
 
+// ===========================================
+// PRODUCTION SCHEDULER BULK OPERATIONS
+// ===========================================
+
+// Bulk update operations for production scheduler
+router.put("/api/schedules/:scheduleId/operations/bulk", enhancedAuth, async (req, res) => {
+  try {
+    const scheduleId = parseInt(req.params.scheduleId);
+    const { operations } = req.body;
+    
+    if (!operations || !Array.isArray(operations)) {
+      return res.status(400).json({ 
+        error: 'Operations array is required' 
+      });
+    }
+    
+    console.log(`📝 Bulk updating ${operations.length} operations for schedule ${scheduleId}`);
+    
+    // Update operations in a transaction for consistency
+    const results = await db.transaction(async (tx) => {
+      const updateResults = [];
+      
+      for (const op of operations) {
+        if (!op.id || !op.start || !op.end) {
+          console.warn(`Skipping operation with missing data:`, op);
+          continue;
+        }
+        
+        try {
+          // Update the ptjoboperations table with new scheduled times
+          const updated = await tx
+            .update(ptJobOperations)
+            .set({
+              scheduled_start: new Date(op.start),
+              scheduled_end: new Date(op.end)
+            })
+            .where(eq(ptJobOperations.id, op.id))
+            .returning({ id: ptJobOperations.id });
+          
+          updateResults.push({ 
+            id: op.id, 
+            success: true,
+            updated: updated.length > 0
+          });
+        } catch (error) {
+          console.error(`Failed to update operation ${op.id}:`, error);
+          updateResults.push({ 
+            id: op.id, 
+            success: false, 
+            error: error instanceof Error ? error.message : 'Unknown error'
+          });
+        }
+      }
+      
+      return updateResults;
+    });
+    
+    const successCount = results.filter(r => r.success && r.updated).length;
+    const failureCount = results.filter(r => !r.success).length;
+    const skippedCount = results.filter(r => r.success && !r.updated).length;
+    
+    console.log(`✅ Successfully updated ${successCount}/${operations.length} operations`);
+    if (failureCount > 0) {
+      console.warn(`⚠️ Failed to update ${failureCount} operations`);
+    }
+    if (skippedCount > 0) {
+      console.log(`ℹ️ Skipped ${skippedCount} operations (not found)`);
+    }
+    
+    res.json({
+      success: true,
+      message: `Updated ${successCount} operations`,
+      updatedCount: successCount,
+      failedCount: failureCount,
+      skippedCount: skippedCount,
+      totalProcessed: operations.length
+    });
+    
+  } catch (error) {
+    console.error('❌ Error in bulk operations update:', error);
+    res.status(500).json({ 
+      error: 'Failed to update operations',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
 // Helper functions for metrics calculation
 function calculateMakespan(schedule: any): number {
   if (!schedule.operations || schedule.operations.length === 0) return 0;
