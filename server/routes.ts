@@ -9312,30 +9312,21 @@ router.post("/api/master-data/bulk-generate", requireAuth, async (req, res) => {
       });
     }
     
-    // Default record counts
+    // Default record counts - only for existing tables
     const defaultCounts = {
-      items: 15, customers: 8, vendors: 8, capabilities: 12, workCenters: 6, 
-      jobs: 12, recipes: 8, routings: 8, billsOfMaterial: 10, warehouses: 6
+      jobs: 12,
+      resources: 10
     };
     const finalRecordCounts = { ...defaultCounts, ...recordCounts };
     
     const totalRecords = Object.values(finalRecordCounts).reduce((a: number, b: number) => a + b, 0);
     console.log(`[AI Bulk Generate] Creating ${totalRecords} total records across all tables`);
     
-    // Master data table mapping (dynamically import schema)
+    // Master data table mapping - only include existing PT tables
     const schema = await import('@shared/schema');
     const masterDataTables = {
-      items: schema.items,
-      customers: schema.customers,
-      vendors: schema.vendors,
-      capabilities: schema.ptCapabilities,
-      resources: schema.ptResources,
-      workCenters: schema.workCenters,
       jobs: schema.ptJobs,
-      recipes: schema.recipes,
-      billsOfMaterial: schema.billsOfMaterial,
-      routings: schema.routings,
-      warehouses: schema.ptWarehouses
+      resources: schema.ptResources
     };
     
     const entityTypes = Object.keys(finalRecordCounts);
@@ -9352,31 +9343,13 @@ router.post("/api/master-data/bulk-generate", requireAuth, async (req, res) => {
         const companyContext = companyInfo ? `\n\nCOMPANY CONTEXT: ${companyInfo}\nGenerate data relevant to this specific company/industry.` : '';
         
         const contextDescriptions: Record<string, string> = {
-          items: "diverse manufacturing inventory items including raw materials, components, finished products",
-          customers: "comprehensive customer database with company names, contact persons, addresses",
-          vendors: "complete vendor/supplier records including company details, contact information",
-          capabilities: "manufacturing capabilities and processes including machining, assembly, packaging",
-          resources: "manufacturing resources like CNC machines, packaging lines, reactors",
-          workCenters: "production work centers including machining stations, assembly lines",
           jobs: "production jobs with unique job numbers, specifications, quantities",
-          recipes: "formulation recipes for products with ingredients and process parameters",
-          billsOfMaterial: "detailed BOMs showing parent-child relationships",
-          routings: "manufacturing routings with operation sequences",
-          warehouses: "warehouse locations with capacity and inventory management details"
+          resources: "manufacturing resources like CNC machines, packaging lines, reactors"
         };
         
         const requiredFields: Record<string, string> = {
-          items: "REQUIRED: name (string), description (string), price (number)",
-          customers: "REQUIRED: name (string), email (string), phone (string)",
-          vendors: "REQUIRED: name (string), contactEmail (string), contactPhone (string)",
-          capabilities: "REQUIRED: name (string), description (string)",
-          resources: "REQUIRED: name (string), type (string), status (string - use 'active')",
-          workCenters: "REQUIRED: name (string), description (string)",
           jobs: "REQUIRED: name (string), description (string), priority (number - use 2), status (string - use 'planned')",
-          recipes: "REQUIRED: recipeName (string), recipeNumber (string), status (string - use 'Active')",
-          billsOfMaterial: "REQUIRED: bomNumber (string), parentItemId (number - use 1), description (string)",
-          routings: "REQUIRED: routingNumber (string), name (string), description (string)",
-          warehouses: "REQUIRED: name (string), location (string), capacity (number)"
+          resources: "REQUIRED: name (string), description (string), resourceType (string - use 'machine'), capacity (number - use 100), status (string - use 'active')"
         };
         
         const systemPrompt = `You are a manufacturing data expert. Generate ${recordCount} diverse, realistic ${contextDescriptions[entityType] || 'data records'} for a comprehensive manufacturing system.${companyContext} Return a JSON object with a "suggestions" array containing objects with: operation: "create", data: {complete record data}, explanation: "brief description", confidence: 0.9.`;
@@ -9445,6 +9418,16 @@ CRITICAL: Always include all required fields with valid non-null values. Use cur
                       'low': 3, 'minor': 3
                     };
                     validatedData.priority = priorityMap[validatedData.priority?.toLowerCase()] || 2;
+                  }
+                  
+                  if (entityType === 'resources') {
+                    // Map fields for ptresources table
+                    const now = new Date();
+                    validatedData.publishDate = validatedData.publishDate || now;
+                    validatedData.instanceId = validatedData.instanceId || `RES-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+                    validatedData.plantId = validatedData.plantId || 1;
+                    validatedData.active = validatedData.active !== undefined ? validatedData.active : true;
+                    validatedData.bottleneck = validatedData.bottleneck || false;
                   }
                   
                   await db.insert(tableSchema).values(validatedData);
