@@ -1216,6 +1216,32 @@ router.post("/api/powerbi/grouped-data", async (req, res) => {
     
     const accessToken = await powerBIService.getAccessToken();
     
+    // Get table schema to validate columns
+    const tableSchema = await powerBIService.getTableSchema(
+      accessToken,
+      workspaceId,
+      datasetId,
+      tableName
+    );
+    const validColumnNames = tableSchema.map(col => col.columnName);
+    
+    // Validate groupByColumns against table schema
+    const invalidGroupColumns = groupByColumns.filter(col => !validColumnNames.includes(col));
+    if (invalidGroupColumns.length > 0) {
+      return res.status(400).json({ 
+        message: `Invalid grouping columns: ${invalidGroupColumns.join(', ')}. These columns do not exist in table ${tableName}` 
+      });
+    }
+    
+    // Validate aggregation columns against table schema
+    const aggregationColumns = Object.keys(aggregations);
+    const invalidAggColumns = aggregationColumns.filter(col => !validColumnNames.includes(col));
+    if (invalidAggColumns.length > 0) {
+      return res.status(400).json({ 
+        message: `Invalid aggregation columns: ${invalidAggColumns.join(', ')}. These columns do not exist in table ${tableName}` 
+      });
+    }
+    
     const result = await powerBIService.getGroupedData({
       accessToken,
       workspaceId,
@@ -11630,6 +11656,27 @@ router.post("/api/paginated-reports/grouped", enhancedAuth, async (req, res) => 
     
     if (!isValidTable) {
       return res.status(400).json({ error: "Invalid schema or table name" });
+    }
+
+    // Get table schema to validate columns
+    const tableSchema = await sqlServerService.getTableSchema(schema, table);
+    const validColumnNames = tableSchema.map(col => col.columnName);
+    
+    // Validate groupByColumns against table schema
+    const invalidGroupColumns = groupByColumns.filter(col => !validColumnNames.includes(col));
+    if (invalidGroupColumns.length > 0) {
+      return res.status(400).json({ 
+        error: `Invalid grouping columns: ${invalidGroupColumns.join(', ')}. These columns do not exist in table ${schema}.${table}` 
+      });
+    }
+    
+    // Validate aggregation columns against table schema
+    const aggregationColumns = Object.keys(aggregations);
+    const invalidAggColumns = aggregationColumns.filter(col => !validColumnNames.includes(col));
+    if (invalidAggColumns.length > 0) {
+      return res.status(400).json({ 
+        error: `Invalid aggregation columns: ${invalidAggColumns.join(', ')}. These columns do not exist in table ${schema}.${table}` 
+      });
     }
 
     // Get grouped data with aggregations
