@@ -313,7 +313,11 @@ export const ReportPreview = memo(({
   }, [resizingColumn, handleMouseMove, handleMouseUp]);
 
   const renderGroupedData = () => {
-    if (!groupedData || !groupedData.groups) return null;
+    console.log('[ReportPreview] renderGroupedData called with:', { groupedData, groupingEnabled });
+    if (!groupedData || !groupedData.groups) {
+      console.log('[ReportPreview] No grouped data or groups to render');
+      return null;
+    }
 
     return (
       <div className="space-y-2 p-4">

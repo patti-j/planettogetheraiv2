@@ -509,7 +509,7 @@ export default function PaginatedReports() {
   
   // Group data (client-side for now, should be moved to server)
   // Fetch grouped data from server when grouping is enabled
-  const { data: groupedData } = useQuery({
+  const { data: groupedData, isLoading: isLoadingGroupedData, error: groupedDataError } = useQuery({
     queryKey: groupingEnabled && groupingColumns.length > 0 
       ? ['grouped', sourceType, selectedTable, selectedWorkspace, selectedDataset, selectedPowerBITable, 
          groupingColumns, page, pageSize, sortBy, sortOrder, columnFilters, selectedColumns]
@@ -591,8 +591,18 @@ export default function PaginatedReports() {
       
       return { groups: [] };
     },
-    enabled: groupingEnabled && groupingColumns.length > 0 && !!dataUrl
+    enabled: groupingEnabled && groupingColumns.length > 0 && (!!selectedTable || !!selectedPowerBITable)
   });
+  
+  // Debug grouped data
+  useEffect(() => {
+    if (groupedDataError) {
+      console.error('[PaginatedReports] Grouped data error:', groupedDataError);
+    }
+    if (groupedData) {
+      console.log('[PaginatedReports] Grouped data received:', groupedData);
+    }
+  }, [groupedData, groupedDataError]);
   
   // Reset selected columns when table changes
   useEffect(() => {
