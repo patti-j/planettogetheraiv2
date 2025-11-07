@@ -9581,6 +9581,19 @@ CRITICAL: Always include all required fields with valid non-null values. Use rea
   }
 });
 
+// Data validation endpoint
+router.post("/api/data-validation/run", requireAuth, async (req, res) => {
+  try {
+    console.log('Data validation requested by user:', req.user?.id);
+    
+    const result = await storage.runDataValidation();
+    res.json(result);
+  } catch (error) {
+    console.error("Error running data validation:", error);
+    res.status(500).json({ error: "Failed to run data validation" });
+  }
+});
+
 // AI-powered master data assistance endpoint
 router.post("/api/master-data/ai-assist", requireAuth, async (req, res) => {
   try {
