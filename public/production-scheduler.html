@@ -3471,7 +3471,7 @@
                         }
                         
                         // Show success message with appropriate color
-                        showAlgorithmSuccess(message, color);
+                        showNotification(message, 'success');
                         
                         // Notify parent that algorithm completed
                         if (window.parent !== window) {
@@ -3486,7 +3486,10 @@
                         console.error('Algorithm error:', error);
                         return false;
                     } finally {
-                        document.getElementById('loadingOverlay').style.display = 'none';
+                        const overlay = document.getElementById('loadingOverlay');
+                        if (overlay) {
+                            overlay.style.display = 'none';
+                        }
                     }
                 }
                 
@@ -3494,9 +3497,12 @@
                 window.applySelectedAlgorithm = applySelectedAlgorithm;
                 
                 // Apply Scheduling Algorithm button - just calls the shared function
-                document.getElementById('applyScheduling').addEventListener('click', async () => {
-                    await applySelectedAlgorithm();
-                });
+                const applyBtn = document.getElementById('applyScheduling');
+                if (applyBtn) {
+                    applyBtn.addEventListener('click', async () => {
+                        await applySelectedAlgorithm();
+                    });
+                }
                 
                 // Save schedule to database - make it globally available
                 window.saveSchedule = async function() {
