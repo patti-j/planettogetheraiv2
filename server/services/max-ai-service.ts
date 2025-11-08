@@ -1820,6 +1820,21 @@ Rules:
     }
   ): Promise<MaxResponse> {
     try {
+        // PRIORITY 1: Check for chart/graph/plot keywords FIRST before delegating to agents
+        const queryLower = query.toLowerCase();
+        const chartKeywords = ['plot', 'graph', 'chart', 'visualize', 'visualization'];
+        const hasChartKeyword = chartKeywords.some(keyword => queryLower.includes(keyword));
+        
+        if (hasChartKeyword) {
+          console.log(`[Max AI] 🎨 Chart keyword detected: "${query}", routing to chart creation BEFORE agent delegation`);
+          const chartResponse = await this.getDynamicChart(query, context);
+          if (chartResponse && !chartResponse.error) {
+            return chartResponse;
+          }
+          // If chart creation failed, continue with normal flow
+          console.log(`[Max AI] Chart creation failed or returned error, continuing with normal flow`);
+        }
+        
         // Check if any specialized agent can handle this request
         console.log(`[Max AI] Checking if specialized agent can handle: "${query}"`);
         const agentContext: AgentContext = {
