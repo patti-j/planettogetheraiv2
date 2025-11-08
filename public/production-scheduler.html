@@ -3936,333 +3936,248 @@
                         console.log(`  Job "${jobKey}": ${operations.length} operations (sequences ${operations.map(op => getSequence(op)).join(', ')})`);
                     }
                     
-                    // ASAP: Sort jobs by PRIORITY ASC (1 before 5) so Priority 1 finishes first
-                    console.log('📊 Before sorting - Job priorities:');
+                    // NEW INTERLEAVED ASAP ALGORITHM
+                    // Sort jobs by priority for processing order
+                    console.log('📊 Analyzing job priorities for interleaved scheduling:');
+                    
+                    // Create a list of all jobs with their priority
+                    const jobsWithPriority = [];
                     for (const [jobKey, operations] of jobOperations.entries()) {
                         if (jobKey !== '_orphans_') {
                             const priority = getJobPriorityForOperation(operations[0]);
-                            console.log(`  ${jobKey}: Priority ${priority}`);
-                        }
-                    }
-                    
-                    const sortedJobs = Array.from(jobOperations.entries()).sort(([keyA, opsA], [keyB, opsB]) => {
-                        // Skip orphans - they go last
-                        if (keyA === '_orphans_') return 1;
-                        if (keyB === '_orphans_') return -1;
-                        
-                        // Sort by job PRIORITY ascending
-                        // Priority 1 (highest) should schedule first and finish first
-                        // Priority 5 (lowest) should schedule last and finish last
-                        const priorityA = getJobPriorityForOperation(opsA[0]);
-                        const priorityB = getJobPriorityForOperation(opsB[0]);
-                        
-                        // Debug log for sorting
-                        console.log(`  Comparing ${keyA} (pri ${priorityA}) vs ${keyB} (pri ${priorityB})`);
-                        
-                        if (priorityA !== priorityB) {
-                            return priorityA - priorityB; // Ascending: 1, 2, 3, 4, 5
-                        }
-                        
-                        // If same priority, sort by job key for consistency
-                        return String(keyA).localeCompare(String(keyB));
-                    });
-                    
-                    // Flatten sorted jobs into a single sorted events array
-                    const sortedEvents = [];
-                    for (const [jobKey, operations] of sortedJobs) {
-                        sortedEvents.push(...operations);
-                    }
-                    
-                    console.log(`  ✅ Sorted ${sortedEvents.length} events by job priority and sequence`);
-                    
-                    // Log the priority order for verification
-                    console.log('📊 ASAP Job scheduling order (highest priority first for forward scheduling):');
-                    sortedJobs.forEach(([jobKey, operations], index) => {
-                        if (jobKey === '_orphans_') {
-                            console.log(`  ${index + 1}. Orphan operations: ${operations.length} operations`);
-                        } else {
-                            const priority = parseInt(getJobPriorityForOperation(operations[0]));
                             const jobName = operations[0].jobName || jobKey;
-                            console.log(`  ${index + 1}. Priority ${priority}: Batch ${jobKey} (${jobName}) - ${operations.length} operations`);
+                            jobsWithPriority.push({ 
+                                jobKey, 
+                                priority, 
+                                jobName,
+                                operations 
+                            });
+                            console.log(`  Job ${jobKey} (${jobName}): Priority ${priority}`);
                         }
+                    }
+                    
+                    // Sort jobs by priority (1 = highest, goes first)
+                    jobsWithPriority.sort((a, b) => a.priority - b.priority);
+                    
+                    console.log('\n📊 Job Processing Order (by priority):');
+                    jobsWithPriority.forEach((job, index) => {
+                        console.log(`  ${index + 1}. Priority ${job.priority}: ${job.jobName} (${job.jobKey})`);
                     });
                     
-                    // Process events in job/sequence order
-                    const byId = id => eventStore.getById(id);
+                    // ============================================================================
+                    // NEW INTERLEAVED SCHEDULING ALGORITHM
+                    // Operations from different jobs can share resources efficiently
+                    // ============================================================================
                     
-                    // ADVANCED BIN PACKING ALGORITHM for optimal schedule compaction
-                    // Track occupied time slots for each resource (like a timeline with filled bins)
-                    const resourceTimelines = new Map(); // resourceId -> array of {start, end, eventId}
+                    // Track occupied time slots for each resource
+                    const resourceTimelines = new Map(); // resourceId -> array of {start, end, eventId, jobKey}
                     
-                    console.log('\n📦 Starting Advanced Bin Packing Algorithm for schedule compaction...');
+                    // Track completion times for each operation
+                    const operationEndTimes = new Map(); // operationId -> endDate
+                    
+                    // Track job start dates (release dates or today)
+                    const jobStartDates = new Map(); // jobKey -> startDate
+                    
+                    console.log('\n📦 Starting Interleaved ASAP Scheduling Algorithm...');
                     
                     // Helper function to find the earliest available slot on a resource
-                    function findEarliestSlot(resourceId, duration, earliestPossibleStart) {
+                    function findEarliestSlotOnResource(resourceId, duration, earliestPossibleStart) {
                         const timeline = resourceTimelines.get(resourceId) || [];
                         
-                        // If no operations on this resource yet, can start at earliest possible time
                         if (timeline.length === 0) {
                             return earliestPossibleStart;
                         }
                         
-                        // Sort timeline by start time (should already be sorted, but ensure it)
+                        // Sort timeline by start time
                         timeline.sort((a, b) => a.start.getTime() - b.start.getTime());
                         
-                        // CRITICAL FIX: Advance earliestPossibleStart past any overlapping operations
-                        let adjustedEarliestStart = earliestPossibleStart.getTime();
+                        // Find the first available slot that fits our duration
+                        let currentTime = earliestPossibleStart.getTime();
                         
-                        // Check each existing operation on this resource
                         for (const slot of timeline) {
                             const slotStart = slot.start.getTime();
                             const slotEnd = slot.end.getTime();
                             
-                            // If our earliest start falls within an existing operation, push it to after that operation
-                            if (adjustedEarliestStart >= slotStart && adjustedEarliestStart < slotEnd) {
-                                console.log(`    ⚠️ Earliest start conflicts with existing operation, moving from ${new Date(adjustedEarliestStart).toLocaleString()} to ${slot.end.toLocaleString()}`);
-                                adjustedEarliestStart = slotEnd;
+                            // If current time is before this slot and we can fit, use this gap
+                            if (currentTime + duration <= slotStart) {
+                                return new Date(currentTime);
                             }
-                        }
-                        
-                        // Now use the adjusted earliest start for finding slots
-                        const earliestTime = adjustedEarliestStart;
-                        
-                        // Check if we can fit before the first operation
-                        const firstOpStart = timeline[0].start.getTime();
-                        
-                        if (earliestTime + duration <= firstOpStart) {
-                            // We can fit before the first operation
-                            return new Date(earliestTime);
-                        }
-                        
-                        // Check gaps between operations (bin packing)
-                        for (let i = 0; i < timeline.length - 1; i++) {
-                            const gapStart = timeline[i].end.getTime();
-                            const gapEnd = timeline[i + 1].start.getTime();
-                            const gapSize = gapEnd - gapStart;
                             
-                            // Check if this gap is big enough and respects earliest start
-                            if (gapSize >= duration) {
-                                // The operation must start at or after earliestTime
-                                const actualStart = Math.max(gapStart, earliestTime);
-                                
-                                // Check if starting at actualStart, we can still fit within the gap
-                                if (actualStart + duration <= gapEnd) {
-                                    return new Date(actualStart);
-                                }
+                            // Move current time past this slot if it overlaps
+                            if (currentTime < slotEnd) {
+                                currentTime = slotEnd;
                             }
                         }
                         
-                        // No gaps found, schedule after the last operation
-                        const lastEnd = timeline[timeline.length - 1].end.getTime();
-                        // Must respect the adjusted earliest start constraint
-                        return new Date(Math.max(lastEnd, earliestTime));
+                        // No gaps found, schedule after all existing operations
+                        return new Date(currentTime);
                     }
                     
-                    // ============================================================================
-                    // Process Operations in Job/Sequence Order
-                    // NOTE: Dependencies are NOT used for scheduling logic, only visual display
-                    // ============================================================================
-                    for (const [jobKey, operations] of sortedJobs) {
-                        // CRITICAL: Skip orphan operations entirely - they have no job context
-                        if (jobKey === '_orphans_') {
-                            console.warn(`\n⚠️ Skipping ${operations.length} orphan operations (no job ID)`);
-                            console.warn('🗑️ Orphan operations will be hidden to prevent scheduling conflicts');
-                            
-                            // Move orphan operations out of the visible schedule
-                            operations.forEach(ev => {
-                                const farFuture = new Date('2099-12-31');
-                                ev.set({
-                                    startDate: farFuture,
-                                    endDate: new Date(farFuture.getTime() + 3600000),
-                                    manuallyScheduled: false,
-                                    hidden: true
-                                });
-                                console.log(`  🗑️ Orphan operation "${ev.name}" moved out of scheduling range`);
+                    // Helper function to get resource for an operation
+                    function getResourceForOperation(event) {
+                        const assignment = assignmentStore.find(a => a.eventId === event.id);
+                        if (assignment) {
+                            return scheduler.resourceStore.getById(assignment.resourceId);
+                        }
+                        return null;
+                    }
+                    
+                    // Helper to find the predecessor operation in the same job
+                    function findPredecessor(operation, jobOperations) {
+                        const opIndex = jobOperations.indexOf(operation);
+                        if (opIndex > 0) {
+                            return jobOperations[opIndex - 1];
+                        }
+                        return null;
+                    }
+                    
+                    // Process orphan operations first (hide them)
+                    const orphans = jobOperations.get('_orphans_') || [];
+                    if (orphans.length > 0) {
+                        console.warn(`\n⚠️ Found ${orphans.length} orphan operations - hiding them`);
+                        orphans.forEach(ev => {
+                            const farFuture = new Date('2099-12-31');
+                            ev.set({
+                                startDate: farFuture,
+                                endDate: new Date(farFuture.getTime() + 3600000),
+                                manuallyScheduled: false,
+                                hidden: true
                             });
-                            continue; // Skip to next job
+                        });
+                    }
+                    
+                    // Initialize job start dates
+                    for (const job of jobsWithPriority) {
+                        const releaseDate = getManufacturingReleaseDate(job.operations[0]);
+                        const startDate = releaseDate || today;
+                        jobStartDates.set(job.jobKey, startDate);
+                        console.log(`  Job ${job.jobKey}: Start date = ${startDate.toLocaleDateString()}`);
+                    }
+                    
+                    // Create a queue of operations to schedule
+                    // Operations are processed by sequence across all jobs at each priority level
+                    console.log('\n📋 Creating interleaved operation queue...');
+                    
+                    // Process by priority groups to ensure higher priority jobs get resources first
+                    const priorityGroups = new Map(); // priority -> array of jobs
+                    for (const job of jobsWithPriority) {
+                        if (!priorityGroups.has(job.priority)) {
+                            priorityGroups.set(job.priority, []);
+                        }
+                        priorityGroups.get(job.priority).push(job);
+                    }
+                    
+                    // Sort priority levels
+                    const sortedPriorities = Array.from(priorityGroups.keys()).sort((a, b) => a - b);
+                    
+                    console.log('\n🔄 Processing operations by priority and sequence...');
+                    
+                    // Process each priority level
+                    for (const priority of sortedPriorities) {
+                        const jobsAtPriority = priorityGroups.get(priority);
+                        console.log(`\n  Priority ${priority}: ${jobsAtPriority.length} jobs`);
+                        
+                        // Find max sequence number across all jobs at this priority
+                        let maxSequence = 0;
+                        for (const job of jobsAtPriority) {
+                            for (const op of job.operations) {
+                                const seq = getSequence(op);
+                                if (seq > maxSequence) maxSequence = seq;
+                            }
                         }
                         
-                        const jobName = operations[0].jobName || '';
-                        console.log(`\n🏭 Processing Batch ${jobKey} (${jobName}) with ${operations.length} operations`);
-                        
-                        // Determine the start date for this job
-                        let jobStartDate = today; // Default to today
-                        
-                        // Check if this job has a manufacturing release date
-                        if (operations.length > 0) {
-                            const releaseDate = getManufacturingReleaseDate(operations[0]);
-                            if (releaseDate) {
-                                jobStartDate = releaseDate;
-                                console.log(`  📅 Job has manufacturing release date: ${releaseDate.toLocaleDateString()}`);
-                            } else {
-                                console.log(`  📅 No release date specified, starting from today: ${today.toLocaleDateString()}`);
-                            }
-                            // Store for potential reuse
-                            jobStartDates.set(jobKey, jobStartDate);
-                        }
-                        
-                        let previousOperationEnd = null; // Track end of previous operation in this job
-                        
-                        for (const event of operations) {
-                            const sequence = getSequence(event);
-                            
-                            // ========================================================================
-                            // Calculate Earliest Start Time
-                            // For first operation in job: use job start date (today or release date)
-                            // For subsequent operations: must start after previous operation ends
-                            // CRITICAL: Operations within a job MUST be scheduled in strict sequence order
-                            // ========================================================================
-                            let earliestStart = previousOperationEnd || jobStartDate;
-                            
-                            console.log(`  📋 Operation "${event.name}" (seq ${sequence})`);
-                            if (previousOperationEnd) {
-                                console.log(`     Must start after previous operation ends: ${previousOperationEnd.toLocaleString()}`);
-                                // ENFORCE: This operation cannot start before the previous one ends
-                                // This ensures operations within a job maintain their sequence order
-                            } else {
-                                console.log(`     First operation, can start at: ${earliestStart.toLocaleString()}`);
+                        // Process by sequence number (interleaving operations from different jobs)
+                        for (let seq = 0; seq <= maxSequence; seq += 10) {
+                            // Collect all operations at this sequence level from all jobs at this priority
+                            const opsAtSequence = [];
+                            for (const job of jobsAtPriority) {
+                                const op = job.operations.find(o => getSequence(o) === seq);
+                                if (op) {
+                                    opsAtSequence.push({ operation: op, job: job });
+                                }
                             }
                             
-                            // Get the resource this event is assigned to
-                            let resource = null;
-                            const assignment = assignmentStore.find(a => a.eventId === event.id);
-                            if (assignment) {
-                                resource = scheduler.resourceStore.getById(assignment.resourceId);
-                            }
+                            if (opsAtSequence.length === 0) continue;
                             
-                            const durationMs = event.durationMS ?? (event.duration * 60 * 60 * 1000);
+                            console.log(`    Sequence ${seq}: ${opsAtSequence.length} operations`);
                             
-                            if (resource) {
-                                const resourceId = resource.id;
+                            // Schedule all operations at this sequence level
+                            for (const { operation, job } of opsAtSequence) {
+                                const resource = getResourceForOperation(operation);
+                                const durationMs = operation.durationMS ?? (operation.duration * 60 * 60 * 1000);
                                 
-                                // CRITICAL FIX: For operations after the first in a job, they MUST start
-                                // immediately after the previous operation ends to maintain continuous flow
-                                let slotStart, slotEnd;
+                                // Find predecessor in the same job
+                                const predecessor = findPredecessor(operation, job.operations);
                                 
-                                if (previousOperationEnd) {
-                                    // This is NOT the first operation - must start immediately after predecessor
-                                    console.log(`  🔗 Operation must start immediately after predecessor`);
-                                    
-                                    // Check if resource is available at the required time
-                                    const timeline = resourceTimelines.get(resourceId) || [];
-                                    let isResourceBusy = false;
-                                    const requiredStart = previousOperationEnd;
-                                    const requiredEnd = new Date(requiredStart.getTime() + durationMs);
-                                    
-                                    // Check if this time conflicts with existing operations on this resource
-                                    for (const slot of timeline) {
-                                        // Check if our required time overlaps with an existing operation
-                                        if ((requiredStart >= slot.start && requiredStart < slot.end) ||
-                                            (requiredEnd > slot.start && requiredEnd <= slot.end) ||
-                                            (requiredStart <= slot.start && requiredEnd >= slot.end)) {
-                                            isResourceBusy = true;
-                                            console.log(`     ⚠️ Resource ${resource.name} is busy from ${slot.start.toLocaleString()} to ${slot.end.toLocaleString()}`);
-                                            break;
-                                        }
+                                // Calculate earliest start time based on TWO constraints:
+                                // 1. Must start after predecessor in same job (if any)
+                                // 2. Resource must be available
+                                let earliestStart;
+                                if (predecessor) {
+                                    // Must start after predecessor ends
+                                    const predEnd = operationEndTimes.get(predecessor.id);
+                                    if (!predEnd) {
+                                        console.error(`      ❌ Predecessor ${predecessor.name} not yet scheduled!`);
+                                        continue;
                                     }
-                                    
-                                    if (isResourceBusy) {
-                                        // Resource is busy when we need it - we must delay the entire job chain
-                                        // Find when the resource becomes available
-                                        const availableStart = findEarliestSlot(resourceId, durationMs, requiredStart);
-                                        const delay = availableStart.getTime() - requiredStart.getTime();
-                                        
-                                        console.log(`     🔄 Resource conflict - delaying entire job chain by ${(delay / 3600000).toFixed(1)} hours`);
-                                        
-                                        // We need to reschedule all previous operations in this job by the same delay
-                                        // This maintains the continuous flow but shifts everything later
-                                        for (let j = 0; j < operations.indexOf(event); j++) {
-                                            const prevOp = operations[j];
-                                            const oldStart = prevOp.startDate;
-                                            const oldEnd = prevOp.endDate;
-                                            const newStart = new Date(oldStart.getTime() + delay);
-                                            const newEnd = new Date(oldEnd.getTime() + delay);
-                                            
-                                            // Update the operation times
-                                            prevOp.setStartDate(newStart, true);
-                                            prevOp.set({
-                                                endDate: newEnd,
-                                                manuallyScheduled: false
-                                            });
-                                            
-                                            // Update resource timeline for this operation
-                                            const prevResource = resolveResource(prevOp);
-                                            if (prevResource) {
-                                                const prevResourceId = prevResource.id;
-                                                const prevTimeline = resourceTimelines.get(prevResourceId) || [];
-                                                const prevSlot = prevTimeline.find(s => s.eventId === prevOp.id);
-                                                if (prevSlot) {
-                                                    prevSlot.start = newStart;
-                                                    prevSlot.end = newEnd;
-                                                }
-                                            }
-                                            
-                                            console.log(`     📝 Rescheduled "${prevOp.name}" to ${newStart.toLocaleString()}`);
-                                        }
-                                        
-                                        // Now schedule this operation at the available time
-                                        slotStart = availableStart;
-                                        slotEnd = new Date(slotStart.getTime() + durationMs);
-                                    } else {
-                                        // Resource is available - schedule immediately after predecessor
-                                        slotStart = requiredStart;
-                                        slotEnd = requiredEnd;
-                                    }
+                                    earliestStart = predEnd;
+                                    console.log(`      ${operation.name} (${job.jobName}): After predecessor at ${earliestStart.toLocaleTimeString()}`);
                                 } else {
-                                    // First operation in job - find earliest available slot
-                                    slotStart = findEarliestSlot(resourceId, durationMs, earliestStart);
-                                    slotEnd = new Date(slotStart.getTime() + durationMs);
+                                    // First operation - use job start date
+                                    earliestStart = jobStartDates.get(job.jobKey);
+                                    console.log(`      ${operation.name} (${job.jobName}): First op, start at ${earliestStart.toLocaleTimeString()}`);
                                 }
                                 
-                                console.log(`  📦 Scheduling "${event.name}" on "${resource.name}"`);
-                                console.log(`     Time: ${slotStart.toLocaleString()} to ${slotEnd.toLocaleString()}`);
-                                
-                                // Helper function to resolve resource for an operation
-                                function resolveResource(op) {
-                                    const asg = assignmentStore.find(a => a.eventId === op.id);
-                                    if (asg) return scheduler.resourceStore.getById(asg.resourceId);
-                                    return null;
+                                // Find when resource is available
+                                let startTime, endTime;
+                                if (resource) {
+                                    startTime = findEarliestSlotOnResource(resource.id, durationMs, earliestStart);
+                                    endTime = new Date(startTime.getTime() + durationMs);
+                                    
+                                    // Add to resource timeline
+                                    if (!resourceTimelines.has(resource.id)) {
+                                        resourceTimelines.set(resource.id, []);
+                                    }
+                                    resourceTimelines.get(resource.id).push({
+                                        start: startTime,
+                                        end: endTime,
+                                        eventId: operation.id,
+                                        jobKey: job.jobKey,
+                                        eventName: operation.name
+                                    });
+                                    
+                                    console.log(`        → Scheduled on ${resource.name}: ${startTime.toLocaleTimeString()} - ${endTime.toLocaleTimeString()}`);
+                                } else {
+                                    // No resource - simple scheduling
+                                    startTime = earliestStart;
+                                    endTime = new Date(startTime.getTime() + durationMs);
+                                    console.log(`        → No resource: ${startTime.toLocaleTimeString()} - ${endTime.toLocaleTimeString()}`);
                                 }
                                 
-                                // Update the event with the scheduled times
-                                event.setStartDate(slotStart, true);
-                                event.set({
-                                    endDate: slotEnd,
+                                // Update operation times
+                                operation.set({
+                                    startDate: startTime,
+                                    endDate: endTime,
                                     manuallyScheduled: false
                                 });
                                 
-                                // Add this time slot to the resource timeline
-                                if (!resourceTimelines.has(resourceId)) {
-                                    resourceTimelines.set(resourceId, []);
-                                }
-                                resourceTimelines.get(resourceId).push({
-                                    start: slotStart,
-                                    end: slotEnd,
-                                    eventId: event.id,
-                                    eventName: event.name
-                                });
-                                
-                                // Update previous operation end for next operation in sequence
-                                previousOperationEnd = slotEnd;
-                                
-                                console.log(`  ✅ Scheduled "${event.name}" on ${resource.name}: ${slotStart.toLocaleString()} to ${slotEnd.toLocaleString()}`);
-                            } else {
-                                // Unassigned events - schedule at earliest time
-                                const endDate = new Date(earliestStart.getTime() + durationMs);
-                                
-                                console.log(`  ⚠️ Event "${event.name}" has no resource assignment`);
-                                event.set({ 
-                                    startDate: earliestStart, 
-                                    endDate: endDate,
-                                    manuallyScheduled: false
-                                });
-                                
-                                // Update previous operation end for next operation in sequence
-                                previousOperationEnd = endDate;
+                                // Track completion time for successor operations
+                                operationEndTimes.set(operation.id, endTime);
                             }
                         }
-                        
-                        console.log(`  ✅ Job ${jobKey} complete - scheduled ${operations.length} operations by sequence`);
+                    }
+                    
+                    // Log resource utilization summary
+                    console.log('\n📊 Resource Utilization Summary:');
+                    for (const [resourceId, timeline] of resourceTimelines) {
+                        const resource = scheduler.resourceStore.getById(resourceId);
+                        if (timeline.length > 0 && resource) {
+                            timeline.sort((a, b) => a.start.getTime() - b.start.getTime());
+                            console.log(`\n  ${resource.name}:`);
+                            for (const slot of timeline) {
+                                console.log(`    ${slot.start.toLocaleTimeString()} - ${slot.end.toLocaleTimeString()}: ${slot.eventName} (Job ${slot.jobKey})`);
+                            }
+                        }
                     }
                     
                     // Log packing efficiency
