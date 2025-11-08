@@ -97,7 +97,7 @@ interface StatusReport {
 export default function OperatorDashboard() {
 
   const [selectedResource, setSelectedResource] = useState<string>("all");
-  const [statusFilter, setStatusFilter] = useState<string>("upcoming");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
   const [selectedOperation, setSelectedOperation] = useState<OperatorOperation | null>(null);
   const [reportDialogOpen, setReportDialogOpen] = useState(false);
   const [reportType, setReportType] = useState<string>("progress");
