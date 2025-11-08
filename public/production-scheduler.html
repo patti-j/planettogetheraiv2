@@ -1159,36 +1159,31 @@
         <span id="resourceUtilization">Resource utilization: --</span>
     </div>
 
-    <!-- Initialize CommonJS shim for Bryntum (the file is CommonJS, not UMD) -->
-    <script>
-        // Create CommonJS shim for Bryntum library
-        // DO NOT pre-create window.bryntum - let the library create it
-        window.exports = {};
-        window.module = { exports: {} };
-        console.log('🔧 Created CommonJS shim for Bryntum');
-    </script>
+    <!-- Load Bryntum Scheduler Pro (Browser-compatible UMD build) -->
+    <script id="bryntum-script" src="/schedulerpro-browser.umd.js?v=635"></script>
     
-    <!-- Load Bryntum Scheduler Pro (CommonJS format with shim) -->
-    <script id="bryntum-script" src="/schedulerpro.umd.js?v=634"></script>
-    
-    <!-- Map CommonJS exports to window.bryntum after load -->
+    <!-- Check if Bryntum loaded properly -->
     <script>
-        // After CommonJS load, map exports to window.bryntum
-        console.log('🔍 Checking CommonJS exports...');
-        console.log('module.exports keys:', Object.keys(window.module?.exports || {}).length);
-        console.log('exports keys:', Object.keys(window.exports || {}).length);
+        console.log('🔍 Checking Bryntum library after load...');
         
-        // The library may populate either module.exports or exports directly
-        if (window.module && window.module.exports && Object.keys(window.module.exports).length > 0) {
-            window.bryntum = window.module.exports;
-            console.log('✅ Bryntum loaded from module.exports:', Object.keys(window.bryntum).slice(0, 10).join(', '));
-        } else if (window.exports && Object.keys(window.exports).length > 0) {
-            window.bryntum = window.exports;
-            console.log('✅ Bryntum loaded from exports:', Object.keys(window.bryntum).slice(0, 10).join(', '));
+        // Check various possible locations where Bryntum might be
+        if (typeof bryntum !== 'undefined') {
+            console.log('✅ Bryntum loaded at window.bryntum');
+            console.log('✅ Available exports:', Object.keys(window.bryntum).slice(0, 15).join(', '));
+        } else if (typeof window.bryntum !== 'undefined') {
+            console.log('✅ Bryntum loaded at window.bryntum (explicit)');
+            console.log('✅ Available exports:', Object.keys(window.bryntum).slice(0, 15).join(', '));
         } else {
-            console.error('❌ CommonJS shim failed - no exports found');
-            console.log('Debug - module:', window.module);
-            console.log('Debug - exports:', window.exports);
+            console.error('❌ Bryntum not found after loading');
+            console.log('🔍 Checking window object for any Bryntum-related properties...');
+            const bryntumKeys = Object.keys(window).filter(key => 
+                key.toLowerCase().includes('bryntum') || 
+                key.toLowerCase().includes('scheduler') ||
+                key === 'SchedulerPro'
+            );
+            if (bryntumKeys.length > 0) {
+                console.log('Found potential Bryntum properties:', bryntumKeys);
+            }
         }
     </script>
     
