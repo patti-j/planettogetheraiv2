@@ -1307,7 +1307,7 @@ export class ProductionSchedulingAgent extends BaseAgent {
       let response = `📋 **Jobs List** (Showing ${jobs.rows.length} jobs)\n\n`;
       
       for (const job of jobs.rows as any[]) {
-        const jobId = job.external_id || job.id;
+        const jobId = job.external_id || `ID-${job.id}`;
         const jobName = job.name || 'Unnamed Job';
         const needDate = job.need_date_time ? new Date(job.need_date_time).toLocaleDateString() : 'Not set';
         const status = job.scheduled_status || 'Scheduled';
@@ -1315,6 +1315,7 @@ export class ProductionSchedulingAgent extends BaseAgent {
         const description = job.description || 'No description';
         
         response += `**Job ${jobId}**\n`;
+        response += `• ID: ${job.id}\n`;
         response += `• Name: ${jobName}\n`;
         if (description && description !== 'No description') {
           response += `• Description: ${description}\n`;
