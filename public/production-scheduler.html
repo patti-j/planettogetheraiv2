@@ -4753,30 +4753,94 @@
                             } else {
                                 // Earlier operations must finish when the next operation starts (finish-to-start)
                                 endDate = nextOperationStart;
-                                console.log(`  🔗 "${operation.name}" (seq ${sequence}) must finish before next operation starts at ${endDate.toLocaleString()}`);
+                                console.log(`  🔗 "${operation.name}" (seq ${sequence}) must finish exactly when next operation starts at ${endDate.toLocaleString()}`);
                             }
                             
                             // Calculate start date based on duration
                             let startDate, actualEndDate;
                             
-                            // CRITICAL FIX: ALL operations must check resource availability, not just the last one
-                            // BUT they must also respect sequence constraints (can't end after successor starts)
+                            // CRITICAL FIX: Enforce continuous flow within jobs
+                            // Operations must end exactly when the next operation starts (no gaps)
                             if (resource) {
-                                // Find the latest free slot on the resource that respects sequence constraints
-                                // endDate is the absolute latest this operation can end (due to sequence)
-                                const slot = findLatestFreeSlotOnResource(resource, endDate, durationMs, operation);
-                                startDate = slot.start;
-                                actualEndDate = slot.end;
+                                const resourceId = String(resource.id);
+                                const existingIntervals = manualBusyIntervals.get(resourceId) || [];
                                 
-                                // VALIDATION: Ensure we're not violating sequence constraints
-                                if (actualEndDate.getTime() > endDate.getTime()) {
-                                    console.error(`❌ ERROR: Operation "${operation.name}" end time ${actualEndDate.toLocaleString()} exceeds sequence constraint ${endDate.toLocaleString()}`);
-                                    // Force it to respect the constraint
-                                    actualEndDate = endDate;
-                                    startDate = new Date(actualEndDate.getTime() - durationMs);
+                                // For non-last operations, we need to end EXACTLY when the next operation starts
+                                if (i < operations.length - 1) {
+                                    // This operation must end exactly at nextOperationStart time for continuous flow
+                                    const requiredEndTime = endDate;
+                                    const requiredStartTime = new Date(requiredEndTime.getTime() - durationMs);
+                                    
+                                    // Check if resource is available at the required time
+                                    let isResourceBusy = false;
+                                    for (const interval of existingIntervals) {
+                                        // Check if our required time overlaps with existing operation
+                                        if ((requiredStartTime >= interval.start && requiredStartTime < interval.end) ||
+                                            (requiredEndTime > interval.start && requiredEndTime <= interval.end) ||
+                                            (requiredStartTime <= interval.start && requiredEndTime >= interval.end)) {
+                                            isResourceBusy = true;
+                                            console.log(`     ⚠️ Resource ${resource.name} is busy from ${interval.start.toLocaleString()} to ${interval.end.toLocaleString()}`);
+                                            break;
+                                        }
+                                    }
+                                    
+                                    if (isResourceBusy) {
+                                        // Resource is busy - we need to shift entire remaining job chain earlier
+                                        console.log(`     🔄 Resource conflict - need to shift job chain earlier`);
+                                        
+                                        // Find the latest time we can end before the conflict
+                                        const slot = findLatestFreeSlotOnResource(resource, requiredEndTime, durationMs, operation);
+                                        const shift = requiredEndTime.getTime() - slot.end.getTime();
+                                        
+                                        if (shift > 0) {
+                                            console.log(`     📝 Shifting job chain earlier by ${(shift / 3600000).toFixed(1)} hours`);
+                                            
+                                            // Shift all already-scheduled operations in this job earlier
+                                            for (let j = i + 1; j < operations.length; j++) {
+                                                const laterOp = operations[j];
+                                                const oldStart = laterOp.startDate;
+                                                const oldEnd = laterOp.endDate;
+                                                const newStart = new Date(oldStart.getTime() - shift);
+                                                const newEnd = new Date(oldEnd.getTime() - shift);
+                                                
+                                                // Update operation times
+                                                laterOp.startDate = newStart;
+                                                laterOp.endDate = newEnd;
+                                                
+                                                // Update resource timeline
+                                                const laterResource = resolveResource(laterOp);
+                                                if (laterResource) {
+                                                    const laterResourceId = String(laterResource.id);
+                                                    const laterIntervals = manualBusyIntervals.get(laterResourceId) || [];
+                                                    const laterInterval = laterIntervals.find(iv => iv.operationId === laterOp.id);
+                                                    if (laterInterval) {
+                                                        laterInterval.start = newStart;
+                                                        laterInterval.end = newEnd;
+                                                    }
+                                                }
+                                                
+                                                console.log(`     📝 Rescheduled "${laterOp.name}" to ${newStart.toLocaleString()}`);
+                                            }
+                                            
+                                            // Update nextOperationStart for continuous flow
+                                            nextOperationStart = new Date(nextOperationStart.getTime() - shift);
+                                        }
+                                        
+                                        startDate = slot.start;
+                                        actualEndDate = slot.end;
+                                    } else {
+                                        // Resource is available - schedule at required time for continuous flow
+                                        startDate = requiredStartTime;
+                                        actualEndDate = requiredEndTime;
+                                    }
+                                } else {
+                                    // Last operation - find latest slot respecting due date
+                                    const slot = findLatestFreeSlotOnResource(resource, endDate, durationMs, operation);
+                                    startDate = slot.start;
+                                    actualEndDate = slot.end;
                                 }
                                 
-                                console.log(`  📦 Found slot for "${operation.name}" on "${resource.name}": ${startDate.toLocaleString()} to ${actualEndDate.toLocaleString()}`);
+                                console.log(`  📦 Scheduling "${operation.name}" on "${resource.name}": ${startDate.toLocaleString()} to ${actualEndDate.toLocaleString()}`);
                             } else {
                                 // No resource assigned - simple backward calculation
                                 actualEndDate = endDate;
