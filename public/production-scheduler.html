@@ -4075,37 +4075,38 @@
                         const jobsAtPriority = priorityGroups.get(priority);
                         console.log(`\n  Priority ${priority}: ${jobsAtPriority.length} jobs`);
                         
-                        // Find max sequence number across all jobs at this priority
-                        let maxSequence = 0;
+                        // Create a list of all unscheduled operations from all jobs at this priority
+                        const unscheduledOps = new Map(); // operationId -> {operation, job}
                         for (const job of jobsAtPriority) {
                             for (const op of job.operations) {
-                                const seq = getSequence(op);
-                                if (seq > maxSequence) maxSequence = seq;
+                                unscheduledOps.set(op.id, { operation: op, job: job });
                             }
                         }
                         
-                        // Process by sequence number (interleaving operations from different jobs)
-                        for (let seq = 0; seq <= maxSequence; seq += 10) {
-                            // Collect all operations at this sequence level from all jobs at this priority
-                            const opsAtSequence = [];
-                            for (const job of jobsAtPriority) {
-                                const op = job.operations.find(o => getSequence(o) === seq);
-                                if (op) {
-                                    opsAtSequence.push({ operation: op, job: job });
-                                }
-                            }
+                        console.log(`    Total operations to schedule: ${unscheduledOps.size}`);
+                        
+                        // Schedule operations in rounds until all are scheduled
+                        let round = 0;
+                        while (unscheduledOps.size > 0) {
+                            round++;
+                            console.log(`\n    Round ${round}: ${unscheduledOps.size} operations remaining`);
                             
-                            if (opsAtSequence.length === 0) continue;
+                            const scheduledInThisRound = [];
                             
-                            console.log(`    Sequence ${seq}: ${opsAtSequence.length} operations`);
-                            
-                            // Schedule all operations at this sequence level
-                            for (const { operation, job } of opsAtSequence) {
+                            // Try to schedule operations that have their predecessors scheduled
+                            for (const [opId, { operation, job }] of unscheduledOps) {
                                 const resource = getResourceForOperation(operation);
                                 const durationMs = operation.durationMS ?? (operation.duration * 60 * 60 * 1000);
                                 
                                 // Find predecessor in the same job
                                 const predecessor = findPredecessor(operation, job.operations);
+                                
+                                // Check if we can schedule this operation
+                                // (either no predecessor, or predecessor is already scheduled)
+                                if (predecessor && !operationEndTimes.has(predecessor.id)) {
+                                    // Predecessor not yet scheduled, skip for now
+                                    continue;
+                                }
                                 
                                 // Calculate earliest start time based on TWO constraints:
                                 // 1. Must start after predecessor in same job (if any)
@@ -4114,10 +4115,6 @@
                                 if (predecessor) {
                                     // Must start after predecessor ends
                                     const predEnd = operationEndTimes.get(predecessor.id);
-                                    if (!predEnd) {
-                                        console.error(`      ❌ Predecessor ${predecessor.name} not yet scheduled!`);
-                                        continue;
-                                    }
                                     earliestStart = predEnd;
                                     console.log(`      ${operation.name} (${job.jobName}): After predecessor at ${earliestStart.toLocaleTimeString()}`);
                                 } else {
@@ -4161,6 +4158,20 @@
                                 
                                 // Track completion time for successor operations
                                 operationEndTimes.set(operation.id, endTime);
+                                
+                                // Mark as scheduled
+                                scheduledInThisRound.push(opId);
+                            }
+                            
+                            // Remove scheduled operations from unscheduled list
+                            for (const opId of scheduledInThisRound) {
+                                unscheduledOps.delete(opId);
+                            }
+                            
+                            // Safety check: if we couldn't schedule anything, break to avoid infinite loop
+                            if (scheduledInThisRound.length === 0 && unscheduledOps.size > 0) {
+                                console.error(`    ⚠️ Could not schedule ${unscheduledOps.size} operations - may have circular dependencies`);
+                                break;
                             }
                         }
                     }
