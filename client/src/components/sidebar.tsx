@@ -356,8 +356,10 @@ export default function Sidebar() {
               <Avatar className="w-8 h-8 mr-3">
                 <AvatarImage src={undefined} alt="User avatar" />
                 <AvatarFallback className="text-xs">
-                  {user.firstName && user.lastName 
-                    ? `${user.firstName.charAt(0)}${user.lastName.charAt(0)}`
+                  {user.firstName 
+                    ? user.firstName.charAt(0).toUpperCase()
+                    : user.username
+                    ? user.username.charAt(0).toUpperCase()
                     : <User className="w-4 h-4" />
                   }
                 </AvatarFallback>

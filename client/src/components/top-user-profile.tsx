@@ -29,8 +29,10 @@ export default function TopUserProfile() {
               <Avatar className="w-8 h-8 mr-2">
                 <AvatarImage src={undefined} alt="User avatar" />
                 <AvatarFallback className="text-xs">
-                  {user.firstName && user.lastName 
-                    ? `${user.firstName.charAt(0)}${user.lastName.charAt(0)}`
+                  {user.firstName 
+                    ? user.firstName.charAt(0).toUpperCase()
+                    : user.username
+                    ? user.username.charAt(0).toUpperCase()
                     : <User className="w-3 h-3" />
                   }
                 </AvatarFallback>

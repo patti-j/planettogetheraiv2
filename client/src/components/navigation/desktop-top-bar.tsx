@@ -384,8 +384,7 @@ export function DesktopTopBar() {
               <Avatar className="w-9 h-9 border-2 border-muted-foreground/20">
                 <AvatarImage src={(user as any)?.avatar || undefined} />
                 <AvatarFallback className="text-xs bg-muted border border-border">
-                  {user.firstName?.[0]?.toUpperCase() || 'U'}
-                  {user.lastName?.[0]?.toUpperCase() || ''}
+                  {user.firstName?.[0]?.toUpperCase() || user.username?.[0]?.toUpperCase() || 'U'}
                 </AvatarFallback>
               </Avatar>
             </Button>
