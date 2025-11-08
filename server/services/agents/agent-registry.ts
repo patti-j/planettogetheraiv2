@@ -104,36 +104,49 @@ export class AgentRegistry {
     message: string, 
     context: AgentContext
   ): Promise<AgentResponse | undefined> {
-    // Find the best agent to handle this message
-    const agent = this.findBestAgent(message, context.permissions);
+    // Get all agents that can potentially handle this message
+    const availableAgents = this.getAvailableAgents(context.permissions);
+    const capableAgents = availableAgents.filter(agent => agent.canHandle(message));
     
-    if (!agent) {
+    if (capableAgents.length === 0) {
       console.log('[AgentRegistry] No agent found to handle message:', message.substring(0, 50) + '...');
       return undefined;
     }
     
-    console.log(`[AgentRegistry] Routing message to agent: ${agent.name}`);
-    
-    try {
-      // Process the message with the selected agent
-      const response = await agent.process(message, context);
+    // Try each capable agent until one successfully handles the request
+    for (const agent of capableAgents) {
+      console.log(`[AgentRegistry] Trying agent: ${agent.name}`);
       
-      // Add agent metadata to the response
-      return {
-        ...response,
-        metadata: {
-          ...response.metadata,
-          agentId: agent.id,
-          agentName: agent.name
+      try {
+        // Process the message with the selected agent
+        const response = await agent.process(message, context);
+        
+        // If agent returns null, it means it cannot handle this request
+        if (response === null) {
+          console.log(`[AgentRegistry] Agent ${agent.name} returned null, trying next agent...`);
+          continue; // Try the next agent
         }
-      } as AgentResponse;
-    } catch (error) {
-      console.error(`[AgentRegistry] Agent ${agent.id} failed to process message:`, error);
-      return {
-        content: `The ${agent.name} encountered an error while processing your request.`,
-        error: true
-      };
+        
+        // Success! Add agent metadata to the response
+        console.log(`[AgentRegistry] Agent ${agent.name} successfully handled request`);
+        return {
+          ...response,
+          metadata: {
+            ...response.metadata,
+            agentId: agent.id,
+            agentName: agent.name
+          }
+        } as AgentResponse;
+      } catch (error) {
+        console.error(`[AgentRegistry] Agent ${agent.id} failed to process message:`, error);
+        // Continue to next agent instead of returning error immediately
+        continue;
+      }
     }
+    
+    // If we get here, no agent could handle the request
+    console.log('[AgentRegistry] No agent could successfully handle the request');
+    return undefined;
   }
   
   /**
