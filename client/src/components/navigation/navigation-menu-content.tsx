@@ -60,6 +60,8 @@ export function NavigationMenuContent({ isPinned, onTogglePin, onClose, isOpen }
   let toggleFavorite = (path: string, label: string, icon?: string) => {};
   let isFavorite = (path: string) => false;
   let clearFavorites = () => {};
+  let moveFavoriteUp = (path: string) => {};
+  let moveFavoriteDown = (path: string) => {};
   try {
     const navigation = useNavigationAdapter();
     addRecentPage = navigation.addRecentPage;
@@ -70,6 +72,8 @@ export function NavigationMenuContent({ isPinned, onTogglePin, onClose, isOpen }
     toggleFavorite = navigation.toggleFavorite;
     isFavorite = navigation.isFavorite;
     clearFavorites = navigation.clearFavorites;
+    moveFavoriteUp = navigation.moveFavoriteUp;
+    moveFavoriteDown = navigation.moveFavoriteDown;
   } catch (error) {
     console.warn('NavigationAdapter not available, using fallback:', error);
   }
@@ -304,31 +308,34 @@ export function NavigationMenuContent({ isPinned, onTogglePin, onClose, isOpen }
                       };
 
                       return (
-                        <Button
-                          key={`fav-${page.path}-${pageIndex}`}
-                          variant="ghost"
-                          className={cn(
-                            "w-full justify-start text-left h-9 px-3 font-normal transition-all duration-150 group",
-                            isActive && "bg-accent text-accent-foreground",
-                            !isActive && "hover:bg-accent/50 hover:text-foreground"
-                          )}
-                          onClick={() => {
-                            handleNavigation(page.path, page.label);
-                            if (!isPinned && onClose) onClose();
-                          }}
-                        >
-                          <div className="flex items-center gap-3 flex-1">
-                            <IconComponent className={cn(
-                              "h-4 w-4 flex-shrink-0",
-                              isActive ? "text-primary" : getColorForPage()
-                            )} />
-                            <span className={cn(
-                              "truncate text-sm",
-                              !isActive && "text-foreground/80"
-                            )}>
-                              {page.label}
-                            </span>
-                          </div>
+                        <div key={`fav-${page.path}-${pageIndex}`} className="flex items-center gap-1">
+                          <Button
+                            variant="ghost"
+                            className={cn(
+                              "flex-1 justify-start text-left h-9 px-3 font-normal transition-all duration-150 group",
+                              isActive && "bg-accent text-accent-foreground",
+                              !isActive && "hover:bg-accent/50 hover:text-foreground"
+                            )}
+                            onClick={() => {
+                              handleNavigation(page.path, page.label);
+                              if (!isPinned && onClose) onClose();
+                            }}
+                          >
+                            <div className="flex items-center gap-3 flex-1">
+                              <IconComponent className={cn(
+                                "h-4 w-4 flex-shrink-0",
+                                isActive ? "text-primary" : getColorForPage()
+                              )} />
+                              <span className={cn(
+                                "truncate text-sm",
+                                !isActive && "text-foreground/80"
+                              )}>
+                                {page.label}
+                              </span>
+                            </div>
+                          </Button>
+                          
+                          {/* Star button to toggle favorite */}
                           <Button
                             variant="ghost"
                             size="sm"
@@ -342,7 +349,47 @@ export function NavigationMenuContent({ isPinned, onTogglePin, onClose, isOpen }
                           >
                             <Star className="h-2.5 w-2.5 text-yellow-500 fill-yellow-500" />
                           </Button>
-                        </Button>
+                          
+                          {/* Up/Down arrow buttons for reordering */}
+                          <div className="flex flex-col gap-0.5">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className={cn(
+                                "h-4 w-4 p-0 transition-opacity",
+                                pageIndex === 0 ? "opacity-30 cursor-not-allowed" : "opacity-60 hover:opacity-100"
+                              )}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (pageIndex > 0) {
+                                  moveFavoriteUp(page.path);
+                                }
+                              }}
+                              disabled={pageIndex === 0}
+                              title="Move up"
+                            >
+                              <ArrowUpDown className="h-3 w-3 rotate-180" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className={cn(
+                                "h-4 w-4 p-0 transition-opacity",
+                                pageIndex === favoritePages.length - 1 ? "opacity-30 cursor-not-allowed" : "opacity-60 hover:opacity-100"
+                              )}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (pageIndex < favoritePages.length - 1) {
+                                  moveFavoriteDown(page.path);
+                                }
+                              }}
+                              disabled={pageIndex === favoritePages.length - 1}
+                              title="Move down"
+                            >
+                              <ArrowUpDown className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        </div>
                       );
                     })}
                   </div>

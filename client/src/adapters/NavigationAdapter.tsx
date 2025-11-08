@@ -31,6 +31,8 @@ interface NavigationAdapterContextType {
   toggleFavorite: (path: string, label: string, icon?: string) => void;
   isFavorite: (path: string) => boolean;
   clearFavorites: () => void;
+  moveFavoriteUp: (path: string) => void;
+  moveFavoriteDown: (path: string) => void;
   lastVisitedRoute: string | null;
   setLastVisitedRoute: (route: string) => void;
 }
@@ -406,6 +408,36 @@ export function NavigationAdapterProvider({ children }: { children: ReactNode })
     }
   };
 
+  // Move favorite up in the list
+  const moveFavoriteUp = (path: string) => {
+    setFavoritePages(current => {
+      const index = current.findIndex(page => page.path === path);
+      if (index <= 0) return current; // Can't move up if at the beginning or not found
+      
+      const updated = [...current];
+      // Swap with previous item
+      [updated[index - 1], updated[index]] = [updated[index], updated[index - 1]];
+      
+      saveFavorites(updated);
+      return updated;
+    });
+  };
+
+  // Move favorite down in the list
+  const moveFavoriteDown = (path: string) => {
+    setFavoritePages(current => {
+      const index = current.findIndex(page => page.path === path);
+      if (index === -1 || index >= current.length - 1) return current; // Can't move down if at the end or not found
+      
+      const updated = [...current];
+      // Swap with next item
+      [updated[index], updated[index + 1]] = [updated[index + 1], updated[index]];
+      
+      saveFavorites(updated);
+      return updated;
+    });
+  };
+
   const value: NavigationAdapterContextType = {
     recentPages,
     addRecentPage,
@@ -415,6 +447,8 @@ export function NavigationAdapterProvider({ children }: { children: ReactNode })
     toggleFavorite,
     isFavorite,
     clearFavorites,
+    moveFavoriteUp,
+    moveFavoriteDown,
     lastVisitedRoute,
     setLastVisitedRoute
   };
