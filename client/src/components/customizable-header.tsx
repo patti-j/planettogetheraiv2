@@ -249,6 +249,11 @@ export function CustomizableHeader({ className }: CustomizableHeaderProps) {
   const [uiDensity, setUiDensity] = useState<'compact' | 'compressed' | 'standard' | 'comfortable'>('standard');
   const { addRecentPage } = useNavigation();
   const { splitMode, setSplitMode } = useSplitScreen();
+  
+  // Track if we've loaded preferences initially
+  const [hasLoadedPreferences, setHasLoadedPreferences] = useState(false);
+  const [lastLoadedHeaderItems, setLastLoadedHeaderItems] = useState<string>('');
+  const [lastLoadedRole, setLastLoadedRole] = useState<string>('');
 
   // Widget state
   const [selectedWidget, setSelectedWidget] = useState<{ type: string; title: string } | null>(null);
@@ -275,29 +280,79 @@ export function CustomizableHeader({ className }: CustomizableHeaderProps) {
         user.roles.find(role => role.id === user.activeRoleId) : null);
   }, [currentRoleData, user?.currentRole, user?.activeRoleId, user?.roles]);
 
-  // Load header configuration from preferences
+  // Load header configuration from preferences - only on initial load or actual changes
   useEffect(() => {
-    if ((preferences as any)?.dashboardLayout?.headerItems) {
-      setHeaderItems((preferences as any).dashboardLayout.headerItems);
-    } else {
-      // Load defaults based on role
-      const roleName = (currentRole as any)?.name || 'Operator';
-      const defaultItems = defaultHeaderItemsByRole[roleName] || defaultHeaderItemsByRole['Operator'];
+    // Skip if preferences not loaded yet
+    if (!preferences) return;
+    
+    const preferencesHeaderItems = (preferences as any)?.dashboardLayout?.headerItems;
+    const preferencesHeaderItemsStr = JSON.stringify(preferencesHeaderItems || []);
+    const currentRoleName = (currentRole as any)?.name || 'Operator';
+    
+    // Check if role has changed
+    const roleChanged = currentRoleName !== lastLoadedRole;
+    
+    // Only update header items if:
+    // 1. This is the first time loading (hasLoadedPreferences is false)
+    // 2. The header items in preferences have actually changed
+    // 3. The role has changed and there are no saved preferences for this role
+    if (!hasLoadedPreferences) {
+      // First load - set items from preferences or defaults
+      if (preferencesHeaderItems) {
+        setHeaderItems(preferencesHeaderItems);
+        setLastLoadedHeaderItems(preferencesHeaderItemsStr);
+      } else {
+        // Load defaults based on role
+        const defaultItems = defaultHeaderItemsByRole[currentRoleName] || defaultHeaderItemsByRole['Operator'];
+        setHeaderItems(defaultItems);
+        setLastLoadedHeaderItems(JSON.stringify(defaultItems));
+      }
+      
+      // Load other settings on first load
+      const showText = (preferences as any)?.dashboardLayout?.showHeaderText ?? true;
+      setShowHeaderText(showText);
+      
+      const prefDensity = (preferences as any)?.dashboardLayout?.uiDensity ?? 'standard';
+      setUiDensity(prefDensity);
+      
+      setHasLoadedPreferences(true);
+      setLastLoadedRole(currentRoleName);
+    } else if (roleChanged && !preferencesHeaderItems) {
+      // Role changed and no saved preferences - load role defaults
+      const defaultItems = defaultHeaderItemsByRole[currentRoleName] || defaultHeaderItemsByRole['Operator'];
       setHeaderItems(defaultItems);
+      setLastLoadedHeaderItems(JSON.stringify(defaultItems));
+      setLastLoadedRole(currentRoleName);
+    } else if (preferencesHeaderItemsStr !== lastLoadedHeaderItems && preferencesHeaderItems) {
+      // Header items have actually changed in the database
+      // This prevents resetting when theme changes but header items haven't changed
+      setHeaderItems(preferencesHeaderItems);
+      setLastLoadedHeaderItems(preferencesHeaderItemsStr);
+      setLastLoadedRole(currentRoleName);
     }
     
-    // Load header text display setting
-    const showText = (preferences as any)?.dashboardLayout?.showHeaderText ?? true;
-    setShowHeaderText(showText);
-    
-    // Load UI density setting - only set local state, don't sync with context to avoid infinite loop
-    const prefDensity = (preferences as any)?.dashboardLayout?.uiDensity ?? 'standard';
-    setUiDensity(prefDensity);
-  }, [preferences, currentRole]);
+    // Only update other settings if they exist in preferences and have changed
+    if (hasLoadedPreferences && (preferences as any)?.dashboardLayout) {
+      const layout = (preferences as any).dashboardLayout;
+      
+      // Update show text if explicitly set in preferences
+      if (layout.hasOwnProperty('showHeaderText') && layout.showHeaderText !== showHeaderText) {
+        setShowHeaderText(layout.showHeaderText);
+      }
+      
+      // Update density if explicitly set in preferences  
+      if (layout.hasOwnProperty('uiDensity') && layout.uiDensity !== uiDensity) {
+        setUiDensity(layout.uiDensity);
+      }
+    }
+  }, [preferences, currentRole]); // Only depend on preferences and currentRole
 
   // Save header configuration
   const saveHeaderMutation = useMutation({
     mutationFn: async ({ items, showText }: { items: HeaderItem[], showText: boolean }) => {
+      // Update tracking so we don't reload from preferences after save
+      setLastLoadedHeaderItems(JSON.stringify(items));
+      
       // Use existing preferences from state instead of fetching
       const updatedPreferences = {
         ...(preferences as any || {}),
