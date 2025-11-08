@@ -3572,21 +3572,38 @@ router.get("/api/production-scheduler", (req, res) => {
     
     // Add version timestamp to force cache refresh (especially important for ASAP algorithm updates)
     const timestamp = new Date().getTime();
+    const versionString = `v${timestamp}`;
+    
+    // Inject version info directly into the page to confirm new version is loaded
+    const versionScript = `
+<script>
+console.log('🚀 Production Scheduler Version: ${versionString} - ${new Date().toISOString()}');
+console.log('🔧 ASAP Algorithm V3: Brewing Chain Continuity ENABLED');
+console.log('📊 Critical Sequences: boiling→(5min)→whirlpool→(10min)→cooling→(30min)→fermentation');
+window.schedulerVersion = '${versionString}';
+</script>`;
+    
+    // Replace the </head> tag to inject version script just before it
+    htmlContent = htmlContent.replace('</head>', `${versionScript}</head>`);
     
     // Replace multiple elements to ensure the browser sees a different file
-    htmlContent = htmlContent.replace('ASAP V2:', `ASAP V2 (${timestamp}):`);
-    htmlContent = htmlContent.replace('</head>', `<meta name="version" content="${timestamp}"></head>`);
-    htmlContent = htmlContent.replace('<body>', `<body data-version="${timestamp}">`);
+    htmlContent = htmlContent.replace('ASAP V2:', `ASAP V3 (${versionString}):`);
+    htmlContent = htmlContent.replace('console.log("🚀 ASAP V3', `console.log("🚀 ASAP V3-${timestamp}`);
+    htmlContent = htmlContent.replace('<meta name="version" content=', `<meta name="version" content="${timestamp}" data-old-version=`);
+    htmlContent = htmlContent.replace('<body>', `<body data-version="${versionString}">`);
     
-    console.log('Successfully read HTML file, size:', htmlContent.length, 'bytes, version:', timestamp);
+    console.log('Successfully read HTML file, size:', htmlContent.length, 'bytes, version:', versionString);
     
     // Set aggressive no-cache headers to prevent browser caching issues
     res.setHeader('Content-Type', 'text/html; charset=utf-8');
-    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate, private, max-age=0, s-maxage=0, proxy-revalidate');
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate, private, max-age=0, s-maxage=0, proxy-revalidate, no-transform');
     res.setHeader('Pragma', 'no-cache');
     res.setHeader('Expires', '0');
-    res.setHeader('X-Scheduler-Version', timestamp.toString());
+    res.setHeader('X-Scheduler-Version', versionString);
     res.setHeader('Surrogate-Control', 'no-store');
+    res.setHeader('ETag', `"${versionString}-${Math.random()}"`);
+    res.setHeader('Last-Modified', new Date().toUTCString());
+    res.setHeader('Vary', '*');
     
     // Important: Use res.end() instead of res.send() to bypass Vite middleware
     // This prevents Vite from injecting its HMR client script
