@@ -591,6 +591,7 @@ export const ptResources = pgTable("ptresources", {
   availableHours: numeric("available_hours"),
   efficiency: numeric("efficiency").default("1.0"),
   isActive: boolean("is_active").default(true),
+  deploymentOrder: integer("deployment_order").default(999), // Order in production flow
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
