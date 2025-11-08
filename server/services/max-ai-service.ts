@@ -1829,10 +1829,19 @@ Rules:
           console.log(`[Max AI] 🎨 Chart keyword detected: "${query}", routing to chart creation BEFORE agent delegation`);
           const chartResponse = await this.getDynamicChart(query, context);
           if (chartResponse && !chartResponse.error) {
+            // EARLY RETURN - prevent any agent delegation when chart creation succeeds
             return chartResponse;
           }
-          // If chart creation failed, continue with normal flow
-          console.log(`[Max AI] Chart creation failed or returned error, continuing with normal flow`);
+          // If chart creation failed, log it but still return early to prevent agent delegation for chart requests
+          console.log(`[Max AI] Chart creation attempt completed, returning response`);
+          if (chartResponse) {
+            return chartResponse;
+          }
+          // Only if no response at all, return a default error
+          return {
+            content: "I encountered an issue creating the chart. Please try rephrasing your request.",
+            error: "Chart creation failed"
+          };
         }
         
         // Check if any specialized agent can handle this request

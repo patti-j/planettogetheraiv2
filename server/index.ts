@@ -157,6 +157,38 @@ app.use((req, res, next) => {
     log("⚠️  OpenAI API key not configured - AI features will be limited");
   }
   
+  // Ensure dashboard with id=1 exists for Max AI Canvas widgets
+  try {
+    const { dashboards } = await import("@db/schema");
+    const existingDashboard = await db.select().from(dashboards).where(eq(dashboards.id, 1)).limit(1);
+    
+    if (existingDashboard.length === 0) {
+      log("📊 Creating default Max AI Canvas dashboard (id=1)...");
+      await db.insert(dashboards).values({
+        id: 1,
+        name: "Max AI Canvas",
+        description: "Default dashboard for Max AI generated widgets",
+        type: "canvas",
+        config: {
+          layout: [],
+          settings: {
+            refreshInterval: 60,
+            theme: "light"
+          }
+        },
+        userId: null, // System dashboard
+        isPublic: true,
+        isDefault: false
+      });
+      log("✅ Default Max AI Canvas dashboard created");
+    } else {
+      log("✅ Max AI Canvas dashboard exists");
+    }
+  } catch (error) {
+    log(`⚠️  Could not check/create default dashboard: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    // Continue startup even if dashboard creation fails
+  }
+  
   // Serve scheduler-test specifically
   app.get('/scheduler-test', (req, res) => {
     res.sendFile(path.resolve('public/scheduler-test/index.html'));
