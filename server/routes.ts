@@ -197,31 +197,20 @@ const uploadFiles = multer({
   }
 });
 
-// Serve Bryntum static assets
-router.get('/schedulerpro.classic-light.css', (req, res) => {
-  const cssPath = path.join(process.cwd(), 'node_modules/@bryntum/schedulerpro/schedulerpro.classic-light.css');
-  res.sendFile(cssPath);
-});
-
-router.get('/schedulerpro.classic-dark.css', (req, res) => {
-  const cssPath = path.join(process.cwd(), 'node_modules/@bryntum/schedulerpro/schedulerpro.classic-dark.css');
-  res.sendFile(cssPath);
-});
-
-router.get('/schedulerpro.stockholm.css', (req, res) => {
-  const cssPath = path.join(process.cwd(), 'node_modules/@bryntum/schedulerpro/schedulerpro.stockholm.css');
-  res.sendFile(cssPath);
-});
-
-router.get('/schedulerpro.umd.js', (req, res) => {
-  const jsPath = path.join(process.cwd(), 'attached_assets/build/schedulerpro.umd.js');
-  res.sendFile(jsPath);
-});
-
+// Serve font files from public/fonts directory
 router.get('/fonts/*', (req, res) => {
   const fontFile = (req.params as any)[0];
-  const fontPath = path.join(process.cwd(), 'attached_assets/build/thin/fonts', fontFile);
-  res.sendFile(fontPath);
+  const fontPath = path.join(process.cwd(), 'public/fonts', fontFile);
+  
+  // Check if file exists before sending
+  if (fs.existsSync(fontPath)) {
+    res.setHeader('Content-Type', 'font/woff2');
+    res.setHeader('Cache-Control', 'public, max-age=31536000');
+    res.sendFile(fontPath);
+  } else {
+    console.error(`Font file not found: ${fontPath}`);
+    res.status(404).send('Font not found');
+  }
 });
 
 // Authentication routes
