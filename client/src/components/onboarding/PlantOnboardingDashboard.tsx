@@ -50,8 +50,8 @@ const createTemplateSchema = z.object({
 
 // Type definitions
 interface Plant {
-  plantCode: number;
-  plantName: string;
+  id: number;
+  name: string;
 }
 
 interface Template {
@@ -265,8 +265,8 @@ export const PlantOnboardingDashboard: React.FC = () => {
             </SelectTrigger>
             <SelectContent>
               {plants.map((plant: any) => (
-                <SelectItem key={plant.plantCode} value={plant.plantCode.toString()}>
-                  {plant.plantName}
+                <SelectItem key={plant.id} value={plant.id.toString()}>
+                  {plant.name}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -306,24 +306,24 @@ export const PlantOnboardingDashboard: React.FC = () => {
                   <div className="space-y-2">
                     {plants.map((plant) => {
                       const plantOnboardings = onboardings.filter(
-                        (o) => o.plant_id === plant.plantCode
+                        (o) => o.plant_id === plant.id
                       );
                       const activeOnboarding = plantOnboardings.find(
                         (o) => o.status === 'in-progress'
                       );
                       return (
                         <div
-                          key={plant.plantCode}
+                          key={plant.id}
                           className={cn(
                             'p-3 rounded-lg border cursor-pointer transition-colors',
-                            selectedPlant === plant.plantCode
+                            selectedPlant === plant.id
                               ? 'bg-blue-50 border-blue-300'
                               : 'hover:bg-gray-50'
                           )}
-                          onClick={() => setSelectedPlant(plant.plantCode)}
+                          onClick={() => setSelectedPlant(plant.id)}
                         >
                           <div className="flex items-center justify-between mb-1">
-                            <span className="font-medium text-sm">{plant.plantName}</span>
+                            <span className="font-medium text-sm">{plant.name}</span>
                             {activeOnboarding && (
                               <Badge variant="outline" className="text-xs">
                                 {activeOnboarding.overall_progress}%
@@ -695,8 +695,8 @@ export const PlantOnboardingDashboard: React.FC = () => {
                         </FormControl>
                         <SelectContent>
                           {plants.map((plant) => (
-                            <SelectItem key={plant.plantCode} value={plant.plantCode.toString()}>
-                              {plant.plantName}
+                            <SelectItem key={plant.id} value={plant.id.toString()}>
+                              {plant.name}
                             </SelectItem>
                           ))}
                         </SelectContent>
