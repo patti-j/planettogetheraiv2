@@ -525,10 +525,168 @@ Format as: "Based on what I remember about you: [relevant info]" or return empty
     return 'general';
   }
   
+  // Get detailed job status information
+  async getJobStatus(jobNumber: string): Promise<any> {
+    try {
+      // Get job details with operations
+      const jobResult = await db.execute(sql`
+        SELECT 
+          j.job_number,
+          j.product_code,
+          j.product_description,
+          j.quantity,
+          j.need_date,
+          j.priority,
+          j.scheduled_start_date_time,
+          j.scheduled_end_date_time,
+          j.status as job_status,
+          COUNT(DISTINCT o.operation_number) as total_operations,
+          COUNT(DISTINCT CASE WHEN o.status = 'Complete' THEN o.operation_number END) as completed_operations,
+          COUNT(DISTINCT CASE WHEN o.status = 'InProgress' THEN o.operation_number END) as in_progress_operations,
+          COUNT(DISTINCT CASE WHEN o.status = 'Started' THEN o.operation_number END) as started_operations,
+          MIN(o.scheduled_start_date_time) as first_op_start,
+          MAX(o.scheduled_end_date_time) as last_op_end
+        FROM ptjobs j
+        LEFT JOIN ptjoboperations o ON j.job_number = o.job_number
+        WHERE j.job_number = ${jobNumber}
+        GROUP BY j.job_number, j.product_code, j.product_description, j.quantity, 
+                 j.need_date, j.priority, j.scheduled_start_date_time, 
+                 j.scheduled_end_date_time, j.status
+      `);
+      
+      if (jobResult.rows.length === 0) {
+        return null;
+      }
+      
+      const job = jobResult.rows[0] as any;
+      
+      // Determine if job is in progress
+      const isInProgress = job.in_progress_operations > 0 || 
+                          job.started_operations > 0 || 
+                          job.completed_operations > 0;
+      
+      // Calculate progress percentage
+      const progressPercentage = job.total_operations > 0 
+        ? Math.round((job.completed_operations / job.total_operations) * 100)
+        : 0;
+      
+      // Determine on-time status
+      const scheduledEnd = job.scheduled_end_date_time || job.last_op_end;
+      const needDate = job.need_date;
+      let onTimeStatus = 'unknown';
+      let daysEarlyOrLate = 0;
+      
+      if (scheduledEnd && needDate) {
+        const schedEndDate = new Date(scheduledEnd);
+        const needByDate = new Date(needDate);
+        const daysDiff = Math.floor((needByDate.getTime() - schedEndDate.getTime()) / (1000 * 60 * 60 * 24));
+        
+        if (daysDiff >= 0) {
+          onTimeStatus = 'on-time';
+          daysEarlyOrLate = daysDiff; // positive means early
+        } else {
+          onTimeStatus = 'late';
+          daysEarlyOrLate = Math.abs(daysDiff); // negative means late
+        }
+      }
+      
+      return {
+        jobNumber: job.job_number,
+        productCode: job.product_code,
+        productDescription: job.product_description,
+        quantity: job.quantity,
+        priority: job.priority,
+        status: {
+          isInProgress,
+          progressPercentage,
+          totalOperations: job.total_operations,
+          completedOperations: job.completed_operations,
+          inProgressOperations: job.in_progress_operations,
+          startedOperations: job.started_operations,
+          remainingOperations: job.total_operations - job.completed_operations
+        },
+        scheduling: {
+          needDate: job.need_date,
+          scheduledStart: job.scheduled_start_date_time || job.first_op_start,
+          scheduledEnd: scheduledEnd,
+          onTimeStatus,
+          daysEarlyOrLate,
+          statusMessage: onTimeStatus === 'on-time' 
+            ? `Scheduled to complete ${daysEarlyOrLate} days before need date`
+            : onTimeStatus === 'late'
+            ? `Scheduled to complete ${daysEarlyOrLate} days after need date - ATTENTION REQUIRED`
+            : 'Unable to determine on-time status'
+        }
+      };
+    } catch (error) {
+      console.error('Error fetching job status:', error);
+      return null;
+    }
+  }
+
   // Analyze specific data queries using internal data
   async analyzeInternalDataQuery(query: string, context: MaxContext): Promise<string> {
     try {
       const lowerQuery = query.toLowerCase();
+      
+      // Handle specific job status queries
+      if (lowerQuery.includes('status') && (lowerQuery.includes('job') || lowerQuery.includes('order'))) {
+        // Extract job number if mentioned
+        const jobNumberMatch = query.match(/(?:job|order|jo|mo)[-\s#]*([A-Z0-9-]+)/i);
+        
+        if (jobNumberMatch && jobNumberMatch[1]) {
+          const jobNumber = jobNumberMatch[1];
+          const jobStatus = await this.getJobStatus(jobNumber);
+          
+          if (!jobStatus) {
+            return `I couldn't find Job ${jobNumber} in the system. Please check the job number and try again.`;
+          }
+          
+          // Build comprehensive status message
+          let statusMessage = `📊 **Job ${jobStatus.jobNumber} Status**\n\n`;
+          statusMessage += `**Product:** ${jobStatus.productCode} - ${jobStatus.productDescription}\n`;
+          statusMessage += `**Quantity:** ${jobStatus.quantity} units\n`;
+          statusMessage += `**Priority:** ${jobStatus.priority || 'Standard'}\n\n`;
+          
+          // Progress status
+          statusMessage += `**Progress Status:** `;
+          if (jobStatus.status.isInProgress) {
+            statusMessage += `✅ IN PROGRESS (${jobStatus.status.progressPercentage}% complete)\n`;
+            statusMessage += `- ${jobStatus.status.completedOperations} of ${jobStatus.status.totalOperations} operations completed\n`;
+            if (jobStatus.status.inProgressOperations > 0) {
+              statusMessage += `- ${jobStatus.status.inProgressOperations} operations currently running\n`;
+            }
+            statusMessage += `- ${jobStatus.status.remainingOperations} operations remaining\n\n`;
+          } else {
+            statusMessage += `⏸️ NOT STARTED\n`;
+            statusMessage += `- 0 of ${jobStatus.status.totalOperations} operations completed\n\n`;
+          }
+          
+          // Schedule status
+          statusMessage += `**Schedule Status:** `;
+          if (jobStatus.scheduling.onTimeStatus === 'on-time') {
+            statusMessage += `✅ ON-TIME\n`;
+            statusMessage += `- Scheduled to complete ${jobStatus.scheduling.daysEarlyOrLate} days before need date\n`;
+          } else if (jobStatus.scheduling.onTimeStatus === 'late') {
+            statusMessage += `⚠️ LATE - ATTENTION REQUIRED\n`;
+            statusMessage += `- Scheduled to complete ${jobStatus.scheduling.daysEarlyOrLate} days after need date\n`;
+          } else {
+            statusMessage += `❓ UNKNOWN\n`;
+          }
+          
+          if (jobStatus.scheduling.needDate) {
+            statusMessage += `- Need Date: ${new Date(jobStatus.scheduling.needDate).toLocaleDateString()}\n`;
+          }
+          if (jobStatus.scheduling.scheduledEnd) {
+            statusMessage += `- Scheduled Completion: ${new Date(jobStatus.scheduling.scheduledEnd).toLocaleDateString()}\n`;
+          }
+          
+          return statusMessage;
+        }
+        
+        // No specific job number - provide general guidance
+        return `Please specify a job number to check its status. For example: "What's the status of Job 2001?" or "Check status of MO-30287"`;
+      }
       
       // Handle job-related queries
       if (lowerQuery.includes('job') || lowerQuery.includes('operation')) {
@@ -537,6 +695,32 @@ Format as: "Based on what I remember about you: [relevant info]" or return empty
         
         if (lowerQuery.includes('how many') || lowerQuery.includes('count') || lowerQuery.includes('total')) {
           return `We currently have ${totalJobs} jobs in the system. These are production jobs from our PT jobs data. Would you like me to show you the production schedule or analyze these jobs further?`;
+        }
+        
+        // Check for late jobs query
+        if (lowerQuery.includes('late') || lowerQuery.includes('behind') || lowerQuery.includes('delayed')) {
+          const lateJobsResult = await db.execute(sql`
+            SELECT 
+              j.job_number,
+              j.product_code,
+              j.need_date,
+              MAX(o.scheduled_end_date_time) as scheduled_end
+            FROM ptjobs j
+            LEFT JOIN ptjoboperations o ON j.job_number = o.job_number
+            WHERE j.need_date IS NOT NULL
+            GROUP BY j.job_number, j.product_code, j.need_date
+            HAVING MAX(o.scheduled_end_date_time) > j.need_date
+          `);
+          
+          const lateCount = lateJobsResult.rows.length;
+          if (lateCount > 0) {
+            const jobList = lateJobsResult.rows.slice(0, 5).map((job: any) => 
+              `• Job ${job.job_number} (${job.product_code})`
+            ).join('\n');
+            return `⚠️ There are ${lateCount} jobs scheduled to complete after their need date:\n\n${jobList}${lateCount > 5 ? `\n...and ${lateCount - 5} more` : ''}\n\nWould you like me to analyze these late jobs in more detail?`;
+          } else {
+            return `✅ Good news! All jobs are currently scheduled to complete on or before their need dates.`;
+          }
         }
       }
       

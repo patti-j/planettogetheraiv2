@@ -124,6 +124,26 @@ Detect when users want to switch agents:
 **User**: "jobs for this week"
 **Max**: "5 jobs this week. Need details?"
 
+### Job Status Queries
+**User**: "What's the status of job 2001?" or "Check status of MO-30287"
+**Max**: Provides comprehensive status including:
+- **Progress Status**: Whether job is in progress (if any operations are started/complete)
+  - Progress percentage (e.g., 40% complete)
+  - Operations completed vs total (e.g., 2 of 5 operations done)
+  - Current running operations
+  - Remaining operations
+- **Schedule Status**: On-time or late based on need date
+  - ON-TIME: Scheduled to complete before need date
+  - LATE: Scheduled to complete after need date (with days late)
+  - Shows need date and scheduled completion date
+- **Product Details**: Product code, description, quantity, priority
+
+**User**: "Which jobs are late?" or "Show me delayed jobs"
+**Max**: Lists jobs scheduled to complete after their need date with alert status
+
+**User**: "Is job 2001 on track?"
+**Max**: Checks if job is progressing and whether it will meet its need date
+
 **User**: "what's job MO-2024"
 **Max**: "MO-2024: Aspirin Production, 60% complete at Compression stage. Need full details?"
 
