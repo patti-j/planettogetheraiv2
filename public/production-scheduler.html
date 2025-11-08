@@ -3807,11 +3807,15 @@
                     
                     try {
                         // ============================================================================
-                        // ASAP (As Soon As Possible) - Forward Scheduling Algorithm
+                        // ASAP (As Soon As Possible) - Forward Scheduling Algorithm V2
                         // ============================================================================
+                        // Enhanced with brewing chain continuity logic
                         // This algorithm schedules operations from today forward, respecting:
                         // 1. Job priority (1=highest, 5=lowest) 
                         // 2. Operation sequence within each job
+                        // 3. Brewing operation continuity (boiling→whirlpool→cooling→fermentation)
+                        
+                        console.log('🚀 ASAP V2: Starting with brewing chain continuity...');
                         
                         const scheduler = window.scheduler;
                         const { project, eventStore, assignmentStore } = scheduler;
