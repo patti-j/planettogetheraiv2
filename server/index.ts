@@ -310,6 +310,37 @@ app.use((req, res, next) => {
   app.use(automationRoutes);  // AI automation rules routes
   app.use('/api/forecasting', forecastingRoutes);  // Forecasting API routes
 
+  // CRITICAL: Register production scheduler route BEFORE Vite to prevent interference
+  // This must be before Vite middleware to avoid injection of Vite client scripts
+  app.get("/api/production-scheduler", (req, res) => {
+    try {
+      console.log('Serving production scheduler HTML (bypassing Vite)...');
+      const htmlPath = path.join(process.cwd(), 'public', 'production-scheduler.html');
+      
+      // Check if file exists
+      if (!fs.existsSync(htmlPath)) {
+        console.error('Production scheduler HTML not found at:', htmlPath);
+        return res.status(404).send('Production scheduler HTML not found');
+      }
+      
+      // Read and send the HTML file
+      const htmlContent = fs.readFileSync(htmlPath, 'utf8');
+      console.log('Successfully read HTML file, size:', htmlContent.length, 'bytes');
+      
+      // Set headers to ensure clean HTML delivery
+      res.setHeader('Content-Type', 'text/html; charset=utf-8');
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+      res.setHeader('Pragma', 'no-cache');
+      res.setHeader('Expires', '0');
+      
+      // Send the HTML directly without any processing
+      res.status(200).send(htmlContent);
+    } catch (error) {
+      console.error('Error serving production scheduler HTML:', error);
+      res.status(500).send('Error loading production scheduler');
+    }
+  });
+
   // Create HTTP server and WebSocket server
   // Use PORT environment variable for production, fallback to 5000 for development
   const port = process.env.PORT ? parseInt(process.env.PORT) : 5000;

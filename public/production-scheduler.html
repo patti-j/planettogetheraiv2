@@ -1159,8 +1159,15 @@
         <span id="resourceUtilization">Resource utilization: --</span>
     </div>
 
+    <!-- Initialize global bryntum object before loading UMD -->
+    <script>
+        // Ensure global bryntum object exists for UMD bundle
+        window.bryntum = window.bryntum || {};
+        console.log('🔧 Initialized window.bryntum object');
+    </script>
+    
     <!-- Load Bryntum Scheduler Pro UMD -->
-    <script id="bryntum-script" src="/schedulerpro.umd.js?v=633"></script>
+    <script id="bryntum-script" src="/schedulerpro.umd.js?v=633" async="false"></script>
     
     <script>
         console.log('🔥 SCHEDULER SCRIPT STARTING...');
