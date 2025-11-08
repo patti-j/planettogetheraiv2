@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Bryntum Test</title>
+</head>
+<body>
+    <h1>Bryntum Loading Test</h1>
+    <div id="output"></div>
+    
+    <script src="/schedulerpro-browser.umd.js"></script>
+    <script>
+        setTimeout(() => {
+            const output = document.getElementById('output');
+            let html = '<h2>Bryntum Structure Analysis:</h2><pre>';
+            
+            // Check what's available globally
+            html += 'Global variables:\n';
+            if (typeof bryntum !== 'undefined') {
+                html += '✅ bryntum is defined\n';
+                html += 'bryntum keys: ' + Object.keys(bryntum).join(', ') + '\n\n';
+                
+                // Check for scheduler-related properties
+                if (bryntum.schedulerpro) {
+                    html += '✅ bryntum.schedulerpro exists\n';
+                    html += 'bryntum.schedulerpro keys: ' + Object.keys(bryntum.schedulerpro).slice(0, 20).join(', ') + '...\n\n';
+                }
+                
+                if (bryntum.SchedulerPro) {
+                    html += '✅ bryntum.SchedulerPro exists\n';
+                }
+                
+                // Check for any Scheduler classes
+                for (const key in bryntum) {
+                    if (key.toLowerCase().includes('scheduler')) {
+                        html += `Found: bryntum.${key} (${typeof bryntum[key]})\n`;
+                    }
+                }
+            } else {
+                html += '❌ bryntum is NOT defined\n';
+            }
+            
+            if (typeof SchedulerPro !== 'undefined') {
+                html += '✅ SchedulerPro is defined globally\n';
+            } else {
+                html += '❌ SchedulerPro is NOT defined globally\n';
+            }
+            
+            if (typeof window.SchedulerPro !== 'undefined') {
+                html += '✅ window.SchedulerPro is defined\n';
+            } else {
+                html += '❌ window.SchedulerPro is NOT defined\n';
+            }
+            
+            html += '</pre>';
+            output.innerHTML = html;
+        }, 2000);
+    </script>
+</body>
+</html>

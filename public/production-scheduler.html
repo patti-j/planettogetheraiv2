@@ -1234,115 +1234,139 @@
         function waitForBryntum(callback) {
             let timeoutHandle = null;
             let intervalCleared = false;
+            let attemptCount = 0;
             
             const checkInterval = setInterval(() => {
-                // Check for SchedulerPro in the CommonJS exports
-                if (typeof bryntum !== 'undefined' && bryntum.SchedulerPro) {
-                    if (!intervalCleared) {
-                        clearInterval(checkInterval);
-                        intervalCleared = true;
-                        if (timeoutHandle) {
-                            clearTimeout(timeoutHandle);
-                        }
-                        console.log('✅ Bryntum SchedulerPro loaded at bryntum.SchedulerPro');
-                        // Make SchedulerPro globally available for easier access
+                attemptCount++;
+                
+                // Try different possible locations for SchedulerPro
+                let schedulerProFound = false;
+                let schedulerProClass = null;
+                
+                // Method 1: Check if SchedulerPro is directly on window
+                if (typeof window.SchedulerPro !== 'undefined') {
+                    schedulerProClass = window.SchedulerPro;
+                    schedulerProFound = true;
+                    console.log('✅ Found SchedulerPro directly on window');
+                }
+                // Method 2: Check global SchedulerPro
+                else if (typeof SchedulerPro !== 'undefined') {
+                    schedulerProClass = SchedulerPro;
+                    window.SchedulerPro = SchedulerPro;
+                    schedulerProFound = true;
+                    console.log('✅ Found SchedulerPro globally');
+                }
+                // Method 3: Check bryntum namespace
+                else if (typeof bryntum !== 'undefined') {
+                    console.log(`⏳ Attempt ${attemptCount}: Checking bryntum namespace...`);
+                    
+                    // Check bryntum.SchedulerPro (capital S)
+                    if (bryntum.SchedulerPro) {
+                        schedulerProClass = bryntum.SchedulerPro;
                         window.SchedulerPro = bryntum.SchedulerPro;
-                        callback();
+                        schedulerProFound = true;
+                        console.log('✅ Found bryntum.SchedulerPro');
                     }
-                } else if (typeof SchedulerPro !== 'undefined') {
-                    // Check if SchedulerPro is directly on window
-                    if (!intervalCleared) {
-                        clearInterval(checkInterval);
-                        intervalCleared = true;
-                        if (timeoutHandle) {
-                            clearTimeout(timeoutHandle);
-                        }
-                        console.log('✅ Bryntum SchedulerPro loaded directly on window');
-                        window.SchedulerPro = SchedulerPro;
-                        callback();
-                    }
-                } else if (typeof window.SchedulerPro !== 'undefined') {
-                    // Already available
-                    if (!intervalCleared) {
-                        clearInterval(checkInterval);
-                        intervalCleared = true;
-                        if (timeoutHandle) {
-                            clearTimeout(timeoutHandle);
-                        }
-                        console.log('✅ Bryntum SchedulerPro already available on window');
-                        callback();
-                    }
-                } else {
-                    console.log('⏳ Waiting for Bryntum SchedulerPro to load...');
-                    // Debug: Log what's available
-                    if (typeof bryntum !== 'undefined') {
-                        console.log('  bryntum object found, contents:', Object.keys(bryntum || {}));
+                    // Check bryntum.schedulerpro namespace (lowercase s)
+                    else if (bryntum.schedulerpro) {
+                        console.log('  Found bryntum.schedulerpro namespace, checking for SchedulerPro class...');
                         
-                        // Check all possible locations where SchedulerPro might be
-                        if (bryntum.schedulerpro) {
-                            console.log('  bryntum.schedulerpro found, contents:', Object.keys(bryntum.schedulerpro || {}));
+                        // Look for SchedulerPro class in the namespace
+                        if (bryntum.schedulerpro.SchedulerPro) {
+                            schedulerProClass = bryntum.schedulerpro.SchedulerPro;
+                            window.SchedulerPro = bryntum.schedulerpro.SchedulerPro;
+                            schedulerProFound = true;
+                            console.log('✅ Found bryntum.schedulerpro.SchedulerPro');
+                        } else {
+                            // Try to find any Scheduler class in the namespace
+                            const keys = Object.keys(bryntum.schedulerpro);
+                            console.log(`    Available classes in schedulerpro: ${keys.slice(0, 10).join(', ')}${keys.length > 10 ? '...' : ''}`);
                             
-                            // Check if SchedulerPro is a class in schedulerpro namespace
-                            for (const key of Object.keys(bryntum.schedulerpro)) {
-                                const value = bryntum.schedulerpro[key];
-                                if (typeof value === 'function' && key.includes('Scheduler')) {
-                                    console.log(`    Found potential SchedulerPro class: bryntum.schedulerpro.${key}`);
-                                    
-                                    // Try to use it as SchedulerPro
-                                    if (!intervalCleared) {
-                                        clearInterval(checkInterval);
-                                        intervalCleared = true;
-                                        if (timeoutHandle) {
-                                            clearTimeout(timeoutHandle);
-                                        }
-                                        console.log(`✅ Using bryntum.schedulerpro.${key} as SchedulerPro`);
-                                        window.SchedulerPro = value;
-                                        callback();
-                                        return;
-                                    }
+                            // Look for the main Scheduler class
+                            for (const key of keys) {
+                                if ((key === 'Scheduler' || key === 'SchedulerPro') && typeof bryntum.schedulerpro[key] === 'function') {
+                                    schedulerProClass = bryntum.schedulerpro[key];
+                                    window.SchedulerPro = bryntum.schedulerpro[key];
+                                    schedulerProFound = true;
+                                    console.log(`✅ Found bryntum.schedulerpro.${key} - using as SchedulerPro`);
+                                    break;
                                 }
                             }
                         }
+                    }
+                    
+                    // If still not found, check all bryntum properties
+                    if (!schedulerProFound) {
+                        const bryntumKeys = Object.keys(bryntum);
+                        console.log(`  Bryntum root keys: ${bryntumKeys.slice(0, 10).join(', ')}${bryntumKeys.length > 10 ? '...' : ''}`);
                         
-                        // Also check root bryntum for any Scheduler classes
-                        for (const key of Object.keys(bryntum)) {
-                            if (key.toLowerCase().includes('scheduler')) {
-                                console.log(`  Found scheduler-related namespace: bryntum.${key}`);
-                                const namespace = bryntum[key];
-                                if (namespace && typeof namespace === 'object') {
-                                    console.log(`    Contents of bryntum.${key}:`, Object.keys(namespace).slice(0, 10));
-                                }
+                        // Look for any property with Scheduler in the name
+                        for (const key of bryntumKeys) {
+                            if (key.includes('Scheduler') && typeof bryntum[key] === 'function') {
+                                schedulerProClass = bryntum[key];
+                                window.SchedulerPro = bryntum[key];
+                                schedulerProFound = true;
+                                console.log(`✅ Found bryntum.${key} - using as SchedulerPro`);
+                                break;
                             }
                         }
                     }
                 }
-            }, 100);
+                
+                // If we found SchedulerPro, initialize
+                if (schedulerProFound && schedulerProClass) {
+                    if (!intervalCleared) {
+                        clearInterval(checkInterval);
+                        intervalCleared = true;
+                        if (timeoutHandle) {
+                            clearTimeout(timeoutHandle);
+                        }
+                        console.log('✅ SchedulerPro loaded successfully!');
+                        callback();
+                    }
+                } else if (attemptCount === 5) {
+                    // Log detailed debug info after 5 attempts
+                    console.log('⚠️ SchedulerPro not found after 5 attempts. Debug info:');
+                    console.log('  typeof bryntum:', typeof bryntum);
+                    console.log('  typeof window.SchedulerPro:', typeof window.SchedulerPro);
+                    console.log('  typeof SchedulerPro:', typeof SchedulerPro);
+                    if (typeof bryntum !== 'undefined') {
+                        console.log('  bryntum keys:', Object.keys(bryntum || {}));
+                    }
+                }
+            }, 200);
             
-            // Timeout after 10 seconds - but only show error if we still don't have Bryntum
+            // Timeout after 15 seconds
             timeoutHandle = setTimeout(() => {
                 if (!intervalCleared) {
                     clearInterval(checkInterval);
                     intervalCleared = true;
                     
-                    // Double-check if Bryntum is really not loaded before showing error
-                    if (typeof window.SchedulerPro === 'undefined' && 
-                        (typeof bryntum === 'undefined' || !bryntum.schedulerpro?.SchedulerPro)) {
-                        console.error('❌ Bryntum SchedulerPro failed to load after 10 seconds');
+                    // Final check before showing error
+                    if (typeof window.SchedulerPro === 'undefined') {
+                        console.error('❌ Bryntum SchedulerPro failed to load after 15 seconds');
+                        console.error('Available globals:', {
+                            bryntum: typeof bryntum,
+                            SchedulerPro: typeof SchedulerPro,
+                            'window.SchedulerPro': typeof window.SchedulerPro
+                        });
+                        
                         const loadingOverlay = document.getElementById('loadingOverlay');
-                        // Only show error if loading overlay is visible and empty
-                        if (loadingOverlay && loadingOverlay.style.display !== 'none' && !loadingOverlay.querySelector('.loading-spinner')) {
+                        if (loadingOverlay && loadingOverlay.style.display !== 'none') {
                             loadingOverlay.innerHTML = `
                                 <div style="color: red; font-size: 16px; padding: 20px; background: white; border-radius: 8px;">
                                     <h3>Loading Error</h3>
                                     <p>Bryntum Scheduler Pro failed to load. Please refresh the page.</p>
+                                    <p style="font-size: 12px; margin-top: 10px;">If the problem persists, please contact support.</p>
                                 </div>
                             `;
                         }
                     } else {
-                        console.log('✅ Bryntum already loaded, timeout cleared');
+                        console.log('✅ Bryntum loaded successfully (found in timeout check)');
+                        callback();
                     }
                 }
-            }, 10000);
+            }, 15000);
         }
         
         // --- Planning area filter: robust wiring + safe filtering ---
