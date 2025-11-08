@@ -3821,7 +3821,9 @@
                         // 2. Operation sequence within each job
                         // 3. Brewing operation continuity (boiling→whirlpool→cooling→fermentation)
                         
-                        console.log('🚀 ASAP V2: Starting with brewing chain continuity...');
+                        console.log('===== ASAP ALGORITHM V3 STARTED =====');
+                        console.log('Timestamp:', new Date().toISOString());
+                        console.log('🚀 ASAP V3: Enhanced brewing chain continuity with critical path detection...');
                         
                         const scheduler = window.scheduler;
                         const { project, eventStore, assignmentStore } = scheduler;
@@ -3834,7 +3836,7 @@
                         // The scheduling logic IGNORES dependencies and uses only priority + sequence.
                         // ============================================================================
                         
-                        console.log('🚀 Starting ASAP scheduling (Forward from Today)...');
+                        console.log('🚀 Starting ASAP scheduling with Brewery-Specific Chain Continuity...');
                         console.log('📌 NOTE: Dependencies are visual-only. Scheduling uses priority + sequence.');
                         const events = [...eventStore.records].filter(e => e.resourceId !== 'unscheduled');
                         console.log(`  Total operations to schedule: ${events.length}`);
