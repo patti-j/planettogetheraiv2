@@ -4073,22 +4073,6 @@
                     }
                 }
                 
-                // OLD CLIENT-SIDE IMPLEMENTATION REMOVED - Now using server-side algorithm
-                // The following code from lines 3926-4395 has been replaced with server call above
-                /* REMOVED: 500+ lines of client-side ASAP scheduling logic */
-                
-                // Skip to line 4401 where the next function begins
-                    console.log(`📅 Base scheduling date (today): ${today.toLocaleDateString()}`);
-                    
-                    // Map to store job-specific start dates (from manufacturing_release_date if available)
-                        }
-                    }
-                    } finally {
-                        // Always reset the flag, even if there was an error
-                        isAsapRunning = false;
-                    }
-                }
-                
                 // Backward packer helper - finds the latest free slot on resource working backwards
                 // CRITICAL: latestEnd is the absolute latest the operation can END (due to sequence constraints)
                 function findLatestFreeSlotOnResource(resource, latestEnd, durationMs, excludeEvent) {
