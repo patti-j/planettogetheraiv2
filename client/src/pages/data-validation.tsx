@@ -564,7 +564,7 @@ function DataValidation() {
             <Activity className="h-4 w-4" />
             <span className="hidden sm:inline">Health Metrics</span>
           </TabsTrigger>
-        </Tabs>
+        </TabsList>
 
         {/* Validation Tab */}
         <TabsContent value="validation" className="space-y-4">
