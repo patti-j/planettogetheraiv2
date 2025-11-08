@@ -1286,17 +1286,16 @@ export class ProductionSchedulingAgent extends BaseAgent {
     try {
       const jobs = await db.execute(sql`
         SELECT 
-          job_number,
-          product_code,
-          product_description,
-          quantity,
-          need_date,
+          id,
+          external_id,
+          name,
+          description,
           priority,
-          status,
-          scheduled_start_date_time,
-          scheduled_end_date_time
+          need_date_time,
+          scheduled_status,
+          manufacturing_release_date
         FROM ptjobs
-        ORDER BY need_date ASC, priority DESC
+        ORDER BY need_date_time ASC, priority DESC
         LIMIT 20
       `);
       
@@ -1308,13 +1307,18 @@ export class ProductionSchedulingAgent extends BaseAgent {
       let response = `📋 **Jobs List** (Showing ${jobs.rows.length} jobs)\n\n`;
       
       for (const job of jobs.rows as any[]) {
-        const needDate = job.need_date ? new Date(job.need_date).toLocaleDateString() : 'Not set';
-        const status = job.status || 'Scheduled';
+        const jobId = job.external_id || job.id;
+        const jobName = job.name || 'Unnamed Job';
+        const needDate = job.need_date_time ? new Date(job.need_date_time).toLocaleDateString() : 'Not set';
+        const status = job.scheduled_status || 'Scheduled';
         const priority = job.priority || 'Standard';
+        const description = job.description || 'No description';
         
-        response += `**Job ${job.job_number}**\n`;
-        response += `• Product: ${job.product_code} - ${job.product_description}\n`;
-        response += `• Quantity: ${job.quantity} units\n`;
+        response += `**Job ${jobId}**\n`;
+        response += `• Name: ${jobName}\n`;
+        if (description && description !== 'No description') {
+          response += `• Description: ${description}\n`;
+        }
         response += `• Need Date: ${needDate}\n`;
         response += `• Priority: ${priority} | Status: ${status}\n`;
         response += `---\n`;
