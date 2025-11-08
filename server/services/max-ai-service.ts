@@ -527,32 +527,31 @@ Format as: "Based on what I remember about you: [relevant info]" or return empty
   }
   
   // Get detailed job status information
-  async getJobStatus(jobNumber: string): Promise<any> {
+  async getJobStatus(jobId: string): Promise<any> {
     try {
-      // Get job details with operations
+      // Get job details - check if input is numeric ID or external ID
       const jobResult = await db.execute(sql`
         SELECT 
-          j.job_number,
-          j.product_code,
-          j.product_description,
-          j.quantity,
-          j.need_date,
+          j.id,
+          j.external_id,
+          j.name,
+          j.description,
           j.priority,
-          j.scheduled_start_date_time,
-          j.scheduled_end_date_time,
-          j.status as job_status,
-          COUNT(DISTINCT o.operation_number) as total_operations,
-          COUNT(DISTINCT CASE WHEN o.status = 'Complete' THEN o.operation_number END) as completed_operations,
-          COUNT(DISTINCT CASE WHEN o.status = 'InProgress' THEN o.operation_number END) as in_progress_operations,
-          COUNT(DISTINCT CASE WHEN o.status = 'Started' THEN o.operation_number END) as started_operations,
+          j.need_date_time,
+          j.scheduled_status,
+          j.manufacturing_release_date,
+          COUNT(DISTINCT o.id) as total_operations,
+          COUNT(DISTINCT CASE WHEN o.status = 'Complete' THEN o.id END) as completed_operations,
+          COUNT(DISTINCT CASE WHEN o.status = 'InProgress' THEN o.id END) as in_progress_operations,
+          COUNT(DISTINCT CASE WHEN o.status = 'Started' THEN o.id END) as started_operations,
           MIN(o.scheduled_start_date_time) as first_op_start,
           MAX(o.scheduled_end_date_time) as last_op_end
         FROM ptjobs j
-        LEFT JOIN ptjoboperations o ON j.job_number = o.job_number
-        WHERE j.job_number = ${jobNumber}
-        GROUP BY j.job_number, j.product_code, j.product_description, j.quantity, 
-                 j.need_date, j.priority, j.scheduled_start_date_time, 
-                 j.scheduled_end_date_time, j.status
+        LEFT JOIN ptjoboperations o ON j.id = o.job_id OR j.external_id = o.job_number
+        WHERE j.id::text = ${jobId} OR j.external_id = ${jobId}
+        GROUP BY j.id, j.external_id, j.name, j.description, 
+                 j.priority, j.need_date_time, j.scheduled_status,
+                 j.manufacturing_release_date
       `);
       
       if (jobResult.rows.length === 0) {
@@ -572,8 +571,8 @@ Format as: "Based on what I remember about you: [relevant info]" or return empty
         : 0;
       
       // Determine on-time status
-      const scheduledEnd = job.scheduled_end_date_time || job.last_op_end;
-      const needDate = job.need_date;
+      const scheduledEnd = job.last_op_end || job.manufacturing_release_date;
+      const needDate = job.need_date_time;
       let onTimeStatus = 'unknown';
       let daysEarlyOrLate = 0;
       
@@ -592,10 +591,12 @@ Format as: "Based on what I remember about you: [relevant info]" or return empty
       }
       
       return {
-        jobNumber: job.job_number,
-        productCode: job.product_code,
-        productDescription: job.product_description,
-        quantity: job.quantity,
+        jobId: job.id,
+        jobNumber: job.external_id || `ID-${job.id}`,
+        productCode: job.external_id,
+        productName: job.name,
+        productDescription: job.description,
+        quantity: null, // Not available in current table structure
         priority: job.priority,
         status: {
           isInProgress,
@@ -604,11 +605,12 @@ Format as: "Based on what I remember about you: [relevant info]" or return empty
           completedOperations: job.completed_operations,
           inProgressOperations: job.in_progress_operations,
           startedOperations: job.started_operations,
-          remainingOperations: job.total_operations - job.completed_operations
+          remainingOperations: job.total_operations - job.completed_operations,
+          scheduledStatus: job.scheduled_status
         },
         scheduling: {
-          needDate: job.need_date,
-          scheduledStart: job.scheduled_start_date_time || job.first_op_start,
+          needDate: job.need_date_time,
+          scheduledStart: job.manufacturing_release_date || job.first_op_start,
           scheduledEnd: scheduledEnd,
           onTimeStatus,
           daysEarlyOrLate,
