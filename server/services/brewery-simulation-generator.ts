@@ -122,6 +122,25 @@ export async function generateBrewerySimulationData() {
     }
 
     // 3. Create brewery resources (equipment)
+    // Define deployment order for each resource type based on production flow
+    const getDeploymentOrder = (resourceType: string): number => {
+      const orderMap: { [key: string]: number } = {
+        'Grain Mill': 10,           // 1. Milling
+        'Mash Tun': 20,             // 2. Mashing
+        'Lauter Tun': 30,           // 3. Lautering
+        'Brew Kettle': 40,          // 4. Boiling
+        'Whirlpool': 50,            // 5. Whirlpool
+        'Heat Exchanger': 60,       // 6. Cooling
+        'Fermentation Tank': 70,    // 7. Fermentation
+        'Maturation Tank': 80,      // 8. Maturation
+        'Filter': 90,               // 9. Filtration
+        'Bright Tank': 100,         // 10. Bright/Conditioning
+        'Packaging Line': 110,      // 11. Packaging
+        'Lab': 120                  // 12. Quality Control
+      };
+      return orderMap[resourceType] || 999;
+    };
+
     let resourceId = 1;
     for (const plant of plants.slice(0, 2)) { // Focus on first 2 plants for detailed scheduling
       for (const resource of BREWERY_RESOURCES) {
@@ -152,8 +171,11 @@ export async function generateBrewerySimulationData() {
         }
         // All other equipment defaults to Brewing Operations
         
+        // Get deployment order for this resource type
+        const deploymentOrder = getDeploymentOrder(resource.type);
+        
         await db.execute(sql`
-          INSERT INTO ptresources (id, external_id, name, description, plant_id, active, publish_date, instance_id, department_id, resource_id)
+          INSERT INTO ptresources (id, external_id, name, description, plant_id, active, publish_date, instance_id, department_id, resource_id, deployment_order)
           VALUES (
             ${resourceId}, 
             ${`RES-${plant.external_id}-${resourceId.toString().padStart(3, '0')}`},
@@ -164,7 +186,8 @@ export async function generateBrewerySimulationData() {
             NOW(),
             'BREW-SIM-001',
             ${departmentId}, 
-            ${resourceId}
+            ${resourceId},
+            ${deploymentOrder}
           )
         `);
         resourceId++;
