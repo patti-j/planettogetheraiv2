@@ -298,14 +298,18 @@ export function CustomizableHeader({ className }: CustomizableHeaderProps) {
   // Save header configuration
   const saveHeaderMutation = useMutation({
     mutationFn: async ({ items, showText }: { items: HeaderItem[], showText: boolean }) => {
+      // Use existing preferences from state instead of fetching
       const updatedPreferences = {
-        ...(preferences as any),
+        ...(preferences as any || {}),
         dashboardLayout: {
-          ...(preferences as any)?.dashboardLayout,
+          ...(preferences as any)?.dashboardLayout || {},
           headerItems: items,
-          showHeaderText: showText
+          showHeaderText: showText,
+          // Preserve other dashboard layout settings
+          uiDensity: (preferences as any)?.dashboardLayout?.uiDensity || uiDensity,
         }
       };
+      
       return apiRequest('PUT', `/api/user-preferences/${user?.id}`, updatedPreferences);
     },
     onSuccess: () => {
@@ -327,13 +331,18 @@ export function CustomizableHeader({ className }: CustomizableHeaderProps) {
   // Save UI density
   const saveDensityMutation = useMutation({
     mutationFn: async (density: 'compact' | 'compressed' | 'standard' | 'comfortable') => {
+      // Use existing preferences from state instead of fetching
       const updatedPreferences = {
-        ...(preferences as any),
+        ...(preferences as any || {}),
         dashboardLayout: {
-          ...(preferences as any)?.dashboardLayout,
-          uiDensity: density
+          ...(preferences as any)?.dashboardLayout || {},
+          uiDensity: density,
+          // Preserve header settings
+          headerItems: (preferences as any)?.dashboardLayout?.headerItems || headerItems,
+          showHeaderText: (preferences as any)?.dashboardLayout?.showHeaderText ?? showHeaderText
         }
       };
+      
       return apiRequest('PUT', `/api/user-preferences/${user?.id}`, updatedPreferences);
     },
     onSuccess: () => {
@@ -404,11 +413,29 @@ export function CustomizableHeader({ className }: CustomizableHeaderProps) {
   };
 
   // Save customizations
-  const saveCustomizations = () => {
-    setHeaderItems(tempHeaderItems);
-    setShowHeaderText(tempShowHeaderText);
-    saveHeaderMutation.mutate({ items: tempHeaderItems, showText: tempShowHeaderText });
-    setCustomizeOpen(false);
+  const saveCustomizations = async () => {
+    try {
+      // Update local state first for immediate UI feedback
+      setHeaderItems(tempHeaderItems);
+      setShowHeaderText(tempShowHeaderText);
+      
+      // Save to database and wait for completion
+      await saveHeaderMutation.mutateAsync({ items: tempHeaderItems, showText: tempShowHeaderText });
+      
+      // Only close dialog after successful save
+      setCustomizeOpen(false);
+    } catch (error) {
+      console.error('Failed to save header customizations:', error);
+      
+      // Show error toast to user
+      toast({
+        title: "Failed to save",
+        description: "Your header customizations could not be saved. Please try again.",
+        variant: "destructive"
+      });
+      
+      // Keep dialog open on error so user can retry
+    }
   };
 
   // Handle item click
