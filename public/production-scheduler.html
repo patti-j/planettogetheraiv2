@@ -4135,62 +4135,117 @@
                             if (resource) {
                                 const resourceId = resource.id;
                                 
-                                // Find the earliest slot using bin packing algorithm
-                                // IMPORTANT: The slot MUST respect the earliestStart constraint
-                                // to maintain operation sequence within the job
-                                const slotStart = findEarliestSlot(resourceId, durationMs, earliestStart);
-                                const slotEnd = new Date(slotStart.getTime() + durationMs);
+                                // CRITICAL FIX: For operations after the first in a job, they MUST start
+                                // immediately after the previous operation ends to maintain continuous flow
+                                let slotStart, slotEnd;
                                 
-                                console.log(`  📦 Packing "${event.name}" on "${resource.name}"`);
-                                console.log(`     Sequence requires after: ${earliestStart.toLocaleString()}`);
-                                console.log(`     Found optimal slot: ${slotStart.toLocaleString()} to ${slotEnd.toLocaleString()}`);
-                                
-                                // VALIDATION: Ensure the slot respects sequence constraints
-                                if (slotStart.getTime() < earliestStart.getTime()) {
-                                    console.error(`❌ ERROR: Slot start (${slotStart.toLocaleString()}) is before earliest allowed (${earliestStart.toLocaleString()})`);
-                                    console.error(`   This violates sequence order for job ${jobKey}`);
-                                    // Force the slot to respect the sequence constraint
-                                    const correctedStart = new Date(earliestStart);
-                                    const correctedEnd = new Date(correctedStart.getTime() + durationMs);
-                                    console.log(`   🔧 Correcting to: ${correctedStart.toLocaleString()} to ${correctedEnd.toLocaleString()}`);
-                                    event.setStartDate(correctedStart, true);
-                                    event.set({
-                                        endDate: correctedEnd,
-                                        manuallyScheduled: false
-                                    });
-                                    // Update timeline with corrected slot
-                                    if (!resourceTimelines.has(resourceId)) {
-                                        resourceTimelines.set(resourceId, []);
+                                if (previousOperationEnd) {
+                                    // This is NOT the first operation - must start immediately after predecessor
+                                    console.log(`  🔗 Operation must start immediately after predecessor`);
+                                    
+                                    // Check if resource is available at the required time
+                                    const timeline = resourceTimelines.get(resourceId) || [];
+                                    let isResourceBusy = false;
+                                    const requiredStart = previousOperationEnd;
+                                    const requiredEnd = new Date(requiredStart.getTime() + durationMs);
+                                    
+                                    // Check if this time conflicts with existing operations on this resource
+                                    for (const slot of timeline) {
+                                        // Check if our required time overlaps with an existing operation
+                                        if ((requiredStart >= slot.start && requiredStart < slot.end) ||
+                                            (requiredEnd > slot.start && requiredEnd <= slot.end) ||
+                                            (requiredStart <= slot.start && requiredEnd >= slot.end)) {
+                                            isResourceBusy = true;
+                                            console.log(`     ⚠️ Resource ${resource.name} is busy from ${slot.start.toLocaleString()} to ${slot.end.toLocaleString()}`);
+                                            break;
+                                        }
                                     }
-                                    resourceTimelines.get(resourceId).push({
-                                        start: correctedStart,
-                                        end: correctedEnd,
-                                        eventId: event.id,
-                                        eventName: event.name
-                                    });
-                                    previousOperationEnd = correctedEnd;
+                                    
+                                    if (isResourceBusy) {
+                                        // Resource is busy when we need it - we must delay the entire job chain
+                                        // Find when the resource becomes available
+                                        const availableStart = findEarliestSlot(resourceId, durationMs, requiredStart);
+                                        const delay = availableStart.getTime() - requiredStart.getTime();
+                                        
+                                        console.log(`     🔄 Resource conflict - delaying entire job chain by ${(delay / 3600000).toFixed(1)} hours`);
+                                        
+                                        // We need to reschedule all previous operations in this job by the same delay
+                                        // This maintains the continuous flow but shifts everything later
+                                        for (let j = 0; j < operations.indexOf(event); j++) {
+                                            const prevOp = operations[j];
+                                            const oldStart = prevOp.startDate;
+                                            const oldEnd = prevOp.endDate;
+                                            const newStart = new Date(oldStart.getTime() + delay);
+                                            const newEnd = new Date(oldEnd.getTime() + delay);
+                                            
+                                            // Update the operation times
+                                            prevOp.setStartDate(newStart, true);
+                                            prevOp.set({
+                                                endDate: newEnd,
+                                                manuallyScheduled: false
+                                            });
+                                            
+                                            // Update resource timeline for this operation
+                                            const prevResource = resolveResource(prevOp);
+                                            if (prevResource) {
+                                                const prevResourceId = prevResource.id;
+                                                const prevTimeline = resourceTimelines.get(prevResourceId) || [];
+                                                const prevSlot = prevTimeline.find(s => s.eventId === prevOp.id);
+                                                if (prevSlot) {
+                                                    prevSlot.start = newStart;
+                                                    prevSlot.end = newEnd;
+                                                }
+                                            }
+                                            
+                                            console.log(`     📝 Rescheduled "${prevOp.name}" to ${newStart.toLocaleString()}`);
+                                        }
+                                        
+                                        // Now schedule this operation at the available time
+                                        slotStart = availableStart;
+                                        slotEnd = new Date(slotStart.getTime() + durationMs);
+                                    } else {
+                                        // Resource is available - schedule immediately after predecessor
+                                        slotStart = requiredStart;
+                                        slotEnd = requiredEnd;
+                                    }
                                 } else {
-                                    // Update the event with the packed times
-                                    event.setStartDate(slotStart, true); // true = keep duration
-                                    event.set({
-                                        endDate: slotEnd,
-                                        manuallyScheduled: false
-                                    });
-                                    // Add this time slot to the resource timeline
-                                    if (!resourceTimelines.has(resourceId)) {
-                                        resourceTimelines.set(resourceId, []);
-                                    }
-                                    resourceTimelines.get(resourceId).push({
-                                        start: slotStart,
-                                        end: slotEnd,
-                                        eventId: event.id,
-                                        eventName: event.name
-                                    });
-                                    // Update previous operation end for next operation in sequence
-                                    previousOperationEnd = slotEnd;
+                                    // First operation in job - find earliest available slot
+                                    slotStart = findEarliestSlot(resourceId, durationMs, earliestStart);
+                                    slotEnd = new Date(slotStart.getTime() + durationMs);
                                 }
                                 
-                                console.log(`  ✅ Packed "${event.name}" on ${resource.name}: ${slotStart.toLocaleString()} to ${slotEnd.toLocaleString()}`);
+                                console.log(`  📦 Scheduling "${event.name}" on "${resource.name}"`);
+                                console.log(`     Time: ${slotStart.toLocaleString()} to ${slotEnd.toLocaleString()}`);
+                                
+                                // Helper function to resolve resource for an operation
+                                function resolveResource(op) {
+                                    const asg = assignmentStore.find(a => a.eventId === op.id);
+                                    if (asg) return scheduler.resourceStore.getById(asg.resourceId);
+                                    return null;
+                                }
+                                
+                                // Update the event with the scheduled times
+                                event.setStartDate(slotStart, true);
+                                event.set({
+                                    endDate: slotEnd,
+                                    manuallyScheduled: false
+                                });
+                                
+                                // Add this time slot to the resource timeline
+                                if (!resourceTimelines.has(resourceId)) {
+                                    resourceTimelines.set(resourceId, []);
+                                }
+                                resourceTimelines.get(resourceId).push({
+                                    start: slotStart,
+                                    end: slotEnd,
+                                    eventId: event.id,
+                                    eventName: event.name
+                                });
+                                
+                                // Update previous operation end for next operation in sequence
+                                previousOperationEnd = slotEnd;
+                                
+                                console.log(`  ✅ Scheduled "${event.name}" on ${resource.name}: ${slotStart.toLocaleString()} to ${slotEnd.toLocaleString()}`);
                             } else {
                                 // Unassigned events - schedule at earliest time
                                 const endDate = new Date(earliestStart.getTime() + durationMs);
