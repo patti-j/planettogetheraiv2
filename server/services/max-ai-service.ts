@@ -5,6 +5,7 @@ import {
   playbooks,
   playbookUsage,
   insertAiMemorySchema,
+  widgets,
   type Playbook
 } from '@shared/schema';
 import { eq, and, or, gte, lte, isNull, sql, desc, asc, like } from 'drizzle-orm';
@@ -1552,6 +1553,151 @@ Return only the JSON object, no other text.`;
     }
   }
 
+  // Create table widget for canvas display
+  async createTableWidgetForCanvas(entityType: string, tableName: string, query: string, context: MaxContext): Promise<MaxResponse> {
+    try {
+      console.log(`[Max AI] Creating table widget for ${entityType} in canvas`);
+      
+      // Fetch the data first (reuse the table data logic)
+      let dataResult;
+      
+      if (entityType === 'jobs' || tableName === 'ptjobs') {
+        // Fetch jobs data
+        dataResult = await db.execute(sql`
+          SELECT 
+            j.id,
+            j.external_id,
+            j.name,
+            j.description,
+            j.priority,
+            j.need_date_time,
+            j.scheduled_status,
+            j.manufacturing_release_date
+          FROM ptjobs j
+          ORDER BY j.need_date_time ASC, j.priority DESC
+          LIMIT 100
+        `);
+      } else {
+        // Generic query for other entity types
+        dataResult = await db.execute(sql`
+          SELECT * FROM ${sql.raw(tableName)}
+          ORDER BY id DESC
+          LIMIT 100
+        `);
+      }
+      
+      if (!dataResult || !dataResult.rows || dataResult.rows.length === 0) {
+        return {
+          content: `No ${entityType} found in the system to display.`,
+          error: false
+        };
+      }
+      
+      // Define columns based on entity type
+      const columnMappings: Record<string, any[]> = {
+        'jobs': [
+          { key: 'id', label: 'ID', width: '60px' },
+          { key: 'external_id', label: 'Job ID', width: '120px' },
+          { key: 'name', label: 'Job Name', width: '200px' },
+          { key: 'priority', label: 'Priority', width: '80px' },
+          { key: 'scheduled_status', label: 'Status', width: '120px' },
+          { key: 'need_date_time', label: 'Need Date', width: '150px' },
+          { key: 'description', label: 'Description', width: '250px' }
+        ]
+      };
+      
+      const columns = columnMappings[entityType] || columnMappings['jobs'];
+      
+      // Format rows for display
+      const rows = dataResult.rows.map((row: any) => {
+        const formattedRow: any = {};
+        columns.forEach(col => {
+          if (col.key === 'need_date_time' && row[col.key]) {
+            formattedRow[col.key] = new Date(row[col.key]).toLocaleDateString();
+          } else {
+            formattedRow[col.key] = row[col.key] || 'N/A';
+          }
+        });
+        return formattedRow;
+      });
+      
+      console.log(`[Max AI] Formatted ${rows.length} ${entityType} for table widget`);
+      
+      // Create the widget configuration
+      const widgetConfig = {
+        type: 'table',
+        title: `${entityType.charAt(0).toUpperCase() + entityType.slice(1)} List`,
+        columns,
+        rows,
+        filters: [],
+        sortBy: entityType === 'jobs' ? 'need_date_time' : 'id',
+        sortOrder: 'asc'
+      };
+      
+      // Save the widget to the database
+      const widgetId = await this.saveTableWidget(widgetConfig, context.userId);
+      
+      if (widgetId) {
+        return {
+          content: `I've created a table in the Canvas showing ${rows.length} ${entityType}. The table includes key information like ${columns.slice(0, 3).map(c => c.label).join(', ')}, and more.`,
+          action: {
+            type: 'create_table' as any,
+            widgetId,
+            tableConfig: widgetConfig
+          }
+        };
+      } else {
+        return {
+          content: `I've prepared a table with ${rows.length} ${entityType}, but there was an issue saving it to the Canvas. Please try again.`,
+          error: true
+        };
+      }
+      
+    } catch (error) {
+      console.error('[Max AI] Error creating table widget:', error);
+      return {
+        content: `I encountered an error while creating the ${entityType} table. Please try again or check the system logs.`,
+        error: true
+      };
+    }
+  }
+
+  // Save table widget to database
+  private async saveTableWidget(tableConfig: any, userId: string): Promise<string | null> {
+    try {
+      console.log('[Max AI] Saving table widget to database');
+      
+      // Mark existing active widgets for this user as inactive
+      await db.execute(sql`
+        UPDATE widgets 
+        SET "isActive" = false 
+        WHERE "userId" = ${userId} 
+        AND "isActive" = true
+      `);
+      
+      // Create new widget record
+      const widgetRecord = {
+        userId,
+        type: 'table',
+        title: tableConfig.title,
+        config: {
+          ...tableConfig,
+          createdBy: 'Max AI',
+          createdAt: new Date().toISOString()
+        },
+        isActive: true
+      };
+      
+      const [savedWidget] = await db.insert(widgets).values(widgetRecord).returning();
+      console.log('[Max AI] Table widget saved with ID:', savedWidget.id);
+      
+      return savedWidget.id;
+    } catch (error) {
+      console.error('[Max AI] Error saving table widget:', error);
+      return null;
+    }
+  }
+
   // Extract filters from user query
   extractTableFilters(query: string): { column: string; value: any }[] {
     const filters: { column: string; value: any }[] = [];
@@ -1786,7 +1932,7 @@ Return only the JSON object, no other text.`;
   }
 
   // Use AI to intelligently determine user intent and target route
-  private async analyzeUserIntentWithAI(query: string): Promise<{ type: 'navigate' | 'show_data' | 'chat' | 'create_chart' | 'switch_agent' | 'show_jobs_table'; target?: string; agentId?: string; confidence: number; chartType?: string }> {
+  private async analyzeUserIntentWithAI(query: string): Promise<{ type: 'navigate' | 'show_data' | 'chat' | 'create_chart' | 'switch_agent' | 'show_jobs_table' | 'create_jobs_table'; target?: string; agentId?: string; confidence: number; chartType?: string; entityType?: string; tableName?: string }> {
     const navigationMapping = await this.getNavigationMapping();
     const routes = Object.values(navigationMapping).map(page => ({
       route: page.path,
@@ -1890,12 +2036,41 @@ Return only the JSON object, no other text.`;
       'work order', 'manufacturing order', 'production'
     ];
     const showKeywords = ['show', 'display', 'view', 'see', 'create'];
+    const canvasKeywords = ['canvas', 'in canvas', 'in the canvas', 'on canvas', 'to canvas', 'on the canvas', 'in a canvas'];
     
     const hasTableKeyword = tableKeywords.some(keyword => queryLower.includes(keyword));
     const hasEntityKeyword = entityKeywords.some(keyword => queryLower.includes(keyword));
     const hasShowKeyword = showKeywords.some(keyword => queryLower.includes(keyword));
+    const hasCanvasKeyword = canvasKeywords.some(keyword => queryLower.includes(keyword));
     
-    // Detect any table/grid/list request for entities
+    // Check if user wants to create a table in the canvas (e.g., "list jobs in canvas", "show jobs table in canvas")
+    if ((hasTableKeyword || queryLower.includes('list')) && hasEntityKeyword && hasCanvasKeyword) {
+      // Determine which entity type is being requested
+      let entityType = 'general';
+      let tableName = '';
+      
+      if (queryLower.includes('job')) {
+        entityType = 'jobs';
+        tableName = 'ptjobs';
+      } else if (queryLower.includes('resource') || queryLower.includes('equipment') || queryLower.includes('machine')) {
+        entityType = 'resources';
+        tableName = 'ptresources';
+      } else if (queryLower.includes('operation')) {
+        entityType = 'operations';
+        tableName = 'ptoperations';
+      } else if (queryLower.includes('product') || queryLower.includes('item')) {
+        entityType = 'products';
+        tableName = 'ptproducts';
+      } else if (queryLower.includes('material')) {
+        entityType = 'materials';
+        tableName = 'ptmaterials';
+      }
+      
+      console.log(`[Max AI Intent] 🎯 TABLE IN CANVAS DETECTED! Entity: ${entityType}, Query: "${query}"`);
+      return { type: 'create_jobs_table', entityType, tableName, confidence: 0.95 };
+    }
+    
+    // Detect any table/grid/list request for entities (without canvas)
     if (hasTableKeyword && hasEntityKeyword && (hasShowKeyword || queryLower.includes('of'))) {
       // Determine which entity type is being requested
       let entityType = 'general';
@@ -1942,11 +2117,11 @@ Return only the JSON object, no other text.`;
     // Check for chart creation requests with more liberal matching
     const chartKeywords = ['chart', 'graph', 'visualization', 'pie chart', 'bar chart', 'line chart', 'gauge', 'kpi', 'plot'];
     const createKeywords = ['create', 'show', 'make', 'generate', 'display', 'build'];
-    const canvasKeywords = ['canvas', 'in the canvas', 'on canvas', 'to canvas'];
+    // canvasKeywords already declared above
     
     const hasChartKeyword = chartKeywords.some(keyword => queryLower.includes(keyword));
     const hasCreateKeyword = createKeywords.some(keyword => queryLower.includes(keyword));
-    const hasCanvasKeyword = canvasKeywords.some(keyword => queryLower.includes(keyword));
+    // hasCanvasKeyword already declared above
     
     console.log(`[Max AI Intent] Query: "${query}"`);
     console.log(`[Max AI Intent] Chart keywords found: ${hasChartKeyword}`);
@@ -2135,8 +2310,14 @@ Rules:
         const intent = await this.analyzeUserIntentWithAI(query);
         
         // Handle table/grid intent for any entity (high priority)
-        if ((intent.type === 'show_table' || intent.type === 'show_jobs_table') && intent.confidence > 0.7) {
+        if ((intent.type === 'show_table' || intent.type === 'show_jobs_table' || intent.type === 'create_jobs_table') && intent.confidence > 0.7) {
           console.log(`[Max AI] Detected table intent for ${intent.entityType || 'jobs'} with confidence ${intent.confidence}`);
+          
+          // Handle table creation in canvas intent
+          if (intent.type === 'create_jobs_table') {
+            console.log(`[Max AI] Creating table widget for ${intent.entityType || 'jobs'} in canvas`);
+            return await this.createTableWidgetForCanvas(intent.entityType || 'jobs', intent.tableName || 'ptjobs', query, context);
+          }
           
           // Handle backwards compatibility for old show_jobs_table intent
           if (intent.type === 'show_jobs_table') {
