@@ -4029,6 +4029,40 @@
                         return null;
                     }
                     
+                    // Helper to identify brewing operation types
+                    function getBrewingOperationType(operationName) {
+                        const name = (operationName || '').toLowerCase();
+                        if (name.includes('mill') || name.includes('grain')) return 'milling';
+                        if (name.includes('mash')) return 'mashing';
+                        if (name.includes('lauter') || name.includes('sparge')) return 'lautering';
+                        if (name.includes('boil') || name.includes('kettle')) return 'boiling';
+                        if (name.includes('whirlpool') || name.includes('whirl')) return 'whirlpool';
+                        if (name.includes('cool') || name.includes('chill')) return 'cooling';
+                        if (name.includes('ferment') || name.includes('yeast')) return 'fermentation';
+                        if (name.includes('condition') || name.includes('mature')) return 'conditioning';
+                        if (name.includes('filter') || name.includes('clarify')) return 'filtering';
+                        if (name.includes('package') || name.includes('bottle') || name.includes('keg')) return 'packaging';
+                        return 'other';
+                    }
+                    
+                    // Helper to add buffer time between specific brewing operations
+                    function getBrewingOperationBuffer(prevType, nextType) {
+                        // Whirlpool should happen immediately after boiling (minimal buffer)
+                        if (prevType === 'boiling' && nextType === 'whirlpool') {
+                            return 5 * 60 * 1000; // 5 minutes buffer
+                        }
+                        // Cooling should happen soon after whirlpool
+                        if (prevType === 'whirlpool' && nextType === 'cooling') {
+                            return 10 * 60 * 1000; // 10 minutes buffer
+                        }
+                        // Fermentation needs proper cooling first
+                        if (prevType === 'cooling' && nextType === 'fermentation') {
+                            return 30 * 60 * 1000; // 30 minutes to ensure proper cooling
+                        }
+                        // Default buffer between other operations
+                        return 15 * 60 * 1000; // 15 minutes default
+                    }
+                    
                     // Process orphan operations first (hide them)
                     const orphans = jobOperations.get('_orphans_') || [];
                     if (orphans.length > 0) {
@@ -4070,6 +4104,9 @@
                     
                     console.log('\n🔄 Processing operations by priority and sequence...');
                     
+                    // Track jobs with active brewing chains to maintain continuity
+                    const activeBrewingChains = new Map(); // jobKey -> boolean
+                    
                     // Process each priority level
                     for (const priority of sortedPriorities) {
                         const jobsAtPriority = priorityGroups.get(priority);
@@ -4093,8 +4130,90 @@
                             
                             const scheduledInThisRound = [];
                             
-                            // Try to schedule operations that have their predecessors scheduled
+                            // First, continue any active brewing chains to maintain continuity
                             for (const [opId, { operation, job }] of unscheduledOps) {
+                                if (activeBrewingChains.has(job.jobKey)) {
+                                    const opType = getBrewingOperationType(operation.name);
+                                    
+                                    // Check if this is the next operation in the brewing chain
+                                    const predecessor = findPredecessor(operation, job.operations);
+                                    if (predecessor && operationEndTimes.has(predecessor.id)) {
+                                        const predType = getBrewingOperationType(predecessor.name);
+                                        
+                                        // These operations should stay together: boiling→whirlpool→cooling→fermentation
+                                        const isCriticalSequence = 
+                                            (predType === 'boiling' && opType === 'whirlpool') ||
+                                            (predType === 'whirlpool' && opType === 'cooling') ||
+                                            (predType === 'cooling' && opType === 'fermentation');
+                                        
+                                        if (isCriticalSequence) {
+                                            // Schedule this operation immediately to maintain continuity
+                                            const resource = getResourceForOperation(operation);
+                                            const durationMs = operation.durationMS ?? (operation.duration * 60 * 60 * 1000);
+                                            const predEnd = operationEndTimes.get(predecessor.id);
+                                            const buffer = getBrewingOperationBuffer(predType, opType);
+                                            
+                                            let earliestStart = new Date(predEnd.getTime() + buffer);
+                                            let startTime, endTime;
+                                            
+                                            if (resource) {
+                                                // For critical sequences, try to reserve the resource immediately
+                                                startTime = findEarliestSlotOnResource(resource.id, durationMs, earliestStart);
+                                                endTime = new Date(startTime.getTime() + durationMs);
+                                                
+                                                // Add to resource timeline
+                                                if (!resourceTimelines.has(resource.id)) {
+                                                    resourceTimelines.set(resource.id, []);
+                                                }
+                                                resourceTimelines.get(resource.id).push({
+                                                    start: startTime,
+                                                    end: endTime,
+                                                    eventId: operation.id,
+                                                    jobKey: job.jobKey,
+                                                    eventName: operation.name
+                                                });
+                                                
+                                                console.log(`        → [CHAIN] ${operation.name} on ${resource.name}: ${startTime.toLocaleTimeString()} - ${endTime.toLocaleTimeString()}`);
+                                            } else {
+                                                startTime = earliestStart;
+                                                endTime = new Date(startTime.getTime() + durationMs);
+                                                console.log(`        → [CHAIN] ${operation.name}: ${startTime.toLocaleTimeString()} - ${endTime.toLocaleTimeString()}`);
+                                            }
+                                            
+                                            // Update operation times
+                                            operation.set({
+                                                startDate: startTime,
+                                                endDate: endTime,
+                                                manuallyScheduled: false
+                                            });
+                                            
+                                            // Track completion time
+                                            operationEndTimes.set(operation.id, endTime);
+                                            scheduledInThisRound.push(opId);
+                                            
+                                            // Continue the chain if not at fermentation
+                                            if (opType !== 'fermentation') {
+                                                activeBrewingChains.set(job.jobKey, true);
+                                            } else {
+                                                activeBrewingChains.delete(job.jobKey); // Chain complete
+                                            }
+                                            
+                                            continue; // Skip the normal scheduling for this operation
+                                        }
+                                    }
+                                    
+                                    // If we couldn't continue the chain, clear it
+                                    activeBrewingChains.delete(job.jobKey);
+                                }
+                            }
+                            
+                            // Then schedule other operations normally
+                            for (const [opId, { operation, job }] of unscheduledOps) {
+                                // Skip if already scheduled in the chain continuation above
+                                if (scheduledInThisRound.includes(opId)) {
+                                    continue;
+                                }
+                                
                                 const resource = getResourceForOperation(operation);
                                 const durationMs = operation.durationMS ?? (operation.duration * 60 * 60 * 1000);
                                 
@@ -4108,15 +4227,40 @@
                                     continue;
                                 }
                                 
-                                // Calculate earliest start time based on TWO constraints:
+                                // Check if this starts a brewing chain
+                                const opType = getBrewingOperationType(operation.name);
+                                if (opType === 'boiling') {
+                                    activeBrewingChains.set(job.jobKey, true);
+                                }
+                                
+                                // Calculate earliest start time based on THREE constraints:
                                 // 1. Must start after predecessor in same job (if any)
                                 // 2. Resource must be available
+                                // 3. Brewing operations need proper sequencing and buffers
                                 let earliestStart;
                                 if (predecessor) {
                                     // Must start after predecessor ends
                                     const predEnd = operationEndTimes.get(predecessor.id);
-                                    earliestStart = predEnd;
-                                    console.log(`      ${operation.name} (${job.jobName}): After predecessor at ${earliestStart.toLocaleTimeString()}`);
+                                    
+                                    // Add brewing-specific buffer time if applicable
+                                    const prevType = getBrewingOperationType(predecessor.name);
+                                    const currType = getBrewingOperationType(operation.name);
+                                    const buffer = getBrewingOperationBuffer(prevType, currType);
+                                    
+                                    // Special case: Whirlpool operations should be tightly coupled to boiling
+                                    if (currType === 'whirlpool' && prevType === 'boiling') {
+                                        // Whirlpool should start almost immediately after boiling
+                                        earliestStart = new Date(predEnd.getTime() + buffer);
+                                        console.log(`      ${operation.name} (${job.jobName}): Whirlpool after boiling at ${earliestStart.toLocaleTimeString()}`);
+                                    } else if (currType === 'fermentation') {
+                                        // Fermentation should wait for proper cooling
+                                        earliestStart = new Date(predEnd.getTime() + buffer);
+                                        console.log(`      ${operation.name} (${job.jobName}): Fermentation after cooling at ${earliestStart.toLocaleTimeString()}`);
+                                    } else {
+                                        // Standard operations with normal buffer
+                                        earliestStart = new Date(predEnd.getTime() + buffer);
+                                        console.log(`      ${operation.name} (${job.jobName}): After ${predecessor.name} with ${buffer/60000}min buffer at ${earliestStart.toLocaleTimeString()}`);
+                                    }
                                 } else {
                                     // First operation - use job start date
                                     earliestStart = jobStartDates.get(job.jobKey);
