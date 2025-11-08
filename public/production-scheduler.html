@@ -1544,12 +1544,12 @@
                         console.log('First 3 resources:', resources.slice(0, 3));
                         
                         // Resources are now ordered by deployment_order from the database
-                        // No hardcoded sorting needed!
+                        // The API returns them in the correct order (deployment_order, name)
                         
                         // Add explicit sortOrder field to each resource to prevent Bryntum from re-sorting
                         resources = resources.map((resource, index) => ({
                             ...resource,
-                            sortOrder: index + 1,  // Add explicit sort order
+                            sortOrder: resource.deployment_order || (index + 1),  // Use deployment_order if available
                             // Override the numeric ID with a string to prevent numeric sorting
                             originalId: resource.id,
                             id: `resource_${index + 1}_${resource.id}`,
@@ -1557,9 +1557,9 @@
                             planning_area: resource.planning_area || resource.planning_area_name || ''
                         }));
                         
-                        console.log('✅ Resources sorted by operational sequence:');
+                        console.log('✅ Resources ordered by deployment_order from database:');
                         resources.forEach((r, idx) => {
-                            console.log(`  ${idx + 1}. ${r.name} (sortOrder: ${r.sortOrder}, id: ${r.id}, planning_area: ${r.planning_area || 'NONE'})`);
+                            console.log(`  ${idx + 1}. ${r.name} (deployment_order: ${r.deployment_order}, sortOrder: ${r.sortOrder}, id: ${r.id})`);
                         });
                     } else {
                         console.error('❌ Failed to fetch resources:', resourcesResponse.status);
