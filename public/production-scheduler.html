@@ -1159,15 +1159,26 @@
         <span id="resourceUtilization">Resource utilization: --</span>
     </div>
 
-    <!-- Initialize global bryntum object before loading UMD -->
+    <!-- Initialize CommonJS shim for Bryntum (the file is CommonJS, not UMD) -->
     <script>
-        // Ensure global bryntum object exists for UMD bundle
+        // Create CommonJS shim for Bryntum library
         window.bryntum = window.bryntum || {};
-        console.log('🔧 Initialized window.bryntum object');
+        window.exports = window.bryntum;
+        window.module = { exports: window.bryntum };
+        console.log('🔧 Created CommonJS shim for Bryntum');
     </script>
     
-    <!-- Load Bryntum Scheduler Pro UMD (synchronous load required) -->
+    <!-- Load Bryntum Scheduler Pro (CommonJS format with shim) -->
     <script id="bryntum-script" src="/schedulerpro.umd.js?v=633"></script>
+    
+    <!-- Ensure Bryntum is accessible globally after load -->
+    <script>
+        // After CommonJS load, ensure global access
+        if (window.module && window.module.exports) {
+            window.bryntum = window.module.exports;
+            console.log('✅ Bryntum library loaded via CommonJS shim:', Object.keys(window.bryntum).slice(0, 10));
+        }
+    </script>
     
     <script>
         console.log('🔥 SCHEDULER SCRIPT STARTING...');
@@ -1218,17 +1229,17 @@
             let intervalCleared = false;
             
             const checkInterval = setInterval(() => {
-                // Check multiple possible locations for SchedulerPro (from UMD bundle)
-                if (typeof bryntum !== 'undefined' && bryntum.schedulerpro && bryntum.schedulerpro.SchedulerPro) {
+                // Check for SchedulerPro in the CommonJS exports
+                if (typeof bryntum !== 'undefined' && bryntum.SchedulerPro) {
                     if (!intervalCleared) {
                         clearInterval(checkInterval);
                         intervalCleared = true;
                         if (timeoutHandle) {
                             clearTimeout(timeoutHandle);
                         }
-                        console.log('✅ Bryntum SchedulerPro loaded at bryntum.schedulerpro.SchedulerPro');
+                        console.log('✅ Bryntum SchedulerPro loaded at bryntum.SchedulerPro');
                         // Make SchedulerPro globally available for easier access
-                        window.SchedulerPro = bryntum.schedulerpro.SchedulerPro;
+                        window.SchedulerPro = bryntum.SchedulerPro;
                         callback();
                     }
                 } else if (typeof SchedulerPro !== 'undefined') {
