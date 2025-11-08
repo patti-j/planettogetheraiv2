@@ -541,13 +541,13 @@ Format as: "Based on what I remember about you: [relevant info]" or return empty
           j.scheduled_status,
           j.manufacturing_release_date,
           COUNT(DISTINCT o.id) as total_operations,
-          COUNT(DISTINCT CASE WHEN o.status = 'Complete' THEN o.id END) as completed_operations,
-          COUNT(DISTINCT CASE WHEN o.status = 'InProgress' THEN o.id END) as in_progress_operations,
-          COUNT(DISTINCT CASE WHEN o.status = 'Started' THEN o.id END) as started_operations,
-          MIN(o.scheduled_start_date_time) as first_op_start,
-          MAX(o.scheduled_end_date_time) as last_op_end
+          COUNT(DISTINCT CASE WHEN o.percent_finished = 100 THEN o.id END) as completed_operations,
+          COUNT(DISTINCT CASE WHEN o.percent_finished > 0 AND o.percent_finished < 100 THEN o.id END) as in_progress_operations,
+          COUNT(DISTINCT CASE WHEN o.percent_finished > 0 THEN o.id END) as started_operations,
+          MIN(o.scheduled_start) as first_op_start,
+          MAX(o.scheduled_end) as last_op_end
         FROM ptjobs j
-        LEFT JOIN ptjoboperations o ON j.id = o.job_id OR j.external_id = o.job_number
+        LEFT JOIN ptjoboperations o ON j.id = o.job_id
         WHERE j.id::text = ${jobId} OR j.external_id = ${jobId}
         GROUP BY j.id, j.external_id, j.name, j.description, 
                  j.priority, j.need_date_time, j.scheduled_status,
