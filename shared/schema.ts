@@ -279,6 +279,18 @@ export const widgetTypes = pgTable("widget_types", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// Canvas widgets for Max AI (separate from dashboard widgets)
+export const canvasWidgets = pgTable("canvas_widgets", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  type: varchar("type", { length: 100 }).notNull(), // 'table', 'chart', etc.
+  title: varchar("title", { length: 255 }).notNull(),
+  config: jsonb("config").default(sql`'{}'::jsonb`),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 // ============================================
 // PT Manufacturing Tables (Minimal Schema)
 // ============================================

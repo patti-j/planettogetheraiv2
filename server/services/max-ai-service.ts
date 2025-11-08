@@ -1674,14 +1674,14 @@ Return only the JSON object, no other text.`;
   // Save table widget to database
   private async saveTableWidget(tableConfig: any, userId: string): Promise<string | null> {
     try {
-      console.log('[Max AI] Saving table widget to database');
+      console.log('[Max AI] Saving table widget to canvas_widgets table');
       
       // Mark existing active widgets for this user as inactive
       await db.execute(sql`
-        UPDATE widgets 
-        SET "isActive" = false 
-        WHERE "userId" = ${userId} 
-        AND "isActive" = true
+        UPDATE canvas_widgets 
+        SET "is_active" = false 
+        WHERE "user_id" = ${userId} 
+        AND "is_active" = true
       `);
       
       // Create new widget record
@@ -1697,8 +1697,10 @@ Return only the JSON object, no other text.`;
         isActive: true
       };
       
-      const [savedWidget] = await db.insert(widgets).values(widgetRecord).returning();
-      console.log('[Max AI] Table widget saved with ID:', savedWidget.id);
+      // Import canvasWidgets table from schema
+      const { canvasWidgets } = await import('@shared/schema');
+      const [savedWidget] = await db.insert(canvasWidgets).values(widgetRecord).returning();
+      console.log('[Max AI] Table widget saved to canvas_widgets with ID:', savedWidget.id);
       
       return savedWidget.id;
     } catch (error) {
