@@ -1162,21 +1162,33 @@
     <!-- Initialize CommonJS shim for Bryntum (the file is CommonJS, not UMD) -->
     <script>
         // Create CommonJS shim for Bryntum library
-        window.bryntum = window.bryntum || {};
-        window.exports = window.bryntum;
-        window.module = { exports: window.bryntum };
+        // DO NOT pre-create window.bryntum - let the library create it
+        window.exports = {};
+        window.module = { exports: {} };
         console.log('🔧 Created CommonJS shim for Bryntum');
     </script>
     
     <!-- Load Bryntum Scheduler Pro (CommonJS format with shim) -->
-    <script id="bryntum-script" src="/schedulerpro.umd.js?v=633"></script>
+    <script id="bryntum-script" src="/schedulerpro.umd.js?v=634"></script>
     
-    <!-- Ensure Bryntum is accessible globally after load -->
+    <!-- Map CommonJS exports to window.bryntum after load -->
     <script>
-        // After CommonJS load, ensure global access
-        if (window.module && window.module.exports) {
+        // After CommonJS load, map exports to window.bryntum
+        console.log('🔍 Checking CommonJS exports...');
+        console.log('module.exports keys:', Object.keys(window.module?.exports || {}).length);
+        console.log('exports keys:', Object.keys(window.exports || {}).length);
+        
+        // The library may populate either module.exports or exports directly
+        if (window.module && window.module.exports && Object.keys(window.module.exports).length > 0) {
             window.bryntum = window.module.exports;
-            console.log('✅ Bryntum library loaded via CommonJS shim:', Object.keys(window.bryntum).slice(0, 10));
+            console.log('✅ Bryntum loaded from module.exports:', Object.keys(window.bryntum).slice(0, 10).join(', '));
+        } else if (window.exports && Object.keys(window.exports).length > 0) {
+            window.bryntum = window.exports;
+            console.log('✅ Bryntum loaded from exports:', Object.keys(window.bryntum).slice(0, 10).join(', '));
+        } else {
+            console.error('❌ CommonJS shim failed - no exports found');
+            console.log('Debug - module:', window.module);
+            console.log('Debug - exports:', window.exports);
         }
     </script>
     
