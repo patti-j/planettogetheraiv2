@@ -8,7 +8,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 
 import { cn } from '@/lib/utils';
 import { usePermissions, useAuth } from '@/hooks/useAuth';
-import { useNavigation } from '@/contexts/NavigationContext';
+import { useNavigationAdapter } from '@/adapters/NavigationAdapter';
 import { useSplitScreen } from '@/contexts/SplitScreenContext';
 import { navigationGroups } from '@/config/navigation-menu';
 import { useQuery } from '@tanstack/react-query';
@@ -51,7 +51,7 @@ export function NavigationMenuContent({ isPinned, onTogglePin, onClose, isOpen }
     enabled: !!user?.id,
   });
   
-  // Safe navigation context access with fallback
+  // Safe navigation adapter access with fallback
   let addRecentPage = (path: string, label: string, icon?: string) => {};
   let recentPages: any[] = [];
   let togglePinPage = (path: string) => {};
@@ -61,7 +61,7 @@ export function NavigationMenuContent({ isPinned, onTogglePin, onClose, isOpen }
   let isFavorite = (path: string) => false;
   let clearFavorites = () => {};
   try {
-    const navigation = useNavigation();
+    const navigation = useNavigationAdapter();
     addRecentPage = navigation.addRecentPage;
     recentPages = navigation.recentPages || [];
     togglePinPage = navigation.togglePinPage;
@@ -71,7 +71,7 @@ export function NavigationMenuContent({ isPinned, onTogglePin, onClose, isOpen }
     isFavorite = navigation.isFavorite;
     clearFavorites = navigation.clearFavorites;
   } catch (error) {
-    console.warn('NavigationContext not available, using fallback:', error);
+    console.warn('NavigationAdapter not available, using fallback:', error);
   }
 
   // Get Lucide icon component from icon name

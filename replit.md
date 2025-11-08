@@ -63,6 +63,7 @@ These files must be synchronized for features like trigger arrays, handler metho
 -   **AI Automation Rules System**: Comprehensive system for automatic resolution of recurring issues from AI recommendations, with inline enablement, advanced options, rule management, and safety features.
 -   **AI Recommendations Resolution**: Interactive resolution workflows with "Resolve Now" and "Show Plan First" options.
 -   **Global Control Tower**: Enhanced with KPI target management, weighted performance tracking, autonomous optimization, and real-time plant monitoring.
+-   **Plant-Specific Onboarding System**: Comprehensive onboarding assistant that tracks implementation progress by plant with template support, phase tracking, metrics monitoring, and progress visualization. Enables customers to onboard one plant at a time with reusable templates.
 -   **Production Scheduler Architecture**: Hybrid iframe/React architecture loading Bryntum Scheduler Pro via a backend API route.
 -   **Voice Chat**: Integrates real-time voice chat with OpenAI's gpt-realtime-mini model using WebSocket and SSE.
 -   **Demand Forecasting**: Native React-based forecasting application with SQL Server integration, dynamic table/column selection, and time-series forecasting with Recharts visualization, including intermittent demand handling.

@@ -15481,6 +15481,338 @@ router.post('/api/admin/import-production-data', async (req, res) => {
 });
 
 // ============================================
+// Plant-Specific Onboarding API Endpoints
+// ============================================
+
+// Get all onboarding templates
+router.get("/api/onboarding/templates", requireAuth, async (req, res) => {
+  try {
+    const { isPublic } = req.query;
+    const userId = req.session?.user?.id || 1;
+    
+    let query = sql`
+      SELECT 
+        ot.id,
+        ot.name,
+        ot.description,
+        ot.industry,
+        ot.plant_type,
+        ot.phases,
+        ot.goals,
+        ot.estimated_duration_days,
+        ot.is_public,
+        ot.created_at,
+        u.username as created_by_name
+      FROM onboarding_templates ot
+      LEFT JOIN users u ON ot.created_by = u.id
+    `;
+
+    if (isPublic === 'true') {
+      query = sql`${query} WHERE ot.is_public = true`;
+    } else {
+      query = sql`${query} WHERE (ot.is_public = true OR ot.created_by = ${userId})`;
+    }
+    
+    query = sql`${query} ORDER BY ot.created_at DESC`;
+    
+    const result = await db.execute(query);
+    res.json(result.rows || []);
+  } catch (error: any) {
+    console.error('Error fetching onboarding templates:', error);
+    res.status(500).json({ error: 'Failed to fetch templates' });
+  }
+});
+
+// Create new onboarding template
+router.post("/api/onboarding/templates", requireAuth, async (req, res) => {
+  try {
+    const { name, description, industry, plantType, phases, goals, estimatedDurationDays, isPublic } = req.body;
+    const userId = req.session?.user?.id || 1;
+    
+    const result = await db.execute(sql`
+      INSERT INTO onboarding_templates (
+        name, description, industry, plant_type, phases, goals, 
+        estimated_duration_days, is_public, created_by, created_at, updated_at
+      ) VALUES (
+        ${name}, ${description}, ${industry}, ${plantType}, 
+        ${JSON.stringify(phases)}, ${JSON.stringify(goals)}, 
+        ${estimatedDurationDays}, ${isPublic || false}, ${userId}, NOW(), NOW()
+      )
+      RETURNING *
+    `);
+    
+    res.status(201).json(result.rows[0]);
+  } catch (error: any) {
+    console.error('Error creating onboarding template:', error);
+    res.status(500).json({ error: 'Failed to create template' });
+  }
+});
+
+// Get plant-specific onboarding progress
+router.get("/api/onboarding/plants", requireAuth, async (req, res) => {
+  try {
+    const { plantId } = req.query;
+    
+    let query = sql`
+      SELECT 
+        po.id,
+        po.plant_id,
+        po.template_id,
+        po.name,
+        po.status,
+        po.start_date,
+        po.target_completion_date,
+        po.actual_completion_date,
+        po.overall_progress,
+        po.current_phase,
+        po.custom_phases,
+        po.custom_goals,
+        po.notes,
+        po.created_at,
+        po.updated_at,
+        p.plant_name,
+        ot.name as template_name,
+        u1.username as created_by_name,
+        u2.username as assigned_to_name
+      FROM plant_onboarding po
+      LEFT JOIN ptplants p ON po.plant_id = p.plant_code
+      LEFT JOIN onboarding_templates ot ON po.template_id = ot.id
+      LEFT JOIN users u1 ON po.created_by = u1.id
+      LEFT JOIN users u2 ON po.assigned_to = u2.id
+    `;
+    
+    if (plantId) {
+      query = sql`${query} WHERE po.plant_id = ${parseInt(plantId as string)}`;
+    }
+    
+    query = sql`${query} ORDER BY po.created_at DESC`;
+    
+    const result = await db.execute(query);
+    res.json(result.rows || []);
+  } catch (error: any) {
+    console.error('Error fetching plant onboarding:', error);
+    res.status(500).json({ error: 'Failed to fetch plant onboarding data' });
+  }
+});
+
+// Create plant onboarding from template
+router.post("/api/onboarding/plants", requireAuth, async (req, res) => {
+  try {
+    const { 
+      plantId, 
+      templateId, 
+      name, 
+      startDate, 
+      targetCompletionDate,
+      assignedTo,
+      notes 
+    } = req.body;
+    const userId = req.session?.user?.id || 1;
+    
+    // If template is provided, fetch its phases and goals
+    let templateData = null;
+    if (templateId) {
+      const templateResult = await db.execute(sql`
+        SELECT phases, goals FROM onboarding_templates WHERE id = ${templateId}
+      `);
+      templateData = templateResult.rows[0];
+    }
+    
+    const result = await db.execute(sql`
+      INSERT INTO plant_onboarding (
+        plant_id, template_id, name, status, start_date, 
+        target_completion_date, custom_phases, custom_goals,
+        notes, created_by, assigned_to, created_at, updated_at
+      ) VALUES (
+        ${plantId}, ${templateId}, ${name}, 'not-started', ${startDate},
+        ${targetCompletionDate}, ${templateData ? JSON.stringify(templateData.phases) : null},
+        ${templateData ? JSON.stringify(templateData.goals) : null},
+        ${notes}, ${userId}, ${assignedTo || userId}, NOW(), NOW()
+      )
+      RETURNING *
+    `);
+    
+    const onboardingId = result.rows[0].id;
+    
+    // Create phase entries if template data exists
+    if (templateData && templateData.phases) {
+      for (const phase of templateData.phases as any[]) {
+        await db.execute(sql`
+          INSERT INTO plant_onboarding_phases (
+            onboarding_id, phase_id, phase_name, status, progress,
+            tasks, milestones, total_tasks, updated_at
+          ) VALUES (
+            ${onboardingId}, ${phase.id}, ${phase.name}, 'not-started', 0,
+            ${JSON.stringify(phase.tasks || [])}, 
+            ${JSON.stringify(phase.milestones || [])},
+            ${(phase.tasks || []).length}, NOW()
+          )
+        `);
+      }
+    }
+    
+    res.status(201).json(result.rows[0]);
+  } catch (error: any) {
+    console.error('Error creating plant onboarding:', error);
+    res.status(500).json({ error: 'Failed to create plant onboarding' });
+  }
+});
+
+// Update plant onboarding progress
+router.patch("/api/onboarding/plants/:id", requireAuth, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status, overallProgress, currentPhase, notes } = req.body;
+    const userId = req.session?.user?.id || 1;
+    
+    let updateFields = [];
+    let updateValues = [];
+    
+    if (status !== undefined) {
+      updateFields.push('status = $' + (updateValues.push(status)));
+    }
+    if (overallProgress !== undefined) {
+      updateFields.push('overall_progress = $' + (updateValues.push(overallProgress)));
+    }
+    if (currentPhase !== undefined) {
+      updateFields.push('current_phase = $' + (updateValues.push(currentPhase)));
+    }
+    if (notes !== undefined) {
+      updateFields.push('notes = $' + (updateValues.push(notes)));
+    }
+    
+    if (status === 'completed') {
+      updateFields.push('actual_completion_date = NOW()');
+    }
+    
+    updateFields.push('updated_at = NOW()');
+    updateValues.push(parseInt(id));
+    
+    const query = `
+      UPDATE plant_onboarding 
+      SET ${updateFields.join(', ')}
+      WHERE id = $${updateValues.length}
+      RETURNING *
+    `;
+    
+    const result = await directSql.query(query, updateValues);
+    
+    if (!result.rows || result.rows.length === 0) {
+      return res.status(404).json({ error: 'Onboarding not found' });
+    }
+    
+    res.json(result.rows[0]);
+  } catch (error: any) {
+    console.error('Error updating plant onboarding:', error);
+    res.status(500).json({ error: 'Failed to update plant onboarding' });
+  }
+});
+
+// Get phases for a plant onboarding
+router.get("/api/onboarding/plants/:id/phases", requireAuth, async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    const result = await db.execute(sql`
+      SELECT * FROM plant_onboarding_phases
+      WHERE onboarding_id = ${parseInt(id)}
+      ORDER BY phase_id
+    `);
+    
+    res.json(result.rows || []);
+  } catch (error: any) {
+    console.error('Error fetching onboarding phases:', error);
+    res.status(500).json({ error: 'Failed to fetch phases' });
+  }
+});
+
+// Update phase progress
+router.patch("/api/onboarding/phases/:id", requireAuth, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status, progress, completedTasks, notes } = req.body;
+    const userId = req.session?.user?.id || 1;
+    
+    const result = await db.execute(sql`
+      UPDATE plant_onboarding_phases
+      SET 
+        status = COALESCE(${status}, status),
+        progress = COALESCE(${progress}, progress),
+        completed_tasks = COALESCE(${completedTasks}, completed_tasks),
+        notes = COALESCE(${notes}, notes),
+        updated_by = ${userId},
+        updated_at = NOW()
+      WHERE id = ${parseInt(id)}
+      RETURNING *
+    `);
+    
+    if (!result.rows || result.rows.length === 0) {
+      return res.status(404).json({ error: 'Phase not found' });
+    }
+    
+    // Update overall progress in parent onboarding
+    const phaseData = result.rows[0];
+    await db.execute(sql`
+      UPDATE plant_onboarding po
+      SET overall_progress = (
+        SELECT AVG(progress)::integer
+        FROM plant_onboarding_phases
+        WHERE onboarding_id = ${phaseData.onboarding_id}
+      ),
+      updated_at = NOW()
+      WHERE id = ${phaseData.onboarding_id}
+    `);
+    
+    res.json(result.rows[0]);
+  } catch (error: any) {
+    console.error('Error updating phase:', error);
+    res.status(500).json({ error: 'Failed to update phase' });
+  }
+});
+
+// Get onboarding metrics
+router.get("/api/onboarding/plants/:id/metrics", requireAuth, async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    const result = await db.execute(sql`
+      SELECT * FROM plant_onboarding_metrics
+      WHERE onboarding_id = ${parseInt(id)}
+      ORDER BY measured_at DESC
+    `);
+    
+    res.json(result.rows || []);
+  } catch (error: any) {
+    console.error('Error fetching metrics:', error);
+    res.status(500).json({ error: 'Failed to fetch metrics' });
+  }
+});
+
+// Add onboarding metric
+router.post("/api/onboarding/plants/:id/metrics", requireAuth, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { metricName, metricValue, metricUnit, targetValue, status, notes } = req.body;
+    
+    const result = await db.execute(sql`
+      INSERT INTO plant_onboarding_metrics (
+        onboarding_id, metric_name, metric_value, metric_unit,
+        target_value, status, notes, measured_at
+      ) VALUES (
+        ${parseInt(id)}, ${metricName}, ${metricValue}, ${metricUnit},
+        ${targetValue}, ${status}, ${notes}, NOW()
+      )
+      RETURNING *
+    `);
+    
+    res.status(201).json(result.rows[0]);
+  } catch (error: any) {
+    console.error('Error adding metric:', error);
+    res.status(500).json({ error: 'Failed to add metric' });
+  }
+});
+
+// ============================================
 // Routing Intelligence API Endpoints
 // ============================================
 

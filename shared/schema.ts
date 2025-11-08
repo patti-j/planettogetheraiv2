@@ -3582,6 +3582,141 @@ export const insertAutomationExecutionSchema = createInsertSchema(automationExec
 export type InsertAutomationExecution = z.infer<typeof insertAutomationExecutionSchema>;
 export type AutomationExecution = typeof automationExecutions.$inferSelect;
 
+// ============================================
+// Plant-Specific Onboarding System
+// ============================================
+
+export const onboardingTemplates = pgTable("onboarding_templates", {
+  id: serial("id").primaryKey(),
+  name: varchar("name", { length: 255 }).notNull(),
+  description: text("description"),
+  industry: varchar("industry", { length: 100 }),
+  plantType: varchar("plant_type", { length: 100 }), // e.g., "brewery", "bottling", "packaging"
+  phases: jsonb("phases").notNull(), // Array of phase objects with tasks, milestones
+  goals: jsonb("goals"), // Template goals and success metrics
+  estimatedDuration: integer("estimated_duration_days"),
+  isPublic: boolean("is_public").default(false), // Whether template can be used by other organizations
+  createdBy: integer("created_by").references(() => users.id),
+  organizationId: integer("organization_id"), // For private templates
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow()
+});
+
+export const plantOnboarding = pgTable("plant_onboarding", {
+  id: serial("id").primaryKey(),
+  plantId: integer("plant_id").references(() => ptplants.plantCode).notNull(),
+  templateId: integer("template_id").references(() => onboardingTemplates.id),
+  name: varchar("name", { length: 255 }).notNull(),
+  status: varchar("status", { length: 50 }).default("not-started"), // not-started, in-progress, completed, paused
+  startDate: date("start_date"),
+  targetCompletionDate: date("target_completion_date"),
+  actualCompletionDate: date("actual_completion_date"),
+  overallProgress: integer("overall_progress").default(0), // 0-100
+  currentPhase: varchar("current_phase", { length: 100 }),
+  customPhases: jsonb("custom_phases"), // Modified phases from template or custom phases
+  customGoals: jsonb("custom_goals"), // Modified or additional goals
+  notes: text("notes"),
+  createdBy: integer("created_by").references(() => users.id),
+  assignedTo: integer("assigned_to").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow()
+});
+
+export const plantOnboardingPhases = pgTable("plant_onboarding_phases", {
+  id: serial("id").primaryKey(),
+  onboardingId: integer("onboarding_id").references(() => plantOnboarding.id).notNull(),
+  phaseId: varchar("phase_id", { length: 50 }).notNull(), // e.g., "discovery", "setup", "training"
+  phaseName: varchar("phase_name", { length: 255 }).notNull(),
+  status: varchar("status", { length: 50 }).default("not-started"),
+  progress: integer("progress").default(0),
+  startDate: date("start_date"),
+  endDate: date("end_date"),
+  tasks: jsonb("tasks"), // Array of task objects
+  milestones: jsonb("milestones"), // Array of milestone objects
+  completedTasks: integer("completed_tasks").default(0),
+  totalTasks: integer("total_tasks").default(0),
+  notes: text("notes"),
+  updatedBy: integer("updated_by").references(() => users.id),
+  updatedAt: timestamp("updated_at").defaultNow()
+});
+
+export const plantOnboardingTasks = pgTable("plant_onboarding_tasks", {
+  id: serial("id").primaryKey(),
+  phaseId: integer("phase_id").references(() => plantOnboardingPhases.id).notNull(),
+  taskId: varchar("task_id", { length: 50 }).notNull(),
+  title: varchar("title", { length: 255 }).notNull(),
+  description: text("description"),
+  priority: varchar("priority", { length: 20 }).default("medium"), // high, medium, low
+  status: varchar("status", { length: 50 }).default("pending"), // pending, in-progress, completed, skipped
+  assignedTo: integer("assigned_to").references(() => users.id),
+  dueDate: date("due_date"),
+  completedDate: date("completed_date"),
+  estimatedHours: integer("estimated_hours"),
+  actualHours: integer("actual_hours"),
+  dependencies: jsonb("dependencies"), // Array of task IDs
+  attachments: jsonb("attachments"), // Array of file references
+  comments: jsonb("comments"), // Array of comment objects
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow()
+});
+
+export const plantOnboardingMetrics = pgTable("plant_onboarding_metrics", {
+  id: serial("id").primaryKey(),
+  onboardingId: integer("onboarding_id").references(() => plantOnboarding.id).notNull(),
+  metricName: varchar("metric_name", { length: 100 }).notNull(),
+  metricValue: decimal("metric_value"),
+  metricUnit: varchar("metric_unit", { length: 50 }),
+  targetValue: decimal("target_value"),
+  status: varchar("status", { length: 50 }), // on-track, at-risk, behind
+  measuredAt: timestamp("measured_at").defaultNow(),
+  notes: text("notes")
+});
+
+export const plantOnboardingDocuments = pgTable("plant_onboarding_documents", {
+  id: serial("id").primaryKey(),
+  onboardingId: integer("onboarding_id").references(() => plantOnboarding.id).notNull(),
+  documentType: varchar("document_type", { length: 100 }).notNull(), // e.g., "training-material", "sop", "configuration"
+  documentName: varchar("document_name", { length: 255 }).notNull(),
+  documentUrl: text("document_url"),
+  fileSize: integer("file_size"),
+  mimeType: varchar("mime_type", { length: 100 }),
+  version: varchar("version", { length: 20 }),
+  uploadedBy: integer("uploaded_by").references(() => users.id),
+  uploadedAt: timestamp("uploaded_at").defaultNow()
+});
+
+// Create insert schemas and types for Plant Onboarding tables
+export const insertOnboardingTemplateSchema = createInsertSchema(onboardingTemplates).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true
+});
+export type InsertOnboardingTemplate = z.infer<typeof insertOnboardingTemplateSchema>;
+export type OnboardingTemplate = typeof onboardingTemplates.$inferSelect;
+
+export const insertPlantOnboardingSchema = createInsertSchema(plantOnboarding).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true
+});
+export type InsertPlantOnboarding = z.infer<typeof insertPlantOnboardingSchema>;
+export type PlantOnboarding = typeof plantOnboarding.$inferSelect;
+
+export const insertPlantOnboardingPhaseSchema = createInsertSchema(plantOnboardingPhases).omit({
+  id: true,
+  updatedAt: true
+});
+export type InsertPlantOnboardingPhase = z.infer<typeof insertPlantOnboardingPhaseSchema>;
+export type PlantOnboardingPhase = typeof plantOnboardingPhases.$inferSelect;
+
+export const insertPlantOnboardingTaskSchema = createInsertSchema(plantOnboardingTasks).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true
+});
+export type InsertPlantOnboardingTask = z.infer<typeof insertPlantOnboardingTaskSchema>;
+export type PlantOnboardingTask = typeof plantOnboardingTasks.$inferSelect;
+
 // Create insert schemas and types for tours
 export const insertTourSchema = createInsertSchema(tours).omit({
   id: true,
