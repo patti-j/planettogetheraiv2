@@ -1543,51 +1543,8 @@
                         console.log('✅ Resources fetched successfully:', resources.length);
                         console.log('First 3 resources:', resources.slice(0, 3));
                         
-                        // CRITICAL: Sort resources to ensure proper grouping 
-                        // (fermentation tanks together, bright tanks together, packaging together)
-                        // Define order for resource types
-                        const getOrder = (name) => {
-                            const lowerName = name.toLowerCase();
-                            // 1. MILLING (top)
-                            if (lowerName.includes('mill')) return 1;
-                            // 2. MASHING
-                            if (lowerName.includes('mash')) return 2;
-                            // 3. LAUTERING
-                            if (lowerName.includes('lauter')) return 3;
-                            // 4. BOILING/KETTLE
-                            if (lowerName.includes('boil') || lowerName.includes('kettle')) return 4;
-                            // 5. WHIRLPOOL
-                            if (lowerName.includes('whirlpool')) return 5;
-                            // 6. COOLING
-                            if (lowerName.includes('cool')) return 6;
-                            // 7. ALL FERMENTATION TANKS (grouped together)
-                            if (lowerName.includes('ferment')) return 7;
-                            // 8. ALL BRIGHT/CONDITIONING TANKS (grouped together)
-                            if (lowerName.includes('bright') || lowerName.includes('condition')) return 8;
-                            // 9. PASTEURIZATION
-                            if (lowerName.includes('pasteur')) return 9;
-                            // 10. ALL PACKAGING/FILLING (bottling and canning grouped together)
-                            if (lowerName.includes('bottle') || lowerName.includes('can') || lowerName.includes('filler') || lowerName.includes('packag')) return 10;
-                            // 11. Any other resources
-                            return 11;
-                        };
-                        
-                        // Sort resources and add explicit sortOrder field
-                        resources.sort((a, b) => {
-                            const aName = (a.name || '').toLowerCase();
-                            const bName = (b.name || '').toLowerCase();
-                            
-                            const aOrder = getOrder(aName);
-                            const bOrder = getOrder(bName);
-                            
-                            // First sort by type order
-                            if (aOrder !== bOrder) {
-                                return aOrder - bOrder;
-                            }
-                            
-                            // Within same type, sort alphabetically by name
-                            return aName.localeCompare(bName);
-                        });
+                        // Resources are now ordered by deployment_order from the database
+                        // No hardcoded sorting needed!
                         
                         // Add explicit sortOrder field to each resource to prevent Bryntum from re-sorting
                         resources = resources.map((resource, index) => ({
