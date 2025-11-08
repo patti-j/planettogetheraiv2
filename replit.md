@@ -54,6 +54,7 @@ These files must be synchronized for features like trigger arrays, handler metho
 -   **Inventory Management**: Stock-centric system tracking specific records.
 -   **Master Data Management**: Unified interface with AI-powered modification and validation.
 -   **Algorithm Requirements Management System**: Manages optimization algorithms (functional/policy requirements, priorities, validation, API for CRUD).
+-   **Resource Deployment Ordering**: Database-driven resource ordering system using deployment_order field in ptresources table. Resources are automatically ordered by their position in the production flow (milling → mashing → lautering → boiling → packaging, etc.). Management interface at `/resource-deployment-order` allows drag-and-drop reordering.
 -   **Production Scheduling**: Visual Gantt chart with operation sequencer and algorithms (ASAP, ALAP, Drum/TOC), auto-save, calendar management, theme switching, and enhanced version control with snapshots, rollback, and comprehensive version comparison.
 -   **Dashboarding & Analytics**: UI Design Studio for custom visualizations, AI-powered dashboard generation, and a drag-and-drop designer.
 -   **Role-Based Access Control**: Unified permission system with feature-action permissions.
