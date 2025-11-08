@@ -4008,39 +4008,54 @@
                         // Sort timeline by start time (should already be sorted, but ensure it)
                         timeline.sort((a, b) => a.start.getTime() - b.start.getTime());
                         
+                        // CRITICAL FIX: Advance earliestPossibleStart past any overlapping operations
+                        let adjustedEarliestStart = earliestPossibleStart.getTime();
+                        
+                        // Check each existing operation on this resource
+                        for (const slot of timeline) {
+                            const slotStart = slot.start.getTime();
+                            const slotEnd = slot.end.getTime();
+                            
+                            // If our earliest start falls within an existing operation, push it to after that operation
+                            if (adjustedEarliestStart >= slotStart && adjustedEarliestStart < slotEnd) {
+                                console.log(`    ⚠️ Earliest start conflicts with existing operation, moving from ${new Date(adjustedEarliestStart).toLocaleString()} to ${slot.end.toLocaleString()}`);
+                                adjustedEarliestStart = slotEnd;
+                            }
+                        }
+                        
+                        // Now use the adjusted earliest start for finding slots
+                        const earliestTime = adjustedEarliestStart;
+                        
                         // Check if we can fit before the first operation
-                        // CRITICAL FIX: Must check that we can start at or after earliestPossibleStart
-                        // AND still finish before the first operation starts
                         const firstOpStart = timeline[0].start.getTime();
-                        const earliestTime = earliestPossibleStart.getTime();
                         
                         if (earliestTime + duration <= firstOpStart) {
-                            // We can fit before the first operation, starting at earliest possible time
-                            return earliestPossibleStart;
+                            // We can fit before the first operation
+                            return new Date(earliestTime);
                         }
                         
                         // Check gaps between operations (bin packing)
                         for (let i = 0; i < timeline.length - 1; i++) {
-                            const gapStart = timeline[i].end;
-                            const gapEnd = timeline[i + 1].start;
-                            const gapSize = gapEnd.getTime() - gapStart.getTime();
+                            const gapStart = timeline[i].end.getTime();
+                            const gapEnd = timeline[i + 1].start.getTime();
+                            const gapSize = gapEnd - gapStart;
                             
                             // Check if this gap is big enough and respects earliest start
                             if (gapSize >= duration) {
-                                // The operation must start at or after earliestPossibleStart
-                                const actualStart = Math.max(gapStart.getTime(), earliestPossibleStart.getTime());
+                                // The operation must start at or after earliestTime
+                                const actualStart = Math.max(gapStart, earliestTime);
                                 
                                 // Check if starting at actualStart, we can still fit within the gap
-                                if (actualStart + duration <= gapEnd.getTime()) {
+                                if (actualStart + duration <= gapEnd) {
                                     return new Date(actualStart);
                                 }
                             }
                         }
                         
                         // No gaps found, schedule after the last operation
-                        const lastEnd = timeline[timeline.length - 1].end;
-                        // CRITICAL: Must respect earliestPossibleStart constraint for sequence order
-                        return new Date(Math.max(lastEnd.getTime(), earliestPossibleStart.getTime()));
+                        const lastEnd = timeline[timeline.length - 1].end.getTime();
+                        // Must respect the adjusted earliest start constraint
+                        return new Date(Math.max(lastEnd, earliestTime));
                     }
                     
                     // ============================================================================
@@ -4370,6 +4385,15 @@
                     // due to sequence constraints (must finish before successor starts)
                     const cal = resource.calendar || resource.project?.calendar;
                     let right = new Date(latestEnd);
+                    
+                    // CRITICAL FIX: Adjust latestEnd backwards if it falls within an occupied slot
+                    // This prevents overlaps by ensuring we never schedule within an existing operation
+                    for (const slot of merged) {
+                        if (right.getTime() > slot.start.getTime() && right.getTime() <= slot.end.getTime()) {
+                            console.log(`    ⚠️ Latest end conflicts with existing operation, moving from ${right.toLocaleString()} to ${slot.start.toLocaleString()}`);
+                            right = new Date(slot.start);
+                        }
+                    }
 
                     // Snap right boundary to working time (backwards)
                     if (cal?.isNonWorkingTime?.(right)) right = cal.skipNonWorkingTime(right, false);
