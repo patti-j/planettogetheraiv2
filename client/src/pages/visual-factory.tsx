@@ -576,7 +576,7 @@ export default function VisualFactory() {
                         {index + 1}
                       </div>
                       <div className="flex-1">
-                        <h4 className="font-medium">{dashboard?.title}</h4>
+                        <h4 className="font-medium">{dashboard?.name}</h4>
                         <div className="flex items-center gap-4 mt-2">
                           <div className="flex items-center gap-2">
                             <Label className="text-sm">Duration:</Label>
