@@ -647,41 +647,48 @@ Format as: "Based on what I remember about you: [relevant info]" or return empty
           
           // Build comprehensive status message
           let statusMessage = `📊 **Job ${jobStatus.jobNumber} Status**\n\n`;
-          statusMessage += `**Product:** ${jobStatus.productCode} - ${jobStatus.productDescription}\n`;
-          statusMessage += `**Quantity:** ${jobStatus.quantity} units\n`;
-          statusMessage += `**Priority:** ${jobStatus.priority || 'Standard'}\n\n`;
-          
-          // Progress status
-          statusMessage += `**Progress Status:** `;
-          if (jobStatus.status.isInProgress) {
-            statusMessage += `✅ IN PROGRESS (${jobStatus.status.progressPercentage}% complete)\n`;
-            statusMessage += `- ${jobStatus.status.completedOperations} of ${jobStatus.status.totalOperations} operations completed\n`;
-            if (jobStatus.status.inProgressOperations > 0) {
-              statusMessage += `- ${jobStatus.status.inProgressOperations} operations currently running\n`;
-            }
-            statusMessage += `- ${jobStatus.status.remainingOperations} operations remaining\n\n`;
-          } else {
-            statusMessage += `⏸️ NOT STARTED\n`;
-            statusMessage += `- 0 of ${jobStatus.status.totalOperations} operations completed\n\n`;
+          statusMessage += `**Product:** ${jobStatus.productName || jobStatus.productCode}\n`;
+          if (jobStatus.productDescription) {
+            statusMessage += `**Description:** ${jobStatus.productDescription}\n`;
           }
+          statusMessage += `**Priority:** ${jobStatus.priority || 'Standard'}\n`;
+          statusMessage += `**Current Status:** ${jobStatus.status.scheduledStatus || 'Scheduled'}\n\n`;
           
-          // Schedule status
-          statusMessage += `**Schedule Status:** `;
+          // On-Time Status with prominent days early/late display
+          statusMessage += `📅 **SCHEDULE PERFORMANCE:**\n`;
           if (jobStatus.scheduling.onTimeStatus === 'on-time') {
-            statusMessage += `✅ ON-TIME\n`;
-            statusMessage += `- Scheduled to complete ${jobStatus.scheduling.daysEarlyOrLate} days before need date\n`;
+            statusMessage += `✅ **ON-TIME** - ${jobStatus.scheduling.daysEarlyOrLate} DAYS EARLY\n`;
           } else if (jobStatus.scheduling.onTimeStatus === 'late') {
-            statusMessage += `⚠️ LATE - ATTENTION REQUIRED\n`;
-            statusMessage += `- Scheduled to complete ${jobStatus.scheduling.daysEarlyOrLate} days after need date\n`;
+            statusMessage += `⚠️ **LATE** - ${jobStatus.scheduling.daysEarlyOrLate} DAYS LATE (ATTENTION REQUIRED)\n`;
           } else {
-            statusMessage += `❓ UNKNOWN\n`;
+            statusMessage += `❓ **SCHEDULE STATUS UNKNOWN**\n`;
           }
           
           if (jobStatus.scheduling.needDate) {
-            statusMessage += `- Need Date: ${new Date(jobStatus.scheduling.needDate).toLocaleDateString()}\n`;
+            statusMessage += `• Need Date: ${new Date(jobStatus.scheduling.needDate).toLocaleDateString()}\n`;
           }
           if (jobStatus.scheduling.scheduledEnd) {
-            statusMessage += `- Scheduled Completion: ${new Date(jobStatus.scheduling.scheduledEnd).toLocaleDateString()}\n`;
+            statusMessage += `• Scheduled End: ${new Date(jobStatus.scheduling.scheduledEnd).toLocaleDateString()}\n`;
+          }
+          statusMessage += '\n';
+          
+          // Progress status
+          statusMessage += `**Progress Status:** `;
+          if (jobStatus.status.totalOperations > 0) {
+            if (jobStatus.status.isInProgress) {
+              statusMessage += `IN PROGRESS (${jobStatus.status.progressPercentage}% complete)\n`;
+              statusMessage += `• ${jobStatus.status.completedOperations} of ${jobStatus.status.totalOperations} operations completed\n`;
+              if (jobStatus.status.inProgressOperations > 0) {
+                statusMessage += `• ${jobStatus.status.inProgressOperations} operations currently running\n`;
+              }
+              statusMessage += `• ${jobStatus.status.remainingOperations} operations remaining\n`;
+            } else if (jobStatus.status.completedOperations === jobStatus.status.totalOperations) {
+              statusMessage += `✅ COMPLETED - All operations finished\n`;
+            } else {
+              statusMessage += `NOT STARTED - 0 of ${jobStatus.status.totalOperations} operations completed\n`;
+            }
+          } else {
+            statusMessage += `No operations tracked for this job\n`;
           }
           
           return statusMessage;
