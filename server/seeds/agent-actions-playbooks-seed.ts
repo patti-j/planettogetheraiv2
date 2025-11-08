@@ -916,6 +916,997 @@ This playbook outlines the proven methodologies for optimizing production schedu
         tags: ['safety', 'emergency-response', 'loto', 'ppe', 'osha', 'training', 'incident-reporting'],
         createdBy: pattiUser?.id || adminUser.id,
         lastEditedBy: pattiUser?.id || adminUser.id
+      },
+      {
+        title: 'Operation Sequencing and Priority Management',
+        content: `# Operation Sequencing and Priority Management
+
+## Overview
+Effective operation sequencing is critical for optimizing production flow, minimizing bottlenecks, and meeting delivery commitments. This playbook provides guidelines for sequencing operations and managing priorities.
+
+## Sequencing Methods
+
+### Forward Scheduling (ASAP - As Soon As Possible)
+**When to Use**:
+- Rush orders requiring fastest completion
+- Customer commitments with tight deadlines
+- New product introductions needing quick turnaround
+- Make-to-order environments
+
+**Benefits**:
+- Minimizes total completion time
+- Maximizes resource utilization
+- Reduces work-in-progress inventory
+- Improves cash flow
+
+**Implementation**:
+1. Schedule operations immediately after predecessor completion
+2. Start all operations at earliest possible time
+3. Consider resource availability constraints
+4. Account for setup times between jobs
+5. Validate material availability
+
+### Backward Scheduling (ALAP - As Late As Possible)
+**When to Use**:
+- Make-to-stock production planning
+- Managing inventory carrying costs
+- Long lead time materials
+- Seasonal demand patterns
+
+**Benefits**:
+- Minimizes inventory holding costs
+- Reduces obsolescence risk
+- Better cash flow management
+- Just-in-time production alignment
+
+**Implementation**:
+1. Start from required completion date
+2. Work backwards through operations
+3. Calculate latest start times
+4. Maintain safety buffers at bottlenecks
+5. Verify material ordering dates
+
+### Theory of Constraints (Drum-Buffer-Rope)
+**When to Use**:
+- Environments with clear bottleneck resources
+- High-mix production with capacity constraints
+- Continuous improvement focused operations
+
+**Drum** (Bottleneck Scheduling):
+- Schedule bottleneck resource to maximum capacity
+- Protect bottleneck from starvation
+- Subordinate all other resources to bottleneck
+
+**Buffer** (Time Protection):
+- Time buffer before bottleneck (typically 1-2 shifts)
+- Shipping buffer to protect delivery dates
+- Assembly buffer for convergent points
+
+**Rope** (Material Release):
+- Release materials based on bottleneck schedule
+- Tie material release to bottleneck consumption
+- Limit work-in-process to buffer requirements
+
+## Priority Rules and Dispatching
+
+### Priority Ranking Factors
+1. **Customer Priority**
+   - Strategic customer relationships
+   - Contract penalties for late delivery
+   - Market share considerations
+   - Emergency or service orders
+
+2. **Due Date Urgency**
+   - Days until due date
+   - Slack time remaining
+   - Critical ratio (time remaining / work remaining)
+
+3. **Order Value**
+   - Revenue contribution
+   - Profit margin
+   - Strategic product importance
+
+4. **Setup Optimization**
+   - Setup time similarity
+   - Color/material changeover requirements
+   - Tooling configuration needs
+
+### Dispatching Rules
+
+#### Shortest Processing Time (SPT)
+- **Use When**: Minimizing average flow time
+- **Benefit**: Quick wins, high throughput
+- **Risk**: Long jobs may be delayed
+
+#### Earliest Due Date (EDD)
+- **Use When**: Meeting delivery commitments is priority
+- **Benefit**: Fewer late orders
+- **Risk**: May not optimize throughput
+
+#### Critical Ratio (CR)
+- **Formula**: (Due Date - Today) / (Work Days Remaining)
+- **CR < 1.0**: Order is behind schedule
+- **CR = 1.0**: Order is on schedule
+- **CR > 1.0**: Order has slack time
+- **Use When**: Balancing multiple objectives
+
+#### First-In-First-Out (FIFO)
+- **Use When**: Simple, fair processing required
+- **Benefit**: Easy to understand and implement
+- **Risk**: Ignores urgency and importance
+
+## Resource Allocation Strategy
+
+### Load Balancing
+**Objectives**:
+- Smooth workload across resources
+- Minimize idle time
+- Avoid overloading critical resources
+- Maintain consistent flow
+
+**Techniques**:
+- Resource leveling algorithms
+- Alternate routing utilization
+- Cross-training for flexibility
+- Parallel processing where possible
+
+### Setup Reduction
+**Family Grouping**:
+- Group similar products together
+- Minimize color/material changeovers
+- Batch similar configurations
+
+**SMED (Single-Minute Exchange of Dies)**:
+- External setup preparation
+- Standardized tooling and fixtures
+- Quick-change mechanisms
+- Setup checklists
+
+### Capacity Management
+**Peak Demand Strategies**:
+- Planned overtime utilization
+- Shift differential scheduling
+- Temporary labor augmentation
+- Outsourcing options
+
+**Low Demand Strategies**:
+- Preventive maintenance scheduling
+- Training and development
+- Process improvement projects
+- Build-ahead for stable products
+
+## Job Shop vs Flow Shop Considerations
+
+### Job Shop Scheduling
+**Characteristics**:
+- High variety, low volume
+- Complex routing through work centers
+- Significant setup times
+- Custom or semi-custom products
+
+**Best Practices**:
+- Use visual scheduling boards
+- Maintain flexibility in routing
+- Focus on bottleneck optimization
+- Real-time priority updates
+
+### Flow Shop Scheduling
+**Characteristics**:
+- Lower variety, higher volume
+- Consistent routing sequence
+- Standardized operations
+- Repetitive production
+
+**Best Practices**:
+- Balance line rates
+- Minimize buffer inventory
+- Standardize work content
+- Continuous flow optimization
+
+## Operation Sequencer Tool Usage
+
+### Daily Scheduling Workflow
+1. **Morning Review** (7:00 AM)
+   - Review overnight changes
+   - Check material arrivals
+   - Confirm resource availability
+   - Update priorities based on new information
+
+2. **Mid-Day Adjustment** (12:00 PM)
+   - Monitor actual vs planned progress
+   - Adjust sequences for delays or rush orders
+   - Communicate changes to production floor
+   - Update estimated completion times
+
+3. **End-of-Day Planning** (4:00 PM)
+   - Prepare next day's schedule
+   - Confirm material staging
+   - Communicate tomorrow's priorities
+   - Lock schedule for overnight shift
+
+### Sequence Optimization
+**Drag-and-Drop Reordering**:
+- Visual interface for quick adjustments
+- Real-time feasibility validation
+- Automatic dependency checking
+- Impact analysis on downstream operations
+
+**Filtering and Views**:
+- By resource/work center
+- By customer or product line
+- By priority level
+- By time window (today, this week, etc.)
+
+**Save and Compare Scenarios**:
+- Create "what-if" scenarios
+- Compare completion times
+- Evaluate resource utilization
+- Choose optimal sequence
+
+## Performance Metrics
+
+### Schedule Performance
+- **Schedule Adherence**: Actual vs planned completion
+  - Target: >95%
+- **On-Time Delivery**: Orders delivered by due date
+  - Target: >98%
+- **Schedule Stability**: Changes in final 72 hours
+  - Target: <5% changes
+
+### Resource Metrics
+- **Resource Utilization**: Productive time vs available time
+  - Target: 85-90% for non-bottlenecks
+  - Target: 95%+ for bottleneck resources
+- **Setup Time %**: Setup time as % of total time
+  - Target: <10%
+
+### Flow Metrics
+- **Cycle Time**: Time from order release to completion
+  - Track trend, aim for reduction
+- **Work-in-Process (WIP)**: Active jobs on floor
+  - Target: Minimize while maintaining flow
+- **Flow Time Ratio**: Actual time / theoretical minimum time
+  - Target: <2.0
+
+## Common Challenges and Solutions
+
+### Challenge: Frequent Hot Jobs Disrupt Schedule
+**Solution**:
+- Reserve capacity for expedites (10-15%)
+- Implement hot job process with approval
+- Analyze root causes of hot jobs
+- Improve demand forecasting
+
+### Challenge: Setup Times Too Long
+**Solution**:
+- Implement SMED methodology
+- Create setup reduction teams
+- Standardize tooling and fixtures
+- Use family grouping
+
+### Challenge: Resource Conflicts
+**Solution**:
+- Cross-train operators
+- Maintain alternate routings
+- Use priority matrix for decisions
+- Implement finite capacity scheduling
+
+### Challenge: Material Shortages
+**Solution**:
+- Integrate MRP with scheduling
+- Real-time inventory visibility
+- Supplier performance management
+- Safety stock for critical items
+
+## Best Practices
+
+1. **Freeze Zone**: Maintain a frozen schedule for near-term (24-48 hours) to provide stability
+2. **Visual Management**: Use visual boards or digital displays to communicate priorities
+3. **Daily Huddles**: Brief morning meetings to review schedule and priorities
+4. **Exception Management**: Focus on exceptions rather than routine operations
+5. **Continuous Improvement**: Regularly review and optimize sequencing rules
+6. **Cross-Functional**: Involve planning, production, and materials in scheduling decisions
+7. **Data-Driven**: Use actual performance data to refine algorithms and rules
+8. **Flexible but Disciplined**: Allow flexibility for urgent needs while maintaining discipline
+
+## Related Tools and Integration
+- Production Scheduler (Gantt chart view)
+- Inventory Management System
+- Quality Control Integration
+- Shop Floor Data Collection
+- Customer Order Management`,
+        tags: ['scheduling', 'sequencing', 'priority-management', 'toc', 'dispatching', 'asap', 'alap', 'operation-sequencer'],
+        createdBy: jimUser?.id || adminUser.id,
+        lastEditedBy: jimUser?.id || adminUser.id
+      },
+      {
+        title: 'Capacity Planning and Resource Optimization',
+        content: `# Capacity Planning and Resource Optimization
+
+## Overview
+Capacity planning ensures that production resources are available to meet demand while optimizing utilization and minimizing costs. This playbook covers capacity analysis, planning methods, and optimization strategies.
+
+## Capacity Analysis
+
+### Capacity Types
+
+#### Design Capacity
+- **Definition**: Maximum theoretical output under ideal conditions
+- **Use**: Long-term planning and investment decisions
+- **Calculation**: Based on engineering specifications and optimal conditions
+
+#### Effective Capacity
+- **Definition**: Maximum output under normal operating conditions
+- **Factors**: Maintenance, breaks, typical efficiency losses
+- **Calculation**: Design capacity × availability factor × performance efficiency
+
+#### Demonstrated Capacity
+- **Definition**: Actual proven output based on historical performance
+- **Use**: Realistic scheduling and planning
+- **Calculation**: Average of recent actual production output
+
+### Capacity Metrics
+
+**Utilization Rate**:
+\`\`\`
+Utilization = (Actual Output / Design Capacity) × 100%
+Target: 85-90% for non-bottleneck resources
+Target: 95%+ for bottleneck resources
+\`\`\`
+
+**Efficiency Rate**:
+\`\`\`
+Efficiency = (Actual Output / Effective Capacity) × 100%
+Target: >90%
+\`\`\`
+
+**Overall Equipment Effectiveness (OEE)**:
+\`\`\`
+OEE = Availability × Performance × Quality
+Availability = Operating Time / Planned Production Time
+Performance = (Actual Output × Ideal Cycle Time) / Operating Time
+Quality = Good Units / Total Units
+Target OEE: >85% world-class
+\`\`\`
+
+## Rough-Cut Capacity Planning (RCCP)
+
+### Purpose
+- Validate master production schedule feasibility
+- Identify capacity constraints early
+- Support make-or-buy decisions
+- Guide capital investment planning
+
+### Steps
+
+1. **Calculate Required Capacity**
+   - For each product in MPS
+   - Multiply quantity by standard hours per unit
+   - Sum by resource/work center
+   - Extend over planning horizon
+
+2. **Compare to Available Capacity**
+   - Gather resource capacity data
+   - Account for planned downtime
+   - Consider efficiency factors
+   - Identify gaps
+
+3. **Resolve Capacity Issues**
+   - **Underutilization**: Reduce capacity, add products, fill with make-to-stock
+   - **Overutilization**: Add capacity, subcontract, adjust schedule, reduce commitments
+
+### Capacity Planning Using Overall Factors (CPOF)
+- **Quick rough-cut method**
+- Uses overall planning factors
+- Good for aggregate planning
+- Not detailed enough for execution
+
+### Capacity Bills Method
+- **More detailed than CPOF**
+- Uses bill of resources
+- Capacity per end item
+- Better accuracy for rough-cut planning
+
+### Resource Profiles Method
+- **Most detailed RCCP approach**
+- Time-phased capacity requirements
+- Lead time offset included
+- Best accuracy for rough-cut planning
+
+## Finite Capacity Scheduling
+
+### Principles
+**Finite Loading**:
+- Respect capacity constraints
+- No resource overloading
+- Realistic completion dates
+- Material and capacity synchronized
+
+**Characteristics**:
+- All resources have limited capacity
+- Jobs scheduled within available capacity
+- May extend due dates if capacity insufficient
+- Provides achievable schedules
+
+### Implementation
+
+**Scheduling Rules**:
+1. **Forward Finite**: Schedule ASAP respecting capacity
+2. **Backward Finite**: Schedule ALAP respecting capacity
+3. **Critical Ratio**: Priority-based finite scheduling
+
+**Capacity Constraints**:
+- Resource availability calendars
+- Setup time requirements
+- Tool and fixture availability
+- Skilled labor constraints
+- Material availability
+
+### Optimization Objectives
+- **Minimize Makespan**: Total completion time
+- **Minimize Tardiness**: Late delivery penalties
+- **Maximize Utilization**: Efficient resource use
+- **Minimize WIP**: Reduce inventory carrying costs
+- **Balance Load**: Smooth workload distribution
+
+## Capacity Expansion Strategies
+
+### Short-Term Adjustments (0-3 months)
+
+**Overtime**:
+- **Pros**: Quick, flexible, no capital required
+- **Cons**: Higher labor costs, fatigue, quality risks
+- **Target**: <10% overtime as sustainable
+
+**Temporary Labor**:
+- **Pros**: Flexible, scalable, lower commitment
+- **Cons**: Training required, quality variability
+- **Best for**: Seasonal peaks, specific skills
+
+**Shift Differential**:
+- **Pros**: Utilizes existing equipment, spreads fixed costs
+- **Cons**: Premium pay, supervision requirements
+- **Target**: 2-3 shift operation for bottlenecks
+
+**Outsourcing/Subcontracting**:
+- **Pros**: Quick capacity, no capital investment
+- **Cons**: Quality control, cost, IP concerns
+- **Best for**: Non-core operations, overflow
+
+### Medium-Term Adjustments (3-12 months)
+
+**Equipment Additions**:
+- Used equipment purchase
+- Equipment leasing
+- Bottleneck debottlenecking
+- Process improvement
+
+**Workforce Expansion**:
+- New hire recruitment
+- Cross-training programs
+- Contractor to employee conversion
+- Shift additions
+
+**Process Improvements**:
+- Setup time reduction (SMED)
+- Cycle time optimization
+- Yield improvement
+- Quality enhancement
+
+### Long-Term Adjustments (1-3+ years)
+
+**Capital Investment**:
+- New production lines
+- Advanced automation
+- Facility expansion
+- Technology upgrades
+
+**Strategic Planning**:
+- Make vs buy analysis
+- Vertical integration decisions
+- Geographic expansion
+- Acquisition or partnership
+
+## Bottleneck Management
+
+### Identification Methods
+
+**Statistical Analysis**:
+- Highest utilization percentage
+- Longest queue times
+- Most frequent delays
+- Maximum work-in-process
+
+**Value Stream Mapping**:
+- Visual flow analysis
+- Identify constraint points
+- Measure throughput rates
+- Document wait times
+
+### Theory of Constraints (TOC) Five Focusing Steps
+
+1. **Identify the Constraint**
+   - Which resource limits throughput?
+   - Use data analysis and observation
+   - May be resource, policy, or market
+
+2. **Exploit the Constraint**
+   - Maximize constraint productivity
+   - Eliminate waste at constraint
+   - No unplanned downtime
+   - Best operators assigned
+
+3. **Subordinate Everything Else**
+   - Align all resources to constraint
+   - Upstream: Don't overproduce
+   - Downstream: Always ready to accept
+   - Schedule based on constraint capacity
+
+4. **Elevate the Constraint**
+   - Increase constraint capacity
+   - Add equipment, shifts, or outsource
+   - Only if exploitation insufficient
+
+5. **Prevent Inertia - Return to Step 1**
+   - Constraint may have moved
+   - Continuous improvement cycle
+   - Don't let past constraint become dogma
+
+### Constraint Buffer Management
+
+**Time Buffers**:
+- **Purpose**: Protect constraint from disruption
+- **Size**: Typically 1-2 shifts worth of work
+- **Management**: Monitor buffer penetration
+
+**Buffer Zones**:
+- **Green Zone** (67-100%): Normal operation
+- **Yellow Zone** (34-66%): Monitor closely
+- **Red Zone** (0-33%): Immediate action required
+
+## Load Leveling and Smoothing
+
+### Heijunka (Production Leveling)
+
+**Volume Leveling**:
+- Distribute production evenly over time
+- Avoid peaks and valleys
+- Reduce capacity needs
+- Improve flow
+
+**Mix Leveling**:
+- Distribute product mix evenly
+- Reduce changeovers
+- Balance skill requirements
+- Smooth material consumption
+
+### Takt Time
+**Calculation**:
+\`\`\`
+Takt Time = Available Production Time / Customer Demand
+\`\`\`
+
+**Application**:
+- Pace of production to meet demand
+- Balance work content to takt
+- Identify capacity gaps
+- Synchronize operations
+
+### Pitch
+**Definition**: Takt time × pack quantity
+- Schedule production by pitch increments
+- Visual production control
+- Small, manageable batches
+
+## Advanced Planning Techniques
+
+### Aggregate Planning
+- **Time Horizon**: 3-18 months
+- **Decisions**: Production rates, workforce levels, inventory
+- **Methods**: Level strategy, chase strategy, hybrid
+
+**Level Strategy**:
+- Constant production rate
+- Absorb demand variation with inventory
+- Stable workforce
+- Lower hiring/training costs
+
+**Chase Strategy**:
+- Match production to demand
+- Variable workforce
+- Minimal inventory
+- Higher HR costs
+
+### Master Production Scheduling (MPS)
+- **Time Horizon**: 8-12 weeks
+- **Purpose**: Bridge aggregate plan to execution
+- **Outputs**: Specific product quantities and dates
+
+### Material Requirements Planning (MRP)
+- **Inputs**: MPS, BOM, inventory, lead times
+- **Logic**: Time-phased requirements calculation
+- **Outputs**: Planned orders for materials and components
+
+## Performance Monitoring
+
+### Capacity Dashboards
+**Key Metrics**:
+- Current utilization by resource
+- Available capacity (hours/units)
+- Capacity vs demand trend
+- Bottleneck identification
+- Overtime hours
+- Backlog analysis
+
+### Regular Reviews
+**Daily**: Bottleneck status, urgent capacity issues
+**Weekly**: Utilization review, short-term capacity planning
+**Monthly**: Capacity trends, efficiency analysis
+**Quarterly**: Strategic capacity review, investment planning
+
+## Best Practices
+
+1. **Maintain Accurate Data**: Routing, cycle times, setup times, capacity calendars
+2. **Proactive Planning**: Forecast demand changes, plan capacity ahead
+3. **Focus on Constraints**: Protect and optimize bottleneck resources
+4. **Continuous Improvement**: Regular review of capacity utilization and efficiency
+5. **Integrated Planning**: Align capacity planning with business strategy
+6. **Flexible Capacity**: Maintain options for quick capacity adjustments
+7. **Visual Management**: Make capacity status visible to all stakeholders
+8. **Cross-Functional Collaboration**: Sales, operations, and finance alignment
+
+## Tools and Systems
+- Capacity planning software
+- Finite capacity scheduler
+- ERP system integration
+- Production monitoring systems
+- Analytics and reporting dashboards`,
+        tags: ['capacity-planning', 'resource-optimization', 'bottleneck', 'toc', 'finite-scheduling', 'oee', 'heijunka', 'takt-time'],
+        createdBy: adminUser.id,
+        lastEditedBy: adminUser.id
+      },
+      {
+        title: 'Schedule Change Management and Communication',
+        content: `# Schedule Change Management and Communication
+
+## Overview
+Production schedules must adapt to changing conditions, but too much change creates chaos. This playbook establishes protocols for managing schedule changes professionally and communicating them effectively.
+
+## Change Control Principles
+
+### Frozen Zone Concept
+**Definition**: A time window where schedule changes are prohibited or heavily restricted
+
+**Standard Frozen Zones**:
+- **Immediate (0-24 hours)**: Frozen - no changes except emergencies
+- **Near-term (24-72 hours)**: Restricted - supervisor approval required
+- **Medium-term (3-7 days)**: Managed - planning approval required
+- **Long-term (>7 days)**: Flexible - normal change process
+
+**Benefits**:
+- Production floor stability
+- Material planning accuracy
+- Labor scheduling reliability
+- Reduced expediting costs
+
+### Change Classification
+
+#### Emergency Changes (Red)
+**Definition**: Immediate safety, quality, or customer emergency issues
+
+**Examples**:
+- Safety recall or critical safety issue
+- Major quality defect requiring immediate action
+- Top customer emergency order (VP approval)
+- Equipment failure forcing reschedule
+
+**Process**:
+1. Immediate authorization by operations manager
+2. Document change and reason
+3. Communicate to all affected parties within 1 hour
+4. Post-change review within 24 hours
+
+#### Urgent Changes (Yellow)
+**Definition**: Important changes needed within frozen zone
+
+**Examples**:
+- Hot customer order (premium pricing)
+- Material shortage requiring substitution
+- Unplanned equipment downtime >4 hours
+- Critical employee absence
+
+**Process**:
+1. Submit change request to production supervisor
+2. Assess impact on current schedule
+3. Approval by supervisor or planning manager
+4. Document change reason and impact
+5. Communicate to affected parties within 2 hours
+
+#### Normal Changes (Green)
+**Definition**: Standard planning changes outside frozen zone
+
+**Examples**:
+- Demand forecast updates
+- New customer orders
+- Scheduled maintenance
+- Standard order cancellations
+
+**Process**:
+1. Submit change request to planning
+2. Evaluate impact and alternatives
+3. Update schedule in next planning cycle
+4. Communicate in daily planning meeting
+
+## Change Request Process
+
+### Request Documentation
+**Required Information**:
+- Requester name and department
+- Change category (emergency/urgent/normal)
+- Affected jobs/orders
+- Reason for change
+- Requested timing
+- Business impact if not approved
+- Alternative solutions considered
+
+### Impact Assessment
+**Evaluation Criteria**:
+1. **Customer Impact**
+   - Will any customer commitments be missed?
+   - What is the relationship/revenue impact?
+   - Are there contract penalties?
+
+2. **Resource Impact**
+   - Does it create overtime?
+   - Are special skills required?
+   - Equipment/tooling availability?
+
+3. **Material Impact**
+   - Is material available for change?
+   - Will existing material become excess?
+   - Lead time considerations?
+
+4. **Cost Impact**
+   - Premium freight charges?
+   - Overtime costs?
+   - Setup/changeover costs?
+   - Potential contract penalties?
+
+5. **Other Orders Impact**
+   - How many other orders affected?
+   - Cascade effect on schedule?
+   - Overall delivery performance impact?
+
+### Decision Matrix
+\`\`\`
+Urgency Level | Within Frozen Zone | Approval Required
+Emergency     | Yes                | Operations Manager
+Emergency     | No                 | Production Supervisor
+Urgent        | Yes                | Planning Manager + Supervisor
+Urgent        | No                 | Production Supervisor
+Normal        | N/A (not allowed)  | N/A
+Normal        | No                 | Planning Team
+\`\`\`
+
+## Communication Protocols
+
+### Communication Channels
+
+**Immediate (Within 1 hour)**:
+- Radio announcement to production floor
+- Text message to supervisors
+- Email to planning and materials
+- Update visual schedule boards
+
+**Near-term (Within 2-4 hours)**:
+- Email to affected departments
+- Update in production system
+- Discussion in next shift meeting
+- Post to visual management board
+
+**Standard (Same day)**:
+- Include in daily planning report
+- Discuss in morning production meeting
+- Update master schedule
+- Email summary to stakeholders
+
+### Stakeholder Notification
+
+**Production Floor**:
+- Specific jobs affected
+- New sequence and timing
+- Reason for change
+- Resource/material implications
+
+**Materials/Planning**:
+- Material requirements changes
+- New delivery expectations
+- Inventory implications
+- Purchase order impacts
+
+**Quality**:
+- Changes to first article inspection needs
+- Updated test requirements
+- Documentation updates
+
+**Maintenance**:
+- Equipment availability needs
+- Tool/fixture requirements
+- Timing of planned maintenance
+
+**Sales/Customer Service**:
+- Customer delivery date impacts
+- Reasons for changes
+- Alternative options if applicable
+
+### Communication Templates
+
+**Emergency Change Notification**:
+\`\`\`
+URGENT SCHEDULE CHANGE - IMMEDIATE ACTION REQUIRED
+
+Change Type: Emergency
+Time: [Timestamp]
+Affected Jobs: [List job numbers]
+
+CHANGE DETAILS:
+Original Schedule: [Description]
+New Schedule: [Description]
+Reason: [Brief explanation]
+
+ACTION REQUIRED:
+- Production: [Specific actions]
+- Materials: [Specific actions]  
+- Quality: [Specific actions]
+
+Questions contact: [Name] at [Extension]
+\`\`\`
+
+**Standard Change Notice**:
+\`\`\`
+Schedule Update - [Date]
+
+The following changes have been made to the production schedule:
+
+Job #[XXX]: [Original date] → [New date]
+Reason: [Explanation]
+Impact: [Brief impact statement]
+
+Job #[YYY]: [Original date] → [New date]  
+Reason: [Explanation]
+Impact: [Brief impact statement]
+
+Please review and prepare accordingly.
+Questions: Planning at ext. [XXXX]
+\`\`\`
+
+## Schedule Stability Metrics
+
+### Measurement
+**Schedule Stability Index**:
+\`\`\`
+Stability = (1 - Changes in Last 72 Hours / Total Jobs) × 100%
+Target: >95%
+\`\`\`
+
+**Change Frequency by Type**:
+- Emergency changes per week: Target <2
+- Urgent changes per week: Target <5
+- Normal changes per week: Acceptable
+- Total changes in frozen zone: Target <5%
+
+**Root Cause Tracking**:
+- Material shortage: X%
+- Equipment failure: Y%
+- Customer changes: Z%
+- Planning errors: A%
+- Quality issues: B%
+
+### Continuous Improvement
+**Monthly Review**:
+- Analyze change frequency and root causes
+- Identify improvement opportunities
+- Update processes to reduce disruptions
+- Share lessons learned
+
+**Action Plans**:
+- Address top 3 root causes
+- Implement preventive measures
+- Track effectiveness
+- Adjust protocols as needed
+
+## Best Practices
+
+### Minimize Changes
+1. **Better Forecasting**: Improve demand planning accuracy
+2. **Supplier Partnerships**: Reduce material shortage disruptions
+3. **Preventive Maintenance**: Minimize unplanned equipment downtime
+4. **Quality Systems**: Prevent quality-related reschedules
+5. **Cross-Training**: Reduce labor-related schedule impacts
+
+### When Changes are Necessary
+1. **Act Quickly**: Don't delay necessary changes
+2. **Communicate Clearly**: Explain why change is needed
+3. **Document Thoroughly**: Track for analysis and improvement
+4. **Learn and Improve**: Use data to prevent future issues
+5. **Respect Frozen Zone**: Maintain discipline for stability
+
+### Tools and Visual Management
+1. **Digital Displays**: Real-time schedule status
+2. **Color Coding**: Visual priority indicators
+3. **Change Log**: Track all changes in one place
+4. **Impact Dashboard**: Show cascade effects
+5. **Stability Metrics**: Display performance trends
+
+## Roles and Responsibilities
+
+### Planning Team
+- Evaluate change requests
+- Assess schedule impact
+- Approve/deny normal changes
+- Maintain schedule integrity
+- Communicate changes
+
+### Production Supervisors
+- Approve urgent changes in frozen zone
+- Implement schedule changes on floor
+- Communicate to operators
+- Provide feedback on feasibility
+
+### Operations Manager
+- Approve emergency changes
+- Review change metrics monthly
+- Drive continuous improvement
+- Escalation point for conflicts
+
+### Materials Team
+- Assess material availability
+- Manage material implications
+- Communicate supplier impacts
+- Adjust purchasing as needed
+
+### Quality Team
+- Review quality implications
+- Update inspection requirements
+- Adjust test schedules
+- Validate change feasibility
+
+## Emergency Response Procedures
+
+### Equipment Failure
+1. Assess failure severity and repair time
+2. Identify jobs affected
+3. Determine alternate equipment/routing
+4. Reschedule affected jobs
+5. Communicate changes
+6. Update preventive maintenance if applicable
+
+### Material Shortage
+1. Confirm actual shortage and ETA
+2. Check for substitution options
+3. Identify affected jobs
+4. Prioritize by customer importance
+5. Reschedule or expedite as appropriate
+6. Communicate to affected parties
+
+### Customer Emergency Order
+1. Verify priority level and approval
+2. Assess capacity availability
+3. Identify jobs to be delayed if necessary
+4. Calculate cost implications
+5. Get required approvals
+6. Implement change and communicate
+
+## Integration with Other Systems
+- ERP production scheduling module
+- Shop floor data collection
+- Material requirements planning
+- Customer order management
+- Email and messaging systems
+- Visual management displays`,
+        tags: ['schedule-management', 'change-control', 'communication', 'frozen-zone', 'stability', 'coordination', 'emergency-response'],
+        createdBy: jimUser?.id || adminUser.id,
+        lastEditedBy: jimUser?.id || adminUser.id
       }
     ];
 
