@@ -1506,6 +1506,52 @@
                 let lastScheduledArea = '';
                 let allPlanningAreas = [];
                 
+                // Helper to wait for auth token with timeout
+                async function waitForAuthToken(timeout = 5000) {
+                    return new Promise((resolve) => {
+                        // Check if token already exists
+                        const existingToken = getAuthToken();
+                        if (existingToken) {
+                            console.log('✅ Auth token already available');
+                            resolve(existingToken);
+                            return;
+                        }
+                        
+                        // Wait for token via postMessage
+                        let resolved = false;
+                        const timeoutId = setTimeout(() => {
+                            if (!resolved) {
+                                console.warn('⚠️ Auth token timeout - proceeding without auth');
+                                resolved = true;
+                                resolve(null);
+                            }
+                        }, timeout);
+                        
+                        const messageHandler = (event) => {
+                            if (event.data?.type === 'SET_AUTH_TOKEN' && event.data?.token) {
+                                if (!resolved) {
+                                    clearTimeout(timeoutId);
+                                    resolved = true;
+                                    window.removeEventListener('message', messageHandler);
+                                    console.log('✅ Received auth token from parent');
+                                    globalAuthToken = event.data.token;
+                                    localStorage.setItem('auth_token', event.data.token);
+                                    resolve(event.data.token);
+                                }
+                            }
+                        };
+                        
+                        window.addEventListener('message', messageHandler);
+                    });
+                }
+                
+                // Wait for auth token before loading any data
+                console.log('⏳ Waiting for authentication token...');
+                const authToken = await waitForAuthToken();
+                if (!authToken) {
+                    console.warn('⚠️ No authentication token received - API calls may fail');
+                }
+                
                 // Load all planning areas for the dropdown (once on startup)
                 async function loadPlanningAreas() {
                     try {
