@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Bryntum Loading Test</title>
+</head>
+<body>
+    <h1>Testing Bryntum Library Loading</h1>
+    <pre id="output">Loading...</pre>
+    
+    <script src="/schedulerpro-browser.umd.js?v=635"></script>
+    <script>
+        // Wait a bit for the script to load
+        setTimeout(() => {
+            const output = document.getElementById('output');
+            let result = 'Bryntum Loading Test Results:\n\n';
+            
+            // Check global variables
+            result += 'Global Variables Check:\n';
+            result += '  typeof bryntum: ' + typeof bryntum + '\n';
+            result += '  typeof SchedulerPro: ' + typeof SchedulerPro + '\n';
+            result += '  typeof window.SchedulerPro: ' + typeof window.SchedulerPro + '\n\n';
+            
+            // Check bryntum namespace if it exists
+            if (typeof bryntum !== 'undefined') {
+                result += 'bryntum namespace found!\n';
+                const keys = Object.keys(bryntum);
+                result += 'Top-level keys (first 20): ' + keys.slice(0, 20).join(', ') + '\n\n';
+                
+                // Check for scheduler-related properties
+                if (bryntum.schedulerpro) {
+                    result += 'bryntum.schedulerpro exists!\n';
+                    const schedulerKeys = Object.keys(bryntum.schedulerpro);
+                    result += 'schedulerpro keys (first 20): ' + schedulerKeys.slice(0, 20).join(', ') + '\n\n';
+                    
+                    // Check for SchedulerPro class
+                    if (bryntum.schedulerpro.SchedulerPro) {
+                        result += '✅ FOUND: bryntum.schedulerpro.SchedulerPro\n';
+                        result += '  Type: ' + typeof bryntum.schedulerpro.SchedulerPro + '\n';
+                    } else if (bryntum.schedulerpro.Scheduler) {
+                        result += '✅ FOUND: bryntum.schedulerpro.Scheduler\n';
+                        result += '  Type: ' + typeof bryntum.schedulerpro.Scheduler + '\n';
+                    }
+                } else {
+                    result += 'bryntum.schedulerpro NOT found\n';
+                }
+                
+                // Check if SchedulerPro is at root level
+                if (bryntum.SchedulerPro) {
+                    result += '✅ FOUND: bryntum.SchedulerPro\n';
+                    result += '  Type: ' + typeof bryntum.SchedulerPro + '\n';
+                }
+                
+                // Look for any Scheduler-related classes
+                result += '\nSearching for Scheduler classes:\n';
+                for (const key in bryntum) {
+                    if (key.toLowerCase().includes('scheduler')) {
+                        result += '  Found: bryntum.' + key + ' (type: ' + typeof bryntum[key] + ')\n';
+                    }
+                }
+            } else {
+                result += '❌ bryntum namespace NOT found\n';
+            }
+            
+            // Check window object for any Scheduler classes
+            result += '\nChecking window object:\n';
+            for (const key in window) {
+                if (key.toLowerCase().includes('scheduler') || key.toLowerCase().includes('bryntum')) {
+                    result += '  Found on window: ' + key + '\n';
+                }
+            }
+            
+            output.textContent = result;
+        }, 3000);
+    </script>
+</body>
+</html>
