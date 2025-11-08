@@ -3572,16 +3572,21 @@ router.get("/api/production-scheduler", (req, res) => {
     
     // Add version timestamp to force cache refresh (especially important for ASAP algorithm updates)
     const timestamp = new Date().getTime();
+    
+    // Replace multiple elements to ensure the browser sees a different file
     htmlContent = htmlContent.replace('ASAP V2:', `ASAP V2 (${timestamp}):`);
+    htmlContent = htmlContent.replace('</head>', `<meta name="version" content="${timestamp}"></head>`);
+    htmlContent = htmlContent.replace('<body>', `<body data-version="${timestamp}">`);
     
     console.log('Successfully read HTML file, size:', htmlContent.length, 'bytes, version:', timestamp);
     
     // Set aggressive no-cache headers to prevent browser caching issues
     res.setHeader('Content-Type', 'text/html; charset=utf-8');
-    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate, private, max-age=0');
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate, private, max-age=0, s-maxage=0, proxy-revalidate');
     res.setHeader('Pragma', 'no-cache');
     res.setHeader('Expires', '0');
     res.setHeader('X-Scheduler-Version', timestamp.toString());
+    res.setHeader('Surrogate-Control', 'no-store');
     
     // Important: Use res.end() instead of res.send() to bypass Vite middleware
     // This prevents Vite from injecting its HMR client script
