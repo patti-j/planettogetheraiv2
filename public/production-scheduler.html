@@ -3975,8 +3975,7 @@
                     // Track completion times for each operation
                     const operationEndTimes = new Map(); // operationId -> endDate
                     
-                    // Track job start dates (release dates or today)
-                    const jobStartDates = new Map(); // jobKey -> startDate
+                    // Note: jobStartDates already declared earlier - reusing existing Map
                     
                     console.log('\n📦 Starting Interleaved ASAP Scheduling Algorithm...');
                     
