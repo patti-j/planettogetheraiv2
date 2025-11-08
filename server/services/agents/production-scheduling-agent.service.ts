@@ -83,12 +83,13 @@ export class ProductionSchedulingAgent extends BaseAgent {
     this.db = db;
   }
 
-  async process(message: string, context: AgentContext): Promise<AgentResponse> {
+  async process(message: string, context: AgentContext): Promise<AgentResponse | null> {
     const lowerMessage = message.toLowerCase();
     
     // Skip processing if the request is for canvas/table display (let Max AI handle it)
     if (lowerMessage.includes('canvas') || lowerMessage.includes('table in') || lowerMessage.includes('as a table')) {
-      return null as any; // Return null to let Max AI handle canvas/table requests
+      // Return null to indicate this agent cannot handle the request
+      return null;
     }
     
     try {
