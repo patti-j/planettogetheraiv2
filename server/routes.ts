@@ -10739,6 +10739,31 @@ router.get("/api/ptresources", enhancedAuth, async (req, res) => {
   }
 });
 
+// Update deployment order for resources
+router.post("/api/ptresources/update-deployment-order", enhancedAuth, async (req, res) => {
+  try {
+    const { updates } = req.body;
+    
+    if (!Array.isArray(updates)) {
+      return res.status(400).json({ error: "Invalid request format" });
+    }
+    
+    // Update each resource's deployment order
+    for (const update of updates) {
+      await db.execute(sql`
+        UPDATE ptresources 
+        SET deployment_order = ${update.deployment_order}
+        WHERE id = ${update.id}
+      `);
+    }
+    
+    res.json({ success: true, message: "Deployment order updated successfully" });
+  } catch (error: any) {
+    console.error("Error updating deployment order:", error);
+    res.status(500).json({ error: "Failed to update deployment order" });
+  }
+});
+
 // ============================================
 // Product Wheel Routes
 // ============================================
