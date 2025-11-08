@@ -10727,10 +10727,10 @@ router.get("/api/ptplants", enhancedAuth, async (req, res) => {
 router.get("/api/ptresources", enhancedAuth, async (req, res) => {
   try {
     const result = await db.execute(sql`
-      SELECT id, name, description, resource_id, plant_id, active 
+      SELECT id, name, description, resource_id, plant_id, active, deployment_order 
       FROM ptresources 
       WHERE active = true 
-      ORDER BY name
+      ORDER BY deployment_order, name
     `);
     res.json(result.rows);
   } catch (error: any) {
