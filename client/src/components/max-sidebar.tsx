@@ -709,7 +709,23 @@ export function MaxSidebar({ onClose }: MaxSidebarProps = {}) {
 
       // Handle navigation and scheduler actions from Max AI
       if (response.action) {
-        if (response.action.type === 'navigate' && response.action.target) {
+        // Handle table creation action from Max AI
+        if (response.action.type === 'create_table') {
+          console.log('Max AI create_table action detected:', response.action);
+          
+          // Store the widget ID to scroll to it when Canvas opens
+          if (response.action.widgetId) {
+            sessionStorage.setItem('scrollToWidget', response.action.widgetId.toString());
+          }
+          
+          // Navigate to the Canvas page to show the created table
+          setLocation('/canvas');
+          
+          toast({
+            title: "Table Created",
+            description: "Table has been created in the Canvas. Opening Canvas now...",
+          });
+        } else if (response.action.type === 'navigate' && response.action.target) {
           console.log('Max AI navigation action detected:', response.action);
           // Decode HTML entities in the URL (e.g., &amp; to &)
           const targetUrl = response.action.target.replace(/&amp;/g, '&');
