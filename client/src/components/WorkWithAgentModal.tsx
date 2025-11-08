@@ -24,7 +24,8 @@ import {
   ChevronLeft,
   ChevronRight,
   Send,
-  Loader2
+  Loader2,
+  ArrowUpDown
 } from 'lucide-react';
 
 interface Message {
@@ -163,6 +164,13 @@ export function WorkWithAgentModal({ isOpen, onClose, recommendation }: WorkWith
 
   const systemTools = [
     {
+      icon: ArrowUpDown,
+      title: 'Operation Sequencer',
+      description: 'Sequence and prioritize operations',
+      color: 'text-purple-600',
+      path: '/schedule-sequences'
+    },
+    {
       icon: Calendar,
       title: 'Production Schedule',
       description: 'View current production timeline',
@@ -180,7 +188,7 @@ export function WorkWithAgentModal({ isOpen, onClose, recommendation }: WorkWith
       icon: Users,
       title: 'Resource Allocation',
       description: 'View staff and equipment assignments',
-      color: 'text-purple-600',
+      color: 'text-amber-600',
       path: '/labor-planning'
     },
     {
