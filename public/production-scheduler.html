@@ -4115,7 +4115,36 @@
                     console.log('\n🔄 Processing operations by priority and sequence...');
                     
                     // Track jobs with active brewing chains to maintain continuity
-                    const activeBrewingChains = new Map(); // jobKey -> boolean
+                    const activeBrewingChains = new Map(); // jobKey -> last operation in chain
+                    const criticalPathOps = new Set(); // Operations that are part of critical brewing paths
+                    
+                    // First pass: identify all critical brewing sequences
+                    console.log('\n🔍 Identifying critical brewing sequences...');
+                    for (const job of jobsWithPriority) {
+                        let foundBoiling = false;
+                        let foundWhirlpool = false;
+                        let foundCooling = false;
+                        let foundFermentation = false;
+                        
+                        for (const op of job.operations) {
+                            const opType = getBrewingOperationType(op.name);
+                            if (opType === 'boiling') foundBoiling = true;
+                            if (opType === 'whirlpool') foundWhirlpool = true;
+                            if (opType === 'cooling') foundCooling = true;
+                            if (opType === 'fermentation') foundFermentation = true;
+                        }
+                        
+                        // If this job has critical brewing operations, mark them for special handling
+                        if (foundBoiling || foundWhirlpool || foundCooling || foundFermentation) {
+                            console.log(`  Job ${job.jobKey} has critical brewing operations`);
+                            for (const op of job.operations) {
+                                const opType = getBrewingOperationType(op.name);
+                                if (['boiling', 'whirlpool', 'cooling', 'fermentation'].includes(opType)) {
+                                    criticalPathOps.add(op.id);
+                                }
+                            }
+                        }
+                    }
                     
                     // Process each priority level
                     for (const priority of sortedPriorities) {
@@ -4140,86 +4169,88 @@
                             
                             const scheduledInThisRound = [];
                             
-                            // First, continue any active brewing chains to maintain continuity
+                            // Special handling for critical brewing sequences
                             for (const [opId, { operation, job }] of unscheduledOps) {
-                                if (activeBrewingChains.has(job.jobKey)) {
-                                    const opType = getBrewingOperationType(operation.name);
+                                if (!criticalPathOps.has(opId)) continue; // Skip non-critical ops for now
+                                
+                                const opType = getBrewingOperationType(operation.name);
+                                const predecessor = findPredecessor(operation, job.operations);
+                                
+                                // Check if predecessor is scheduled (or if this is first op)
+                                if (predecessor && !operationEndTimes.has(predecessor.id)) {
+                                    continue; // Wait for predecessor
+                                }
+                                
+                                // If this is part of a critical sequence, handle specially
+                                if (predecessor) {
+                                    const predType = getBrewingOperationType(predecessor.name);
+                                    const predEnd = operationEndTimes.get(predecessor.id);
                                     
-                                    // Check if this is the next operation in the brewing chain
-                                    const predecessor = findPredecessor(operation, job.operations);
-                                    if (predecessor && operationEndTimes.has(predecessor.id)) {
-                                        const predType = getBrewingOperationType(predecessor.name);
+                                    // Critical sequences that must be tightly coupled
+                                    if ((predType === 'boiling' && opType === 'whirlpool') ||
+                                        (predType === 'whirlpool' && opType === 'cooling') ||
+                                        (predType === 'cooling' && opType === 'fermentation')) {
                                         
-                                        // These operations should stay together: boiling→whirlpool→cooling→fermentation
-                                        const isCriticalSequence = 
-                                            (predType === 'boiling' && opType === 'whirlpool') ||
-                                            (predType === 'whirlpool' && opType === 'cooling') ||
-                                            (predType === 'cooling' && opType === 'fermentation');
+                                        console.log(`      🔗 Critical sequence detected: ${predType} → ${opType} for ${job.jobName}`);
                                         
-                                        if (isCriticalSequence) {
-                                            // Schedule this operation immediately to maintain continuity
-                                            const resource = getResourceForOperation(operation);
-                                            const durationMs = operation.durationMS ?? (operation.duration * 60 * 60 * 1000);
-                                            const predEnd = operationEndTimes.get(predecessor.id);
-                                            const buffer = getBrewingOperationBuffer(predType, opType);
+                                        const resource = getResourceForOperation(operation);
+                                        const durationMs = operation.durationMS ?? (operation.duration * 60 * 60 * 1000);
+                                        const buffer = getBrewingOperationBuffer(predType, opType);
+                                        
+                                        // Force immediate scheduling after predecessor
+                                        let startTime = new Date(predEnd.getTime() + buffer);
+                                        let endTime = new Date(startTime.getTime() + durationMs);
+                                        
+                                        if (resource) {
+                                            // Check if resource is available at this time
+                                            const timeline = resourceTimelines.get(resource.id) || [];
+                                            let conflict = false;
                                             
-                                            let earliestStart = new Date(predEnd.getTime() + buffer);
-                                            let startTime, endTime;
-                                            
-                                            if (resource) {
-                                                // For critical sequences, try to reserve the resource immediately
-                                                startTime = findEarliestSlotOnResource(resource.id, durationMs, earliestStart);
-                                                endTime = new Date(startTime.getTime() + durationMs);
-                                                
-                                                // Add to resource timeline
-                                                if (!resourceTimelines.has(resource.id)) {
-                                                    resourceTimelines.set(resource.id, []);
+                                            for (const slot of timeline) {
+                                                if ((startTime < slot.end && endTime > slot.start)) {
+                                                    // There's a conflict, find next available time
+                                                    startTime = new Date(slot.end.getTime() + 1000);
+                                                    endTime = new Date(startTime.getTime() + durationMs);
+                                                    conflict = true;
+                                                    console.log(`        ⚠️ Resource conflict, moved to ${startTime.toLocaleTimeString()}`);
                                                 }
-                                                resourceTimelines.get(resource.id).push({
-                                                    start: startTime,
-                                                    end: endTime,
-                                                    eventId: operation.id,
-                                                    jobKey: job.jobKey,
-                                                    eventName: operation.name
-                                                });
-                                                
-                                                console.log(`        → [CHAIN] ${operation.name} on ${resource.name}: ${startTime.toLocaleTimeString()} - ${endTime.toLocaleTimeString()}`);
-                                            } else {
-                                                startTime = earliestStart;
-                                                endTime = new Date(startTime.getTime() + durationMs);
-                                                console.log(`        → [CHAIN] ${operation.name}: ${startTime.toLocaleTimeString()} - ${endTime.toLocaleTimeString()}`);
                                             }
                                             
-                                            // Update operation times
-                                            operation.set({
-                                                startDate: startTime,
-                                                endDate: endTime,
-                                                manuallyScheduled: false
+                                            // Add to resource timeline
+                                            if (!resourceTimelines.has(resource.id)) {
+                                                resourceTimelines.set(resource.id, []);
+                                            }
+                                            resourceTimelines.get(resource.id).push({
+                                                start: startTime,
+                                                end: endTime,
+                                                eventId: operation.id,
+                                                jobKey: job.jobKey,
+                                                eventName: operation.name
                                             });
                                             
-                                            // Track completion time
-                                            operationEndTimes.set(operation.id, endTime);
-                                            scheduledInThisRound.push(opId);
-                                            
-                                            // Continue the chain if not at fermentation
-                                            if (opType !== 'fermentation') {
-                                                activeBrewingChains.set(job.jobKey, true);
-                                            } else {
-                                                activeBrewingChains.delete(job.jobKey); // Chain complete
-                                            }
-                                            
-                                            continue; // Skip the normal scheduling for this operation
+                                            console.log(`        ✅ [CRITICAL] ${operation.name} on ${resource.name}: ${startTime.toLocaleTimeString()} - ${endTime.toLocaleTimeString()}`);
+                                        } else {
+                                            console.log(`        ✅ [CRITICAL] ${operation.name}: ${startTime.toLocaleTimeString()} - ${endTime.toLocaleTimeString()}`);
                                         }
+                                        
+                                        // Update operation times
+                                        operation.set({
+                                            startDate: startTime,
+                                            endDate: endTime,
+                                            manuallyScheduled: false
+                                        });
+                                        
+                                        // Track completion time
+                                        operationEndTimes.set(operation.id, endTime);
+                                        scheduledInThisRound.push(opId);
+                                        continue;
                                     }
-                                    
-                                    // If we couldn't continue the chain, clear it
-                                    activeBrewingChains.delete(job.jobKey);
                                 }
                             }
                             
                             // Then schedule other operations normally
                             for (const [opId, { operation, job }] of unscheduledOps) {
-                                // Skip if already scheduled in the chain continuation above
+                                // Skip if already scheduled in critical path handling above
                                 if (scheduledInThisRound.includes(opId)) {
                                     continue;
                                 }
