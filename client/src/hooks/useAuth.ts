@@ -57,7 +57,7 @@ const rolePermissionsMap: Record<string, string[]> = {
     'labor-create', 'labor-delete', 'labor-edit', 'labor-view',
     'labor-planning-create', 'labor-planning-delete', 'labor-planning-edit', 'labor-planning-view',
     'maintenance-view', 'maintenance-planning-view', 'master-production-schedule-view',
-    'notifications-send', 'operator-dashboard-view', 'optimization-view',
+    'notifications-send', 'operator_dashboard-view', 'optimization-view',
     'optimization-studio-view', 'planning-scheduling-view', 'plant-manager-view',
     'production-cockpit-view', 'reports-create', 'reports-view',
     'role-management-view', 'schedule-create', 'schedule-delete', 'schedule-edit', 'schedule-view',
@@ -76,7 +76,7 @@ const rolePermissionsMap: Record<string, string[]> = {
     'dashboards-view', 'smart-kpi-tracking-view', 'production-planning-view', 'production-scheduling-view'
   ],
   'Shop Floor Operations': [
-    'shop-floor-view', 'operator-dashboard-view', 'reports-view',
+    'shop-floor-view', 'operator_dashboard-view', 'reports-view',
     'ai-assistant-view', 'feedback-view', 'production-scheduling-view'
   ],
   'Data Analyst': [
@@ -88,7 +88,7 @@ const rolePermissionsMap: Record<string, string[]> = {
     'schedule-view', 'business-goals-view', 'visual-factory-view',
     'ai-assistant-view', 'feedback-view', 'systems-management-view',
     'capacity-planning-view', 'scheduling-optimizer-view', 'shop-floor-view', 
-    'boards-view', 'erp-import-view', 'plant-manager-view', 'operator-dashboard-view',
+    'boards-view', 'erp-import-view', 'plant-manager-view', 'operator_dashboard-view',
     'maintenance-planning-view', 'role-management-view', 'user-role-assignments-view',
     'business-goals-create', 'business-goals-edit', 'schedule-create', 'schedule-edit',
     'implementation-projects-view', 'production-scheduling-view'
