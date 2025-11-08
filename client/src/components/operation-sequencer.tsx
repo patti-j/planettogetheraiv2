@@ -19,8 +19,10 @@ import {
   Factory,
   ArrowRight,
   Save,
-  RotateCcw
+  RotateCcw,
+  Palette
 } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 interface Operation {
   id: number;
@@ -49,6 +51,7 @@ interface OperationSequencerProps {
   resourceFilter?: string;
   statusFilter?: string;
   view?: 'compact' | 'standard' | 'detailed';
+  colorBy?: 'priority' | 'status' | 'product' | 'operation' | 'ontime';
   onSequenceChange?: (operations: Operation[]) => void;
 }
 
@@ -56,10 +59,12 @@ export function OperationSequencer({
   resourceFilter = 'all', 
   statusFilter = 'all',
   view = 'standard',
+  colorBy = 'priority',
   onSequenceChange
 }: OperationSequencerProps) {
   const [operations, setOperations] = useState<Operation[]>([]);
   const [hasChanges, setHasChanges] = useState(false);
+  const [selectedColorBy, setSelectedColorBy] = useState<'priority' | 'status' | 'product' | 'operation' | 'ontime'>(colorBy);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -206,6 +211,99 @@ export function OperationSequencer({
     return 'border-green-200 bg-green-50';
   };
 
+  // Get status-based color
+  const getStatusColor = (status: string) => {
+    if (!status) return 'border-gray-200 bg-gray-50';
+    switch (status.toLowerCase()) {
+      case 'completed':
+        return 'border-green-200 bg-green-50';
+      case 'in-progress':
+      case 'in progress':
+        return 'border-blue-200 bg-blue-50';
+      case 'pending':
+      case 'scheduled':
+        return 'border-yellow-200 bg-yellow-50';
+      case 'blocked':
+        return 'border-red-200 bg-red-50';
+      default:
+        return 'border-gray-200 bg-gray-50';
+    }
+  };
+
+  // Generate consistent color from string (for Product/Operation)
+  const getStringBasedColor = (str: string) => {
+    if (!str) return 'border-gray-200 bg-gray-50';
+    
+    // Generate a hash from the string
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+      hash = str.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    
+    // Define a palette of colors
+    const colors = [
+      'border-blue-200 bg-blue-50',
+      'border-green-200 bg-green-50',
+      'border-yellow-200 bg-yellow-50',
+      'border-purple-200 bg-purple-50',
+      'border-pink-200 bg-pink-50',
+      'border-indigo-200 bg-indigo-50',
+      'border-orange-200 bg-orange-50',
+      'border-teal-200 bg-teal-50',
+      'border-cyan-200 bg-cyan-50',
+      'border-rose-200 bg-rose-50',
+    ];
+    
+    // Use hash to select a color consistently
+    const index = Math.abs(hash) % colors.length;
+    return colors[index];
+  };
+
+  // Get on-time/late color
+  const getOnTimeColor = (operation: Operation) => {
+    // If no end time, can't determine if late
+    if (!operation.endTime) return 'border-gray-200 bg-gray-50';
+    
+    const now = new Date();
+    const endTime = new Date(operation.endTime);
+    
+    // If operation is completed
+    if (operation.status?.toLowerCase() === 'completed') {
+      return 'border-green-200 bg-green-50'; // On time (completed)
+    }
+    
+    // If end time has passed and not completed
+    if (endTime < now) {
+      return 'border-red-200 bg-red-50'; // Late
+    }
+    
+    // If end time is within next 24 hours
+    const tomorrow = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+    if (endTime < tomorrow) {
+      return 'border-yellow-200 bg-yellow-50'; // At risk
+    }
+    
+    return 'border-green-200 bg-green-50'; // On track
+  };
+
+  // Get card color based on selected criteria
+  const getCardColor = (operation: Operation) => {
+    switch (selectedColorBy) {
+      case 'priority':
+        return getPriorityColor(operation.priority);
+      case 'status':
+        return getStatusColor(operation.status);
+      case 'product':
+        return getStringBasedColor(operation.product);
+      case 'operation':
+        return getStringBasedColor(operation.operationName || operation.name);
+      case 'ontime':
+        return getOnTimeColor(operation);
+      default:
+        return getPriorityColor(operation.priority);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -235,6 +333,31 @@ export function OperationSequencer({
 
   return (
     <div className="space-y-4">
+      {/* Color Scheme Selector */}
+      <div className="flex items-center gap-3 p-3 bg-gray-50 border border-gray-200 rounded-lg">
+        <Palette className="h-4 w-4 text-gray-600" />
+        <span className="text-sm font-medium text-gray-700">Color cards by:</span>
+        <Select value={selectedColorBy} onValueChange={(value: any) => setSelectedColorBy(value)}>
+          <SelectTrigger className="w-48">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="priority">Priority</SelectItem>
+            <SelectItem value="status">Status</SelectItem>
+            <SelectItem value="product">Product</SelectItem>
+            <SelectItem value="operation">Operation Name</SelectItem>
+            <SelectItem value="ontime">On Time / Late</SelectItem>
+          </SelectContent>
+        </Select>
+        <div className="ml-auto text-xs text-gray-500">
+          {selectedColorBy === 'priority' && 'Red (High) → Green (Low)'}
+          {selectedColorBy === 'status' && 'Color by operation status'}
+          {selectedColorBy === 'product' && 'Unique color per product'}
+          {selectedColorBy === 'operation' && 'Unique color per operation'}
+          {selectedColorBy === 'ontime' && 'Red (Late) → Green (On Track)'}
+        </div>
+      </div>
+
       {/* Action Bar */}
       {hasChanges && (
         <div className="flex items-center justify-between p-3 bg-blue-50 border border-blue-200 rounded-lg">
@@ -298,7 +421,7 @@ export function OperationSequencer({
                       >
                         <Card className={`transition-all duration-200 hover:shadow-md ${
                           snapshot.isDragging ? 'shadow-lg ring-2 ring-blue-300' : ''
-                        } ${getPriorityColor(operation.priority)}`}>
+                        } ${getCardColor(operation)}`}>
                           <CardContent className="p-4">
                             <div className="flex items-center gap-3">
                               {/* Drag Handle */}
