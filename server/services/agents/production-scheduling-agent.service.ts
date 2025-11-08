@@ -1285,38 +1285,50 @@ export class ProductionSchedulingAgent extends BaseAgent {
   private async getAllJobs(context: AgentContext): Promise<AgentResponse> {
     try {
       const jobs = await db.execute(sql`
-        SELECT id, name, external_id, priority, need_date_time, scheduled_status
+        SELECT 
+          job_number,
+          product_code,
+          product_description,
+          quantity,
+          need_date,
+          priority,
+          status,
+          scheduled_start_date_time,
+          scheduled_end_date_time
         FROM ptjobs
-        WHERE scheduled_status NOT IN ('Completed', 'Shipped', 'Delivered')
-        ORDER BY priority ASC, need_date_time ASC
-        LIMIT 50
+        ORDER BY need_date ASC, priority DESC
+        LIMIT 20
       `);
       
       if (!jobs.rows || jobs.rows.length === 0) {
-        return { content: 'No active jobs found.', error: false };
+        return { content: 'No jobs found in the system.', error: false };
       }
       
-      let response = `**${jobs.rows.length} active jobs**\n\n`;
+      // Format jobs list with key fields
+      let response = `📋 **Jobs List** (Showing ${jobs.rows.length} jobs)\n\n`;
       
-      // Group by priority
-      const byPriority: any = {};
-      for (const job of jobs.rows) {
-        const p = job.priority || 999;
-        if (!byPriority[p]) byPriority[p] = [];
-        byPriority[p].push(job);
+      for (const job of jobs.rows as any[]) {
+        const needDate = job.need_date ? new Date(job.need_date).toLocaleDateString() : 'Not set';
+        const status = job.status || 'Scheduled';
+        const priority = job.priority || 'Standard';
+        
+        response += `**Job ${job.job_number}**\n`;
+        response += `• Product: ${job.product_code} - ${job.product_description}\n`;
+        response += `• Quantity: ${job.quantity} units\n`;
+        response += `• Need Date: ${needDate}\n`;
+        response += `• Priority: ${priority} | Status: ${status}\n`;
+        response += `---\n`;
       }
       
-      // Show summary with bullet points
-      for (const priority of Object.keys(byPriority).sort()) {
-        const count = byPriority[priority].length;
-        const label = priority === '1' ? 'highest' : 
-                     priority === '2' ? 'high' :
-                     priority === '3' ? 'medium' :
-                     priority === '4' ? 'low' : 'lowest';
-        response += `• Priority ${priority} (${label}): ${count} jobs\n`;
+      // Check if there are more jobs
+      const totalJobsResult = await db.execute(sql`SELECT COUNT(*) as count FROM ptjobs`);
+      const totalJobs = Number(totalJobsResult.rows[0]?.count || 0);
+      
+      if (totalJobs > 20) {
+        response += `\n*Showing first 20 of ${totalJobs} total jobs. Need to see more or filter by specific criteria?*`;
       }
       
-      return { content: response + '\nWould you like more detailed information?', error: false };
+      return { content: response, error: false };
     } catch (error: any) {
       throw error;
     }
