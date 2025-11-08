@@ -118,11 +118,21 @@ Detect when users want to switch agents:
 ## Common Interactions
 
 ### Job Queries
-**User**: "all jobs" or "show me all jobs"
-**Max**: "Found 20 jobs - 12 active, 8 completed. Want filters?"
+**User**: "list jobs" or "show me all jobs" or "what are the jobs"
+**Max**: Returns formatted list with key fields:
+- Job Number
+- Product code and description
+- Quantity
+- Need date
+- Priority
+- Status
+Shows first 20 jobs ordered by need date and priority
+
+**User**: "how many jobs" or "count jobs"
+**Max**: "We have 49 jobs in the system. Would you like me to list them?"
 
 **User**: "jobs for this week"
-**Max**: "5 jobs this week. Need details?"
+**Max**: Filters jobs by date range and displays relevant jobs
 
 ### Job Status Queries
 **User**: "What's the status of job 2001?" or "Check status of MO-30287"

@@ -690,11 +690,69 @@ Format as: "Based on what I remember about you: [relevant info]" or return empty
       
       // Handle job-related queries
       if (lowerQuery.includes('job') || lowerQuery.includes('operation')) {
-        const jobCountResult = await db.execute(sql`SELECT COUNT(*) as count FROM ptjobs`);
-        const totalJobs = Number(jobCountResult.rows[0]?.count || 0);
+        // Check if user wants to LIST jobs (not just count them)
+        const wantsJobList = 
+          lowerQuery.includes('list') ||
+          lowerQuery.includes('show') ||
+          lowerQuery.includes('display') ||
+          lowerQuery.includes('give me') ||
+          lowerQuery.includes('what are') ||
+          (lowerQuery.includes('all') && lowerQuery.includes('job')) ||
+          lowerQuery === 'jobs';
         
+        if (wantsJobList && !lowerQuery.includes('how many') && !lowerQuery.includes('count')) {
+          // Fetch jobs with key details
+          const jobsResult = await db.execute(sql`
+            SELECT 
+              j.job_number,
+              j.product_code,
+              j.product_description,
+              j.quantity,
+              j.need_date,
+              j.priority,
+              j.status,
+              j.scheduled_start_date_time,
+              j.scheduled_end_date_time
+            FROM ptjobs j
+            ORDER BY j.need_date ASC, j.priority DESC
+            LIMIT 20
+          `);
+          
+          if (jobsResult.rows.length === 0) {
+            return `No jobs found in the system.`;
+          }
+          
+          // Format jobs list
+          let jobListMessage = `📋 **Jobs List** (Showing ${jobsResult.rows.length} jobs)\n\n`;
+          
+          for (const job of jobsResult.rows as any[]) {
+            const needDate = job.need_date ? new Date(job.need_date).toLocaleDateString() : 'Not set';
+            const status = job.status || 'Scheduled';
+            const priority = job.priority || 'Standard';
+            
+            jobListMessage += `**Job ${job.job_number}**\n`;
+            jobListMessage += `• Product: ${job.product_code} - ${job.product_description}\n`;
+            jobListMessage += `• Quantity: ${job.quantity} units\n`;
+            jobListMessage += `• Need Date: ${needDate}\n`;
+            jobListMessage += `• Priority: ${priority} | Status: ${status}\n`;
+            jobListMessage += `---\n`;
+          }
+          
+          const totalJobsResult = await db.execute(sql`SELECT COUNT(*) as count FROM ptjobs`);
+          const totalJobs = Number(totalJobsResult.rows[0]?.count || 0);
+          
+          if (totalJobs > 20) {
+            jobListMessage += `\n*Showing first 20 of ${totalJobs} total jobs. Need to see more or filter by specific criteria?*`;
+          }
+          
+          return jobListMessage;
+        }
+        
+        // Handle count queries
         if (lowerQuery.includes('how many') || lowerQuery.includes('count') || lowerQuery.includes('total')) {
-          return `We currently have ${totalJobs} jobs in the system. These are production jobs from our PT jobs data. Would you like me to show you the production schedule or analyze these jobs further?`;
+          const jobCountResult = await db.execute(sql`SELECT COUNT(*) as count FROM ptjobs`);
+          const totalJobs = Number(jobCountResult.rows[0]?.count || 0);
+          return `We currently have ${totalJobs} jobs in the system. These are production jobs from our PT jobs data. Would you like me to list them or analyze them further?`;
         }
         
         // Check for late jobs query
