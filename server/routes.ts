@@ -3120,21 +3120,57 @@ router.get("/api/pt-dependencies", async (req, res) => {
 // Operations endpoint - follows pattern of resources endpoint
 router.get("/api/operations", requireAuth, async (req, res) => {
   try {
-    // Fetch operations from PT job operations
-    const operations = await db
-      .select({
-        id: ptJobOperations.id,
-        name: ptJobOperations.name,
-        description: ptJobOperations.description,
-        operationType: sql<string>`'production'`,
-        standardTime: sql<number>`COALESCE(ROUND(${ptJobOperations.cycleHrs} * 60), 60)`,
-        setupTime: sql<number>`COALESCE(ROUND(${ptJobOperations.setupHours} * 60), 0)`,
-        resourceRequired: sql<string>`''`,
-        isActive: sql<boolean>`true`
-      })
-      .from(ptJobOperations)
-      .orderBy(ptJobOperations.name)
-      .limit(100);
+    // Fetch operations from PT job operations with job information
+    const operationsQuery = `
+      SELECT 
+        o.id,
+        o.name as operation_name,
+        o.description,
+        o.job_id,
+        o.sequence_number as "order",
+        COALESCE(ROUND(o.cycle_hrs * 60), 60) as duration,
+        j.name as product,
+        j.priority,
+        j.scheduled_status as status,
+        o.scheduled_start as "startTime",
+        o.scheduled_end as "endTime",
+        (
+          SELECT jr.default_resource_id 
+          FROM ptjobresources jr 
+          WHERE jr.operation_id = o.id 
+          LIMIT 1
+        ) as assigned_resource_id
+      FROM ptjoboperations o
+      LEFT JOIN ptjobs j ON o.job_id = j.id
+      WHERE o.scheduled_start IS NOT NULL
+      ORDER BY o.sequence_number, o.id
+      LIMIT 100
+    `;
+    
+    const result = await db.execute(sql.raw(operationsQuery));
+    const operationsData = Array.isArray(result) ? result : result.rows || [];
+    
+    // Format the response to match the expected interface
+    const operations = operationsData.map((op: any) => ({
+      id: op.id,
+      name: op.operation_name,
+      operationName: op.operation_name,
+      description: op.description,
+      jobId: op.job_id,
+      product: op.product || 'Unknown Product',
+      priority: op.priority || 1,
+      status: op.status || 'Pending',
+      duration: op.duration || 60,
+      order: op.order || 0,
+      startTime: op.startTime,
+      endTime: op.endTime,
+      assignedResourceId: op.assigned_resource_id ? parseInt(op.assigned_resource_id) : undefined,
+      operationType: 'production',
+      standardTime: op.duration || 60,
+      setupTime: 0,
+      resourceRequired: '',
+      isActive: true
+    }));
 
     res.json(operations);
   } catch (error) {

@@ -32,6 +32,7 @@ interface Operation {
   endTime?: Date;
   assignedResourceId?: number;
   jobId: number;
+  product: string;
   order: number;
   priority: number;
   operationName: string;
@@ -327,6 +328,18 @@ export function OperationSequencer({
                                   </Badge>
                                 </div>
                                 
+                                {/* Always show Job # and Product */}
+                                <div className="mt-1.5 flex items-center gap-3 text-xs">
+                                  <div className="flex items-center gap-1 text-blue-600 font-medium">
+                                    <User className="h-3 w-3" />
+                                    Job #{operation.jobId}
+                                  </div>
+                                  <div className="flex items-center gap-1 text-gray-700">
+                                    <Factory className="h-3 w-3" />
+                                    {operation.product}
+                                  </div>
+                                </div>
+                                
                                 {view !== 'compact' && (
                                   <div className="mt-2 flex items-center gap-4 text-xs text-gray-500">
                                     <div className="flex items-center gap-1">
@@ -336,10 +349,6 @@ export function OperationSequencer({
                                     <div className="flex items-center gap-1">
                                       <MapPin className="h-3 w-3" />
                                       {resourceName}
-                                    </div>
-                                    <div className="flex items-center gap-1">
-                                      <User className="h-3 w-3" />
-                                      Job #{operation.jobId}
                                     </div>
                                   </div>
                                 )}
