@@ -51,13 +51,14 @@ export default function ProductionScheduler() {
     checkMobile();
     window.addEventListener('resize', checkMobile);
     
-    // Set a timeout fallback to hide loading after 3 seconds
+    // Set a timeout fallback to hide loading after 15 seconds
+    // Increased from 3 seconds to give Bryntum SchedulerPro enough time to initialize
     const loadingTimeout = setTimeout(() => {
       if (isLoading) {
         console.log('⏰ Loading timeout - hiding overlay');
         setIsLoading(false);
       }
-    }, 3000);
+    }, 15000); // 15 seconds to allow Bryntum to fully load
 
     // Handle iframe load event - only sets up message listener
     const handleLoad = () => {
