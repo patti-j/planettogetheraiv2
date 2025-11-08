@@ -15,11 +15,22 @@ interface RecentPage {
   isPinned?: boolean;
 }
 
+interface FavoritePage {
+  path: string;
+  label: string;
+  icon?: string;
+  timestamp: number;
+}
+
 interface NavigationAdapterContextType {
   recentPages: RecentPage[];
   addRecentPage: (path: string, label: string, icon?: string) => void;
   clearRecentPages: () => void;
   togglePinPage: (path: string) => void;
+  favoritePages: FavoritePage[];
+  toggleFavorite: (path: string, label: string, icon?: string) => void;
+  isFavorite: (path: string) => boolean;
+  clearFavorites: () => void;
   lastVisitedRoute: string | null;
   setLastVisitedRoute: (route: string) => void;
 }
@@ -31,6 +42,7 @@ const DEFAULT_MAX_RECENT_PAGES = 5;
 export function NavigationAdapterProvider({ children }: { children: ReactNode }) {
   const [isInitialized, setIsInitialized] = useState(false);
   const [recentPages, setRecentPages] = useState<RecentPage[]>([]);
+  const [favoritePages, setFavoritePages] = useState<FavoritePage[]>([]);
   const [lastVisitedRoute, setLastVisitedRouteState] = useState<string | null>(null);
   const [location] = useLocation();
   const { user, isAuthenticated } = useAuthAdapter();
@@ -86,7 +98,14 @@ export function NavigationAdapterProvider({ children }: { children: ReactNode })
           
           const preferences = await response.json();
           const savedRecentPages = preferences?.dashboardLayout?.recentPages || [];
+          const savedFavorites = preferences?.dashboardLayout?.favoritePages || [];
           
+          // Load favorites
+          if (Array.isArray(savedFavorites) && savedFavorites.length > 0) {
+            setFavoritePages(savedFavorites);
+          }
+          
+          // Load recent pages
           if (!Array.isArray(savedRecentPages) || savedRecentPages.length === 0) {
             const defaultRecentPages = [{
               path: '/onboarding',
@@ -266,11 +285,136 @@ export function NavigationAdapterProvider({ children }: { children: ReactNode })
     setLastVisitedRouteState(route);
   };
 
+  // Save favorites to database
+  const saveFavorites = async (favorites: FavoritePage[]) => {
+    if (!isAuthenticated || !user?.id) return;
+    
+    try {
+      const getResponse = await fetch(`/api/user-preferences/${user.id}`, {
+        headers: {
+          'Authorization': localStorage.getItem('auth_token') ? `Bearer ${localStorage.getItem('auth_token')}` : '',
+        },
+        credentials: 'include',
+      });
+      
+      if (!getResponse.ok) {
+        throw new Error(`Failed to get preferences: ${getResponse.status}`);
+      }
+      
+      const currentPreferences = await getResponse.json();
+      
+      const updatedDashboardLayout = {
+        ...currentPreferences.dashboardLayout,
+        favoritePages: favorites
+      };
+      
+      const putResponse = await fetch('/api/user-preferences', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': localStorage.getItem('auth_token') ? `Bearer ${localStorage.getItem('auth_token')}` : '',
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          dashboardLayout: updatedDashboardLayout
+        }),
+      });
+      
+      if (!putResponse.ok) {
+        throw new Error(`Failed to save favorites: ${putResponse.status}`);
+      }
+    } catch (error) {
+      console.warn('Failed to save favorites to database:', error);
+    }
+  };
+
+  // Toggle favorite status for a page
+  const toggleFavorite = (path: string, label?: string, icon?: string) => {
+    const navItem = getNavigationItemByHref(path);
+    const finalLabel = label || navItem?.label || generateLabelFromPath(path).label;
+    const finalIcon = icon || (typeof navItem?.icon === 'string' ? navItem.icon : 'FileText');
+    
+    setFavoritePages(current => {
+      const existingIndex = current.findIndex(page => page.path === path);
+      
+      let updated: FavoritePage[];
+      if (existingIndex !== -1) {
+        // Remove from favorites
+        updated = current.filter((_, index) => index !== existingIndex);
+      } else {
+        // Add to favorites
+        const newFavorite = {
+          path,
+          label: finalLabel,
+          icon: finalIcon,
+          timestamp: Date.now()
+        };
+        updated = [...current, newFavorite];
+      }
+      
+      saveFavorites(updated);
+      return updated;
+    });
+  };
+
+  // Check if a path is favorited
+  const isFavorite = (path: string) => {
+    return favoritePages.some(page => page.path === path);
+  };
+
+  // Clear all favorites
+  const clearFavorites = async () => {
+    setFavoritePages([]);
+    if (isAuthenticated && user?.id) {
+      try {
+        const getResponse = await fetch(`/api/user-preferences/${user.id}`, {
+          headers: {
+            'Authorization': localStorage.getItem('auth_token') ? `Bearer ${localStorage.getItem('auth_token')}` : '',
+          },
+          credentials: 'include',
+        });
+        
+        if (!getResponse.ok) {
+          throw new Error(`Failed to get preferences: ${getResponse.status}`);
+        }
+        
+        const currentPreferences = await getResponse.json();
+        
+        const updatedDashboardLayout = {
+          ...currentPreferences.dashboardLayout,
+          favoritePages: []
+        };
+        
+        const putResponse = await fetch('/api/user-preferences', {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': localStorage.getItem('auth_token') ? `Bearer ${localStorage.getItem('auth_token')}` : '',
+          },
+          credentials: 'include',
+          body: JSON.stringify({
+            dashboardLayout: updatedDashboardLayout
+          }),
+        });
+        
+        if (!putResponse.ok) {
+          throw new Error(`Failed to clear favorites: ${putResponse.status}`);
+        }
+      } catch (error) {
+        console.warn('Failed to clear favorites from database:', error);
+      }
+    }
+  };
+
   const value: NavigationAdapterContextType = {
     recentPages,
     addRecentPage,
     clearRecentPages,
     togglePinPage,
+    favoritePages,
+    toggleFavorite,
+    isFavorite,
+    clearFavorites,
     lastVisitedRoute,
     setLastVisitedRoute
   };

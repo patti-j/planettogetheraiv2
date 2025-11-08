@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { useLocation } from 'wouter';
-import { Search, Pin, PinOff, List, Folder, X, Home, Clock, Calendar, Brain, Briefcase, Database, Factory, Settings, FileText, Package, Target, BarChart3, Wrench, Shield, BookOpen, Eye, MessageSquare, Sparkles, Building, Server, TrendingUp, Truck, AlertTriangle, MessageCircle, GraduationCap, Monitor, Columns3, Code, Network, Globe, GitBranch, DollarSign, Headphones, Upload, ArrowRightLeft, FileSearch, Presentation, FileX, Grid, PlayCircle, History, Layout, Puzzle, AlertCircle, Layers, Workflow, ArrowUpDown, Disc } from 'lucide-react';
+import { Search, Pin, PinOff, List, Folder, X, Home, Clock, Star, StarOff, Calendar, Brain, Briefcase, Database, Factory, Settings, FileText, Package, Target, BarChart3, Wrench, Shield, BookOpen, Eye, MessageSquare, Sparkles, Building, Server, TrendingUp, Truck, AlertTriangle, MessageCircle, GraduationCap, Monitor, Columns3, Code, Network, Globe, GitBranch, DollarSign, Headphones, Upload, ArrowRightLeft, FileSearch, Presentation, FileX, Grid, PlayCircle, History, Layout, Puzzle, AlertCircle, Layers, Workflow, ArrowUpDown, Disc } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -56,12 +56,20 @@ export function NavigationMenuContent({ isPinned, onTogglePin, onClose, isOpen }
   let recentPages: any[] = [];
   let togglePinPage = (path: string) => {};
   let clearRecentPages = () => {};
+  let favoritePages: any[] = [];
+  let toggleFavorite = (path: string, label: string, icon?: string) => {};
+  let isFavorite = (path: string) => false;
+  let clearFavorites = () => {};
   try {
     const navigation = useNavigation();
     addRecentPage = navigation.addRecentPage;
     recentPages = navigation.recentPages || [];
     togglePinPage = navigation.togglePinPage;
     clearRecentPages = navigation.clearRecentPages;
+    favoritePages = navigation.favoritePages || [];
+    toggleFavorite = navigation.toggleFavorite;
+    isFavorite = navigation.isFavorite;
+    clearFavorites = navigation.clearFavorites;
   } catch (error) {
     console.warn('NavigationContext not available, using fallback:', error);
   }
@@ -248,6 +256,99 @@ export function NavigationMenuContent({ isPinned, onTogglePin, onClose, isOpen }
           {layoutMode === 'list' ? (
             // List Layout - Show items grouped by category with headers
             <div className="px-3">
+              {/* Favorites Group - Always show at top if there are favorite pages */}
+              {favoritePages.length > 0 && (
+                <div className="mb-4 border-b border-border/20 pb-4">
+                  {/* Category Header */}
+                  <div className="flex items-center justify-between px-2 py-1 mb-2">
+                    <div className="flex items-center gap-2">
+                      <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
+                      <span className="text-sm font-medium text-foreground/70">
+                        Favorites
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-muted-foreground">
+                        {favoritePages.length}
+                      </span>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={clearFavorites}
+                        className="h-5 px-2 text-xs"
+                      >
+                        Clear
+                      </Button>
+                    </div>
+                  </div>
+
+                  {/* Favorite Pages Items */}
+                  <div className="space-y-0.5">
+                    {favoritePages.map((page, pageIndex) => {
+                      const IconComponent = getIconComponent(page.icon || 'FileText');
+                      const isActive = location === page.path;
+                      
+                      // Find the color from navigation config
+                      const getColorForPage = () => {
+                        for (const group of navigationGroups) {
+                          const feature = group.features.find((f: any) => f.href === page.path);
+                          if (feature) {
+                            // Convert bg-color to text-color
+                            const bgColor = feature.color;
+                            if (!bgColor) return 'text-blue-500';
+                            if (bgColor.includes('gradient')) return 'text-purple-500';
+                            return bgColor.replace('bg-', 'text-');
+                          }
+                        }
+                        return 'text-gray-500';
+                      };
+
+                      return (
+                        <Button
+                          key={`fav-${page.path}-${pageIndex}`}
+                          variant="ghost"
+                          className={cn(
+                            "w-full justify-start text-left h-9 px-3 font-normal transition-all duration-150 group",
+                            isActive && "bg-accent text-accent-foreground",
+                            !isActive && "hover:bg-accent/50 hover:text-foreground"
+                          )}
+                          onClick={() => {
+                            handleNavigation(page.path, page.label);
+                            if (!isPinned && onClose) onClose();
+                          }}
+                        >
+                          <div className="flex items-center gap-3 flex-1">
+                            <IconComponent className={cn(
+                              "h-4 w-4 flex-shrink-0",
+                              isActive ? "text-primary" : getColorForPage()
+                            )} />
+                            <span className={cn(
+                              "truncate text-sm",
+                              !isActive && "text-foreground/80"
+                            )}>
+                              {page.label}
+                            </span>
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className={cn(
+                              "h-4 w-4 p-0 transition-opacity opacity-100"
+                            )}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              toggleFavorite(page.path, page.label, page.icon);
+                            }}
+                          >
+                            <Star className="h-2.5 w-2.5 text-yellow-500 fill-yellow-500" />
+                          </Button>
+                        </Button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
               {/* Recents Group - Always show at top if there are recent pages */}
               {filteredRecentPages.length > 0 && (
                 <div className="mb-4 border-b border-border/20 pb-4">
@@ -397,7 +498,7 @@ export function NavigationMenuContent({ isPinned, onTogglePin, onClose, isOpen }
                             key={item.href}
                             variant="ghost"
                             className={cn(
-                              "w-full justify-start text-left h-9 px-3 font-normal transition-all duration-150",
+                              "w-full justify-start text-left h-9 px-3 font-normal transition-all duration-150 group",
                               isActive && "bg-accent text-accent-foreground",
                               !isActive && "hover:bg-accent/50 hover:text-foreground"
                             )}
@@ -417,6 +518,25 @@ export function NavigationMenuContent({ isPinned, onTogglePin, onClose, isOpen }
                                 {item.label}
                               </span>
                             </div>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className={cn(
+                                "h-4 w-4 p-0 transition-opacity",
+                                isFavorite(item.href) ? "opacity-100" : "opacity-0 group-hover:opacity-100"
+                              )}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                const iconName = Icon?.displayName || Icon?.name || 'FileText';
+                                toggleFavorite(item.href, item.label, iconName);
+                              }}
+                            >
+                              {isFavorite(item.href) ? (
+                                <Star className="h-2.5 w-2.5 text-yellow-500 fill-yellow-500" />
+                              ) : (
+                                <StarOff className="h-2.5 w-2.5 text-muted-foreground" />
+                              )}
+                            </Button>
                           </Button>
                         );
                       })}
@@ -428,6 +548,109 @@ export function NavigationMenuContent({ isPinned, onTogglePin, onClose, isOpen }
           ) : (
             // Hierarchical Layout - Show collapsible categories
             <>
+              {/* Favorites as Collapsible Category - Only show when there are favorite pages */}
+              {favoritePages.length > 0 && (
+                <div className="px-3 py-2 border-b border-border/40">
+                  {/* Favorites Header - Clickable to expand/collapse */}
+                  <Button
+                    variant="ghost"
+                    className="w-full justify-between h-9 px-2 font-medium hover:bg-accent/50"
+                    onClick={() => toggleGroup('Favorites')}
+                  >
+                    <div className="flex items-center gap-2">
+                      <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
+                      <span className="text-sm font-medium">
+                        Favorites
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <span className="text-xs text-muted-foreground">
+                        {favoritePages.length}
+                      </span>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          clearFavorites();
+                        }}
+                        className="h-5 w-5 p-0 ml-1 text-xs hover:bg-muted-foreground/20"
+                        title="Clear favorites"
+                      >
+                        <X className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  </Button>
+
+                  {/* Favorite Pages Items - Only shown when expanded */}
+                  {expandedGroups.has('Favorites') && (
+                    <div className="mt-1 ml-3 space-y-0.5">
+                      {favoritePages.map((page, pageIndex) => {
+                        const IconComponent = getIconComponent(page.icon || 'FileText');
+                        const isActive = location === page.path;
+                        
+                        // Find the color from navigation config
+                        const getColorForPage = () => {
+                          for (const group of navigationGroups) {
+                            const feature = group.features.find((f: any) => f.href === page.path);
+                            if (feature) {
+                              // Convert bg-color to text-color
+                              const bgColor = feature.color;
+                              if (!bgColor) return 'text-blue-500';
+                              if (bgColor.includes('gradient')) return 'text-purple-500';
+                              return bgColor.replace('bg-', 'text-');
+                            }
+                          }
+                          return 'text-gray-500';
+                        };
+                        
+                        return (
+                          <Button
+                            key={`fav-hier-${page.path}-${pageIndex}`}
+                            variant="ghost"
+                            className={cn(
+                              "w-full justify-start text-left h-8 px-2 font-normal transition-all duration-150 ml-3 group",
+                              isActive && "bg-accent text-accent-foreground",
+                              !isActive && "hover:bg-accent/50 hover:text-foreground"
+                            )}
+                            onClick={() => {
+                              handleNavigation(page.path, page.label);
+                              if (!isPinned && onClose) onClose();
+                            }}
+                          >
+                            <div className="flex items-center gap-2.5 flex-1">
+                              <IconComponent className={cn(
+                                "h-3.5 w-3.5 flex-shrink-0",
+                                isActive ? "text-primary" : getColorForPage()
+                              )} />
+                              <span className={cn(
+                                "truncate text-sm",
+                                !isActive && "text-foreground/80"
+                              )}>
+                                {page.label}
+                              </span>
+                            </div>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className={cn(
+                                "h-4 w-4 p-0 transition-opacity opacity-100"
+                              )}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                toggleFavorite(page.path, page.label, page.icon);
+                              }}
+                            >
+                              <Star className="h-2.5 w-2.5 text-yellow-500 fill-yellow-500" />
+                            </Button>
+                          </Button>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              )}
+
               {/* Recents as Collapsible Category - Only show when there are recent pages */}
               {filteredRecentPages.length > 0 && (
                 <div className="px-3 py-2 border-b border-border/40">
