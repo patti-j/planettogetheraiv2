@@ -353,19 +353,29 @@ export function CustomizableHeader({ className }: CustomizableHeaderProps) {
       // Update tracking so we don't reload from preferences after save
       setLastLoadedHeaderItems(JSON.stringify(items));
       
-      // Use existing preferences from state instead of fetching
-      const updatedPreferences = {
-        ...(preferences as any || {}),
-        dashboardLayout: {
-          ...(preferences as any)?.dashboardLayout || {},
-          headerItems: items,
-          showHeaderText: showText,
-          // Preserve other dashboard layout settings
-          uiDensity: (preferences as any)?.dashboardLayout?.uiDensity || uiDensity,
-        }
+      // Use existing preferences from state to preserve all settings
+      const currentDashboardLayout = (preferences as any)?.dashboardLayout || {};
+      
+      // Preserve ALL existing dashboardLayout properties
+      const updatedDashboardLayout = {
+        ...currentDashboardLayout,
+        headerItems: items,
+        showHeaderText: showText,
+        uiDensity: currentDashboardLayout.uiDensity || uiDensity,
+        // Preserve favorites and other settings
+        favoritePages: currentDashboardLayout.favoritePages || [],
+        recentPages: currentDashboardLayout.recentPages || [],
+        maxRecentPages: currentDashboardLayout.maxRecentPages || 5
       };
       
-      return apiRequest('PUT', `/api/user-preferences/${user?.id}`, updatedPreferences);
+      // Only send dashboardLayout in the PUT request to prevent overwriting other preferences
+      const requestBody = {
+        dashboardLayout: updatedDashboardLayout
+      };
+      
+      console.log('Saving header configuration:', requestBody);
+      
+      return apiRequest('PUT', `/api/user-preferences/${user?.id}`, requestBody);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [`/api/user-preferences/${user?.id}`] });
@@ -386,19 +396,28 @@ export function CustomizableHeader({ className }: CustomizableHeaderProps) {
   // Save UI density
   const saveDensityMutation = useMutation({
     mutationFn: async (density: 'compact' | 'compressed' | 'standard' | 'comfortable') => {
-      // Use existing preferences from state instead of fetching
-      const updatedPreferences = {
-        ...(preferences as any || {}),
-        dashboardLayout: {
-          ...(preferences as any)?.dashboardLayout || {},
-          uiDensity: density,
-          // Preserve header settings
-          headerItems: (preferences as any)?.dashboardLayout?.headerItems || headerItems,
-          showHeaderText: (preferences as any)?.dashboardLayout?.showHeaderText ?? showHeaderText
-        }
+      // Use existing preferences from state to preserve all settings
+      const currentDashboardLayout = (preferences as any)?.dashboardLayout || {};
+      
+      // Preserve ALL existing dashboardLayout properties
+      const updatedDashboardLayout = {
+        ...currentDashboardLayout,
+        uiDensity: density,
+        // Preserve header settings
+        headerItems: currentDashboardLayout.headerItems || headerItems,
+        showHeaderText: currentDashboardLayout.showHeaderText ?? showHeaderText,
+        // Preserve favorites and other settings
+        favoritePages: currentDashboardLayout.favoritePages || [],
+        recentPages: currentDashboardLayout.recentPages || [],
+        maxRecentPages: currentDashboardLayout.maxRecentPages || 5
       };
       
-      return apiRequest('PUT', `/api/user-preferences/${user?.id}`, updatedPreferences);
+      // Only send dashboardLayout in the PUT request to prevent overwriting other preferences
+      const requestBody = {
+        dashboardLayout: updatedDashboardLayout
+      };
+      
+      return apiRequest('PUT', `/api/user-preferences/${user?.id}`, requestBody);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [`/api/user-preferences/${user?.id}`] });
