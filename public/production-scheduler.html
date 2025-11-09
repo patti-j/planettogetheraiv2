@@ -6564,93 +6564,15 @@
                                 console.log('Resource timelines:', Object.fromEntries(resourceTimelines));
                                 break;
                             case 'alap':
-                                // ALAP scheduling - schedule as late as possible
-                                console.log('🚀 Applying ALAP scheduling...');
+                                // ALAP scheduling - use the new sequence-based implementation
+                                console.log('🚀 Applying ALAP scheduling with Need-By dates...');
                                 
-                                // Get the event store and dependency store
-                                const eventStoreALAP = window.scheduler.eventStore;
-                                const dependencyStoreALAP = window.scheduler.dependencyStore;
-                                
-                                // First, collect all events and their resource assignments
-                                const eventsByResourceALAP = {};
-                                eventStoreALAP.records.forEach(event => {
-                                    const resourceId = event.resourceId;
-                                    if (!eventsByResourceALAP[resourceId]) {
-                                        eventsByResourceALAP[resourceId] = [];
-                                    }
-                                    eventsByResourceALAP[resourceId].push(event);
-                                });
-                                
-                                // Build a reverse dependency graph (successors for each event)
-                                const successorGraph = {};
-                                const hasSuccessor = new Set();
-                                dependencyStoreALAP.records.forEach(dep => {
-                                    if (!successorGraph[dep.to]) {
-                                        successorGraph[dep.to] = [];
-                                    }
-                                    successorGraph[dep.to].push(dep.from);
-                                    hasSuccessor.add(dep.from);
-                                });
-                                
-                                // Find ending events (no outgoing dependencies)
-                                const endingEvents = eventStoreALAP.records.filter(event => 
-                                    !hasSuccessor.has(event.id)
-                                );
-                                
-                                // Set project end date (e.g., 30 days from now)
-                                const projectEnd = new Date();
-                                projectEnd.setDate(projectEnd.getDate() + 30);
-                                projectEnd.setHours(17, 0, 0, 0); // End at 5 PM
-                                
-                                // Process each resource's events separately to avoid overlaps
-                                Object.entries(eventsByResourceALAP).forEach(([resourceId, resourceEvents]) => {
-                                    // Sort events by their current end date in reverse (or by ID if no end date)
-                                    resourceEvents.sort((a, b) => {
-                                        if (b.endDate && a.endDate) {
-                                            return b.endDate.getTime() - a.endDate.getTime();
-                                        }
-                                        return b.id - a.id;
-                                    });
-                                    
-                                    // Track the latest available time for this resource (working backwards)
-                                    let resourceLatestTime = projectEnd.getTime();
-                                    
-                                    // Schedule each event on this resource (working backwards)
-                                    resourceEvents.forEach((event, index) => {
-                                        // Calculate duration in milliseconds
-                                        const durationMs = event.duration * 60 * 60 * 1000; // Convert hours to ms
-                                        
-                                        // Check for dependencies - if this event has a successor, must finish before it starts
-                                        let latestEnd = resourceLatestTime;
-                                        
-                                        // Check all dependencies where this event is the predecessor
-                                        dependencyStoreALAP.records.forEach(dep => {
-                                            if (dep.from === event.id) {
-                                                const successor = eventStoreALAP.getById(dep.to);
-                                                if (successor && successor.startDate) {
-                                                    const successorStartTime = successor.startDate.getTime();
-                                                    // Subtract lag if specified
-                                                    const lagMs = (dep.lag || 0) * 60 * 60 * 1000;
-                                                    latestEnd = Math.min(latestEnd, successorStartTime - lagMs);
-                                                }
-                                            }
-                                        });
-                                        
-                                        // Set the event end time (ALAP = latest possible)
-                                        event.endDate = new Date(latestEnd);
-                                        event.startDate = new Date(latestEnd - durationMs);
-                                        
-                                        // Update resource availability for previous event (working backwards)
-                                        resourceLatestTime = event.startDate.getTime();
-                                        
-                                        console.log(`✅ Scheduled "${event.name}" on ${resourceId}: ${event.startDate.toLocaleString()} - ${event.endDate.toLocaleString()}`);
-                                    });
-                                });
-                                
-                                // Force a refresh of the scheduler view
-                                window.scheduler.refresh();
-                                
-                                console.log('✅ ALAP scheduling completed - no overlaps!');
+                                // Call the new ALAP implementation that respects job due dates
+                                if (window.alapScheduling) {
+                                    window.alapScheduling();
+                                } else {
+                                    console.error('ALAP scheduling function not available');
+                                }
                                 break;
                             case 'criticalPath':
                                 // Critical path method
