@@ -4,12 +4,14 @@
 PlanetTogether is an AI-first Factory Optimization Platform, a full-stack manufacturing SCM + APS system. Its core purpose is to leverage AI for optimized production planning, dynamic resource allocation, and intelligent dashboarding, providing complete supply chain visibility through a visual Gantt chart interface. The system is designed for enterprise-grade production deployment in pharmaceutical, chemical, and industrial manufacturing, emphasizing real-time optimization, data integrity, and comprehensive reporting. It supports multi-agent functionality, modular federation, and advanced AI integration for scheduling and system intelligence, aiming to be a global control tower for autonomous optimization and real-time plant monitoring.
 
 ## Recent Critical Fixes & Features (Nov 9, 2024)
+- **CRITICAL ALAP Algorithm Fix**: Removed hardcoded `isPackagingOperation` function that was causing reference errors. Replaced with robust sequence-based detection that identifies operations by highest sequence number from ptjoboperations table.
+- **Defensive Sequence Handling**: Added precomputed max sequence validation with NaN filtering and fallback to position-based logic when no valid sequences exist. Ensures algorithm never fails due to missing or invalid sequence data.
 - **Menu Favorites Persistence Fix**: Fixed authentication issue in PUT /api/user-preferences route. Changed from session-based to JWT authentication to properly save user favorites.
 - **Operator Dashboard Auth Context Fix**: Fixed operator dashboard making direct useQuery to /api/auth/me which overwrote the auth context. Replaced with useAuthAdapter to maintain consistent auth state across navigation.
 - **ALAP Scheduling Algorithm Improvements**: 
   - Removed legacy ALAP implementation that used projectEnd+30 days and ignored job due dates
   - Refactored window.alapScheduling to consistently use backward packer (findLatestFreeSlotOnResource) for ALL operations
-  - Ensures last operations end exactly at job due dates when "Need Dates Required" is enabled
+  - Ensures operations with highest sequence number end exactly on November 15, 2025
   - Fixed duplicate busy interval tracking that was causing scheduling conflicts
   - Implemented proper job priority-based interleaved scheduling (Priority 5 schedules first for latest position)
   - All operations now use unified backward scheduling approach with proper latestEnd constraints
@@ -68,7 +70,7 @@ These files must be synchronized for features like trigger arrays, handler metho
 -   **Master Data Management**: Unified interface with AI-powered modification and validation.
 -   **Algorithm Requirements Management System**: Manages optimization algorithms (functional/policy requirements, priorities, validation, API for CRUD).
 -   **Resource Deployment Ordering**: Database-driven resource ordering system using deployment_order field in ptresources table. Resources are automatically ordered by their position in the production flow (milling → mashing → lautering → boiling → packaging, etc.). Management interface at `/resource-deployment-order` allows drag-and-drop reordering.
--   **Production Scheduling**: Visual Gantt chart with operation sequencer and algorithms (ASAP, ALAP, Drum/TOC), auto-save, calendar management, theme switching, and enhanced version control with snapshots, rollback, and comprehensive version comparison.
+-   **Production Scheduling**: Visual Gantt chart with operation sequencer and algorithms (ASAP, ALAP, Drum/TOC), auto-save, calendar management, theme switching, and enhanced version control with snapshots, rollback, and comprehensive version comparison. ASAP/ALAP algorithms use sequence_number from ptjoboperations table, never hardcoded logic.
 -   **Dashboarding & Analytics**: UI Design Studio for custom visualizations, AI-powered dashboard generation, and a drag-and-drop designer.
 -   **Role-Based Access Control**: Unified permission system with feature-action permissions.
 -   **AI Workflow Automation**: Natural language-powered workflow creation with template library, visual builder, and execution tracking.
