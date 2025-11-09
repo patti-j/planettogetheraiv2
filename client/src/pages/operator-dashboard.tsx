@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useAuthAdapter } from "@/adapters/AuthAdapter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -142,6 +143,9 @@ export default function OperatorDashboard() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { isMaxOpen } = useMaxDock();
+  
+  // Get current user from AuthAdapter
+  const { user: currentUser } = useAuthAdapter();
 
   // Fetch production data
   const { data: jobs = [] } = useQuery<Job[]>({
@@ -154,11 +158,6 @@ export default function OperatorDashboard() {
 
   const { data: resources = [] } = useQuery<Resource[]>({
     queryKey: ["/api/resources"],
-  });
-
-  // Get current user for time tracking
-  const { data: currentUser } = useQuery({
-    queryKey: ['/api/auth/me'],
   });
 
   // Get active time entries

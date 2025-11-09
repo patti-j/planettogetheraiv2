@@ -724,7 +724,43 @@ router.post("/onboarding", async (req, res) => {
 // User preferences routes
 router.get("/api/user-preferences/:userId", async (req, res) => {
   try {
-    const userId = Number(req.params.userId);
+    const userIdParam = req.params.userId;
+    
+    // Check if userId is invalid (undefined, null, or NaN)
+    if (!userIdParam || userIdParam === 'undefined' || userIdParam === 'null') {
+      console.warn(`Invalid userId parameter: ${userIdParam}`);
+      // Return default preferences for invalid userId
+      return res.json({
+        theme: "light",
+        language: "en",
+        timezone: "UTC",
+        dashboardLayout: {
+          favoritePages: [],
+          recentPages: []
+        },
+        notificationSettings: {},
+        uiSettings: {}
+      });
+    }
+    
+    const userId = Number(userIdParam);
+    
+    // Check if userId is NaN after conversion
+    if (isNaN(userId)) {
+      console.warn(`Invalid userId after conversion: ${userIdParam} -> ${userId}`);
+      return res.json({
+        theme: "light",
+        language: "en",
+        timezone: "UTC",
+        dashboardLayout: {
+          favoritePages: [],
+          recentPages: []
+        },
+        notificationSettings: {},
+        uiSettings: {}
+      });
+    }
+    
     const preferences = await storage.getUserPreferences(userId);
     
     // Return default preferences if none exist
