@@ -42,9 +42,21 @@ export default function CompanyOnboardingOverview() {
   const [selectedPlant, setSelectedPlant] = useState<any>(null);
 
   // Fetch company-wide onboarding data
-  const { data: overviewData = [], isLoading } = useQuery({
-    queryKey: ['/api/onboarding/company-overview']
+  const { data: apiData, isLoading } = useQuery<{
+    overview: any;
+    plants: any[];
+    summary: {
+      total: number;
+      completed: number;
+      inProgress: number;
+      notStarted: number;
+      paused: number;
+    }
+  }>({
+    queryKey: ['/api/onboarding/company/overview']
   });
+  
+  const overviewData = apiData?.plants || [];
 
   // Fetch AI recommendations summary
   const { data: recommendations = [] } = useQuery({
@@ -121,26 +133,26 @@ export default function CompanyOnboardingOverview() {
 
     // Calculate metrics
     const metrics = {
-      totalPlants: overviewData.length,
-      activeOnboardings: overviewData.filter((p: any) => p.status === 'in-progress').length,
-      completedOnboardings: overviewData.filter((p: any) => p.status === 'completed').length,
+      totalPlants: apiData?.overview?.totalPlants || overviewData.length,
+      activeOnboardings: apiData?.summary?.inProgress || overviewData.filter((p: any) => p.status === 'in-progress').length,
+      completedOnboardings: apiData?.summary?.completed || overviewData.filter((p: any) => p.status === 'completed').length,
       averageProgress: Math.round(
-        overviewData.reduce((sum: number, p: any) => sum + (p.overall_progress || 0), 0) / 
+        overviewData.reduce((sum: number, p: any) => sum + (p.progress || 0), 0) / 
         (overviewData.length || 1)
       ),
       onTrackCount: overviewData.filter((p: any) => {
-        if (!p.target_completion_date) return true;
+        if (!p.targetCompletionDate) return true;
         const daysRemaining = Math.ceil(
-          (new Date(p.target_completion_date).getTime() - Date.now()) / (1000 * 60 * 60 * 24)
+          (new Date(p.targetCompletionDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24)
         );
-        return daysRemaining >= 0 || p.overall_progress >= 80;
+        return daysRemaining >= 0 || p.progress >= 80;
       }).length,
       atRiskCount: overviewData.filter((p: any) => {
-        if (!p.target_completion_date) return false;
+        if (!p.targetCompletionDate) return false;
         const daysRemaining = Math.ceil(
-          (new Date(p.target_completion_date).getTime() - Date.now()) / (1000 * 60 * 60 * 24)
+          (new Date(p.targetCompletionDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24)
         );
-        return daysRemaining < 0 && p.overall_progress < 80;
+        return daysRemaining < 0 && p.progress < 80;
       }).length
     };
 

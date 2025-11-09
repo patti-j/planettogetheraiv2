@@ -10,6 +10,7 @@ import {
   plantOnboardingDocuments,
   onboardingAIRecommendations,
   onboardingRequirements,
+  companyOnboardingOverview,
   ptPlants
 } from '@shared/schema';
 import { eq, sql, and, or } from 'drizzle-orm';
@@ -79,7 +80,15 @@ router.get('/api/onboarding/plants', async (req, res) => {
   try {
     const { plantId, status } = req.query;
     
-    let query = db.select({
+    const conditions = [];
+    if (plantId) {
+      conditions.push(eq(plantOnboarding.plantId, parseInt(plantId as string)));
+    }
+    if (status) {
+      conditions.push(eq(plantOnboarding.status, status as string));
+    }
+    
+    const query = db.select({
       id: plantOnboarding.id,
       plant_id: plantOnboarding.plantId,
       template_id: plantOnboarding.templateId,
@@ -96,19 +105,8 @@ router.get('/api/onboarding/plants', async (req, res) => {
       plant_name: ptPlants.name
     })
     .from(plantOnboarding)
-    .leftJoin(ptPlants, eq(plantOnboarding.plantId, ptPlants.plantId));
-    
-    const conditions = [];
-    if (plantId) {
-      conditions.push(eq(plantOnboarding.plantId, parseInt(plantId as string)));
-    }
-    if (status) {
-      conditions.push(eq(plantOnboarding.status, status as string));
-    }
-    
-    if (conditions.length > 0) {
-      query = query.where(and(...conditions));
-    }
+    .leftJoin(ptPlants, eq(plantOnboarding.plantId, ptPlants.plantId))
+    .where(conditions.length > 0 ? and(...conditions) : undefined);
     
     const result = await query;
     res.json(result);
@@ -124,8 +122,8 @@ router.post('/api/onboarding/plants', async (req, res) => {
     const { plantId, templateId, name, startDate, targetCompletionDate, assignedTo, notes } = req.body;
     
     // Get template if specified
-    let phases = [];
-    let goals = [];
+    let phases: any[] = [];
+    let goals: any[] = [];
     if (templateId) {
       const template = await db.select()
         .from(onboardingTemplates)
@@ -133,8 +131,8 @@ router.post('/api/onboarding/plants', async (req, res) => {
         .limit(1);
       
       if (template.length > 0) {
-        phases = template[0].phases || [];
-        goals = template[0].goals || [];
+        phases = (template[0].phases as any[]) || [];
+        goals = (template[0].goals as any[]) || [];
       }
     }
     
@@ -245,6 +243,80 @@ router.get('/api/onboarding/:id/recommendations', async (req, res) => {
   } catch (error) {
     console.error('Error fetching recommendations:', error);
     res.status(500).json({ error: 'Failed to fetch recommendations' });
+  }
+});
+
+// Get company onboarding overview
+router.get('/api/onboarding/company/overview', async (req, res) => {
+  try {
+    // Get company overview
+    const [overview] = await db.select()
+      .from(companyOnboardingOverview)
+      .limit(1);
+    
+    // Get all plant onboardings with plant information
+    const onboardings = await db.select({
+      id: plantOnboarding.id,
+      plantId: plantOnboarding.plantId,
+      name: plantOnboarding.name,
+      status: plantOnboarding.status,
+      progress: plantOnboarding.overallProgress,
+      startDate: plantOnboarding.startDate,
+      targetCompletionDate: plantOnboarding.targetCompletionDate,
+      actualCompletionDate: plantOnboarding.actualCompletionDate,
+      currentPhase: plantOnboarding.currentPhase,
+      plantName: ptPlants.name,
+      plantCity: ptPlants.city,
+      plantCountry: ptPlants.country
+    })
+    .from(plantOnboarding)
+    .leftJoin(ptPlants, eq(plantOnboarding.plantId, ptPlants.id))
+    .orderBy(plantOnboarding.startDate);
+    
+    // Calculate summary statistics
+    const totalPlants = onboardings.length;
+    const completedPlants = onboardings.filter(p => p.status === 'completed').length;
+    const inProgressPlants = onboardings.filter(p => p.status === 'in-progress').length;
+    const notStartedPlants = onboardings.filter(p => p.status === 'not-started').length;
+    const pausedPlants = onboardings.filter(p => p.status === 'paused').length;
+    
+    res.json({
+      overview: overview || {
+        companyName: 'Global Breweries Inc',
+        totalPlants,
+        onboardedPlants: completedPlants,
+        inProgressPlants,
+        averageCompletionTime: 90,
+        bestPractices: [
+          "Start with pilot plant",
+          "Establish clear KPIs",
+          "Regular progress reviews",
+          "Cross-plant knowledge sharing"
+        ],
+        commonChallenges: [
+          "Regulatory compliance",
+          "Equipment lead times", 
+          "Staff availability",
+          "Integration complexity"
+        ],
+        successMetrics: {
+          avgOeeImprovement: 21.5,
+          timeToProduction: 85,
+          safetyIncidents: 0
+        }
+      },
+      plants: onboardings,
+      summary: {
+        total: totalPlants,
+        completed: completedPlants,
+        inProgress: inProgressPlants,
+        notStarted: notStartedPlants,
+        paused: pausedPlants
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching company overview:', error);
+    res.status(500).json({ error: 'Failed to fetch company overview' });
   }
 });
 
@@ -359,7 +431,7 @@ router.patch('/api/onboarding/phases/:id', async (req, res) => {
       .set({
         status,
         progress,
-        endDate: status === 'completed' ? new Date() : null
+        endDate: status === 'completed' ? new Date().toISOString().split('T')[0] : null
       })
       .where(eq(plantOnboardingPhases.id, phaseId))
       .returning();
@@ -382,6 +454,219 @@ router.patch('/api/onboarding/phases/:id', async (req, res) => {
   } catch (error) {
     console.error('Error updating phase:', error);
     res.status(500).json({ error: 'Failed to update phase' });
+  }
+});
+
+// Generate sample onboarding data for demo purposes
+router.post('/api/onboarding/generate-sample-data', async (req, res) => {
+  try {
+    // First, ensure templates exist
+    const existingTemplates = await db.select().from(onboardingTemplates);
+    if (existingTemplates.length === 0) {
+      // Create sample templates
+      for (const template of SAMPLE_TEMPLATES) {
+        await db.insert(onboardingTemplates).values({
+          name: template.name,
+          description: template.description,
+          industry: template.industry,
+          plantType: template.plantType,
+          estimatedDuration: template.estimatedDuration,
+          phases: template.phases,
+          goals: template.goals
+        });
+      }
+    }
+
+    // Check if we already have sample data
+    const existingOnboardings = await db.select().from(plantOnboarding);
+    if (existingOnboardings.length > 0) {
+      return res.json({ message: 'Sample data already exists', count: existingOnboardings.length });
+    }
+
+    // Create sample plant onboardings
+    const samplePlants = [
+      { 
+        plantId: 1, 
+        name: "Amsterdam Brewery - Digital Transformation", 
+        status: "completed",
+        overallProgress: 100,
+        currentPhase: "Go-Live",
+        startDate: '2024-09-01',
+        targetCompletionDate: '2024-11-30'
+      },
+      { 
+        plantId: 2, 
+        name: "Munich Facility - APS Implementation", 
+        status: "in-progress",
+        overallProgress: 65,
+        currentPhase: "Integration Testing",
+        startDate: '2024-10-01',
+        targetCompletionDate: '2025-01-15'
+      },
+      { 
+        plantId: 3, 
+        name: "Berlin Plant - Quality Module Rollout", 
+        status: "in-progress",
+        overallProgress: 40,
+        currentPhase: "System Configuration",
+        startDate: '2024-10-15',
+        targetCompletionDate: '2025-02-01'
+      },
+      { 
+        plantId: 4, 
+        name: "Prague Brewery - Initial Setup", 
+        status: "not-started",
+        overallProgress: 0,
+        currentPhase: "Discovery",
+        startDate: '2025-01-01',
+        targetCompletionDate: '2025-04-01'
+      },
+      {
+        plantId: 5,
+        name: "Vienna Operations - Scheduling Optimization",
+        status: "in-progress",
+        overallProgress: 85,
+        currentPhase: "Training & Support",
+        startDate: '2024-08-15',
+        targetCompletionDate: '2024-12-15'
+      }
+    ];
+
+    // Get brewery template ID
+    const breweryTemplate = await db.select()
+      .from(onboardingTemplates)
+      .where(eq(onboardingTemplates.plantType, 'Brewery'))
+      .limit(1);
+    
+    const templateId = breweryTemplate.length > 0 ? breweryTemplate[0].id : null;
+
+    // Create onboardings with phases
+    for (const plant of samplePlants) {
+      const [onboarding] = await db.insert(plantOnboarding).values({
+        plantId: plant.plantId,
+        templateId: templateId,
+        name: plant.name,
+        status: plant.status,
+        startDate: plant.startDate,
+        targetCompletionDate: plant.targetCompletionDate,
+        overallProgress: plant.overallProgress,
+        currentPhase: plant.currentPhase
+      }).returning();
+
+      // Create phases for this onboarding based on progress
+      const phases = [
+        { 
+          phaseId: "discovery", 
+          phaseName: "Discovery & Assessment", 
+          progress: plant.overallProgress >= 20 ? 100 : Math.min(plant.overallProgress * 5, 100),
+          status: plant.overallProgress >= 20 ? 'completed' : plant.overallProgress > 0 ? 'in-progress' : 'not-started',
+          totalTasks: 4,
+          completedTasks: plant.overallProgress >= 20 ? 4 : Math.floor(plant.overallProgress / 5)
+        },
+        { 
+          phaseId: "setup", 
+          phaseName: "System Configuration", 
+          progress: plant.overallProgress >= 40 ? 100 : plant.overallProgress >= 20 ? (plant.overallProgress - 20) * 5 : 0,
+          status: plant.overallProgress >= 40 ? 'completed' : plant.overallProgress >= 20 ? 'in-progress' : 'not-started',
+          totalTasks: 8,
+          completedTasks: plant.overallProgress >= 40 ? 8 : plant.overallProgress >= 20 ? Math.floor((plant.overallProgress - 20) / 2.5) : 0
+        },
+        { 
+          phaseId: "integration", 
+          phaseName: "System Integration", 
+          progress: plant.overallProgress >= 60 ? 100 : plant.overallProgress >= 40 ? (plant.overallProgress - 40) * 5 : 0,
+          status: plant.overallProgress >= 60 ? 'completed' : plant.overallProgress >= 40 ? 'in-progress' : 'not-started',
+          totalTasks: 6,
+          completedTasks: plant.overallProgress >= 60 ? 6 : plant.overallProgress >= 40 ? Math.floor((plant.overallProgress - 40) / 3.3) : 0
+        },
+        { 
+          phaseId: "training", 
+          phaseName: "Training & Support", 
+          progress: plant.overallProgress >= 80 ? 100 : plant.overallProgress >= 60 ? (plant.overallProgress - 60) * 5 : 0,
+          status: plant.overallProgress >= 80 ? 'completed' : plant.overallProgress >= 60 ? 'in-progress' : 'not-started',
+          totalTasks: 5,
+          completedTasks: plant.overallProgress >= 80 ? 5 : plant.overallProgress >= 60 ? Math.floor((plant.overallProgress - 60) / 4) : 0
+        },
+        { 
+          phaseId: "go-live", 
+          phaseName: "Go-Live", 
+          progress: plant.overallProgress >= 100 ? 100 : plant.overallProgress >= 80 ? (plant.overallProgress - 80) * 5 : 0,
+          status: plant.overallProgress >= 100 ? 'completed' : plant.overallProgress >= 80 ? 'in-progress' : 'not-started',
+          totalTasks: 3,
+          completedTasks: plant.overallProgress >= 100 ? 3 : plant.overallProgress >= 80 ? Math.floor((plant.overallProgress - 80) / 6.7) : 0
+        }
+      ];
+
+      for (const phase of phases) {
+        const [createdPhase] = await db.insert(plantOnboardingPhases).values({
+          onboardingId: onboarding.id,
+          phaseId: phase.phaseId,
+          phaseName: phase.phaseName,
+          status: phase.status,
+          progress: phase.progress,
+          startDate: phase.status !== 'not-started' ? plant.startDate : null,
+          endDate: phase.status === 'completed' ? new Date().toISOString().split('T')[0] : null,
+          totalTasks: phase.totalTasks,
+          completedTasks: phase.completedTasks
+        }).returning();
+
+        // Create sample tasks for each phase
+        if (phase.phaseId === 'discovery') {
+          await db.insert(plantOnboardingTasks).values([
+            { phaseId: createdPhase.id, taskId: "t1", title: "Current state assessment", status: phase.completedTasks >= 1 ? 'completed' : 'in-progress', estimatedHours: 16 },
+            { phaseId: createdPhase.id, taskId: "t2", title: "Requirements gathering", status: phase.completedTasks >= 2 ? 'completed' : phase.completedTasks >= 1 ? 'in-progress' : 'not-started', estimatedHours: 8 },
+            { phaseId: createdPhase.id, taskId: "t3", title: "Data mapping", status: phase.completedTasks >= 3 ? 'completed' : phase.completedTasks >= 2 ? 'in-progress' : 'not-started', estimatedHours: 12 },
+            { phaseId: createdPhase.id, taskId: "t4", title: "Gap analysis", status: phase.completedTasks >= 4 ? 'completed' : phase.completedTasks >= 3 ? 'in-progress' : 'not-started', estimatedHours: 8 }
+          ]);
+        }
+      }
+    }
+
+    // Add some sample metrics for completed/in-progress onboardings
+    const onboardingsWithProgress = await db.select()
+      .from(plantOnboarding)
+      .where(or(
+        eq(plantOnboarding.status, 'completed'),
+        eq(plantOnboarding.status, 'in-progress')
+      ));
+
+    for (const ob of onboardingsWithProgress) {
+      if (ob.overallProgress && ob.overallProgress > 40) {
+        await db.insert(plantOnboardingMetrics).values([
+          { 
+            onboardingId: ob.id, 
+            metricName: "Schedule Accuracy", 
+            targetValue: "95", 
+            metricValue: ob.overallProgress > 80 ? "92" : "85", 
+            metricUnit: "%"
+          },
+          { 
+            onboardingId: ob.id, 
+            metricName: "On-Time Delivery", 
+            targetValue: "98", 
+            metricValue: ob.overallProgress > 60 ? "96" : "88", 
+            metricUnit: "%"
+          },
+          { 
+            onboardingId: ob.id, 
+            metricName: "Resource Utilization", 
+            targetValue: "85", 
+            metricValue: ob.overallProgress > 70 ? "83" : "75", 
+            metricUnit: "%"
+          }
+        ]);
+      }
+    }
+
+    res.json({ 
+      success: true, 
+      message: 'Sample data generated successfully',
+      onboardings: samplePlants.length,
+      phases: samplePlants.length * 5
+    });
+  } catch (error) {
+    console.error('Error generating sample data:', error);
+    res.status(500).json({ error: 'Failed to generate sample data' });
   }
 });
 

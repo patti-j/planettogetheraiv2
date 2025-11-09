@@ -3604,7 +3604,7 @@ export const onboardingTemplates = pgTable("onboarding_templates", {
 
 export const plantOnboarding = pgTable("plant_onboarding", {
   id: serial("id").primaryKey(),
-  plantId: integer("plant_id").references(() => ptplants.plantCode).notNull(),
+  plantId: integer("plant_id").references(() => ptPlants.id).notNull(),
   templateId: integer("template_id").references(() => onboardingTemplates.id),
   name: varchar("name", { length: 255 }).notNull(),
   status: varchar("status", { length: 50 }).default("not-started"), // not-started, in-progress, completed, paused
@@ -3717,6 +3717,22 @@ export const onboardingRequirements = pgTable("onboarding_requirements", {
   priority: varchar("priority", { length: 20 }).default("medium"),
   status: varchar("status", { length: 50 }).default("pending"),
   analyzedAt: timestamp("analyzed_at"),
+  createdAt: timestamp("created_at").defaultNow()
+});
+
+// Company-wide onboarding overview  
+export const companyOnboardingOverview = pgTable("company_onboarding_overview", {
+  id: serial("id").primaryKey(),
+  companyId: integer("company_id"),
+  companyName: varchar("company_name", { length: 255 }).notNull(),
+  totalPlants: integer("total_plants").default(0),
+  onboardedPlants: integer("onboarded_plants").default(0),
+  inProgressPlants: integer("in_progress_plants").default(0),
+  averageCompletionTime: integer("average_completion_time"), // in days
+  bestPractices: jsonb("best_practices"),
+  commonChallenges: jsonb("common_challenges"),
+  successMetrics: jsonb("success_metrics"),
+  lastUpdated: timestamp("last_updated").defaultNow(),
   createdAt: timestamp("created_at").defaultNow()
 });
 
