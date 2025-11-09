@@ -5014,8 +5014,9 @@
                         // Track when critical operations are scheduled (for buffer enforcement)
                         const scheduledBrewingOps = new Map(); // operationType -> {startDate, endDate}
                         
-                        // CRITICAL FIX: Track operation start times by sequence number for proper chaining
-                        const operationStartBySequence = new Map(); // sequence -> startDate
+                        // CRITICAL FIX: Track operation start times by sequence number for THIS JOB ONLY
+                        // This map is specific to the current job to prevent cross-job interference
+                        const jobOperationStartBySequence = new Map(); // sequence -> startDate for this job
                         
                         // Schedule backward from last operation (highest sequence)
                         let nextOperationStart = null;
@@ -5032,8 +5033,8 @@
                             // CRITICAL FIX: Get the start time of the next operation in sequence
                             // Look for the operation with sequence+1 to properly chain backward
                             const nextSequence = sequence + 1;
-                            if (operationStartBySequence.has(nextSequence)) {
-                                nextOperationStart = operationStartBySequence.get(nextSequence);
+                            if (jobOperationStartBySequence.has(nextSequence)) {
+                                nextOperationStart = jobOperationStartBySequence.get(nextSequence);
                                 console.log(`  🔗 Found next operation in sequence ${nextSequence} starting at ${nextOperationStart.toLocaleString()}`);
                             } else {
                                 nextOperationStart = null;
@@ -5176,7 +5177,7 @@
                                     
                                     // CRITICAL FIX: Store this operation's start time by its sequence number
                                     // so the previous operation (sequence-1) can find it
-                                    operationStartBySequence.set(sequence, startDate);
+                                    jobOperationStartBySequence.set(sequence, startDate);
                                     console.log(`  📌 Stored sequence ${sequence} start time: ${startDate.toLocaleString()}`);
                                 } else {
                                     console.warn(`  ❌ No free slot found for "${operation.name}" before ${endDate.toLocaleString()}`);
@@ -5184,7 +5185,7 @@
                                     actualEndDate = endDate;
                                     startDate = new Date(endDate.getTime() - durationMs);
                                     // Store this operation's start time even in fallback case
-                                    operationStartBySequence.set(sequence, startDate);
+                                    jobOperationStartBySequence.set(sequence, startDate);
                                     console.log(`  📌 Stored sequence ${sequence} start time (fallback): ${startDate.toLocaleString()}`);
                                 }
                                 
@@ -5195,7 +5196,7 @@
                                 startDate = new Date(endDate.getTime() - durationMs);
                                 console.log(`  ⚠️ No resource for "${operation.name}" - scheduled ${startDate.toLocaleString()} to ${actualEndDate.toLocaleString()}`);
                                 // Store this operation's start time even when no resource
-                                operationStartBySequence.set(sequence, startDate);
+                                jobOperationStartBySequence.set(sequence, startDate);
                                 console.log(`  📌 Stored sequence ${sequence} start time (no resource): ${startDate.toLocaleString()}`);
                             }
                             
