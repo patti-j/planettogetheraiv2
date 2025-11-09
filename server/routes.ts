@@ -75,6 +75,7 @@ import { log } from "./vite";
 import path from "path";
 import fs from "fs";
 import agentTrainingRoutes from "./routes/agent-training-routes";
+import onboardingRoutes from "./routes/onboarding-routes";
 import { DEFAULT_MODEL, DEFAULT_TEMPERATURE } from "./config/ai-model";
 import multer from "multer";
 import { AlgorithmRegistry } from "./services/optimization/algorithm-registry";
@@ -10558,6 +10559,9 @@ router.get("/api/powerbi/export/:workspaceId/:reportId/:exportId/file", async (r
 
 // Agent training routes
 router.use('/api', agentTrainingRoutes);
+
+// Onboarding routes
+router.use(onboardingRoutes);
 
 // Create a new real-time voice session
 router.post('/api/realtime/sessions', async (req, res) => {

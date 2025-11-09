@@ -3685,6 +3685,41 @@ export const plantOnboardingDocuments = pgTable("plant_onboarding_documents", {
   uploadedAt: timestamp("uploaded_at").defaultNow()
 });
 
+// AI-powered onboarding recommendations
+export const onboardingAIRecommendations = pgTable("onboarding_ai_recommendations", {
+  id: serial("id").primaryKey(),
+  onboardingId: integer("onboarding_id").references(() => plantOnboarding.id).notNull(),
+  recommendationType: varchar("recommendation_type", { length: 100 }).notNull(), // "feature", "configuration", "data_source", "integration"
+  title: varchar("title", { length: 255 }).notNull(),
+  description: text("description"),
+  reasoning: text("reasoning"), // AI explanation for the recommendation
+  priority: varchar("priority", { length: 20 }).default("medium"),
+  suggestedFeatures: jsonb("suggested_features"), // Array of PT features to enable
+  suggestedDataSources: jsonb("suggested_data_sources"), // Data sources/integrations needed
+  implementationSteps: jsonb("implementation_steps"), // Step-by-step guide
+  estimatedImpact: jsonb("estimated_impact"), // Impact metrics
+  status: varchar("status", { length: 50 }).default("pending"), // pending, accepted, rejected, implemented
+  acceptedBy: integer("accepted_by").references(() => users.id),
+  acceptedAt: timestamp("accepted_at"),
+  createdAt: timestamp("created_at").defaultNow()
+});
+
+// Customer requirements analysis
+export const onboardingRequirements = pgTable("onboarding_requirements", {
+  id: serial("id").primaryKey(),
+  onboardingId: integer("onboarding_id").references(() => plantOnboarding.id).notNull(),
+  requirementCategory: varchar("requirement_category", { length: 100 }).notNull(), // "production", "quality", "compliance", "reporting", "integration"
+  requirementText: text("requirement_text").notNull(),
+  extractedFrom: varchar("extracted_from", { length: 255 }), // Document name or manual entry
+  businessGoals: jsonb("business_goals"), // Related business goals
+  successCriteria: jsonb("success_criteria"), // How to measure success
+  mappedFeatures: jsonb("mapped_features"), // PT features that address this requirement
+  priority: varchar("priority", { length: 20 }).default("medium"),
+  status: varchar("status", { length: 50 }).default("pending"),
+  analyzedAt: timestamp("analyzed_at"),
+  createdAt: timestamp("created_at").defaultNow()
+});
+
 // Create insert schemas and types for Plant Onboarding tables
 export const insertOnboardingTemplateSchema = createInsertSchema(onboardingTemplates).omit({
   id: true,

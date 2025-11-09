@@ -75,6 +75,7 @@ import DisruptionManagement from "@/pages/disruption-management";
 import ErrorLogs from "@/pages/error-logs";
 import ExtensionStudio from "@/pages/extension-studio";
 import OnboardingAssistant from "@/pages/onboarding-assistant";
+import CompanyOnboardingOverview from "@/pages/company-onboarding-overview";
 import ImplementationProjects from "@/pages/implementation-projects";
 import IndustryTemplates from "@/pages/industry-templates";
 import MasterDataManagement from "@/pages/master-data-management";
@@ -395,6 +396,7 @@ export default function ApplicationApp() {
               </Route>
               <Route path="/demand-forecasting" component={DemandForecasting} />
               <Route path="/onboarding-assistant" component={OnboardingAssistant} />
+              <Route path="/company-onboarding-overview" component={CompanyOnboardingOverview} />
               <Route path="/design-studio" component={DesignStudio} />
               <Route path="/ai-scenario-creator" component={AIScenarioCreator} />
               <Route path="/canvas" component={CanvasPage} />
