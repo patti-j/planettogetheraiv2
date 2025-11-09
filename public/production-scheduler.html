@@ -4118,16 +4118,6 @@
                         return predecessor;
                     }
                     
-                    // Helper to identify if an operation is a packaging operation
-                    function isPackagingOperation(operation) {
-                        const name = (operation.name || '').toLowerCase();
-                        return name.includes('bottling') || 
-                               name.includes('canning') || 
-                               name.includes('kegging') || 
-                               name.includes('packaging') ||
-                               name.includes('filling') ||
-                               name.includes('packing');
-                    }
                     
                     // Helper functions moved to global scope - use window.getBrewingOperationType and window.getBrewingOperationBuffer
                     
@@ -4995,6 +4985,20 @@
                         
                         console.log(`  Operations: ${operations.length} (sequences ${operations.map(op => getSequence(op)).join(', ')})`);
                         
+                        // CRITICAL: Precompute the highest sequence number for this job
+                        // Filter out non-numeric values and handle edge cases
+                        const validSequences = operations
+                            .map(op => getSequence(op))
+                            .filter(seq => !isNaN(seq) && seq !== null && seq !== undefined);
+                        
+                        let maxSequence = -1;
+                        if (validSequences.length > 0) {
+                            maxSequence = Math.max(...validSequences);
+                            console.log(`  📊 Highest sequence number in job: ${maxSequence}`);
+                        } else {
+                            console.warn(`  ⚠️ No valid sequence numbers found in job ${jobKey} - using last operation by position`);
+                        }
+                        
                         // Helper function moved to global scope - use window.getBrewingOperationType
                         
                         // 🍺 BREWING CRITICAL SEQUENCES FIX:
@@ -5060,32 +5064,32 @@
                                 }
                             }
                             
-                            // CRITICAL FIX: Packaging operations MUST end on November 15
-                            // Last operation of job should also end at job due date
+                            // CRITICAL FIX: Operation with highest sequence number MUST end on November 15
+                            // This is typically the packaging operation but we identify it by sequence, not by name
                             let isLastOperation = false;
-                            let isPackaging = isPackagingOperation(operation);
+                            let isHighestSequence = false;
                             
-                            // Special handling for packaging operations
-                            if (isPackaging) {
-                                // All packaging operations should finish on November 15
-                                const packagingDueDate = new Date(Date.UTC(2025, 10, 15, 22, 0, 0)); // Nov 15, 2025 10PM UTC
-                                endDate = packagingDueDate;
-                                console.log(`  📦 PACKAGING OPERATION "${operation.name}" (seq ${sequence}) - MUST end on Nov 15: ${endDate.toLocaleString()}`);
+                            // Check if this is the operation with the highest sequence number
+                            // Fall back to last position if no valid sequences exist
+                            if (maxSequence > -1) {
+                                isHighestSequence = (sequence === maxSequence);
+                            } else {
+                                // No valid sequences, use position-based logic
+                                isHighestSequence = (i === operations.length - 1);
+                            }
+                            
+                            // Special handling for highest sequence operation (typically packaging)
+                            if (isHighestSequence) {
+                                // All highest-sequence operations should finish on November 15
+                                const targetDueDate = new Date(Date.UTC(2025, 10, 15, 22, 0, 0)); // Nov 15, 2025 10PM UTC
+                                endDate = targetDueDate;
+                                console.log(`  📦 HIGHEST SEQUENCE OPERATION "${operation.name}" (seq ${sequence}) - MUST end on Nov 15: ${endDate.toLocaleString()}`);
                                 
                                 if (requireNeedDates) {
                                     operation.constraintType = 'finishnolaterthan';
-                                    operation.constraintDate = packagingDueDate;
+                                    operation.constraintDate = targetDueDate;
                                 }
-                            } else if (i === operations.length - 1) {
-                                // Non-packaging last operations end at job due date
-                                endDate = new Date(jobDue);
-                                isLastOperation = true;
-                                console.log(`  🎯 LAST OPERATION "${operation.name}" (seq ${sequence}) - ends at job due date: ${endDate.toLocaleString()}`);
-                                
-                                if (requireNeedDates) {
-                                    operation.constraintType = 'finishnolaterthan';
-                                    operation.constraintDate = new Date(jobDue);
-                                }
+                                isLastOperation = true; // Highest sequence is effectively the last operation
                             } else if (!endDate) {
                                 // Earlier operations must finish when the next operation starts (with buffer if needed)
                                 if (requiresBuffer && nextOperationStart) {
@@ -5114,21 +5118,21 @@
                                     actualEndDate = slot.end;
                                     
                                     // Log the placement decision
-                                    if (isPackaging) {
-                                        console.log(`  📦 PACKAGING OPERATION "${operation.name}" placed using backward packer`);
+                                    if (isHighestSequence) {
+                                        console.log(`  📦 HIGHEST SEQUENCE OPERATION "${operation.name}" placed using backward packer`);
                                         console.log(`     Target end: ${endDate.toLocaleString()}, Actual end: ${actualEndDate.toLocaleString()}`);
                                         
-                                        // Check if packaging ends on Nov 15 (with tolerance for resource conflicts)
-                                        const packagingTarget = new Date(Date.UTC(2025, 10, 15, 22, 0, 0));
-                                        const timeDiff = actualEndDate.getTime() - packagingTarget.getTime();
+                                        // Check if highest sequence op ends on Nov 15 (with tolerance for resource conflicts)
+                                        const targetDate = new Date(Date.UTC(2025, 10, 15, 22, 0, 0));
+                                        const timeDiff = actualEndDate.getTime() - targetDate.getTime();
                                         if (timeDiff > 60000) { // More than 1 minute after target
-                                            console.warn(`     ⚠️ WARNING: Packaging operation ends after Nov 15 (diff: ${timeDiff/60000} min)`);
+                                            console.warn(`     ⚠️ WARNING: Highest sequence operation ends after Nov 15 (diff: ${timeDiff/60000} min)`);
                                         } else if (timeDiff < -86400000) { // More than 1 day before target
-                                            console.log(`     ℹ️ INFO: Packaging moved earlier due to resource conflicts (${Math.abs(timeDiff)/3600000} hours before Nov 15)`);
+                                            console.log(`     ℹ️ INFO: Operation moved earlier due to resource conflicts (${Math.abs(timeDiff)/3600000} hours before Nov 15)`);
                                         } else {
-                                            console.log(`     ✅ Packaging operation scheduled close to Nov 15 target`);
+                                            console.log(`     ✅ Highest sequence operation scheduled close to Nov 15 target`);
                                         }
-                                    } else if (isLastOperation) {
+                                    } else if (isLastOperation && !isHighestSequence) {
                                         console.log(`  🎯 LAST OPERATION "${operation.name}" placed using backward packer`);
                                         console.log(`     Target end: ${endDate.toLocaleString()}, Actual end: ${actualEndDate.toLocaleString()}`);
                                         
