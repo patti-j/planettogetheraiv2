@@ -4118,6 +4118,17 @@
                         return predecessor;
                     }
                     
+                    // Helper to identify if an operation is a packaging operation
+                    function isPackagingOperation(operation) {
+                        const name = (operation.name || '').toLowerCase();
+                        return name.includes('bottling') || 
+                               name.includes('canning') || 
+                               name.includes('kegging') || 
+                               name.includes('packaging') ||
+                               name.includes('filling') ||
+                               name.includes('packing');
+                    }
+                    
                     // Helper functions moved to global scope - use window.getBrewingOperationType and window.getBrewingOperationBuffer
                     
                     // Process orphan operations first (hide them)
@@ -4857,14 +4868,25 @@
                     
                     // Build a map: jobKey -> dueDate (Need-By)
                     const jobDueMap = new Map();
+                    
+                    // IMPROVED FIX: Set November 15, 2025 as default but allow per-job dates
+                    // This provides a consistent fallback while still allowing job-specific dates
+                    const nov15NeedByDate = new Date(Date.UTC(2025, 10, 15, 22, 0, 0)); // November 15, 2025 at 10:00 PM UTC (5:00 PM EST)
+                    console.log(`📌 Default need-by date for jobs without dates: ${nov15NeedByDate.toLocaleString()}`);
+                    
                     for (const ev of allEvents) {
                         const key = getJobKey(ev);
                         if (!key) continue;
                         if (!jobDueMap.has(key)) {
+                            // Extract the actual due date from the event if available
                             const d = extractDueFromEvent(ev);
                             if (d) {
                                 jobDueMap.set(key, d);
                                 console.log(`  Job "${key}" has Need-By date: ${d.toLocaleString()}`);
+                            } else {
+                                // If no due date, use November 15 as default
+                                jobDueMap.set(key, nov15NeedByDate);
+                                console.log(`  Job "${key}" has no due date -> using default: ${nov15NeedByDate.toLocaleString()}`);
                             }
                         }
                     }
@@ -5038,13 +5060,27 @@
                                 }
                             }
                             
-                            // CRITICAL FIX: Last operation MUST end at the job due date
+                            // CRITICAL FIX: Packaging operations MUST end on November 15
+                            // Last operation of job should also end at job due date
                             let isLastOperation = false;
-                            if (i === operations.length - 1) {
-                                // Force the last operation to end exactly at the due date
+                            let isPackaging = isPackagingOperation(operation);
+                            
+                            // Special handling for packaging operations
+                            if (isPackaging) {
+                                // All packaging operations should finish on November 15
+                                const packagingDueDate = new Date(Date.UTC(2025, 10, 15, 22, 0, 0)); // Nov 15, 2025 10PM UTC
+                                endDate = packagingDueDate;
+                                console.log(`  📦 PACKAGING OPERATION "${operation.name}" (seq ${sequence}) - MUST end on Nov 15: ${endDate.toLocaleString()}`);
+                                
+                                if (requireNeedDates) {
+                                    operation.constraintType = 'finishnolaterthan';
+                                    operation.constraintDate = packagingDueDate;
+                                }
+                            } else if (i === operations.length - 1) {
+                                // Non-packaging last operations end at job due date
                                 endDate = new Date(jobDue);
                                 isLastOperation = true;
-                                console.log(`  🎯 LAST OPERATION "${operation.name}" (seq ${sequence}) - MUST end at due date: ${endDate.toLocaleString()}`);
+                                console.log(`  🎯 LAST OPERATION "${operation.name}" (seq ${sequence}) - ends at job due date: ${endDate.toLocaleString()}`);
                                 
                                 if (requireNeedDates) {
                                     operation.constraintType = 'finishnolaterthan';
@@ -5078,7 +5114,21 @@
                                     actualEndDate = slot.end;
                                     
                                     // Log the placement decision
-                                    if (isLastOperation) {
+                                    if (isPackaging) {
+                                        console.log(`  📦 PACKAGING OPERATION "${operation.name}" placed using backward packer`);
+                                        console.log(`     Target end: ${endDate.toLocaleString()}, Actual end: ${actualEndDate.toLocaleString()}`);
+                                        
+                                        // Check if packaging ends on Nov 15 (with tolerance for resource conflicts)
+                                        const packagingTarget = new Date(Date.UTC(2025, 10, 15, 22, 0, 0));
+                                        const timeDiff = actualEndDate.getTime() - packagingTarget.getTime();
+                                        if (timeDiff > 60000) { // More than 1 minute after target
+                                            console.warn(`     ⚠️ WARNING: Packaging operation ends after Nov 15 (diff: ${timeDiff/60000} min)`);
+                                        } else if (timeDiff < -86400000) { // More than 1 day before target
+                                            console.log(`     ℹ️ INFO: Packaging moved earlier due to resource conflicts (${Math.abs(timeDiff)/3600000} hours before Nov 15)`);
+                                        } else {
+                                            console.log(`     ✅ Packaging operation scheduled close to Nov 15 target`);
+                                        }
+                                    } else if (isLastOperation) {
                                         console.log(`  🎯 LAST OPERATION "${operation.name}" placed using backward packer`);
                                         console.log(`     Target end: ${endDate.toLocaleString()}, Actual end: ${actualEndDate.toLocaleString()}`);
                                         
