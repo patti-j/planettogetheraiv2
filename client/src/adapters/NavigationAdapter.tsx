@@ -33,6 +33,7 @@ interface NavigationAdapterContextType {
   clearFavorites: () => void;
   moveFavoriteUp: (path: string) => void;
   moveFavoriteDown: (path: string) => void;
+  reorderFavorites: (newOrder: FavoritePage[]) => void;
   lastVisitedRoute: string | null;
   setLastVisitedRoute: (route: string) => void;
 }
@@ -437,6 +438,12 @@ export function NavigationAdapterProvider({ children }: { children: ReactNode })
       return updated;
     });
   };
+  
+  // Bulk reorder favorites - more efficient for drag-and-drop
+  const reorderFavorites = (newOrder: FavoritePage[]) => {
+    setFavoritePages(newOrder);
+    saveFavorites(newOrder);
+  };
 
   const value: NavigationAdapterContextType = {
     recentPages,
@@ -449,6 +456,7 @@ export function NavigationAdapterProvider({ children }: { children: ReactNode })
     clearFavorites,
     moveFavoriteUp,
     moveFavoriteDown,
+    reorderFavorites,
     lastVisitedRoute,
     setLastVisitedRoute
   };

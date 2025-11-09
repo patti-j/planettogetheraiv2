@@ -1,10 +1,27 @@
 import { useState, useRef, useEffect } from 'react';
 import { useLocation } from 'wouter';
-import { Search, Pin, PinOff, List, Folder, X, Home, Clock, Star, StarOff, Calendar, Brain, Briefcase, Database, Factory, Settings, FileText, Package, Target, BarChart3, Wrench, Shield, BookOpen, Eye, MessageSquare, Sparkles, Building, Server, TrendingUp, Truck, AlertTriangle, MessageCircle, GraduationCap, Monitor, Columns3, Code, Network, Globe, GitBranch, DollarSign, Headphones, Upload, ArrowRightLeft, FileSearch, Presentation, FileX, Grid, PlayCircle, History, Layout, Puzzle, AlertCircle, Layers, Workflow, ArrowUpDown, Disc } from 'lucide-react';
+import { Search, Pin, PinOff, List, Folder, X, Home, Clock, Star, StarOff, Calendar, Brain, Briefcase, Database, Factory, Settings, FileText, Package, Target, BarChart3, Wrench, Shield, BookOpen, Eye, MessageSquare, Sparkles, Building, Server, TrendingUp, Truck, AlertTriangle, MessageCircle, GraduationCap, Monitor, Columns3, Code, Network, Globe, GitBranch, DollarSign, Headphones, Upload, ArrowRightLeft, FileSearch, Presentation, FileX, Grid, PlayCircle, History, Layout, Puzzle, AlertCircle, Layers, Workflow, GripVertical, Disc } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+  useSortable
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 
 import { cn } from '@/lib/utils';
 import { usePermissions, useAuth } from '@/hooks/useAuth';
@@ -20,6 +37,107 @@ interface NavigationMenuContentProps {
   isOpen?: boolean;
 }
 
+// Sortable Favorite Item Component
+interface SortableFavoriteItemProps {
+  page: any;
+  isActive: boolean;
+  onNavigate: () => void;
+  onToggleFavorite: () => void;
+}
+
+function SortableFavoriteItem({ page, isActive, onNavigate, onToggleFavorite }: SortableFavoriteItemProps) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: page.path });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  const IconComponent = getIconComponent(page.icon || 'FileText');
+  
+  // Find the color from navigation config
+  const getColorForPage = () => {
+    for (const group of navigationGroups) {
+      const feature = group.features.find((f: any) => f.href === page.path);
+      if (feature) {
+        const bgColor = feature.color;
+        if (!bgColor) return 'text-blue-500';
+        if (bgColor.includes('gradient')) return 'text-purple-500';
+        return bgColor.replace('bg-', 'text-');
+      }
+    }
+    return 'text-gray-500';
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={cn(
+        "flex items-center gap-1 group rounded-md transition-all",
+        isDragging && "shadow-lg"
+      )}
+    >
+      {/* Drag Handle - Always visible but subtle */}
+      <div 
+        {...attributes} 
+        {...listeners}
+        className={cn(
+          "flex items-center justify-center cursor-move p-1 rounded hover:bg-accent/50 transition-all",
+          "text-muted-foreground/40 hover:text-muted-foreground"
+        )}
+      >
+        <GripVertical className="h-3 w-3" />
+      </div>
+
+      {/* Main Button */}
+      <Button
+        variant="ghost"
+        className={cn(
+          "flex-1 justify-start text-left h-9 px-2 font-normal transition-all duration-150",
+          isActive && "bg-accent text-accent-foreground",
+          !isActive && "hover:bg-accent/50 hover:text-foreground"
+        )}
+        onClick={onNavigate}
+      >
+        <div className="flex items-center gap-3 flex-1">
+          <IconComponent className={cn(
+            "h-4 w-4 flex-shrink-0",
+            isActive ? "text-primary" : getColorForPage()
+          )} />
+          <span className={cn(
+            "truncate text-sm",
+            !isActive && "text-foreground/80"
+          )}>
+            {page.label}
+          </span>
+        </div>
+      </Button>
+      
+      {/* Favorite Toggle */}
+      <Button
+        variant="ghost"
+        size="sm"
+        className="h-6 w-6 p-0 opacity-100"
+        onClick={(e) => {
+          e.stopPropagation();
+          onToggleFavorite();
+        }}
+      >
+        <Star className="h-3 w-3 text-yellow-500 fill-yellow-500" />
+      </Button>
+    </div>
+  );
+}
+
 export function NavigationMenuContent({ isPinned, onTogglePin, onClose, isOpen }: NavigationMenuContentProps) {
   const [location, setLocation] = useLocation();
   const [searchFilter, setSearchFilter] = useState('');
@@ -27,6 +145,35 @@ export function NavigationMenuContent({ isPinned, onTogglePin, onClose, isOpen }
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
   const searchInputRef = useRef<HTMLInputElement>(null);
   const { hasPermission } = usePermissions();
+  
+  // Drag and Drop sensors
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+  
+  // Handle drag end for reordering favorites
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    
+    if (!over || active.id === over.id) {
+      return;
+    }
+    
+    const oldIndex = favoritePages.findIndex((p: any) => p.path === active.id);
+    const newIndex = favoritePages.findIndex((p: any) => p.path === over.id);
+    
+    if (oldIndex !== -1 && newIndex !== -1) {
+      const newOrder = arrayMove(favoritePages, oldIndex, newIndex);
+      reorderFavorites(newOrder);
+    }
+  };
   
   // Auto-focus search input when navigation menu opens
   useEffect(() => {
@@ -62,6 +209,7 @@ export function NavigationMenuContent({ isPinned, onTogglePin, onClose, isOpen }
   let clearFavorites = () => {};
   let moveFavoriteUp = (path: string) => {};
   let moveFavoriteDown = (path: string) => {};
+  let reorderFavorites = (newOrder: any[]) => {};
   try {
     const navigation = useNavigationAdapter();
     addRecentPage = navigation.addRecentPage;
@@ -74,6 +222,7 @@ export function NavigationMenuContent({ isPinned, onTogglePin, onClose, isOpen }
     clearFavorites = navigation.clearFavorites;
     moveFavoriteUp = navigation.moveFavoriteUp;
     moveFavoriteDown = navigation.moveFavoriteDown;
+    reorderFavorites = navigation.reorderFavorites;
   } catch (error) {
     console.warn('NavigationAdapter not available, using fallback:', error);
   }
@@ -286,113 +435,34 @@ export function NavigationMenuContent({ isPinned, onTogglePin, onClose, isOpen }
                     </div>
                   </div>
 
-                  {/* Favorite Pages Items */}
-                  <div className="space-y-0.5">
-                    {favoritePages.map((page, pageIndex) => {
-                      const IconComponent = getIconComponent(page.icon || 'FileText');
-                      const isActive = location === page.path;
-                      
-                      // Find the color from navigation config
-                      const getColorForPage = () => {
-                        for (const group of navigationGroups) {
-                          const feature = group.features.find((f: any) => f.href === page.path);
-                          if (feature) {
-                            // Convert bg-color to text-color
-                            const bgColor = feature.color;
-                            if (!bgColor) return 'text-blue-500';
-                            if (bgColor.includes('gradient')) return 'text-purple-500';
-                            return bgColor.replace('bg-', 'text-');
-                          }
-                        }
-                        return 'text-gray-500';
-                      };
-
-                      return (
-                        <div key={`fav-${page.path}-${pageIndex}`} className="flex items-center gap-1">
-                          <Button
-                            variant="ghost"
-                            className={cn(
-                              "flex-1 justify-start text-left h-9 px-3 font-normal transition-all duration-150 group",
-                              isActive && "bg-accent text-accent-foreground",
-                              !isActive && "hover:bg-accent/50 hover:text-foreground"
-                            )}
-                            onClick={() => {
+                  {/* Favorite Pages Items with Drag and Drop */}
+                  <DndContext
+                    sensors={sensors}
+                    collisionDetection={closestCenter}
+                    onDragEnd={handleDragEnd}
+                  >
+                    <SortableContext
+                      items={favoritePages.map(p => p.path)}
+                      strategy={verticalListSortingStrategy}
+                    >
+                      <div className="space-y-0.5">
+                        {favoritePages.map((page, pageIndex) => (
+                          <SortableFavoriteItem
+                            key={page.path}
+                            page={page}
+                            isActive={location === page.path}
+                            onNavigate={() => {
                               handleNavigation(page.path, page.label);
                               if (!isPinned && onClose) onClose();
                             }}
-                          >
-                            <div className="flex items-center gap-3 flex-1">
-                              <IconComponent className={cn(
-                                "h-4 w-4 flex-shrink-0",
-                                isActive ? "text-primary" : getColorForPage()
-                              )} />
-                              <span className={cn(
-                                "truncate text-sm",
-                                !isActive && "text-foreground/80"
-                              )}>
-                                {page.label}
-                              </span>
-                            </div>
-                          </Button>
-                          
-                          {/* Star button to toggle favorite */}
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className={cn(
-                              "h-4 w-4 p-0 transition-opacity opacity-100"
-                            )}
-                            onClick={(e) => {
-                              e.stopPropagation();
+                            onToggleFavorite={() => {
                               toggleFavorite(page.path, page.label, page.icon);
                             }}
-                          >
-                            <Star className="h-2.5 w-2.5 text-yellow-500 fill-yellow-500" />
-                          </Button>
-                          
-                          {/* Up/Down arrow buttons for reordering */}
-                          <div className="flex flex-col gap-0.5">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className={cn(
-                                "h-4 w-4 p-0 transition-opacity",
-                                pageIndex === 0 ? "opacity-30 cursor-not-allowed" : "opacity-60 hover:opacity-100"
-                              )}
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                if (pageIndex > 0) {
-                                  moveFavoriteUp(page.path);
-                                }
-                              }}
-                              disabled={pageIndex === 0}
-                              title="Move up"
-                            >
-                              <ArrowUpDown className="h-3 w-3 rotate-180" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className={cn(
-                                "h-4 w-4 p-0 transition-opacity",
-                                pageIndex === favoritePages.length - 1 ? "opacity-30 cursor-not-allowed" : "opacity-60 hover:opacity-100"
-                              )}
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                if (pageIndex < favoritePages.length - 1) {
-                                  moveFavoriteDown(page.path);
-                                }
-                              }}
-                              disabled={pageIndex === favoritePages.length - 1}
-                              title="Move down"
-                            >
-                              <ArrowUpDown className="h-3 w-3" />
-                            </Button>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
+                          />
+                        ))}
+                      </div>
+                    </SortableContext>
+                  </DndContext>
                 </div>
               )}
 
