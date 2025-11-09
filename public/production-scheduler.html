@@ -3885,10 +3885,6 @@
                         console.log('🚀 Starting ASAP scheduling with Brewery-Specific Chain Continuity...');
                         console.log('📌 NOTE: Dependencies are visual-only. Scheduling uses priority + sequence.');
                         
-                        // Reset lagering tracking at start of scheduling to avoid stale data between runs
-                        window.lageringEndTimes = new Map();
-                        console.log('  🔄 Reset lagering end time tracking for fresh scheduling pass');
-                        
                         const events = [...eventStore.records].filter(e => e.resourceId !== 'unscheduled');
                         console.log(`  Total operations to schedule: ${events.length}`);
                     
@@ -4037,9 +4033,13 @@
                     // Track completion times for each operation
                     const operationEndTimes = new Map(); // operationId -> endDate
                     
+                    // CRITICAL FIX: Track job-level ready times to ensure proper sequencing
+                    const jobReadyTimes = new Map(); // jobKey -> earliest time next operation can start
+                    
                     // Note: jobStartDates already declared earlier - reusing existing Map
                     
                     console.log('\n📦 Starting Interleaved ASAP Scheduling Algorithm...');
+                    console.log('📋 Using strict sequence-based scheduling from ptjoboperations table');
                     
                     // Helper function to find the earliest available slot on a resource
                     function findEarliestSlotOnResource(resourceId, duration, earliestPossibleStart) {
@@ -4109,11 +4109,13 @@
                         });
                     }
                     
-                    // Initialize job start dates
+                    // Initialize job start dates and ready times
                     for (const job of jobsWithPriority) {
                         const releaseDate = getManufacturingReleaseDate(job.operations[0]);
                         const startDate = releaseDate || today;
                         jobStartDates.set(job.jobKey, startDate);
+                        // Initialize job ready time to the job start date
+                        jobReadyTimes.set(job.jobKey, startDate);
                         console.log(`  Job ${job.jobKey}: Start date = ${startDate.toLocaleDateString()}`);
                     }
                     
@@ -4197,9 +4199,14 @@
                                 const opType = window.getBrewingOperationType(operation.name);
                                 const predecessor = findPredecessor(operation, job.operations);
                                 
-                                // Check if predecessor is scheduled (or if this is first op)
+                                // CRITICAL FIX: Check if predecessor is scheduled (only for operations in this run)
+                                // Don't wait for operations that were filtered out of this scheduling run
                                 if (predecessor && !operationEndTimes.has(predecessor.id)) {
-                                    continue; // Wait for predecessor
+                                    // Only wait if the predecessor is part of this scheduling run
+                                    if (unscheduledOps.has(predecessor.id)) {
+                                        continue; // Wait for predecessor that's in this run
+                                    }
+                                    // Otherwise, predecessor was filtered out, so don't wait for it
                                 }
                                 
                                 // If this is part of a critical sequence, handle specially
@@ -4252,6 +4259,13 @@
                                         
                                         // Track completion time
                                         operationEndTimes.set(operation.id, endTime);
+                                        
+                                        // Update job ready time for critical path operations too
+                                        const currentJobReadyTime = jobReadyTimes.get(job.jobKey);
+                                        if (!currentJobReadyTime || endTime > currentJobReadyTime) {
+                                            jobReadyTimes.set(job.jobKey, endTime);
+                                        }
+                                        
                                         scheduledInThisRound.push(opId);
                                         continue;
                                     }
@@ -4304,20 +4318,17 @@
                                     }
                                 }
                                 
-                                // CRITICAL FIX: Check if this is a packaging operation that must wait for lagering
-                                const isPackagingOp = operation.name.toLowerCase().includes('bottling') || 
-                                                     operation.name.toLowerCase().includes('packaging') ||
-                                                     operation.name.toLowerCase().includes('pack') ||
-                                                     operation.name.toLowerCase().includes('filling') ||
-                                                     operation.name.toLowerCase().includes('kegging') ||
-                                                     operation.name.toLowerCase().includes('canning');
-                                
-                                // Calculate earliest start time based on FOUR constraints:
-                                // 1. Must start after predecessor in same job (if any)
+                                // CRITICAL FIX: Use job ready time to ensure proper sequencing
+                                // Calculate earliest start time based on THREE constraints:
+                                // 1. Must start after job ready time (ensures all predecessors complete)
                                 // 2. Resource must be available
                                 // 3. Brewing operations need proper sequencing and buffers
-                                // 4. Packaging must wait for lagering to complete (for lager beers)
                                 let earliestStart;
+                                
+                                // Start with job ready time - this ensures operation waits for all predecessors
+                                const jobReadyTime = jobReadyTimes.get(job.jobKey) || jobStartDates.get(job.jobKey);
+                                earliestStart = jobReadyTime;
+                                
                                 if (predecessor) {
                                     // Must start after predecessor ends
                                     const predEnd = operationEndTimes.get(predecessor.id);
@@ -4365,18 +4376,8 @@
                                         console.log(`      ${operation.name} (${job.jobName}): After ${predecessor.name} with ${buffer/60000}min buffer at ${earliestStart.toLocaleTimeString()}`);
                                     }
                                 } else {
-                                    // First operation - use job start date
-                                    earliestStart = jobStartDates.get(job.jobKey);
+                                    // First operation - already set earliestStart to job ready time above
                                     console.log(`      ${operation.name} (${job.jobName}): First op, start at ${earliestStart.toLocaleTimeString()}`);
-                                }
-                                
-                                // CRITICAL FIX: If this is a packaging operation, check if we need to wait for lagering
-                                if (isPackagingOp && window.lageringEndTimes && window.lageringEndTimes.has(job.jobKey)) {
-                                    const lageringEnd = window.lageringEndTimes.get(job.jobKey);
-                                    if (!earliestStart || earliestStart < lageringEnd) {
-                                        console.log(`      📦 PACKAGING WAIT: ${operation.name} must wait for lagering to complete at ${lageringEnd.toLocaleString()}`);
-                                        earliestStart = new Date(lageringEnd.getTime() + 30 * 60000); // Add 30 min buffer after lagering
-                                    }
                                 }
                                 
                                 // Find when resource is available
@@ -4415,19 +4416,12 @@
                                 // Track completion time for successor operations
                                 operationEndTimes.set(operation.id, endTime);
                                 
-                                // CRITICAL FIX: Track lagering/cold conditioning completion for proper packaging gating
-                                // For lager beers, packaging must wait for lagering to complete
-                                const operationNameLower = operation.name.toLowerCase();
-                                if (operationNameLower.includes('lagering') || 
-                                    operationNameLower.includes('cold conditioning') ||
-                                    operationNameLower.includes('lager tank') ||
-                                    operationNameLower.includes('cold storage')) {
-                                    // Store lagering end time for this job so packaging operations wait
-                                    if (!window.lageringEndTimes) {
-                                        window.lageringEndTimes = new Map();
-                                    }
-                                    window.lageringEndTimes.set(job.jobKey, endTime);
-                                    console.log(`        🍺 LAGERING TRACKED: Job ${job.jobKey} lagering ends at ${endTime.toLocaleString()}`);
+                                // CRITICAL FIX: Update job ready time so next operations wait properly
+                                // This ensures operations in the same job respect sequence order
+                                const currentJobReadyTime = jobReadyTimes.get(job.jobKey);
+                                if (!currentJobReadyTime || endTime > currentJobReadyTime) {
+                                    jobReadyTimes.set(job.jobKey, endTime);
+                                    console.log(`        📊 Job ${job.jobKey} ready time updated to ${endTime.toLocaleTimeString()}`);
                                 }
                                 
                                 // Mark as scheduled
