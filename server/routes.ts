@@ -731,26 +731,39 @@ router.get("/api/user-preferences/:userId", async (req, res) => {
       theme: "light",
       language: "en",
       timezone: "UTC",
-      dashboardLayout: {},
+      dashboardLayout: {
+        favoritePages: [],
+        recentPages: []
+      },
       notificationSettings: {},
       uiSettings: {}
     };
 
-    res.json({
-      error: preferences ? undefined : "Failed to fetch user preferences",
-      ...defaultPreferences,
-      ...preferences
-    });
+    // If preferences exist, merge them with defaults
+    if (preferences) {
+      // Ensure dashboardLayout has favoritePages array
+      const dashboardLayout = preferences.dashboardLayout || {};
+      if (!dashboardLayout.favoritePages) {
+        dashboardLayout.favoritePages = [];
+      }
+      if (!dashboardLayout.recentPages) {
+        dashboardLayout.recentPages = [];
+      }
+      
+      res.json({
+        ...defaultPreferences,
+        ...preferences,
+        dashboardLayout
+      });
+    } else {
+      // Return defaults if no preferences exist
+      res.json(defaultPreferences);
+    }
   } catch (error) {
     console.error("Error fetching user preferences:", error);
     res.status(500).json({ 
       error: "Failed to fetch user preferences",
-      theme: "light",
-      language: "en",
-      timezone: "UTC",
-      dashboardLayout: {},
-      notificationSettings: {},
-      uiSettings: {}
+      message: error.message
     });
   }
 });
@@ -784,7 +797,22 @@ router.put("/api/user-preferences", async (req, res) => {
     const existing = await storage.getUserPreferences(userId);
     
     if (existing) {
-      const updated = await storage.updateUserPreferences(userId, req.body);
+      // Deep merge dashboardLayout if it exists
+      const mergedData = { ...req.body };
+      if (req.body.dashboardLayout && existing.dashboardLayout) {
+        mergedData.dashboardLayout = {
+          ...existing.dashboardLayout,
+          ...req.body.dashboardLayout
+        };
+      }
+      
+      // Merge the rest of preferences
+      const fullPreferences = {
+        ...existing,
+        ...mergedData
+      };
+      
+      const updated = await storage.updateUserPreferences(userId, fullPreferences);
       res.json(updated);
     } else {
       const created = await storage.createUserPreferences({ userId, ...req.body });
@@ -803,7 +831,22 @@ router.put("/api/user-preferences/:userId", async (req, res) => {
     const existing = await storage.getUserPreferences(userId);
     
     if (existing) {
-      const updated = await storage.updateUserPreferences(userId, req.body);
+      // Deep merge dashboardLayout if it exists
+      const mergedData = { ...req.body };
+      if (req.body.dashboardLayout && existing.dashboardLayout) {
+        mergedData.dashboardLayout = {
+          ...existing.dashboardLayout,
+          ...req.body.dashboardLayout
+        };
+      }
+      
+      // Merge the rest of preferences
+      const fullPreferences = {
+        ...existing,
+        ...mergedData
+      };
+      
+      const updated = await storage.updateUserPreferences(userId, fullPreferences);
       res.json(updated);
     } else {
       const created = await storage.createUserPreferences({ userId, ...req.body });
