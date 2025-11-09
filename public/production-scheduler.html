@@ -5095,9 +5095,13 @@
                                 if (requiresBuffer && nextOperationStart) {
                                     endDate = new Date(nextOperationStart.getTime() - bufferMs);
                                     console.log(`  🔗 "${operation.name}" (seq ${sequence}) must finish ${bufferMs/60000}min before next op at ${endDate.toLocaleString()}`);
-                                } else {
+                                } else if (nextOperationStart) {
                                     endDate = nextOperationStart;
                                     console.log(`  🔗 "${operation.name}" (seq ${sequence}) must finish exactly when next operation starts at ${endDate.toLocaleString()}`);
+                                } else {
+                                    // No next operation start time available - use job due date as fallback
+                                    endDate = jobDue ? new Date(jobDue) : new Date(Date.UTC(2025, 10, 15, 22, 0, 0));
+                                    console.warn(`  ⚠️ "${operation.name}" (seq ${sequence}) - no next operation start, using ${jobDue ? 'job due date' : 'Nov 15 fallback'}: ${endDate.toLocaleString()}`);
                                 }
                             }
                             
