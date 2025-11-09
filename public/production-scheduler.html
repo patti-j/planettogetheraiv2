@@ -5136,6 +5136,11 @@
                                     startDate = slot.start;
                                     actualEndDate = slot.end;
                                     
+                                    // CRITICAL FIX: Store this operation's start time IMMEDIATELY
+                                    // so the previous operation (sequence-1) can find it when processed next
+                                    jobOperationStartBySequence.set(sequence, startDate);
+                                    console.log(`  📌 Stored sequence ${sequence} start time: ${startDate.toLocaleString()}`);
+                                    
                                     // Log the placement decision
                                     if (isHighestSequence) {
                                         console.log(`  📦 HIGHEST SEQUENCE OPERATION "${operation.name}" placed using backward packer`);
@@ -5174,17 +5179,12 @@
                                     const arr = manualBusyIntervals.get(resourceId) || [];
                                     arr.push({ start: startDate, end: actualEndDate, operationId: operation.id });
                                     manualBusyIntervals.set(resourceId, arr);
-                                    
-                                    // CRITICAL FIX: Store this operation's start time by its sequence number
-                                    // so the previous operation (sequence-1) can find it
-                                    jobOperationStartBySequence.set(sequence, startDate);
-                                    console.log(`  📌 Stored sequence ${sequence} start time: ${startDate.toLocaleString()}`);
                                 } else {
                                     console.warn(`  ❌ No free slot found for "${operation.name}" before ${endDate.toLocaleString()}`);
                                     // Fallback: place it anyway to maintain job integrity
                                     actualEndDate = endDate;
                                     startDate = new Date(endDate.getTime() - durationMs);
-                                    // Store this operation's start time even in fallback case
+                                    // Store this operation's start time IMMEDIATELY even in fallback case
                                     jobOperationStartBySequence.set(sequence, startDate);
                                     console.log(`  📌 Stored sequence ${sequence} start time (fallback): ${startDate.toLocaleString()}`);
                                 }
@@ -5194,10 +5194,10 @@
                                 // No resource assigned - simple backward calculation
                                 actualEndDate = endDate;
                                 startDate = new Date(endDate.getTime() - durationMs);
-                                console.log(`  ⚠️ No resource for "${operation.name}" - scheduled ${startDate.toLocaleString()} to ${actualEndDate.toLocaleString()}`);
-                                // Store this operation's start time even when no resource
+                                // Store this operation's start time IMMEDIATELY even when no resource
                                 jobOperationStartBySequence.set(sequence, startDate);
                                 console.log(`  📌 Stored sequence ${sequence} start time (no resource): ${startDate.toLocaleString()}`);
+                                console.log(`  ⚠️ No resource for "${operation.name}" - scheduled ${startDate.toLocaleString()} to ${actualEndDate.toLocaleString()}`);
                             }
                             
                             // CRITICAL: Use direct property setting to avoid triggering auto-reschedule
