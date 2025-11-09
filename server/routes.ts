@@ -788,9 +788,9 @@ router.post("/api/user-preferences/:userId", async (req, res) => {
 });
 
 // PUT route for updating user preferences (full update)
-router.put("/api/user-preferences", async (req, res) => {
+router.put("/api/user-preferences", requireAuth, async (req, res) => {
   try {
-    const userId = (req.session as any)?.userId;
+    const userId = (req as any).user?.id;
     if (!userId) {
       return res.status(401).json({ message: "Not authenticated" });
     }
