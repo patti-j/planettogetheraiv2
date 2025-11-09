@@ -6,6 +6,7 @@ import { HTML5Backend } from "react-dnd-html5-backend";
 import { TourProvider } from "@/contexts/TourContext";
 import { MaxDockProvider } from "@/contexts/MaxDockContext";
 import { AuthAdapterProvider } from "@/adapters/AuthAdapter";
+import { NavigationProvider } from "@/contexts/NavigationContext";
 import { NavigationAdapterProvider } from "@/adapters/NavigationAdapter";
 import { FullScreenProvider } from "@/contexts/FullScreenContext";
 import { LayoutDensityProvider } from "@/contexts/LayoutDensityContext";
@@ -203,10 +204,11 @@ export default function App() {
             <MaxDockProvider>
               <AuthAdapterProvider>
                 <NavigationAdapterProvider>
-                  <FullScreenProvider>
-                    <LayoutDensityProvider>
-                      <SplitScreenProvider>
-                        <ViewModeProvider>
+                  <NavigationProvider>
+                    <FullScreenProvider>
+                      <LayoutDensityProvider>
+                        <SplitScreenProvider>
+                          <ViewModeProvider>
                     {/* Federation test status removed - not needed */}
                     
                     {/* Portal Routes - Always accessible, independent of main app auth */}
@@ -247,10 +249,11 @@ export default function App() {
                         })()}
                       </>
                     )}
-                        </ViewModeProvider>
-                      </SplitScreenProvider>
-                    </LayoutDensityProvider>
-                  </FullScreenProvider>
+                          </ViewModeProvider>
+                        </SplitScreenProvider>
+                      </LayoutDensityProvider>
+                    </FullScreenProvider>
+                  </NavigationProvider>
                 </NavigationAdapterProvider>
               </AuthAdapterProvider>
             </MaxDockProvider>
