@@ -4,7 +4,13 @@
 PlanetTogether is an AI-first Factory Optimization Platform, a full-stack manufacturing SCM + APS system. Its core purpose is to leverage AI for optimized production planning, dynamic resource allocation, and intelligent dashboarding, providing complete supply chain visibility through a visual Gantt chart interface. The system is designed for enterprise-grade production deployment in pharmaceutical, chemical, and industrial manufacturing, emphasizing real-time optimization, data integrity, and comprehensive reporting. It supports multi-agent functionality, modular federation, and advanced AI integration for scheduling and system intelligence, aiming to be a global control tower for autonomous optimization and real-time plant monitoring.
 
 ## Recent Critical Fixes & Features (Nov 9, 2024)
-- **ALAP Scheduling Fix**: Fixed control flow issue where packaging and other last operations were not ending at job due dates when "Need Dates Required" was enabled. The fix ensures last operations skip slot-finding logic and remain anchored to due dates (lines 5038-5090 in production-scheduler.html).
+- **ALAP Scheduling Algorithm Improvements**: 
+  - Removed legacy ALAP implementation that used projectEnd+30 days and ignored job due dates
+  - Refactored window.alapScheduling to consistently use backward packer (findLatestFreeSlotOnResource) for ALL operations
+  - Ensures last operations end exactly at job due dates when "Need Dates Required" is enabled
+  - Fixed duplicate busy interval tracking that was causing scheduling conflicts
+  - Implemented proper job priority-based interleaved scheduling (Priority 5 schedules first for latest position)
+  - All operations now use unified backward scheduling approach with proper latestEnd constraints
 - **Plant Onboarding System**: Created comprehensive plant-specific onboarding system with database tables, API endpoints, and Company Onboarding Overview page. Sample data populated for 5 brewery plants showing different onboarding statuses (completed, in-progress, paused, not-started).
 - **Database Schema Updates**: Fixed ptPlants table references and added companyOnboardingOverview table to schema. All onboarding-related tables successfully created in production database.
 
