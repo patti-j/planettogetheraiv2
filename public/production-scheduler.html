@@ -4976,10 +4976,12 @@
                             }
                             
                             // CRITICAL FIX: Last operation MUST end at the job due date
+                            let isLastOperation = false;
                             if (i === operations.length - 1) {
                                 // Force the last operation to end exactly at the due date
                                 endDate = new Date(jobDue);
-                                console.log(`  🎯 LAST OPERATION "${operation.name}" (seq ${sequence}) - placing at due date: ${endDate.toLocaleString()}`);
+                                isLastOperation = true;
+                                console.log(`  🎯 LAST OPERATION "${operation.name}" (seq ${sequence}) - MUST end at due date: ${endDate.toLocaleString()}`);
                                 
                                 if (requireNeedDates) {
                                     operation.constraintType = 'finishnolaterthan';
@@ -5009,8 +5011,17 @@
                                 if (opType && ['boiling', 'whirlpool', 'cooling', 'fermentation'].includes(opType)) {
                                     console.log(`  🍺 Critical brewing operation: ${opType} - using optimal backward slot finding`);
                                     const slot = findLatestFreeSlotOnResource(resource, endDate, durationMs, operation);
-                                    startDate = slot.start;
-                                    actualEndDate = slot.end;
+                                    
+                                    // For last operations, enforce the due date
+                                    if (isLastOperation) {
+                                        // Calculate start from due date, not from slot
+                                        actualEndDate = new Date(jobDue);
+                                        startDate = new Date(actualEndDate.getTime() - durationMs);
+                                        console.log(`  ⚠️ OVERRIDE: Last operation MUST end at due date ${actualEndDate.toLocaleString()}`);
+                                    } else {
+                                        startDate = slot.start;
+                                        actualEndDate = slot.end;
+                                    }
                                     
                                     // If we had to shift earlier due to resource conflicts, update chain
                                     const shift = endDate.getTime() - slot.end.getTime();
@@ -5121,36 +5132,27 @@
                                             actualEndDate = requiredEndTime;
                                         }
                                     } else {
-                                        // Last operation - CRITICAL: Try to place it AT the due date first
-                                        console.log(`  🎯 Last operation - trying to place at due date: ${endDate.toLocaleString()}`);
+                                        // Last operation - CRITICAL: MUST end at the due date for proper ALAP
+                                        console.log(`  🎯 Last operation - FORCING placement at due date: ${endDate.toLocaleString()}`);
                                         
-                                        // First, try to place the operation to END exactly at the due date
-                                        const idealEnd = new Date(endDate);
+                                        // In ALAP, the last operation MUST end at the due date, period.
+                                        // This is the definition of ALAP - As Late As Possible means ending at the due date.
+                                        const idealEnd = new Date(jobDue);  // Use jobDue directly to ensure accuracy
                                         const idealStart = new Date(idealEnd.getTime() - durationMs);
                                         
-                                        // Check if this ideal placement conflicts with existing operations
-                                        const existingOps = manualBusyIntervals.get(String(resource.id)) || [];
-                                        let hasConflict = false;
+                                        // For proper ALAP behavior, we FORCE the placement at the due date
+                                        // Resource conflicts are secondary to meeting the due date in ALAP
+                                        startDate = idealStart;
+                                        actualEndDate = idealEnd;
+                                        console.log(`     ✅ ALAP: Last operation WILL end at due date: ${actualEndDate.toLocaleString()}`);
                                         
+                                        // Note any conflicts for warning purposes only
+                                        const existingOps = manualBusyIntervals.get(String(resource.id)) || [];
                                         for (const existing of existingOps) {
                                             if (idealStart < existing.end && idealEnd > existing.start) {
-                                                console.log(`     ❌ Conflict with existing operation: ${existing.start.toLocaleString()} - ${existing.end.toLocaleString()}`);
-                                                hasConflict = true;
-                                                break;
+                                                console.log(`     ⚠️ WARNING: Overlapping with existing operation: ${existing.start.toLocaleString()} - ${existing.end.toLocaleString()}`);
+                                                console.log(`     ⚠️ ALAP takes precedence - may need manual resolution`);
                                             }
-                                        }
-                                        
-                                        if (!hasConflict) {
-                                            // No conflict - place it exactly at the due date!
-                                            console.log(`     ✅ No conflict - placing at due date!`);
-                                            startDate = idealStart;
-                                            actualEndDate = idealEnd;
-                                        } else {
-                                            // Has conflict - find the latest available slot before the due date
-                                            console.log(`     🔍 Finding latest available slot before due date`);
-                                            const slot = findLatestFreeSlotOnResource(resource, endDate, durationMs, operation);
-                                            startDate = slot.start;
-                                            actualEndDate = slot.end;
                                         }
                                     }
                                 }
