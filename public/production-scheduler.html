@@ -3588,7 +3588,10 @@
                     if (n.includes('mash') || n.includes('decoction')) return 20;
                     if (n.includes('lauter')) return 30;
                     if (n.includes('boil') || n.includes('kettle')) return 40;
-                    if (n.includes('ferment')) return 50;
+                    if (n.includes('whirl')) return 41;                     // NEW – whirlpool immediately after boil
+                    if (n.includes('cool') || n.includes('chill') || 
+                        n.includes('wort cool')) return 45;                 // NEW – cooling between whirlpool and ferment
+                    if (n.includes('ferment') || n.includes('yeast')) return 50;
                     if (n.includes('bright') || n.includes('condition')) return 60;
                     if (n.includes('packag') || n.includes('bottl') || n.includes('cann')) return 70;
                     return 999;
