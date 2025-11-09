@@ -5076,25 +5076,8 @@
                                 console.log(`  🍺 Tracked ${opType}: ${startDate.toLocaleString()} to ${actualEndDate.toLocaleString()}`);
                             }
                             
-                            // Immediately track this interval as busy to prevent overlap
-                            if (resource) {
-                                const resourceId = String(resource.id);
-                                if (!manualBusyIntervals.has(resourceId)) {
-                                    manualBusyIntervals.set(resourceId, []);
-                                }
-                                manualBusyIntervals.get(resourceId).push({
-                                    start: startDate,
-                                    end: actualEndDate,
-                                    operationId: operation.id
-                                });
-                                console.log(`  📌 Marked interval busy on ${resource.name}: ${startDate.toLocaleString()} - ${actualEndDate.toLocaleString()}`);
-                            }
-                            
                             console.log(`  ⬅️ Scheduled: ${operation.name} @ ${resource?.name || 'no-resource'}`);
                             console.log(`     ${startDate.toLocaleString()} to ${actualEndDate.toLocaleString()}`);
-                            
-                            // This operation's start becomes the next operation's end (working backward)
-                            nextOperationStart = startDate;
                         }
                         
                         console.log(`  ✅ Job ${jobKey} complete - scheduled ${operations.length} operations by sequence`);
