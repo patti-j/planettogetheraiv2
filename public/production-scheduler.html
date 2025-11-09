@@ -5006,127 +5006,52 @@
                             // Calculate start date based on duration
                             let startDate, actualEndDate;
                             
-                            // CRITICAL FIX: Enforce continuous flow within jobs
-                            // Operations must end exactly when the next operation starts (no gaps)
+                            // CRITICAL FIX: Use backward packer consistently for ALL operations
+                            // This ensures proper slot finding and respects latestEnd constraints
                             if (resource) {
                                 const resourceId = String(resource.id);
-                                const existingIntervals = manualBusyIntervals.get(resourceId) || [];
                                 
-                                // CRITICAL FIX FROM CHATGPT 5 PRO: Force ALL last operations to end at due date
-                                // This applies to ALL operation types when requireNeedDates is true
-                                if (isLastOperation && requireNeedDates) {
-                                    // ALAP definition: Last operation MUST end at due date for ALL operation types
-                                    actualEndDate = new Date(jobDue);
-                                    startDate = new Date(actualEndDate.getTime() - durationMs);
-                                    console.log(`  ⚠️ ALAP OVERRIDE: Last operation "${operation.name}" (${opType || 'any type'}) MUST end at due date ${actualEndDate.toLocaleString()}`);
-                                    console.log(`     📍 Forced placement: ${startDate.toLocaleString()} to ${actualEndDate.toLocaleString()}`);
-                                    
-                                    // Check for conflicts but don't let them override ALAP requirement
-                                    for (const interval of existingIntervals) {
-                                        if ((startDate >= interval.start && startDate < interval.end) ||
-                                            (actualEndDate > interval.start && actualEndDate <= interval.end) ||
-                                            (startDate <= interval.start && actualEndDate >= interval.end)) {
-                                            console.log(`     ⚠️ WARNING: ALAP placement conflicts with existing operation ${interval.start.toLocaleString()} - ${interval.end.toLocaleString()}`);
-                                            console.log(`     ⚠️ ALAP requirement takes precedence - may need manual conflict resolution`);
-                                        }
-                                    }
-                                    // CRITICAL: Skip all slot-finding logic for last operations - they MUST stay at due date
-                                } 
-                                // 🍺 BREWING CRITICAL SEQUENCES: Use optimal slot finding for critical operations (non-last only)
-                                else if (!isLastOperation && opType && ['boiling', 'whirlpool', 'cooling', 'fermentation'].includes(opType)) {
-                                    console.log(`  🍺 Critical brewing operation: ${opType} - using optimal backward slot finding`);
-                                    
-                                    // Non-last critical operations use slot finding
-                                    const slot = findLatestFreeSlotOnResource(resource, endDate, durationMs, operation);
+                                // IMPROVED: Always use the backward packer for consistent scheduling
+                                // The packer already clamps end <= latestEnd, so it enforces our constraints
+                                const slot = findLatestFreeSlotOnResource(resource, endDate, durationMs, operation);
+                                
+                                if (slot) {
                                     startDate = slot.start;
                                     actualEndDate = slot.end;
                                     
-                                    // If we had to shift earlier due to resource conflicts, update chain
-                                    // Only calculate shift for non-last operations (last operations are forced to due date)
-                                    if (!isLastOperation) {
-                                        const shift = endDate.getTime() - actualEndDate.getTime();
-                                        if (shift > 0 && i < operations.length - 1) {
-                                            console.log(`     🍺 Shifted ${opType} earlier by ${(shift / 3600000).toFixed(1)} hours due to resource conflict`);
-                                            
-                                            // Update all later operations in this job to maintain continuous flow
-                                            for (let j = i + 1; j < operations.length; j++) {
-                                            const laterOp = operations[j];
-                                            if (laterOp.startDate && laterOp.endDate) {
-                                                const oldStart = laterOp.startDate;
-                                                const oldEnd = laterOp.endDate;
-                                                const newStart = new Date(oldStart.getTime() - shift);
-                                                const newEnd = new Date(oldEnd.getTime() - shift);
-                                                
-                                                laterOp.startDate = newStart;
-                                                laterOp.endDate = newEnd;
-                                                
-                                                // Update resource timeline
-                                                const laterResource = resolveResource(laterOp);
-                                                if (laterResource) {
-                                                    const laterResourceId = String(laterResource.id);
-                                                    const laterIntervals = manualBusyIntervals.get(laterResourceId) || [];
-                                                    const laterInterval = laterIntervals.find(iv => iv.operationId === laterOp.id);
-                                                    if (laterInterval) {
-                                                        laterInterval.start = newStart;
-                                                        laterInterval.end = newEnd;
-                                                    }
-                                                }
-                                                
-                                                console.log(`     📝 Rescheduled "${laterOp.name}" to ${newStart.toLocaleString()}`);
-                                            }
-                                        }
+                                    // Log the placement decision
+                                    if (isLastOperation) {
+                                        console.log(`  🎯 LAST OPERATION "${operation.name}" placed using backward packer`);
+                                        console.log(`     Target end: ${endDate.toLocaleString()}, Actual end: ${actualEndDate.toLocaleString()}`);
                                         
-                                            // Update nextOperationStart for continuous flow
-                                            if (nextOperationStart) {
-                                                nextOperationStart = new Date(nextOperationStart.getTime() - shift);
-                                            }
+                                        // Verify it ends at job due date (within working time snap tolerance)
+                                        const timeDiff = Math.abs(actualEndDate.getTime() - jobDue.getTime());
+                                        if (timeDiff > 60000) { // More than 1 minute difference
+                                            console.warn(`     ⚠️ WARNING: Last operation doesn't end exactly at due date (diff: ${timeDiff/60000} min)`);
+                                        } else {
+                                            console.log(`     ✅ Last operation correctly ends at job due date`);
                                         }
+                                    } else {
+                                        const opLabel = opType && ['boiling', 'whirlpool', 'cooling', 'fermentation'].includes(opType) 
+                                            ? `🍺 Critical ${opType}` : 'Standard';
+                                        console.log(`  ${opLabel} operation "${operation.name}" placed using backward packer`);
                                     }
-                                } 
-                                // Non-critical, non-last operations use standard backward scheduling
-                                else if (!isLastOperation) {
-                                    const slot = findLatestFreeSlotOnResource(resource, endDate, durationMs, operation);
-                                    startDate = slot.start;
-                                    actualEndDate = slot.end;
                                     
-                                    // If we had to shift earlier due to resource conflicts, update chain
-                                    const shift = endDate.getTime() - actualEndDate.getTime();
-                                    if (shift > 0 && i < operations.length - 1) {
-                                        console.log(`     📝 Shifted earlier by ${(shift / 3600000).toFixed(1)} hours due to resource conflict`);
-                                        
-                                        // Update all later operations in this job to maintain continuous flow
-                                        for (let j = i + 1; j < operations.length; j++) {
-                                            const laterOp = operations[j];
-                                            if (laterOp.startDate && laterOp.endDate) {
-                                                const oldStart = laterOp.startDate;
-                                                const oldEnd = laterOp.endDate;
-                                                const newStart = new Date(oldStart.getTime() - shift);
-                                                const newEnd = new Date(oldEnd.getTime() - shift);
-                                                
-                                                laterOp.startDate = newStart;
-                                                laterOp.endDate = newEnd;
-                                                
-                                                // Update resource timeline
-                                                const laterResource = resolveResource(laterOp);
-                                                if (laterResource) {
-                                                    const laterResourceId = String(laterResource.id);
-                                                    const laterIntervals = manualBusyIntervals.get(laterResourceId) || [];
-                                                    const laterInterval = laterIntervals.find(iv => iv.operationId === laterOp.id);
-                                                    if (laterInterval) {
-                                                        laterInterval.start = newStart;
-                                                        laterInterval.end = newEnd;
-                                                    }
-                                                }
-                                                
-                                                console.log(`     📝 Rescheduled "${laterOp.name}" to ${newStart.toLocaleString()}`);
-                                            }
-                                        }
-                                        
-                                        // Update nextOperationStart for continuous flow
-                                        if (nextOperationStart) {
-                                            nextOperationStart = new Date(nextOperationStart.getTime() - shift);
-                                        }
-                                    }
+                                    console.log(`     📍 Scheduled: ${startDate.toLocaleString()} to ${actualEndDate.toLocaleString()}`);
+                                    
+                                    // Update the manual busy map for conflict avoidance
+                                    const arr = manualBusyIntervals.get(resourceId) || [];
+                                    arr.push({ start: startDate, end: actualEndDate, operationId: operation.id });
+                                    manualBusyIntervals.set(resourceId, arr);
+                                    
+                                    // For the next earlier operation in the chain, its latest end is this op's start
+                                    nextOperationStart = new Date(startDate);
+                                } else {
+                                    console.warn(`  ❌ No free slot found for "${operation.name}" before ${endDate.toLocaleString()}`);
+                                    // Fallback: place it anyway to maintain job integrity
+                                    actualEndDate = endDate;
+                                    startDate = new Date(endDate.getTime() - durationMs);
+                                    nextOperationStart = new Date(startDate);
                                 }
                                 
                                 console.log(`  📦 Scheduling "${operation.name}" on "${resource.name}": ${startDate.toLocaleString()} to ${actualEndDate.toLocaleString()}`);
