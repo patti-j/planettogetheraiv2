@@ -4594,12 +4594,30 @@
                     const cal = resource.calendar || resource.project?.calendar;
                     let right = new Date(latestEnd);
                     
-                    // CRITICAL FIX: Adjust latestEnd backwards if it falls within an occupied slot
-                    // This prevents overlaps by ensuring we never schedule within an existing operation
+                    // CRITICAL FIX: For ALAP, try to place operations as close to latestEnd as possible
+                    // Only adjust if the end time directly conflicts with an existing operation
+                    let conflictFound = false;
                     for (const slot of merged) {
+                        // Check if the desired end time falls within an existing operation
                         if (right.getTime() > slot.start.getTime() && right.getTime() <= slot.end.getTime()) {
-                            console.log(`    ⚠️ Latest end conflicts with existing operation, moving from ${right.toLocaleString()} to ${slot.start.toLocaleString()}`);
+                            // Instead of jumping all the way back, just move to the end of the conflict
+                            console.log(`    ⚠️ Latest end ${right.toLocaleString()} conflicts with existing operation [${slot.start.toLocaleString()} - ${slot.end.toLocaleString()}]`);
                             right = new Date(slot.start);
+                            conflictFound = true;
+                            break;
+                        }
+                    }
+                    
+                    // Also check if placing the operation at latestEnd would START within a busy slot
+                    const tentativeStart = new Date(right.getTime() - durationMs);
+                    for (const slot of merged) {
+                        // Check if the operation would overlap with existing operations
+                        if (tentativeStart < slot.end && right > slot.start) {
+                            console.log(`    ⚠️ Operation [${tentativeStart.toLocaleString()} - ${right.toLocaleString()}] would overlap with [${slot.start.toLocaleString()} - ${slot.end.toLocaleString()}]`);
+                            // Move to end exactly at the start of the conflicting operation
+                            right = new Date(slot.start);
+                            conflictFound = true;
+                            break;
                         }
                     }
 
@@ -5114,10 +5132,37 @@
                                             actualEndDate = requiredEndTime;
                                         }
                                     } else {
-                                        // Last operation - find latest slot respecting due date
-                                        const slot = findLatestFreeSlotOnResource(resource, endDate, durationMs, operation);
-                                        startDate = slot.start;
-                                        actualEndDate = slot.end;
+                                        // Last operation - CRITICAL: Try to place it AT the due date first
+                                        console.log(`  🎯 Last operation - trying to place at due date: ${endDate.toLocaleString()}`);
+                                        
+                                        // First, try to place the operation to END exactly at the due date
+                                        const idealEnd = new Date(endDate);
+                                        const idealStart = new Date(idealEnd.getTime() - durationMs);
+                                        
+                                        // Check if this ideal placement conflicts with existing operations
+                                        const existingOps = manualBusyIntervals.get(String(resource.id)) || [];
+                                        let hasConflict = false;
+                                        
+                                        for (const existing of existingOps) {
+                                            if (idealStart < existing.end && idealEnd > existing.start) {
+                                                console.log(`     ❌ Conflict with existing operation: ${existing.start.toLocaleString()} - ${existing.end.toLocaleString()}`);
+                                                hasConflict = true;
+                                                break;
+                                            }
+                                        }
+                                        
+                                        if (!hasConflict) {
+                                            // No conflict - place it exactly at the due date!
+                                            console.log(`     ✅ No conflict - placing at due date!`);
+                                            startDate = idealStart;
+                                            actualEndDate = idealEnd;
+                                        } else {
+                                            // Has conflict - find the latest available slot before the due date
+                                            console.log(`     🔍 Finding latest available slot before due date`);
+                                            const slot = findLatestFreeSlotOnResource(resource, endDate, durationMs, operation);
+                                            startDate = slot.start;
+                                            actualEndDate = slot.end;
+                                        }
                                     }
                                 }
                                 
