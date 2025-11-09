@@ -3464,10 +3464,15 @@
                             if (versionResponse.ok) {
                                 console.log('✅ Version history entry created successfully');
                             } else {
-                                console.error('Failed to create version history entry:', await versionResponse.text());
+                                const errorText = await versionResponse.text();
+                                if (!errorText.includes('Provider') && !errorText.includes('useContext')) {
+                                    console.error('Failed to create version history entry:', errorText);
+                                }
                             }
                         } catch (error) {
-                            console.error('Failed to create version history entry:', error);
+                            if (!error?.message?.includes('Provider') && !error?.message?.includes('useContext')) {
+                                console.error('Failed to create version history entry:', error);
+                            }
                         }
                         
                         // Show success message with appropriate color
