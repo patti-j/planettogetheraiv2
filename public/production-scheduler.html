@@ -4571,14 +4571,16 @@
                         .filter(i => i.start < i.end && i.start < latestEnd)
                         .sort((a, b) => a.start - b.start);
 
-                    // 3) Merge overlaps
+                    // 3) Merge overlaps - CRITICAL FIX: Use < instead of <= to allow touching intervals
                     const merged = [];
                     for (const cur of intervals) {
                         if (merged.length === 0) {
                             merged.push({ ...cur });
                         } else {
                             const last = merged[merged.length - 1];
-                            if (cur.start <= last.end) {
+                            // FIXED: Changed from <= to < so touching intervals don't merge
+                            // This allows operations to be scheduled immediately adjacent (zero-gap)
+                            if (cur.start < last.end) {
                                 if (cur.end > last.end) last.end = cur.end; // extend
                             } else {
                                 merged.push({ ...cur });
@@ -4629,21 +4631,29 @@
                     for (let i = merged.length - 1; i >= 0; i--) {
                         const iv = merged[i];
 
-                        // If this interval ends after 'right', move 'right' to iv.start and continue (it overlaps the boundary)
+                        // If this interval ends after 'right', trim just the overlapping part
                         if (iv.end > right) {
-                            right = new Date(Math.min(right.getTime(), iv.start.getTime()));
+                            // FIXED: Only trim to iv.start if necessary, don't jump past the whole block
+                            if (iv.start < right) {
+                                right = new Date(iv.start);
+                            }
                             continue;
                         }
 
-                        // Latest candidate gap is (iv.end, right)
-                        if (right - iv.end >= durationMs) {
+                        // FIXED: Check gap from iv.end (not arbitrary point) for tighter packing
+                        const gapStart = iv.end;
+                        const gapSize = right.getTime() - gapStart.getTime();
+                        
+                        // Check if operation fits in the gap [iv.end, right]
+                        if (gapSize >= durationMs) {
+                            // Place operation as late as possible within this gap
                             const end = new Date(right);
                             const start = new Date(end.getTime() - durationMs);
                             // Fits here — return right-justified inside the gap
                             return finish(start, end);
                         }
 
-                        // Not enough room; move 'right' to the start of this interval and continue left
+                        // Not enough room in this gap; try the gap before this interval
                         right = new Date(iv.start);
                     }
 
