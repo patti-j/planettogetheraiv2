@@ -5030,9 +5030,10 @@
                                             console.log(`     ⚠️ ALAP requirement takes precedence - may need manual conflict resolution`);
                                         }
                                     }
+                                    // CRITICAL: Skip all slot-finding logic for last operations - they MUST stay at due date
                                 } 
-                                // 🍺 BREWING CRITICAL SEQUENCES: Use optimal slot finding for critical operations
-                                else if (opType && ['boiling', 'whirlpool', 'cooling', 'fermentation'].includes(opType)) {
+                                // 🍺 BREWING CRITICAL SEQUENCES: Use optimal slot finding for critical operations (non-last only)
+                                else if (!isLastOperation && opType && ['boiling', 'whirlpool', 'cooling', 'fermentation'].includes(opType)) {
                                     console.log(`  🍺 Critical brewing operation: ${opType} - using optimal backward slot finding`);
                                     
                                     // Non-last critical operations use slot finding
@@ -5081,9 +5082,9 @@
                                             }
                                         }
                                     }
-                                } else {
-                                    // Non-critical operations use standard backward scheduling
-                                    // Since we already handled ALL last operations above, this is for non-last operations only
+                                } 
+                                // Non-critical, non-last operations use standard backward scheduling
+                                else if (!isLastOperation) {
                                     const slot = findLatestFreeSlotOnResource(resource, endDate, durationMs, operation);
                                     startDate = slot.start;
                                     actualEndDate = slot.end;
