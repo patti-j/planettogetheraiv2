@@ -4881,6 +4881,19 @@
                         
                         console.log(`  Operations: ${operations.length} (sequences ${operations.map(op => getSequence(op)).join(', ')})`);
                         
+                        // 🍺 BREWING CRITICAL SEQUENCES FIX:
+                        // Identify critical brewing sequences for special timing handling
+                        const brewingOps = new Map();
+                        for (const op of operations) {
+                            const opType = getBrewingOperationType(op.name);
+                            if (opType) {
+                                brewingOps.set(op.id, { operation: op, type: opType });
+                            }
+                        }
+                        
+                        // Track when critical operations are scheduled (for buffer enforcement)
+                        const scheduledBrewingOps = new Map(); // operationType -> {startDate, endDate}
+                        
                         // Schedule backward from last operation (highest sequence)
                         let nextOperationStart = null;
                         
@@ -4890,21 +4903,64 @@
                             const sequence = getSequence(operation);
                             const durationMs = operation.durationMS ?? (operation.duration * 60 * 60 * 1000);
                             const resource = resolveResource(operation);
+                            const brewingOpInfo = brewingOps.get(operation.id);
+                            const opType = brewingOpInfo?.type;
                             
                             let endDate;
+                            let requiresBuffer = false;
+                            let bufferMs = 0;
+                            
+                            // 🍺 Check if this operation needs special buffer handling (working backward)
+                            if (opType) {
+                                // When working backward, we check what comes AFTER this operation
+                                const nextOp = i < operations.length - 1 ? operations[i + 1] : null;
+                                const nextOpType = nextOp ? getBrewingOperationType(nextOp.name) : null;
+                                
+                                // Apply buffers based on critical sequence pairs (backward perspective)
+                                if (opType === 'cooling' && nextOpType === 'fermentation') {
+                                    bufferMs = 30 * 60000; // 30 min buffer before fermentation (after cooling)
+                                    requiresBuffer = true;
+                                    console.log(`  🍺 Critical: Cooling→Fermentation requires 30min buffer`);
+                                } else if (opType === 'whirlpool' && nextOpType === 'cooling') {
+                                    bufferMs = 10 * 60000; // 10 min buffer before cooling (after whirlpool)
+                                    requiresBuffer = true;
+                                    console.log(`  🍺 Critical: Whirlpool→Cooling requires 10min buffer`);
+                                } else if (opType === 'boiling' && nextOpType === 'whirlpool') {
+                                    bufferMs = 5 * 60000; // 5 min buffer before whirlpool (after boiling)
+                                    requiresBuffer = true;
+                                    console.log(`  🍺 Critical: Boiling→Whirlpool requires 5min buffer`);
+                                }
+                                
+                                // 🍺 FERMENTATION GUARD: Ensure fermentation only after cooling
+                                if (opType === 'fermentation' && scheduledBrewingOps.has('cooling')) {
+                                    const coolingEnd = scheduledBrewingOps.get('cooling').endDate;
+                                    const fermentStart = nextOperationStart || new Date(jobDue);
+                                    if (fermentStart < new Date(coolingEnd.getTime() + 30 * 60000)) {
+                                        console.log(`  🚨 Fermentation guard: Must wait for cooling + 30min buffer`);
+                                        // Fermentation must start at least 30 min after cooling ends
+                                        endDate = new Date(coolingEnd.getTime() + 30 * 60000 + durationMs);
+                                        console.log(`     Adjusted fermentation end to ${endDate.toLocaleString()}`);
+                                    }
+                                }
+                            }
                             
                             // Last operation (highest sequence) gets the Need-By constraint
                             if (i === operations.length - 1) {
-                                endDate = new Date(jobDue);
+                                endDate = endDate || new Date(jobDue);
                                 if (requireNeedDates) {
                                     operation.constraintType = 'finishnolaterthan';
                                     operation.constraintDate = new Date(jobDue);
                                     console.log(`  📌 Last op "${operation.name}" (seq ${sequence}) constrained to finish by ${jobDue.toLocaleString()}`);
                                 }
-                            } else {
-                                // Earlier operations must finish when the next operation starts (finish-to-start)
-                                endDate = nextOperationStart;
-                                console.log(`  🔗 "${operation.name}" (seq ${sequence}) must finish exactly when next operation starts at ${endDate.toLocaleString()}`);
+                            } else if (!endDate) {
+                                // Earlier operations must finish when the next operation starts (with buffer if needed)
+                                if (requiresBuffer && nextOperationStart) {
+                                    endDate = new Date(nextOperationStart.getTime() - bufferMs);
+                                    console.log(`  🔗 "${operation.name}" (seq ${sequence}) must finish ${bufferMs/60000}min before next op at ${endDate.toLocaleString()}`);
+                                } else {
+                                    endDate = nextOperationStart;
+                                    console.log(`  🔗 "${operation.name}" (seq ${sequence}) must finish exactly when next operation starts at ${endDate.toLocaleString()}`);
+                                }
                             }
                             
                             // Calculate start date based on duration
@@ -4916,45 +4972,27 @@
                                 const resourceId = String(resource.id);
                                 const existingIntervals = manualBusyIntervals.get(resourceId) || [];
                                 
-                                // For non-last operations, we need to end EXACTLY when the next operation starts
-                                if (i < operations.length - 1) {
-                                    // This operation must end exactly at nextOperationStart time for continuous flow
-                                    const requiredEndTime = endDate;
-                                    const requiredStartTime = new Date(requiredEndTime.getTime() - durationMs);
+                                // 🍺 BREWING CRITICAL SEQUENCES: Use optimal slot finding for critical operations
+                                if (opType && ['boiling', 'whirlpool', 'cooling', 'fermentation'].includes(opType)) {
+                                    console.log(`  🍺 Critical brewing operation: ${opType} - using optimal backward slot finding`);
+                                    const slot = findLatestFreeSlotOnResource(resource, endDate, durationMs, operation);
+                                    startDate = slot.start;
+                                    actualEndDate = slot.end;
                                     
-                                    // Check if resource is available at the required time
-                                    let isResourceBusy = false;
-                                    for (const interval of existingIntervals) {
-                                        // Check if our required time overlaps with existing operation
-                                        if ((requiredStartTime >= interval.start && requiredStartTime < interval.end) ||
-                                            (requiredEndTime > interval.start && requiredEndTime <= interval.end) ||
-                                            (requiredStartTime <= interval.start && requiredEndTime >= interval.end)) {
-                                            isResourceBusy = true;
-                                            console.log(`     ⚠️ Resource ${resource.name} is busy from ${interval.start.toLocaleString()} to ${interval.end.toLocaleString()}`);
-                                            break;
-                                        }
-                                    }
-                                    
-                                    if (isResourceBusy) {
-                                        // Resource is busy - we need to shift entire remaining job chain earlier
-                                        console.log(`     🔄 Resource conflict - need to shift job chain earlier`);
+                                    // If we had to shift earlier due to resource conflicts, update chain
+                                    const shift = endDate.getTime() - slot.end.getTime();
+                                    if (shift > 0 && i < operations.length - 1) {
+                                        console.log(`     🍺 Shifted ${opType} earlier by ${(shift / 3600000).toFixed(1)} hours due to resource conflict`);
                                         
-                                        // Find the latest time we can end before the conflict
-                                        const slot = findLatestFreeSlotOnResource(resource, requiredEndTime, durationMs, operation);
-                                        const shift = requiredEndTime.getTime() - slot.end.getTime();
-                                        
-                                        if (shift > 0) {
-                                            console.log(`     📝 Shifting job chain earlier by ${(shift / 3600000).toFixed(1)} hours`);
-                                            
-                                            // Shift all already-scheduled operations in this job earlier
-                                            for (let j = i + 1; j < operations.length; j++) {
-                                                const laterOp = operations[j];
+                                        // Update all later operations in this job to maintain continuous flow
+                                        for (let j = i + 1; j < operations.length; j++) {
+                                            const laterOp = operations[j];
+                                            if (laterOp.startDate && laterOp.endDate) {
                                                 const oldStart = laterOp.startDate;
                                                 const oldEnd = laterOp.endDate;
                                                 const newStart = new Date(oldStart.getTime() - shift);
                                                 const newEnd = new Date(oldEnd.getTime() - shift);
                                                 
-                                                // Update operation times
                                                 laterOp.startDate = newStart;
                                                 laterOp.endDate = newEnd;
                                                 
@@ -4972,23 +5010,89 @@
                                                 
                                                 console.log(`     📝 Rescheduled "${laterOp.name}" to ${newStart.toLocaleString()}`);
                                             }
-                                            
-                                            // Update nextOperationStart for continuous flow
-                                            nextOperationStart = new Date(nextOperationStart.getTime() - shift);
                                         }
                                         
-                                        startDate = slot.start;
-                                        actualEndDate = slot.end;
-                                    } else {
-                                        // Resource is available - schedule at required time for continuous flow
-                                        startDate = requiredStartTime;
-                                        actualEndDate = requiredEndTime;
+                                        // Update nextOperationStart for continuous flow
+                                        if (nextOperationStart) {
+                                            nextOperationStart = new Date(nextOperationStart.getTime() - shift);
+                                        }
                                     }
                                 } else {
-                                    // Last operation - find latest slot respecting due date
-                                    const slot = findLatestFreeSlotOnResource(resource, endDate, durationMs, operation);
-                                    startDate = slot.start;
-                                    actualEndDate = slot.end;
+                                    // Non-critical operations use standard backward scheduling
+                                    // For non-last operations, we need to end EXACTLY when the next operation starts
+                                    if (i < operations.length - 1) {
+                                        // This operation must end exactly at nextOperationStart time for continuous flow
+                                        const requiredEndTime = endDate;
+                                        const requiredStartTime = new Date(requiredEndTime.getTime() - durationMs);
+                                        
+                                        // Check if resource is available at the required time
+                                        let isResourceBusy = false;
+                                        for (const interval of existingIntervals) {
+                                            // Check if our required time overlaps with existing operation
+                                            if ((requiredStartTime >= interval.start && requiredStartTime < interval.end) ||
+                                                (requiredEndTime > interval.start && requiredEndTime <= interval.end) ||
+                                                (requiredStartTime <= interval.start && requiredEndTime >= interval.end)) {
+                                                isResourceBusy = true;
+                                                console.log(`     ⚠️ Resource ${resource.name} is busy from ${interval.start.toLocaleString()} to ${interval.end.toLocaleString()}`);
+                                                break;
+                                            }
+                                        }
+                                        
+                                        if (isResourceBusy) {
+                                            // Resource is busy - we need to shift entire remaining job chain earlier
+                                            console.log(`     🔄 Resource conflict - need to shift job chain earlier`);
+                                            
+                                            // Find the latest time we can end before the conflict
+                                            const slot = findLatestFreeSlotOnResource(resource, requiredEndTime, durationMs, operation);
+                                            const shift = requiredEndTime.getTime() - slot.end.getTime();
+                                            
+                                            if (shift > 0) {
+                                                console.log(`     📝 Shifting job chain earlier by ${(shift / 3600000).toFixed(1)} hours`);
+                                                
+                                                // Shift all already-scheduled operations in this job earlier
+                                                for (let j = i + 1; j < operations.length; j++) {
+                                                    const laterOp = operations[j];
+                                                    const oldStart = laterOp.startDate;
+                                                    const oldEnd = laterOp.endDate;
+                                                    const newStart = new Date(oldStart.getTime() - shift);
+                                                    const newEnd = new Date(oldEnd.getTime() - shift);
+                                                    
+                                                    // Update operation times
+                                                    laterOp.startDate = newStart;
+                                                    laterOp.endDate = newEnd;
+                                                    
+                                                    // Update resource timeline
+                                                    const laterResource = resolveResource(laterOp);
+                                                    if (laterResource) {
+                                                        const laterResourceId = String(laterResource.id);
+                                                        const laterIntervals = manualBusyIntervals.get(laterResourceId) || [];
+                                                        const laterInterval = laterIntervals.find(iv => iv.operationId === laterOp.id);
+                                                        if (laterInterval) {
+                                                            laterInterval.start = newStart;
+                                                            laterInterval.end = newEnd;
+                                                        }
+                                                    }
+                                                    
+                                                    console.log(`     📝 Rescheduled "${laterOp.name}" to ${newStart.toLocaleString()}`);
+                                                }
+                                                
+                                                // Update nextOperationStart for continuous flow
+                                                nextOperationStart = new Date(nextOperationStart.getTime() - shift);
+                                            }
+                                            
+                                            startDate = slot.start;
+                                            actualEndDate = slot.end;
+                                        } else {
+                                            // Resource is available - schedule at required time for continuous flow
+                                            startDate = requiredStartTime;
+                                            actualEndDate = requiredEndTime;
+                                        }
+                                    } else {
+                                        // Last operation - find latest slot respecting due date
+                                        const slot = findLatestFreeSlotOnResource(resource, endDate, durationMs, operation);
+                                        startDate = slot.start;
+                                        actualEndDate = slot.end;
+                                    }
                                 }
                                 
                                 console.log(`  📦 Scheduling "${operation.name}" on "${resource.name}": ${startDate.toLocaleString()} to ${actualEndDate.toLocaleString()}`);
@@ -5003,6 +5107,15 @@
                             operation.startDate = startDate;
                             operation.endDate = actualEndDate;
                             operation.manuallyScheduled = false;
+                            
+                            // 🍺 Track when critical brewing operations are scheduled
+                            if (opType && ['boiling', 'whirlpool', 'cooling', 'fermentation'].includes(opType)) {
+                                scheduledBrewingOps.set(opType, {
+                                    startDate: startDate,
+                                    endDate: actualEndDate
+                                });
+                                console.log(`  🍺 Tracked ${opType}: ${startDate.toLocaleString()} to ${actualEndDate.toLocaleString()}`);
+                            }
                             
                             // Immediately track this interval as busy to prevent overlap
                             if (resource) {
