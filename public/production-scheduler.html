@@ -4268,6 +4268,26 @@
                                     activeBrewingChains.set(job.jobKey, true);
                                 }
                                 
+                                // FERMENTATION GUARD: If we're scheduling fermentation, ensure cooling has finished
+                                if (opType === 'fermentation') {
+                                    const coolingOps = job.operations.filter(
+                                        o => getBrewingOperationType(o.name) === 'cooling'
+                                    );
+                                    
+                                    if (coolingOps.length > 0) {
+                                        const lastCoolingEnd = coolingOps
+                                            .map(o => operationEndTimes.get(o.id))
+                                            .filter(Boolean)
+                                            .sort((a, b) => b - a)[0];
+                                        
+                                        if (!lastCoolingEnd) {
+                                            // Cooling exists but isn't scheduled yet - defer fermentation
+                                            console.log(`      Deferring ${operation.name} - waiting for cooling to be scheduled`);
+                                            continue;
+                                        }
+                                    }
+                                }
+                                
                                 // Calculate earliest start time based on THREE constraints:
                                 // 1. Must start after predecessor in same job (if any)
                                 // 2. Resource must be available
@@ -4290,7 +4310,30 @@
                                     } else if (currType === 'fermentation') {
                                         // Fermentation should wait for proper cooling
                                         earliestStart = new Date(predEnd.getTime() + buffer);
-                                        console.log(`      ${operation.name} (${job.jobName}): Fermentation after cooling at ${earliestStart.toLocaleTimeString()}`);
+                                        
+                                        // Additional check: ensure cooling has completed if it exists
+                                        const coolingOps = job.operations.filter(
+                                            o => getBrewingOperationType(o.name) === 'cooling'
+                                        );
+                                        
+                                        if (coolingOps.length > 0) {
+                                            const lastCoolingEnd = coolingOps
+                                                .map(o => operationEndTimes.get(o.id))
+                                                .filter(Boolean)
+                                                .sort((a, b) => b - a)[0];
+                                            
+                                            if (lastCoolingEnd) {
+                                                const minAfterCooling = new Date(
+                                                    lastCoolingEnd.getTime() + getBrewingOperationBuffer('cooling', 'fermentation')
+                                                );
+                                                if (!earliestStart || earliestStart < minAfterCooling) {
+                                                    earliestStart = minAfterCooling;
+                                                    console.log(`      ${operation.name} (${job.jobName}): Adjusted to start after cooling at ${earliestStart.toLocaleTimeString()}`);
+                                                }
+                                            }
+                                        } else {
+                                            console.log(`      ${operation.name} (${job.jobName}): Fermentation after ${predecessor.name} at ${earliestStart.toLocaleTimeString()}`);
+                                        }
                                     } else {
                                         // Standard operations with normal buffer
                                         earliestStart = new Date(predEnd.getTime() + buffer);
