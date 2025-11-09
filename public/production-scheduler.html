@@ -5018,6 +5018,15 @@
                         // This map is specific to the current job to prevent cross-job interference
                         const jobOperationStartBySequence = new Map(); // sequence -> startDate for this job
                         
+                        // CRITICAL: Sort operations by sequence number for proper backward processing
+                        // The operations array comes sorted by scheduled_start, but we need sequence order
+                        operations.sort((a, b) => {
+                            const seqA = getSequence(a);
+                            const seqB = getSequence(b);
+                            return seqA - seqB; // Sort ascending by sequence
+                        });
+                        console.log(`  📋 Sorted ${operations.length} operations by sequence for backward processing`);
+                        
                         // Schedule backward from last operation (highest sequence)
                         let nextOperationStart = null;
                         
