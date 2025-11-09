@@ -59,7 +59,7 @@ export function NavigationAdapterProvider({ children }: { children: ReactNode })
 
   // Fetch user preferences
   const { data: userPreferences } = useQuery<any>({
-    queryKey: [`/api/user-preferences/${user?.id}`],
+    queryKey: user?.id ? [`/api/user-preferences/${user.id}`] : ['no-user-preferences'],
     enabled: !!user?.id,
   });
 
@@ -88,6 +88,12 @@ export function NavigationAdapterProvider({ children }: { children: ReactNode })
           }
 
           // Fallback to existing logic
+          // Double-check user.id is defined before making the request
+          if (!user?.id || typeof user.id !== 'number') {
+            console.warn('[NavigationAdapter] Skipping preferences fetch - user ID is not valid');
+            return;
+          }
+          
           const response = await fetch(`/api/user-preferences/${user.id}`, {
             headers: {
               'Authorization': localStorage.getItem('auth_token') ? `Bearer ${localStorage.getItem('auth_token')}` : '',

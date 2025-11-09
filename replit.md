@@ -5,7 +5,7 @@ PlanetTogether is an AI-first Factory Optimization Platform, a full-stack manufa
 
 ## Recent Critical Fixes & Features (Nov 9, 2024)
 - **Menu Favorites Persistence Fix**: Fixed authentication issue in PUT /api/user-preferences route. Changed from session-based to JWT authentication to properly save user favorites.
-- **Operator Dashboard Permission Fix**: Fixed permission naming mismatch (operator_dashboard vs operator-dashboard) in App.tsx that was causing "access denied" error and clearing user avatar.
+- **Operator Dashboard Avatar Fix**: Fixed NavigationAdapter trying to fetch user preferences with undefined user ID. Added guards to prevent queryKey formation with undefined ID and double-check user ID validity before API calls.
 - **ALAP Scheduling Algorithm Improvements**: 
   - Removed legacy ALAP implementation that used projectEnd+30 days and ignored job due dates
   - Refactored window.alapScheduling to consistently use backward packer (findLatestFreeSlotOnResource) for ALL operations
