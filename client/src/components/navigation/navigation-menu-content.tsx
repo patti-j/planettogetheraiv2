@@ -44,9 +44,10 @@ interface SortableFavoriteItemProps {
   isActive: boolean;
   onNavigate: () => void;
   onToggleFavorite: () => void;
+  isDragDisabled?: boolean;
 }
 
-function SortableFavoriteItem({ page, isActive, onNavigate, onToggleFavorite }: SortableFavoriteItemProps) {
+function SortableFavoriteItem({ page, isActive, onNavigate, onToggleFavorite, isDragDisabled = false }: SortableFavoriteItemProps) {
   const {
     attributes,
     listeners,
@@ -100,14 +101,17 @@ function SortableFavoriteItem({ page, isActive, onNavigate, onToggleFavorite }: 
         isDragging && "shadow-lg"
       )}
     >
-      {/* Drag Handle - Always visible but subtle */}
+      {/* Drag Handle - Always visible but subtle, disabled when searching */}
       <div 
-        {...attributes} 
-        {...listeners}
+        {...(!isDragDisabled ? attributes : {})} 
+        {...(!isDragDisabled ? listeners : {})}
         className={cn(
-          "flex items-center justify-center cursor-move p-1 rounded hover:bg-accent/50 transition-all",
-          "text-muted-foreground/40 hover:text-muted-foreground"
+          "flex items-center justify-center p-1 rounded transition-all",
+          !isDragDisabled 
+            ? "cursor-move hover:bg-accent/50 text-muted-foreground/40 hover:text-muted-foreground"
+            : "cursor-not-allowed text-muted-foreground/20"
         )}
+        title={isDragDisabled ? "Reordering disabled while searching" : "Drag to reorder"}
       >
         <GripVertical className="h-3 w-3" />
       </div>
@@ -242,6 +246,13 @@ export function NavigationMenuContent({ isPinned, onTogglePin, onClose, isOpen }
   }
 
   // getIconComponent imported from icon-registry module
+  
+  // Filter favorites based on search
+  const filteredFavorites = favoritePages.filter((page: any) => {
+    if (!searchFilter) return true;
+    const searchLower = searchFilter.toLowerCase();
+    return page.label.toLowerCase().includes(searchLower);
+  });
 
   // Get flat list of all navigation items for arrow navigation
   const getAllNavigationItems = () => {
@@ -412,7 +423,7 @@ export function NavigationMenuContent({ isPinned, onTogglePin, onClose, isOpen }
             // List Layout - Show items grouped by category with headers
             <div className="px-3">
               {/* Favorites Group - Always show at top if there are favorite pages */}
-              {favoritePages.length > 0 && (
+              {filteredFavorites.length > 0 && (
                 <div className="mb-4 border-b border-border/20 pb-4">
                   {/* Category Header */}
                   <div className="flex items-center justify-between px-2 py-1 mb-2">
@@ -424,7 +435,7 @@ export function NavigationMenuContent({ isPinned, onTogglePin, onClose, isOpen }
                     </div>
                     <div className="flex items-center gap-2">
                       <span className="text-xs text-muted-foreground">
-                        {favoritePages.length}
+                        {searchFilter ? `${filteredFavorites.length}/${favoritePages.length}` : favoritePages.length}
                       </span>
                       <Button
                         variant="ghost"
@@ -437,22 +448,23 @@ export function NavigationMenuContent({ isPinned, onTogglePin, onClose, isOpen }
                     </div>
                   </div>
 
-                  {/* Favorite Pages Items with Drag and Drop */}
+                  {/* Favorite Pages Items with Drag and Drop - Disabled when searching */}
                   <DndContext
-                    sensors={sensors}
+                    sensors={searchFilter ? [] : sensors}
                     collisionDetection={closestCenter}
                     onDragEnd={handleDragEnd}
                   >
                     <SortableContext
-                      items={favoritePages.map(p => p.path)}
+                      items={filteredFavorites.map(p => p.path)}
                       strategy={verticalListSortingStrategy}
                     >
                       <div className="space-y-0.5">
-                        {favoritePages.map((page, pageIndex) => (
+                        {filteredFavorites.map((page, pageIndex) => (
                           <SortableFavoriteItem
                             key={page.path}
                             page={page}
                             isActive={location === page.path}
+                            isDragDisabled={!!searchFilter}
                             onNavigate={() => {
                               handleNavigation(page.path, page.label);
                               if (!isPinned && onClose) onClose();
@@ -668,7 +680,7 @@ export function NavigationMenuContent({ isPinned, onTogglePin, onClose, isOpen }
             // Hierarchical Layout - Show collapsible categories
             <>
               {/* Favorites as Collapsible Category - Only show when there are favorite pages */}
-              {favoritePages.length > 0 && (
+              {filteredFavorites.length > 0 && (
                 <div className="px-3 py-2 border-b border-border/40">
                   {/* Favorites Header - Clickable to expand/collapse */}
                   <Button
@@ -684,7 +696,7 @@ export function NavigationMenuContent({ isPinned, onTogglePin, onClose, isOpen }
                     </div>
                     <div className="flex items-center gap-1">
                       <span className="text-xs text-muted-foreground">
-                        {favoritePages.length}
+                        {searchFilter ? `${filteredFavorites.length}/${favoritePages.length}` : favoritePages.length}
                       </span>
                       <Button
                         variant="ghost"
@@ -704,7 +716,7 @@ export function NavigationMenuContent({ isPinned, onTogglePin, onClose, isOpen }
                   {/* Favorite Pages Items - Only shown when expanded */}
                   {expandedGroups.has('Favorites') && (
                     <div className="mt-1 ml-3 space-y-0.5">
-                      {favoritePages.map((page, pageIndex) => {
+                      {filteredFavorites.map((page, pageIndex) => {
                         const IconComponent = getIconComponent(page.icon || 'FileText');
                         const isActive = location === page.path;
                         
