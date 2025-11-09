@@ -372,43 +372,44 @@ export function NavigationMenuContent({ isPinned, onTogglePin, onClose, isOpen }
           </div>
         </div>
 
-        {/* Home Button */}
-        <div className="mb-3">
+        {/* Search with Home Button */}
+        <div className="flex items-center gap-2">
+          {/* Home Icon Button */}
           <Button
             variant={location === '/home' ? 'default' : 'ghost'}
-            className="w-full justify-start"
+            size="icon"
             onClick={() => {
               handleNavigation('/home', 'Home');
               if (!isPinned && onClose) onClose();
             }}
+            className="h-9 w-9 flex-shrink-0"
+            title="Home"
           >
-            <Home className="h-4 w-4 mr-2" />
-            Home
+            <Home className="h-4 w-4" />
           </Button>
-        </div>
-        
 
-        {/* Search */}
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            ref={searchInputRef}
-            type="text"
-            placeholder="Search menu..."
-            value={searchFilter}
-            onChange={(e) => setSearchFilter(e.target.value)}
-            className="pl-9 pr-8"
-          />
-          {searchFilter && (
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setSearchFilter('')}
-              className="absolute right-1 top-1/2 -translate-y-1/2 h-6 w-6 hover:bg-muted-foreground/20"
-            >
-              <X className="h-3 w-3" />
-            </Button>
-          )}
+          {/* Search Input */}
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              ref={searchInputRef}
+              type="text"
+              placeholder="Search menu..."
+              value={searchFilter}
+              onChange={(e) => setSearchFilter(e.target.value)}
+              className="pl-9 pr-8"
+            />
+            {searchFilter && (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setSearchFilter('')}
+                className="absolute right-1 top-1/2 -translate-y-1/2 h-6 w-6 hover:bg-muted-foreground/20"
+              >
+                <X className="h-3 w-3" />
+              </Button>
+            )}
+          </div>
         </div>
       </div>
 
