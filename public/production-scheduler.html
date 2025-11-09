@@ -4202,25 +4202,14 @@
                                         const durationMs = operation.durationMS ?? (operation.duration * 60 * 60 * 1000);
                                         const buffer = getBrewingOperationBuffer(predType, opType);
                                         
-                                        // Force immediate scheduling after predecessor
-                                        let startTime = new Date(predEnd.getTime() + buffer);
-                                        let endTime = new Date(startTime.getTime() + durationMs);
+                                        // Use findEarliestSlotOnResource to get the first available gap
+                                        const earliest = new Date(predEnd.getTime() + buffer);
+                                        const startTime = resource
+                                            ? findEarliestSlotOnResource(resource.id, durationMs, earliest)
+                                            : earliest;
+                                        const endTime = new Date(startTime.getTime() + durationMs);
                                         
                                         if (resource) {
-                                            // Check if resource is available at this time
-                                            const timeline = resourceTimelines.get(resource.id) || [];
-                                            let conflict = false;
-                                            
-                                            for (const slot of timeline) {
-                                                if ((startTime < slot.end && endTime > slot.start)) {
-                                                    // There's a conflict, find next available time
-                                                    startTime = new Date(slot.end.getTime() + 1000);
-                                                    endTime = new Date(startTime.getTime() + durationMs);
-                                                    conflict = true;
-                                                    console.log(`        ⚠️ Resource conflict, moved to ${startTime.toLocaleTimeString()}`);
-                                                }
-                                            }
-                                            
                                             // Add to resource timeline
                                             if (!resourceTimelines.has(resource.id)) {
                                                 resourceTimelines.set(resource.id, []);
