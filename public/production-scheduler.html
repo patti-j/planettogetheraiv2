@@ -5014,6 +5014,9 @@
                         // Track when critical operations are scheduled (for buffer enforcement)
                         const scheduledBrewingOps = new Map(); // operationType -> {startDate, endDate}
                         
+                        // CRITICAL FIX: Track operation start times by sequence number for proper chaining
+                        const operationStartBySequence = new Map(); // sequence -> startDate
+                        
                         // Schedule backward from last operation (highest sequence)
                         let nextOperationStart = null;
                         
@@ -5025,6 +5028,17 @@
                             const resource = resolveResource(operation);
                             const brewingOpInfo = brewingOps.get(operation.id);
                             const opType = brewingOpInfo?.type;
+                            
+                            // CRITICAL FIX: Get the start time of the next operation in sequence
+                            // Look for the operation with sequence+1 to properly chain backward
+                            const nextSequence = sequence + 1;
+                            if (operationStartBySequence.has(nextSequence)) {
+                                nextOperationStart = operationStartBySequence.get(nextSequence);
+                                console.log(`  🔗 Found next operation in sequence ${nextSequence} starting at ${nextOperationStart.toLocaleString()}`);
+                            } else {
+                                nextOperationStart = null;
+                                console.log(`  📝 No operation with sequence ${nextSequence} found - this might be the last in chain`);
+                            }
                             
                             let endDate;
                             let requiresBuffer = false;
@@ -5160,14 +5174,18 @@
                                     arr.push({ start: startDate, end: actualEndDate, operationId: operation.id });
                                     manualBusyIntervals.set(resourceId, arr);
                                     
-                                    // For the next earlier operation in the chain, its latest end is this op's start
-                                    nextOperationStart = new Date(startDate);
+                                    // CRITICAL FIX: Store this operation's start time by its sequence number
+                                    // so the previous operation (sequence-1) can find it
+                                    operationStartBySequence.set(sequence, startDate);
+                                    console.log(`  📌 Stored sequence ${sequence} start time: ${startDate.toLocaleString()}`);
                                 } else {
                                     console.warn(`  ❌ No free slot found for "${operation.name}" before ${endDate.toLocaleString()}`);
                                     // Fallback: place it anyway to maintain job integrity
                                     actualEndDate = endDate;
                                     startDate = new Date(endDate.getTime() - durationMs);
-                                    nextOperationStart = new Date(startDate);
+                                    // Store this operation's start time even in fallback case
+                                    operationStartBySequence.set(sequence, startDate);
+                                    console.log(`  📌 Stored sequence ${sequence} start time (fallback): ${startDate.toLocaleString()}`);
                                 }
                                 
                                 console.log(`  📦 Scheduling "${operation.name}" on "${resource.name}": ${startDate.toLocaleString()} to ${actualEndDate.toLocaleString()}`);
@@ -5176,6 +5194,9 @@
                                 actualEndDate = endDate;
                                 startDate = new Date(endDate.getTime() - durationMs);
                                 console.log(`  ⚠️ No resource for "${operation.name}" - scheduled ${startDate.toLocaleString()} to ${actualEndDate.toLocaleString()}`);
+                                // Store this operation's start time even when no resource
+                                operationStartBySequence.set(sequence, startDate);
+                                console.log(`  📌 Stored sequence ${sequence} start time (no resource): ${startDate.toLocaleString()}`);
                             }
                             
                             // CRITICAL: Use direct property setting to avoid triggering auto-reschedule
