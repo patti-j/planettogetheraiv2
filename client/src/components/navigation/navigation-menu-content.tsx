@@ -37,6 +37,20 @@ interface NavigationMenuContentProps {
   isOpen?: boolean;
 }
 
+// Get Lucide icon component from icon name - moved here to be available for SortableFavoriteItem
+const getIconComponent = (iconName: string) => {
+  const icons: Record<string, any> = {
+    Calendar, Brain, Briefcase, Database, Factory, Settings, FileText, Package, Target, BarChart3, 
+    Wrench, Shield, BookOpen, Eye, MessageSquare, Sparkles, Building, Server, TrendingUp, 
+    Truck, AlertTriangle, MessageCircle, GraduationCap, Monitor, Columns3, Code, Network, Globe, 
+    GitBranch, DollarSign, Headphones, Upload, ArrowRightLeft, FileSearch, Presentation, FileX, 
+    Grid, PlayCircle, Search, History, Layout, Puzzle, AlertCircle, Layers, Workflow, Disc
+  };
+  
+  const IconComponent = icons[iconName] || FileText;
+  return IconComponent;
+};
+
 // Sortable Favorite Item Component
 interface SortableFavoriteItemProps {
   page: any;
@@ -227,19 +241,7 @@ export function NavigationMenuContent({ isPinned, onTogglePin, onClose, isOpen }
     console.warn('NavigationAdapter not available, using fallback:', error);
   }
 
-  // Get Lucide icon component from icon name
-  const getIconComponent = (iconName: string) => {
-    const icons: Record<string, any> = {
-      Calendar, Brain, Briefcase, Database, Factory, Settings, FileText, Package, Target, BarChart3, 
-      Wrench, Shield, BookOpen, Eye, MessageSquare, Sparkles, Building, Server, TrendingUp, 
-      Truck, AlertTriangle, MessageCircle, GraduationCap, Monitor, Columns3, Code, Network, Globe, 
-      GitBranch, DollarSign, Headphones, Upload, ArrowRightLeft, FileSearch, Presentation, FileX, 
-      Grid, PlayCircle, Search, History, Layout, Puzzle, AlertCircle, Layers, Workflow, Disc
-    };
-    
-    const IconComponent = icons[iconName] || FileText;
-    return IconComponent;
-  };
+  // getIconComponent function moved to top of file for use in SortableFavoriteItem
 
   // Get flat list of all navigation items for arrow navigation
   const getAllNavigationItems = () => {

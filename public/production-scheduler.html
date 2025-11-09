@@ -3807,6 +3807,39 @@
                     }
                 }
 
+                // ============================================================================
+                // Global Helper Functions for Scheduling Algorithms
+                // ============================================================================
+                
+                // Helper to identify brewing operation types
+                window.getBrewingOperationType = function(operationName) {
+                    const name = (operationName || '').toLowerCase();
+                    
+                    // Critical brewing operations - INCLUDING ALL ALIASES
+                    if (name.includes('boil') || name.includes('kettle')) return 'boiling';
+                    if (name.includes('whirlpool') || name.includes('whirl')) return 'whirlpool';
+                    if (name.includes('cool') || name.includes('chill')) return 'cooling';
+                    if (name.includes('ferment') || name.includes('yeast')) return 'fermentation';
+                    
+                    // Other brewing operations
+                    if (name.includes('mill') || name.includes('grain')) return 'milling';
+                    if (name.includes('mash')) return 'mashing';
+                    if (name.includes('lauter') || name.includes('sparge')) return 'lautering';
+                    if (name.includes('condition') || name.includes('mature')) return 'conditioning';
+                    if (name.includes('filter') || name.includes('clarify')) return 'filtering';
+                    if (name.includes('package') || name.includes('bottle') || name.includes('keg')) return 'packaging';
+                    return 'other';
+                };
+                
+                // Get buffer time between brewing operations (in milliseconds)
+                window.getBrewingOperationBuffer = function(prevType, currType) {
+                    // Critical transitions requiring specific buffers
+                    if (prevType === 'boiling' && currType === 'whirlpool') return 5 * 60000;     // 5 min
+                    if (prevType === 'whirlpool' && currType === 'cooling') return 10 * 60000;    // 10 min
+                    if (prevType === 'cooling' && currType === 'fermentation') return 30 * 60000; // 30 min
+                    return 0; // No buffer for other transitions
+                };
+
                 // Scheduling Algorithm Implementations
                 // Make asapScheduling globally accessible
                 let isAsapRunning = false; // Add flag to prevent re-entrance
@@ -4049,39 +4082,7 @@
                         return null;
                     }
                     
-                    // Helper to identify brewing operation types
-                    function getBrewingOperationType(operationName) {
-                        const name = (operationName || '').toLowerCase();
-                        if (name.includes('mill') || name.includes('grain')) return 'milling';
-                        if (name.includes('mash')) return 'mashing';
-                        if (name.includes('lauter') || name.includes('sparge')) return 'lautering';
-                        if (name.includes('boil') || name.includes('kettle')) return 'boiling';
-                        if (name.includes('whirlpool') || name.includes('whirl')) return 'whirlpool';
-                        if (name.includes('cool') || name.includes('chill')) return 'cooling';
-                        if (name.includes('ferment') || name.includes('yeast')) return 'fermentation';
-                        if (name.includes('condition') || name.includes('mature')) return 'conditioning';
-                        if (name.includes('filter') || name.includes('clarify')) return 'filtering';
-                        if (name.includes('package') || name.includes('bottle') || name.includes('keg')) return 'packaging';
-                        return 'other';
-                    }
-                    
-                    // Helper to add buffer time between specific brewing operations
-                    function getBrewingOperationBuffer(prevType, nextType) {
-                        // Whirlpool should happen immediately after boiling (minimal buffer)
-                        if (prevType === 'boiling' && nextType === 'whirlpool') {
-                            return 5 * 60 * 1000; // 5 minutes buffer
-                        }
-                        // Cooling should happen soon after whirlpool
-                        if (prevType === 'whirlpool' && nextType === 'cooling') {
-                            return 10 * 60 * 1000; // 10 minutes buffer
-                        }
-                        // Fermentation needs proper cooling first
-                        if (prevType === 'cooling' && nextType === 'fermentation') {
-                            return 30 * 60 * 1000; // 30 minutes to ensure proper cooling
-                        }
-                        // Default buffer between other operations
-                        return 15 * 60 * 1000; // 15 minutes default
-                    }
+                    // Helper functions moved to global scope - use window.getBrewingOperationType and window.getBrewingOperationBuffer
                     
                     // Process orphan operations first (hide them)
                     const orphans = jobOperations.get('_orphans_') || [];
@@ -4137,7 +4138,7 @@
                         let foundFermentation = false;
                         
                         for (const op of job.operations) {
-                            const opType = getBrewingOperationType(op.name);
+                            const opType = window.getBrewingOperationType(op.name);
                             if (opType === 'boiling') foundBoiling = true;
                             if (opType === 'whirlpool') foundWhirlpool = true;
                             if (opType === 'cooling') foundCooling = true;
@@ -4148,7 +4149,7 @@
                         if (foundBoiling || foundWhirlpool || foundCooling || foundFermentation) {
                             console.log(`  Job ${job.jobKey} has critical brewing operations`);
                             for (const op of job.operations) {
-                                const opType = getBrewingOperationType(op.name);
+                                const opType = window.getBrewingOperationType(op.name);
                                 if (['boiling', 'whirlpool', 'cooling', 'fermentation'].includes(opType)) {
                                     criticalPathOps.add(op.id);
                                 }
@@ -4183,7 +4184,7 @@
                             for (const [opId, { operation, job }] of unscheduledOps) {
                                 if (!criticalPathOps.has(opId)) continue; // Skip non-critical ops for now
                                 
-                                const opType = getBrewingOperationType(operation.name);
+                                const opType = window.getBrewingOperationType(operation.name);
                                 const predecessor = findPredecessor(operation, job.operations);
                                 
                                 // Check if predecessor is scheduled (or if this is first op)
@@ -4193,7 +4194,7 @@
                                 
                                 // If this is part of a critical sequence, handle specially
                                 if (predecessor) {
-                                    const predType = getBrewingOperationType(predecessor.name);
+                                    const predType = window.getBrewingOperationType(predecessor.name);
                                     const predEnd = operationEndTimes.get(predecessor.id);
                                     
                                     // Critical sequences that must be tightly coupled
@@ -4268,7 +4269,7 @@
                                 }
                                 
                                 // Check if this starts a brewing chain
-                                const opType = getBrewingOperationType(operation.name);
+                                const opType = window.getBrewingOperationType(operation.name);
                                 if (opType === 'boiling') {
                                     activeBrewingChains.set(job.jobKey, true);
                                 }
@@ -4303,9 +4304,9 @@
                                     const predEnd = operationEndTimes.get(predecessor.id);
                                     
                                     // Add brewing-specific buffer time if applicable
-                                    const prevType = getBrewingOperationType(predecessor.name);
-                                    const currType = getBrewingOperationType(operation.name);
-                                    const buffer = getBrewingOperationBuffer(prevType, currType);
+                                    const prevType = window.getBrewingOperationType(predecessor.name);
+                                    const currType = window.getBrewingOperationType(operation.name);
+                                    const buffer = window.getBrewingOperationBuffer(prevType, currType);
                                     
                                     // Special case: Whirlpool operations should be tightly coupled to boiling
                                     if (currType === 'whirlpool' && prevType === 'boiling') {
@@ -4909,27 +4910,13 @@
                         
                         console.log(`  Operations: ${operations.length} (sequences ${operations.map(op => getSequence(op)).join(', ')})`);
                         
-                        // Helper to identify brewing operation types
-                        function getBrewingOperationType(operationName) {
-                            const name = (operationName || '').toLowerCase();
-                            if (name.includes('mill') || name.includes('grain')) return 'milling';
-                            if (name.includes('mash')) return 'mashing';
-                            if (name.includes('lauter') || name.includes('sparge')) return 'lautering';
-                            if (name.includes('boil') || name.includes('kettle')) return 'boiling';
-                            if (name.includes('whirlpool') || name.includes('whirl')) return 'whirlpool';
-                            if (name.includes('cool') || name.includes('chill')) return 'cooling';
-                            if (name.includes('ferment') || name.includes('yeast')) return 'fermentation';
-                            if (name.includes('condition') || name.includes('mature')) return 'conditioning';
-                            if (name.includes('filter') || name.includes('clarify')) return 'filtering';
-                            if (name.includes('package') || name.includes('bottle') || name.includes('keg')) return 'packaging';
-                            return null; // Return null instead of 'other' to match ASAP behavior
-                        }
+                        // Helper function moved to global scope - use window.getBrewingOperationType
                         
                         // 🍺 BREWING CRITICAL SEQUENCES FIX:
                         // Identify critical brewing sequences for special timing handling
                         const brewingOps = new Map();
                         for (const op of operations) {
-                            const opType = getBrewingOperationType(op.name);
+                            const opType = window.getBrewingOperationType(op.name);
                             if (opType) {
                                 brewingOps.set(op.id, { operation: op, type: opType });
                             }
@@ -4958,7 +4945,7 @@
                             if (opType) {
                                 // When working backward, we check what comes AFTER this operation
                                 const nextOp = i < operations.length - 1 ? operations[i + 1] : null;
-                                const nextOpType = nextOp ? getBrewingOperationType(nextOp.name) : null;
+                                const nextOpType = nextOp ? window.getBrewingOperationType(nextOp.name) : null;
                                 
                                 // Apply buffers based on critical sequence pairs (backward perspective)
                                 if (opType === 'cooling' && nextOpType === 'fermentation') {
@@ -4988,13 +4975,15 @@
                                 }
                             }
                             
-                            // Last operation (highest sequence) gets the Need-By constraint
+                            // CRITICAL FIX: Last operation MUST end at the job due date
                             if (i === operations.length - 1) {
-                                endDate = endDate || new Date(jobDue);
+                                // Force the last operation to end exactly at the due date
+                                endDate = new Date(jobDue);
+                                console.log(`  🎯 LAST OPERATION "${operation.name}" (seq ${sequence}) - placing at due date: ${endDate.toLocaleString()}`);
+                                
                                 if (requireNeedDates) {
                                     operation.constraintType = 'finishnolaterthan';
                                     operation.constraintDate = new Date(jobDue);
-                                    console.log(`  📌 Last op "${operation.name}" (seq ${sequence}) constrained to finish by ${jobDue.toLocaleString()}`);
                                 }
                             } else if (!endDate) {
                                 // Earlier operations must finish when the next operation starts (with buffer if needed)
