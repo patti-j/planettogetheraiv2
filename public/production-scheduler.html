@@ -3884,6 +3884,11 @@
                         
                         console.log('🚀 Starting ASAP scheduling with Brewery-Specific Chain Continuity...');
                         console.log('📌 NOTE: Dependencies are visual-only. Scheduling uses priority + sequence.');
+                        
+                        // Reset lagering tracking at start of scheduling to avoid stale data between runs
+                        window.lageringEndTimes = new Map();
+                        console.log('  🔄 Reset lagering end time tracking for fresh scheduling pass');
+                        
                         const events = [...eventStore.records].filter(e => e.resourceId !== 'unscheduled');
                         console.log(`  Total operations to schedule: ${events.length}`);
                     
@@ -4299,10 +4304,19 @@
                                     }
                                 }
                                 
-                                // Calculate earliest start time based on THREE constraints:
+                                // CRITICAL FIX: Check if this is a packaging operation that must wait for lagering
+                                const isPackagingOp = operation.name.toLowerCase().includes('bottling') || 
+                                                     operation.name.toLowerCase().includes('packaging') ||
+                                                     operation.name.toLowerCase().includes('pack') ||
+                                                     operation.name.toLowerCase().includes('filling') ||
+                                                     operation.name.toLowerCase().includes('kegging') ||
+                                                     operation.name.toLowerCase().includes('canning');
+                                
+                                // Calculate earliest start time based on FOUR constraints:
                                 // 1. Must start after predecessor in same job (if any)
                                 // 2. Resource must be available
                                 // 3. Brewing operations need proper sequencing and buffers
+                                // 4. Packaging must wait for lagering to complete (for lager beers)
                                 let earliestStart;
                                 if (predecessor) {
                                     // Must start after predecessor ends
@@ -4356,6 +4370,15 @@
                                     console.log(`      ${operation.name} (${job.jobName}): First op, start at ${earliestStart.toLocaleTimeString()}`);
                                 }
                                 
+                                // CRITICAL FIX: If this is a packaging operation, check if we need to wait for lagering
+                                if (isPackagingOp && window.lageringEndTimes && window.lageringEndTimes.has(job.jobKey)) {
+                                    const lageringEnd = window.lageringEndTimes.get(job.jobKey);
+                                    if (!earliestStart || earliestStart < lageringEnd) {
+                                        console.log(`      📦 PACKAGING WAIT: ${operation.name} must wait for lagering to complete at ${lageringEnd.toLocaleString()}`);
+                                        earliestStart = new Date(lageringEnd.getTime() + 30 * 60000); // Add 30 min buffer after lagering
+                                    }
+                                }
+                                
                                 // Find when resource is available
                                 let startTime, endTime;
                                 if (resource) {
@@ -4391,6 +4414,21 @@
                                 
                                 // Track completion time for successor operations
                                 operationEndTimes.set(operation.id, endTime);
+                                
+                                // CRITICAL FIX: Track lagering/cold conditioning completion for proper packaging gating
+                                // For lager beers, packaging must wait for lagering to complete
+                                const operationNameLower = operation.name.toLowerCase();
+                                if (operationNameLower.includes('lagering') || 
+                                    operationNameLower.includes('cold conditioning') ||
+                                    operationNameLower.includes('lager tank') ||
+                                    operationNameLower.includes('cold storage')) {
+                                    // Store lagering end time for this job so packaging operations wait
+                                    if (!window.lageringEndTimes) {
+                                        window.lageringEndTimes = new Map();
+                                    }
+                                    window.lageringEndTimes.set(job.jobKey, endTime);
+                                    console.log(`        🍺 LAGERING TRACKED: Job ${job.jobKey} lagering ends at ${endTime.toLocaleString()}`);
+                                }
                                 
                                 // Mark as scheduled
                                 scheduledInThisRound.push(opId);
@@ -5801,7 +5839,7 @@
                             name: event.name || 'Unnamed Operation',
                             startDate: startDate,
                             endDate: endDate,
-                            eventColor: event.eventColor || event.color || 'green',
+                            eventColor: event.eventColor || event.color || getOperationColor(event.name),
                             // Remove resourceId from event - it should come from assignments
                             percentDone: event.percentDone || 0,
                             duration: event.duration,
