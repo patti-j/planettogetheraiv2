@@ -4929,31 +4929,31 @@
                     // Process each job independently
                     console.log('\n📍 Processing jobs with sequence-based backward scheduling...');
                     
-                    // ALAP: Sort jobs by PRIORITY DESC (5 before 1) 
-                    // In backward scheduling, what schedules first finishes last (closest to need-by)
-                    // So Priority 5 schedules first to finish last, Priority 1 schedules last to finish first
+                    // ALAP: Sort jobs by PRIORITY ASC (1 before 5) 
+                    // Priority 1 (highest priority) should schedule first to get the best slots
+                    // Priority 5 (lowest priority) should schedule last and take what's left
                     const sortedJobs = Array.from(jobOperations.entries()).sort(([keyA, opsA], [keyB, opsB]) => {
-                        // Sort by job PRIORITY descending
-                        // Priority 5 (lowest) should schedule first (gets latest position/finishes last)
-                        // Priority 1 (highest) should schedule last (gets earliest position/finishes first)
+                        // Sort by job PRIORITY ascending
+                        // Priority 1 (highest) should schedule first (gets best/preferred slots)
+                        // Priority 5 (lowest) should schedule last (takes remaining slots)
                         const priorityA = getJobPriorityForOperation(opsA[0]);
                         const priorityB = getJobPriorityForOperation(opsB[0]);
                         
                         if (priorityA !== priorityB) {
-                            return priorityB - priorityA; // DESCENDING: 5, 4, 3, 2, 1
+                            return priorityA - priorityB; // ASCENDING: 1, 2, 3, 4, 5
                         }
                         
                         // If same priority, sort by job key for consistency
-                        return String(keyB).localeCompare(String(keyA));
+                        return String(keyA).localeCompare(String(keyB));
                     });
                     
-                    console.log('📊 ALAP Job scheduling order (descending by priority for backward scheduling):');
+                    console.log('📊 ALAP Job scheduling order (ascending by priority for backward scheduling):');
                     sortedJobs.forEach(([jobKey, ops], index) => {
                         const priority = getJobPriorityForOperation(ops[0]);
                         const due = jobDueMap.get(jobKey) || globalFallback;
                         const dueStr = due ? due.toLocaleDateString() : 'No due date';
                         const jobName = ops[0]?.jobName || jobKey;
-                        console.log(`  ${index + 1}. Priority ${priority}: ${jobName} (Job ID: ${jobKey}, Due: ${dueStr}) - schedules ${index === 0 ? 'FIRST (placed later/finishes last)' : index === sortedJobs.length - 1 ? 'LAST (placed earlier/finishes first)' : 'in middle'}`);
+                        console.log(`  ${index + 1}. Priority ${priority}: ${jobName} (Job ID: ${jobKey}, Due: ${dueStr}) - schedules ${index === 0 ? 'FIRST (highest priority, gets best slots)' : index === sortedJobs.length - 1 ? 'LAST (lowest priority, takes remaining slots)' : 'in order'}`);
                     });
                     
                     // Track all scheduled intervals manually to prevent conflicts
