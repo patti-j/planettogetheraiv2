@@ -5,7 +5,7 @@ import { DndProvider } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
 import { TourProvider } from "@/contexts/TourContext";
 import { MaxDockProvider } from "@/contexts/MaxDockContext";
-import { NavigationProvider } from "@/contexts/NavigationContext";
+import { NavigationAdapterProvider } from "@/adapters/NavigationAdapter";
 import { FullScreenProvider } from "@/contexts/FullScreenContext";
 import { LayoutDensityProvider } from "@/contexts/LayoutDensityContext";
 import { ViewModeProvider } from "@/hooks/use-view-mode";
@@ -200,7 +200,7 @@ export default function App() {
         <AgentProvider>
           <TourProvider>
             <MaxDockProvider>
-              <NavigationProvider>
+              <NavigationAdapterProvider>
                 <FullScreenProvider>
                   <LayoutDensityProvider>
                     <SplitScreenProvider>
@@ -249,7 +249,7 @@ export default function App() {
                     </SplitScreenProvider>
                   </LayoutDensityProvider>
                 </FullScreenProvider>
-              </NavigationProvider>
+              </NavigationAdapterProvider>
             </MaxDockProvider>
           </TourProvider>
         </AgentProvider>
