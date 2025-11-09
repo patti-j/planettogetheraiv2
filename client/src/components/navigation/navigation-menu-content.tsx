@@ -64,14 +64,27 @@ function SortableFavoriteItem({ page, isActive, onNavigate, onToggleFavorite }: 
 
   const IconComponent = getIconComponent(page.icon || 'FileText');
   
-  // Find the color from navigation config
+  // Find the color from navigation config - improved to handle gradients properly
   const getColorForPage = () => {
     for (const group of navigationGroups) {
       const feature = group.features.find((f: any) => f.href === page.path);
       if (feature) {
         const bgColor = feature.color;
         if (!bgColor) return 'text-blue-500';
-        if (bgColor.includes('gradient')) return 'text-purple-500';
+        
+        // Handle gradients by extracting the first color
+        if (bgColor.includes('gradient')) {
+          // Extract the primary color from gradient strings like "bg-gradient-to-r from-purple-500 to-pink-600"
+          const fromMatch = bgColor.match(/from-([a-z]+-\d+)/);
+          if (fromMatch) {
+            const [, color] = fromMatch;
+            return `text-${color}`;
+          }
+          // Fallback if gradient pattern doesn't match
+          return 'text-purple-500';
+        }
+        
+        // Handle solid colors
         return bgColor.replace('bg-', 'text-');
       }
     }
@@ -695,15 +708,27 @@ export function NavigationMenuContent({ isPinned, onTogglePin, onClose, isOpen }
                         const IconComponent = getIconComponent(page.icon || 'FileText');
                         const isActive = location === page.path;
                         
-                        // Find the color from navigation config
+                        // Find the color from navigation config - improved to handle gradients properly
                         const getColorForPage = () => {
                           for (const group of navigationGroups) {
                             const feature = group.features.find((f: any) => f.href === page.path);
                             if (feature) {
-                              // Convert bg-color to text-color
                               const bgColor = feature.color;
                               if (!bgColor) return 'text-blue-500';
-                              if (bgColor.includes('gradient')) return 'text-purple-500';
+                              
+                              // Handle gradients by extracting the first color
+                              if (bgColor.includes('gradient')) {
+                                // Extract the primary color from gradient strings
+                                const fromMatch = bgColor.match(/from-([a-z]+-\d+)/);
+                                if (fromMatch) {
+                                  const [, color] = fromMatch;
+                                  return `text-${color}`;
+                                }
+                                // Fallback if gradient pattern doesn't match
+                                return 'text-purple-500';
+                              }
+                              
+                              // Handle solid colors
                               return bgColor.replace('bg-', 'text-');
                             }
                           }
@@ -798,15 +823,27 @@ export function NavigationMenuContent({ isPinned, onTogglePin, onClose, isOpen }
                         const IconComponent = getIconComponent(page.icon || 'FileText');
                         const isActive = location === page.path;
                         
-                        // Find the color from navigation config
+                        // Find the color from navigation config - improved to handle gradients properly
                         const getColorForPage = () => {
                           for (const group of navigationGroups) {
                             const feature = group.features.find((f: any) => f.href === page.path);
                             if (feature) {
-                              // Convert bg-color to text-color
                               const bgColor = feature.color;
                               if (!bgColor) return 'text-blue-500';
-                              if (bgColor.includes('gradient')) return 'text-purple-500';
+                              
+                              // Handle gradients by extracting the first color
+                              if (bgColor.includes('gradient')) {
+                                // Extract the primary color from gradient strings
+                                const fromMatch = bgColor.match(/from-([a-z]+-\d+)/);
+                                if (fromMatch) {
+                                  const [, color] = fromMatch;
+                                  return `text-${color}`;
+                                }
+                                // Fallback if gradient pattern doesn't match
+                                return 'text-purple-500';
+                              }
+                              
+                              // Handle solid colors
                               return bgColor.replace('bg-', 'text-');
                             }
                           }
