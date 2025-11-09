@@ -4881,6 +4881,22 @@
                         
                         console.log(`  Operations: ${operations.length} (sequences ${operations.map(op => getSequence(op)).join(', ')})`);
                         
+                        // Helper to identify brewing operation types
+                        function getBrewingOperationType(operationName) {
+                            const name = (operationName || '').toLowerCase();
+                            if (name.includes('mill') || name.includes('grain')) return 'milling';
+                            if (name.includes('mash')) return 'mashing';
+                            if (name.includes('lauter') || name.includes('sparge')) return 'lautering';
+                            if (name.includes('boil') || name.includes('kettle')) return 'boiling';
+                            if (name.includes('whirlpool') || name.includes('whirl')) return 'whirlpool';
+                            if (name.includes('cool') || name.includes('chill')) return 'cooling';
+                            if (name.includes('ferment') || name.includes('yeast')) return 'fermentation';
+                            if (name.includes('condition') || name.includes('mature')) return 'conditioning';
+                            if (name.includes('filter') || name.includes('clarify')) return 'filtering';
+                            if (name.includes('package') || name.includes('bottle') || name.includes('keg')) return 'packaging';
+                            return null; // Return null instead of 'other' to match ASAP behavior
+                        }
+                        
                         // 🍺 BREWING CRITICAL SEQUENCES FIX:
                         // Identify critical brewing sequences for special timing handling
                         const brewingOps = new Map();
