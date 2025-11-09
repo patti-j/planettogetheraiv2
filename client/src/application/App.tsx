@@ -507,7 +507,7 @@ export default function ApplicationApp() {
 
               {/* Specialized Dashboards */}
               <Route path="/operator-dashboard">
-                <ProtectedRoute feature="operator_dashboard" action="view">
+                <ProtectedRoute feature="operator-dashboard" action="view">
                   <OperatorDashboard />
                 </ProtectedRoute>
               </Route>
