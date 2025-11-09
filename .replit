@@ -8,7 +8,7 @@ packages = ["freetds", "glibcLocales", "jq", "redis", "unixODBC", "unzip", "nano
 
 [deployment]
 deploymentTarget = "autoscale"
-build = ["bash", "-c", "NODE_ENV=production npm run build"]
+build = ["npm", "run", "build"]
 run = ["bash", "-c", "NODE_ENV=production REPLIT_DEPLOYMENT=1 node dist/index.js"]
 
 [workflows]

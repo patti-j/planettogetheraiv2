@@ -2,7 +2,7 @@
 // Handles automated detection and fixing of data quality issues
 
 import { db } from '../db';
-import * as schema from '@db/schema';
+import * as schema from '../../shared/schema';
 
 interface DataQualityIssue {
   type: string;

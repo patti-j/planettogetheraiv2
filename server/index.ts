@@ -159,7 +159,7 @@ app.use((req, res, next) => {
   
   // Ensure dashboard with id=1 exists for Max AI Canvas widgets
   try {
-    const { dashboards } = await import("@db/schema");
+    const { dashboards } = await import("../shared/schema");
     const existingDashboard = await db.select().from(dashboards).where(eq(dashboards.id, 1)).limit(1);
     
     if (existingDashboard.length === 0) {
