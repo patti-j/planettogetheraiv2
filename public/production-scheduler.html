@@ -3587,8 +3587,22 @@
                 }
 
                 function getSequence(ev) {
-                    return ev.sequence_number ?? ev.sequenceNumber ??
-                           ev.ptData?.sequence_number ?? ev.ptData?.sequenceNumber ?? 0;
+                    // Check all possible locations for sequence number
+                    // Priority order: direct properties, then data object, then ptData
+                    const seq = ev.sequence_number ?? 
+                               ev.sequenceNumber ?? 
+                               ev.data?.sequence_number ?? 
+                               ev.data?.Sequence_Number ??
+                               ev.ptData?.sequence_number ?? 
+                               ev.ptData?.sequenceNumber ?? 
+                               0;
+                    
+                    // Log warning if we can't find a sequence number
+                    if (seq === 0 && ev.name) {
+                        console.warn(`⚠️ No sequence number found for operation: ${ev.name}`);
+                    }
+                    
+                    return parseInt(seq, 10) || 0;
                 }
 
                 // Process rank tiebreaker for when sequences are missing or tied
@@ -4083,13 +4097,25 @@
                         return null;
                     }
                     
-                    // Helper to find the predecessor operation in the same job
+                    // Helper to find the predecessor operation in the same job based on sequence numbers
                     function findPredecessor(operation, jobOperations) {
-                        const opIndex = jobOperations.indexOf(operation);
-                        if (opIndex > 0) {
-                            return jobOperations[opIndex - 1];
+                        // Get sequence number from the operation (use the function we already have)
+                        const currentSeq = getSequence(operation);
+                        
+                        // Find the operation with the immediately preceding sequence number
+                        let predecessor = null;
+                        let maxPredSeq = -1;
+                        
+                        for (const op of jobOperations) {
+                            const opSeq = getSequence(op);
+                            // Find the highest sequence that's still less than current
+                            if (opSeq < currentSeq && opSeq > maxPredSeq) {
+                                maxPredSeq = opSeq;
+                                predecessor = op;
+                            }
                         }
-                        return null;
+                        
+                        return predecessor;
                     }
                     
                     // Helper functions moved to global scope - use window.getBrewingOperationType and window.getBrewingOperationBuffer
