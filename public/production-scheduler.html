@@ -5010,26 +5010,41 @@
                                 // 🍺 BREWING CRITICAL SEQUENCES: Use optimal slot finding for critical operations
                                 if (opType && ['boiling', 'whirlpool', 'cooling', 'fermentation'].includes(opType)) {
                                     console.log(`  🍺 Critical brewing operation: ${opType} - using optimal backward slot finding`);
-                                    const slot = findLatestFreeSlotOnResource(resource, endDate, durationMs, operation);
                                     
-                                    // For last operations, enforce the due date
+                                    // For last operations in ALAP, MUST end at due date regardless of conflicts
                                     if (isLastOperation) {
-                                        // Calculate start from due date, not from slot
+                                        // ALAP definition: Last operation MUST end at due date
                                         actualEndDate = new Date(jobDue);
                                         startDate = new Date(actualEndDate.getTime() - durationMs);
-                                        console.log(`  ⚠️ OVERRIDE: Last operation MUST end at due date ${actualEndDate.toLocaleString()}`);
+                                        console.log(`  ⚠️ ALAP OVERRIDE: Last critical operation "${operation.name}" MUST end at due date ${actualEndDate.toLocaleString()}`);
+                                        console.log(`     📍 Forced placement: ${startDate.toLocaleString()} to ${actualEndDate.toLocaleString()}`);
+                                        
+                                        // Check for conflicts but don't let them override ALAP requirement
+                                        const existingIntervals = manualBusyIntervals.get(String(resource.id)) || [];
+                                        for (const interval of existingIntervals) {
+                                            if ((startDate >= interval.start && startDate < interval.end) ||
+                                                (actualEndDate > interval.start && actualEndDate <= interval.end) ||
+                                                (startDate <= interval.start && actualEndDate >= interval.end)) {
+                                                console.log(`     ⚠️ WARNING: ALAP placement conflicts with existing operation ${interval.start.toLocaleString()} - ${interval.end.toLocaleString()}`);
+                                                console.log(`     ⚠️ ALAP requirement takes precedence - may need manual conflict resolution`);
+                                            }
+                                        }
                                     } else {
+                                        // Non-last operations use slot finding
+                                        const slot = findLatestFreeSlotOnResource(resource, endDate, durationMs, operation);
                                         startDate = slot.start;
                                         actualEndDate = slot.end;
                                     }
                                     
                                     // If we had to shift earlier due to resource conflicts, update chain
-                                    const shift = endDate.getTime() - slot.end.getTime();
-                                    if (shift > 0 && i < operations.length - 1) {
-                                        console.log(`     🍺 Shifted ${opType} earlier by ${(shift / 3600000).toFixed(1)} hours due to resource conflict`);
-                                        
-                                        // Update all later operations in this job to maintain continuous flow
-                                        for (let j = i + 1; j < operations.length; j++) {
+                                    // Only calculate shift for non-last operations (last operations are forced to due date)
+                                    if (!isLastOperation) {
+                                        const shift = endDate.getTime() - actualEndDate.getTime();
+                                        if (shift > 0 && i < operations.length - 1) {
+                                            console.log(`     🍺 Shifted ${opType} earlier by ${(shift / 3600000).toFixed(1)} hours due to resource conflict`);
+                                            
+                                            // Update all later operations in this job to maintain continuous flow
+                                            for (let j = i + 1; j < operations.length; j++) {
                                             const laterOp = operations[j];
                                             if (laterOp.startDate && laterOp.endDate) {
                                                 const oldStart = laterOp.startDate;
@@ -5056,9 +5071,10 @@
                                             }
                                         }
                                         
-                                        // Update nextOperationStart for continuous flow
-                                        if (nextOperationStart) {
-                                            nextOperationStart = new Date(nextOperationStart.getTime() - shift);
+                                            // Update nextOperationStart for continuous flow
+                                            if (nextOperationStart) {
+                                                nextOperationStart = new Date(nextOperationStart.getTime() - shift);
+                                            }
                                         }
                                     }
                                 } else {
