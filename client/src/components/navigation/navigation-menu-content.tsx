@@ -234,7 +234,7 @@ export function NavigationMenuContent({ isPinned, onTogglePin, onClose, isOpen }
       Wrench, Shield, BookOpen, Eye, MessageSquare, Sparkles, Building, Server, TrendingUp, 
       Truck, AlertTriangle, MessageCircle, GraduationCap, Monitor, Columns3, Code, Network, Globe, 
       GitBranch, DollarSign, Headphones, Upload, ArrowRightLeft, FileSearch, Presentation, FileX, 
-      Grid, PlayCircle, Search, History, Layout, Puzzle, AlertCircle, Layers, Workflow, ArrowUpDown, Disc
+      Grid, PlayCircle, Search, History, Layout, Puzzle, AlertCircle, Layers, Workflow, Disc
     };
     
     const IconComponent = icons[iconName] || FileText;
