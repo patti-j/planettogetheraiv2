@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useLocation } from 'wouter';
-import { Search, Pin, PinOff, List, Folder, X, Home, Clock, Star, StarOff, Calendar, Brain, Briefcase, Database, Factory, Settings, FileText, Package, Target, BarChart3, Wrench, Shield, BookOpen, Eye, MessageSquare, Sparkles, Building, Server, TrendingUp, Truck, AlertTriangle, MessageCircle, GraduationCap, Monitor, Columns3, Code, Network, Globe, GitBranch, DollarSign, Headphones, Upload, ArrowRightLeft, FileSearch, Presentation, FileX, Grid, PlayCircle, History, Layout, Puzzle, AlertCircle, Layers, Workflow, GripVertical, Disc } from 'lucide-react';
+import { Search, Pin, PinOff, List, Folder, X, Home, Clock, Star, StarOff, GripVertical } from 'lucide-react';
+import { getIconComponent } from './icon-registry';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -36,20 +37,6 @@ interface NavigationMenuContentProps {
   onClose?: () => void;
   isOpen?: boolean;
 }
-
-// Get Lucide icon component from icon name - moved here to be available for SortableFavoriteItem
-const getIconComponent = (iconName: string) => {
-  const icons: Record<string, any> = {
-    Calendar, Brain, Briefcase, Database, Factory, Settings, FileText, Package, Target, BarChart3, 
-    Wrench, Shield, BookOpen, Eye, MessageSquare, Sparkles, Building, Server, TrendingUp, 
-    Truck, AlertTriangle, MessageCircle, GraduationCap, Monitor, Columns3, Code, Network, Globe, 
-    GitBranch, DollarSign, Headphones, Upload, ArrowRightLeft, FileSearch, Presentation, FileX, 
-    Grid, PlayCircle, Search, History, Layout, Puzzle, AlertCircle, Layers, Workflow, Disc
-  };
-  
-  const IconComponent = icons[iconName] || FileText;
-  return IconComponent;
-};
 
 // Sortable Favorite Item Component
 interface SortableFavoriteItemProps {
@@ -241,7 +228,7 @@ export function NavigationMenuContent({ isPinned, onTogglePin, onClose, isOpen }
     console.warn('NavigationAdapter not available, using fallback:', error);
   }
 
-  // getIconComponent function moved to top of file for use in SortableFavoriteItem
+  // getIconComponent imported from icon-registry module
 
   // Get flat list of all navigation items for arrow navigation
   const getAllNavigationItems = () => {
