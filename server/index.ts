@@ -15,7 +15,7 @@ import { storage as dbStorage, DatabaseStorage } from "./storage-new";
 import { seedDatabase } from "./seed";
 import { RealtimeVoiceService } from "./realtime-voice-service";
 import { db } from "./db";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 
 // Extend session interface
 declare module "express-session" {
@@ -309,6 +309,38 @@ app.use((req, res, next) => {
   app.use(llmProviderRoutes);  // LLM provider management routes
   app.use(automationRoutes);  // AI automation rules routes
   app.use('/api/forecasting', forecastingRoutes);  // Forecasting API routes
+
+  // DEBUG: Database health check endpoint (for diagnosing production issues)
+  app.get('/api/debug/db-health', async (req, res) => {
+    try {
+      const { users } = await import("../shared/schema");
+      
+      // Check if users table exists and count users
+      const userCount = await db.select({ count: sql<number>`count(*)` }).from(users);
+      const sampleUsers = await db.select({ 
+        id: users.id, 
+        username: users.username 
+      }).from(users).limit(5);
+      
+      res.json({
+        status: 'connected',
+        environment: process.env.NODE_ENV,
+        isProduction: process.env.REPLIT_DEPLOYMENT === '1',
+        userCount: userCount[0]?.count || 0,
+        sampleUsernames: sampleUsers.map(u => u.username),
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      res.status(500).json({
+        status: 'error',
+        environment: process.env.NODE_ENV,
+        isProduction: process.env.REPLIT_DEPLOYMENT === '1',
+        error: error instanceof Error ? error.message : 'Unknown error',
+        errorDetails: error instanceof Error ? error.stack : undefined,
+        timestamp: new Date().toISOString()
+      });
+    }
+  });
 
   // CRITICAL: Register production scheduler route BEFORE Vite to prevent interference
   // This must be before Vite middleware to avoid injection of Vite client scripts

@@ -55,6 +55,17 @@ function getDatabaseUrl(): string {
 // Get the database URL using the appropriate method
 const databaseUrl = getDatabaseUrl();
 
+// Log masked database info for debugging (without exposing password)
+try {
+  const url = new URL(databaseUrl);
+  const maskedUrl = `${url.protocol}//${url.username}:***@${url.host}${url.pathname}`;
+  console.log(`🔗 [Database] Connecting to: ${maskedUrl}`);
+  console.log(`📍 [Database] Host: ${url.host}`);
+  console.log(`📁 [Database] Database name: ${url.pathname.replace('/', '')}`);
+} catch (e) {
+  console.log('🔗 [Database] Connection configured');
+}
+
 // Create Neon connection
 const sql_connection = neon(databaseUrl);
 
