@@ -29,12 +29,32 @@ const app = express();
 
 // CRITICAL: Health check endpoints MUST be first, before ANY middleware
 // This ensures deployment health checks pass immediately without delays
+
+// Liveness probe - always returns 200 immediately (for Cloud Run health checks)
 app.get('/health', (req, res) => {
   res.status(200).json({ 
     status: 'healthy',
     timestamp: new Date().toISOString(),
     service: 'planettogether-api'
   });
+});
+
+// Readiness probe - returns 503 until critical initialization completes
+app.get('/readiness', async (req, res) => {
+  const { orchestrator } = await import('./initialization-orchestrator');
+  const status = orchestrator.getStatus();
+  
+  if (orchestrator.isReady()) {
+    res.status(200).json({
+      status: 'ready',
+      ...status
+    });
+  } else {
+    res.status(503).json({
+      status: 'initializing',
+      ...status
+    });
+  }
 });
 
 // Root endpoint - fast health check for non-browser requests, serve app for browsers
@@ -479,68 +499,16 @@ app.use((req, res, next) => {
     log(`🎯 Environment: ${process.env.NODE_ENV || 'development'}`);
   });
   
-  // Run database initialization in background with proper error handling
-  // This won't block the server from accepting requests
+  // CRITICAL: Run initialization orchestrator in background AFTER server starts
+  // Uses concurrent execution with readiness tracking for fast Cloud Run health checks
   setImmediate(async () => {
     try {
-      await seedDatabase();
-      log(`✅ Database initialized successfully`);
+      const { orchestrator } = await import('./initialization-orchestrator');
+      await orchestrator.start();
+      log(`✅ Initialization orchestrator complete`);
     } catch (error) {
-      log(`ℹ️ Database seeding skipped (already seeded or error): ${error}`);
-    }
-    
-    // Ensure Max AI Canvas dashboard exists (moved to background)
-    try {
-      const { dashboards } = await import("../shared/schema");
-      const existingDashboard = await db.select().from(dashboards).where(eq(dashboards.id, 1)).limit(1);
-      
-      if (existingDashboard.length === 0) {
-        log("📊 Creating default Max AI Canvas dashboard...");
-        await db.insert(dashboards).values({
-          name: "Max AI Canvas",
-          description: "Default dashboard for Max AI generated widgets",
-          configuration: {
-            layout: [],
-            settings: {
-              refreshInterval: 60,
-              theme: "light"
-            }
-          },
-          userId: null,
-          isActive: true,
-          isDefault: false
-        });
-        log("✅ Default Max AI Canvas dashboard created");
-      } else {
-        log("✅ Max AI Canvas dashboard exists");
-      }
-    } catch (error) {
-      log(`⚠️  Could not check/create default dashboard: ${error instanceof Error ? error.message : 'Unknown error'}`);
-    }
-    
-    // Initialize admin user for production login
-    try {
-      const { initializeAdminUser } = await import('./init-admin');
-      await initializeAdminUser();
-      
-      // Also ensure admin has full access (especially in production)
-      const { ensureAdminAccess } = await import('./ensure-admin-access');
-      await ensureAdminAccess();
-      
-      // Initialize production users (Patti and Jim) if in production
-      if (process.env.NODE_ENV === 'production') {
-        const { ensureProductionUsersAccess } = await import('./production-init');
-        await ensureProductionUsersAccess();
-        
-        // Fix production permissions for schedule access
-        const { fixProductionPermissions } = await import('./production-permissions-fix');
-        await fixProductionPermissions();
-      }
-      
-      log(`✅ All initialization complete`);
-    } catch (error) {
-      log(`⚠️ Admin user initialization error: ${error}`);
-      // Don't exit - server should continue running
+      log(`⚠️ Initialization orchestrator error: ${error}`);
+      // Don't exit - server should continue running in degraded state
     }
   });
   

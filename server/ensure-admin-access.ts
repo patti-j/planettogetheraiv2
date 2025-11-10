@@ -87,33 +87,8 @@ export async function ensureAdminAccess() {
       console.log('✅ Admin user already has Administrator role');
     }
     
-    // 4. FAST permissions setup - only ensure critical permissions exist
-    // This avoids the slow loop that was causing production deployment timeouts
-    console.log('📝 Ensuring critical permissions...');
-    
-    const criticalPermissions = [
-      { feature: 'dashboard', action: 'view' },
-      { feature: 'production', action: 'view' },
-      { feature: 'administration', action: 'view' }
-    ];
-    
-    for (const { feature, action } of criticalPermissions) {
-      const [perm] = await db.insert(permissions).values({
-        name: `${feature}:${action}`,
-        feature,
-        action,
-        description: `${action} ${feature}`
-      }).onConflictDoNothing().returning();
-      
-      if (perm) {
-        await db.insert(rolePermissions).values({
-          roleId: adminRole[0].id,
-          permissionId: perm.id
-        }).onConflictDoNothing();
-      }
-    }
-    
-    console.log('✅ Critical permissions ensured (full permissions created on first login)')
+    // NOTE: Permissions are created by production-permissions-fix.ts to keep this fast
+    console.log('✅ Admin role configured (permissions handled separately)')
     
     // 5. Also ensure Jim user exists with admin access
     let jimUser = await db.select().from(users)
