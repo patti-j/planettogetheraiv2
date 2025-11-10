@@ -165,12 +165,10 @@ app.use((req, res, next) => {
     const existingDashboard = await db.select().from(dashboards).where(eq(dashboards.id, 1)).limit(1);
     
     if (existingDashboard.length === 0) {
-      log("📊 Creating default Max AI Canvas dashboard (id=1)...");
+      log("📊 Creating default Max AI Canvas dashboard...");
       await db.insert(dashboards).values({
-        id: 1,
         name: "Max AI Canvas",
         description: "Default dashboard for Max AI generated widgets",
-        type: "canvas",
         config: {
           layout: [],
           settings: {
@@ -178,7 +176,7 @@ app.use((req, res, next) => {
             theme: "light"
           }
         },
-        userId: null, // System dashboard
+        userId: null,
         isPublic: true,
         isDefault: false
       });
