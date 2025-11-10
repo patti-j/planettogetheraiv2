@@ -497,8 +497,18 @@ app.use((req, res, next) => {
   
   log(`🎙️ Realtime Voice WebSocket server initialized on /api/v1/realtime-voice`);
   
-  // Initialize database and seed data
-  (async () => {
+  // CRITICAL: Start HTTP server FIRST before any expensive operations
+  // This ensures health checks pass while initialization runs in background
+  server.listen(port, "0.0.0.0", () => {
+    log(`🏭 PlanetTogether serving on port ${port}`);
+    log(`📡 WebSocket server ready for agent connections`);
+    log(`📊 Database: ${process.env.DATABASE_URL ? 'Connected' : 'No DATABASE_URL'}`);
+    log(`🎯 Environment: ${process.env.NODE_ENV || 'development'}`);
+  });
+  
+  // Run database initialization in background with proper error handling
+  // This won't block the server from accepting requests
+  setImmediate(async () => {
     try {
       await seedDatabase();
       log(`✅ Database initialized successfully`);
@@ -524,17 +534,12 @@ app.use((req, res, next) => {
         const { fixProductionPermissions } = await import('./production-permissions-fix');
         await fixProductionPermissions();
       }
+      
+      log(`✅ All initialization complete`);
     } catch (error) {
       log(`⚠️ Admin user initialization error: ${error}`);
+      // Don't exit - server should continue running
     }
-  })();
-  
-  // Start HTTP server
-  server.listen(port, "0.0.0.0", () => {
-    log(`🏭 PlanetTogether serving on port ${port}`);
-    log(`📡 WebSocket server ready for agent connections`);
-    log(`📊 Database: ${process.env.DATABASE_URL ? 'Connected' : 'No DATABASE_URL'}`);
-    log(`🎯 Environment: ${process.env.NODE_ENV || 'development'}`);
   });
   
   // Broadcast function with strict validation and least-privilege authorization

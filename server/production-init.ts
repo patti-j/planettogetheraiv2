@@ -107,31 +107,8 @@ export async function ensureProductionUsersAccess() {
       console.log('✅ Ensured Administrator role assignments for Patti and Jim');
     }
     
-    // Ensure all required permissions exist
-    const schedulePermissions = [
-      { name: 'schedule.view', feature: 'schedule', action: 'view', description: 'View production schedule' },
-      { name: 'schedule.create', feature: 'schedule', action: 'create', description: 'Create production schedules' },
-      { name: 'schedule.update', feature: 'schedule', action: 'update', description: 'Update production schedules' },
-      { name: 'schedule.delete', feature: 'schedule', action: 'delete', description: 'Delete production schedules' },
-      { name: 'schedule.execute', feature: 'schedule', action: 'execute', description: 'Execute scheduling algorithms' }
-    ];
-    
-    for (const perm of schedulePermissions) {
-      await db.insert(permissions)
-        .values(perm)
-        .onConflictDoNothing();
-    }
-    
-    // Grant all permissions to Administrator role
-    const allPermissions = await db.select().from(permissions);
-    for (const perm of allPermissions) {
-      await db.insert(rolePermissions)
-        .values({
-          roleId: adminRoleId,
-          permissionId: perm.id
-        })
-        .onConflictDoNothing();
-    }
+    // Skip permission creation - handled by ensure-admin-access.ts
+    console.log('✅ Skipping permission creation (handled by ensure-admin-access)')
     
     console.log('✅ Production users Patti and Jim have been configured with full Administrator access');
     console.log('📋 Login credentials:');
