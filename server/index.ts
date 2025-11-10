@@ -169,7 +169,7 @@ app.use((req, res, next) => {
       await db.insert(dashboards).values({
         name: "Max AI Canvas",
         description: "Default dashboard for Max AI generated widgets",
-        config: {
+        configuration: {
           layout: [],
           settings: {
             refreshInterval: 60,
@@ -177,7 +177,7 @@ app.use((req, res, next) => {
           }
         },
         userId: null,
-        isPublic: true,
+        isActive: true,
         isDefault: false
       });
       log("✅ Default Max AI Canvas dashboard created");
