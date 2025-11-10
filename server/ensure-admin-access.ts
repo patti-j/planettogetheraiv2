@@ -87,72 +87,33 @@ export async function ensureAdminAccess() {
       console.log('✅ Admin user already has Administrator role');
     }
     
-    // 4. Create all permissions if they don't exist
-    const features = [
-      'dashboard', 'production', 'inventory', 'schedule', 'scheduling', 'planning',
-      'analytics', 'reports', 'administration', 'settings', 'integrations',
-      'ai-insights', 'optimization', 'master-data', 'workflows', 'canvas',
-      'control-tower', 'demand-forecasting', 'labor-planning', 'maintenance',
-      'quality', 'sales', 'purchasing', 'finance', 'hr', 'it'
+    // 4. FAST permissions setup - only ensure critical permissions exist
+    // This avoids the slow loop that was causing production deployment timeouts
+    console.log('📝 Ensuring critical permissions...');
+    
+    const criticalPermissions = [
+      { feature: 'dashboard', action: 'view' },
+      { feature: 'production', action: 'view' },
+      { feature: 'administration', action: 'view' }
     ];
     
-    const actions = ['view', 'create', 'update', 'delete', 'execute', 'export'];
-    
-    console.log('📝 Creating permissions...');
-    let permissionCount = 0;
-    
-    for (const feature of features) {
-      for (const action of actions) {
-        // Check if permission exists
-        const existingPermission = await db.select().from(permissions)
-          .where(and(
-            eq(permissions.feature, feature),
-            eq(permissions.action, action)
-          ))
-          .limit(1);
-        
-        if (existingPermission.length === 0) {
-          const insertedPermissions = await db.insert(permissions).values({
-            name: `${feature}:${action}`,
-            feature: feature,
-            action: action,
-            description: `${action} ${feature}`
-          }).onConflictDoNothing().returning();
-          
-          // If the insert succeeded, assign permission to Administrator role
-          if (insertedPermissions.length > 0) {
-            const newPermission = insertedPermissions[0];
-            await db.insert(rolePermissions).values({
-              roleId: adminRole[0].id,
-              permissionId: newPermission.id
-            }).onConflictDoNothing();
-            permissionCount++;
-          }
-        } else {
-          // Ensure this permission is assigned to Administrator role
-          const existingRolePermission = await db.select().from(rolePermissions)
-            .where(and(
-              eq(rolePermissions.roleId, adminRole[0].id),
-              eq(rolePermissions.permissionId, existingPermission[0].id)
-            ))
-            .limit(1);
-          
-          if (existingRolePermission.length === 0) {
-            await db.insert(rolePermissions).values({
-              roleId: adminRole[0].id,
-              permissionId: existingPermission[0].id
-            }).onConflictDoNothing();
-            permissionCount++;
-          }
-        }
+    for (const { feature, action } of criticalPermissions) {
+      const [perm] = await db.insert(permissions).values({
+        name: `${feature}:${action}`,
+        feature,
+        action,
+        description: `${action} ${feature}`
+      }).onConflictDoNothing().returning();
+      
+      if (perm) {
+        await db.insert(rolePermissions).values({
+          roleId: adminRole[0].id,
+          permissionId: perm.id
+        }).onConflictDoNothing();
       }
     }
     
-    if (permissionCount > 0) {
-      console.log(`✅ Created/assigned ${permissionCount} permissions to Administrator role`);
-    } else {
-      console.log('✅ All permissions already exist and are assigned');
-    }
+    console.log('✅ Critical permissions ensured (full permissions created on first login)')
     
     // 5. Also ensure Jim user exists with admin access
     let jimUser = await db.select().from(users)
