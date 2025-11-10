@@ -27,6 +27,19 @@ declare module "express-session" {
 
 const app = express();
 
+// Cache index.html in memory for instant serving (production only)
+// This prevents slow disk I/O from timing out Cloud Run health checks
+let cachedIndexHtml: string | null = null;
+if (process.env.NODE_ENV === 'production') {
+  try {
+    const indexPath = path.resolve(import.meta.dirname, "..", "dist", "public", "index.html");
+    cachedIndexHtml = fs.readFileSync(indexPath, 'utf-8');
+    console.log('✅ Cached index.html in memory for instant serving');
+  } catch (error) {
+    console.warn('⚠️ Could not cache index.html, health checks may be slower:', error);
+  }
+}
+
 // CRITICAL: Ultra-fast health check endpoints MUST be first, before ANY middleware
 // These handlers detect Cloud Run health checks and respond instantly with plain text
 // while still serving the React SPA to actual users
@@ -36,23 +49,15 @@ app.get('/health', (req, res) => {
   res.status(200).send('OK');
 });
 
-// Root endpoint handler - smart detection for health checks vs browser requests
-// Cloud Run defaults to checking / so we must handle both health checks AND serve React app
+// Root endpoint - Serve cached index.html instantly in production
+// This bypasses slow disk I/O that would timeout Cloud Run health checks during cold start
+// while still serving the React app to users with normal UX
 app.get('/', (req, res, next) => {
-  const userAgent = req.headers['user-agent'] || '';
-  const acceptHeader = req.headers.accept || '';
-  
-  // Detect health check requests (Cloud Run uses GoogleHC user agent)
-  const isHealthCheck = userAgent.includes('GoogleHC') || 
-                       userAgent.includes('kube-probe') ||
-                       !acceptHeader.includes('text/html');
-  
-  if (isHealthCheck) {
-    // Health check detected - respond instantly with plain text
-    return res.status(200).send('OK');
+  // In production, serve cached HTML instantly (no disk I/O)
+  if (cachedIndexHtml) {
+    return res.status(200).type('html').send(cachedIndexHtml);
   }
-  
-  // Browser request for HTML - pass through to Vite/static serving
+  // In development or if cache failed, pass through to Vite/static serving
   next();
 });
 

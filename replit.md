@@ -3,7 +3,12 @@
 ## Overview
 PlanetTogether is an AI-first Factory Optimization Platform, a full-stack manufacturing SCM + APS system. Its core purpose is to leverage AI for optimized production planning, dynamic resource allocation, and intelligent dashboarding, providing complete supply chain visibility through a visual Gantt chart interface. The system is designed for enterprise-grade production deployment in pharmaceutical, chemical, and industrial manufacturing, emphasizing real-time optimization, data integrity, and comprehensive reporting. It supports multi-agent functionality, modular federation, and advanced AI integration for scheduling and system intelligence, aiming to be a global control tower for autonomous optimization and real-time plant monitoring.
 
-## Recent Critical Fixes & Features (Nov 9, 2024)
+## Recent Critical Fixes & Features
+### Nov 10, 2024
+- **Cloud Run Health Check Fix**: Resolved deployment failures by implementing memory-cached `index.html` serving. In production, `dist/public/index.html` is read once at startup and served instantly from memory at `/`, eliminating slow disk I/O that caused health check timeouts during cold starts. This maintains normal UX (React app at `/`) while ensuring Cloud Run health checks pass in <100ms.
+- **Initialization Orchestrator**: Created background initialization system that runs database setup, admin access, and user provisioning AFTER server starts listening, preventing startup operations from blocking health check responses.
+
+### Nov 9, 2024
 - **CRITICAL ALAP Algorithm Fix**: Removed hardcoded `isPackagingOperation` function that was causing reference errors. Replaced with robust sequence-based detection that identifies operations by highest sequence number from ptjoboperations table.
 - **Defensive Sequence Handling**: Added precomputed max sequence validation with NaN filtering and fallback to position-based logic when no valid sequences exist. Ensures algorithm never fails due to missing or invalid sequence data.
 - **Menu Favorites Persistence Fix**: Fixed authentication issue in PUT /api/user-preferences route. Changed from session-based to JWT authentication to properly save user favorites.
