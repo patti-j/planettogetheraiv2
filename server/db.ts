@@ -13,16 +13,17 @@ neonConfig.webSocketConstructor = ws;
 function getDatabaseUrl(): string {
   // Check if running in Replit deployment (production)
   if (process.env.REPLIT_DEPLOYMENT === '1' || process.env.NODE_ENV === 'production') {
-    // In production, check for PRODUCTION_DATABASE_URL first (Replit Secrets)
-    if (process.env.PRODUCTION_DATABASE_URL) {
-      console.log('Using PRODUCTION_DATABASE_URL from environment in production');
-      return process.env.PRODUCTION_DATABASE_URL;
+    // IMPORTANT: Using DATABASE_URL in production because PRODUCTION_DATABASE_URL endpoint is disabled
+    // and cannot be updated (managed by Replit)
+    if (process.env.DATABASE_URL) {
+      console.log('Using DATABASE_URL in production (PRODUCTION_DATABASE_URL endpoint disabled)');
+      return process.env.DATABASE_URL;
     }
     
-    // Fallback to DATABASE_URL if available
-    if (process.env.DATABASE_URL) {
-      console.log('Using DATABASE_URL from environment in production');
-      return process.env.DATABASE_URL;
+    // Fallback to PRODUCTION_DATABASE_URL if DATABASE_URL not available
+    if (process.env.PRODUCTION_DATABASE_URL) {
+      console.log('Warning: Using PRODUCTION_DATABASE_URL which may be disabled');
+      return process.env.PRODUCTION_DATABASE_URL;
     }
     
     // Otherwise, try to read from secure file storage
@@ -37,7 +38,7 @@ function getDatabaseUrl(): string {
     }
     
     throw new Error(
-      "PRODUCTION_DATABASE_URL or DATABASE_URL must be set in production environment",
+      "DATABASE_URL must be set in production environment",
     );
   }
   
