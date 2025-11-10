@@ -27,16 +27,13 @@ declare module "express-session" {
 
 const app = express();
 
-// CRITICAL: Health check endpoints MUST be first, before ANY middleware
-// This ensures deployment health checks pass immediately without delays
+// CRITICAL: Ultra-fast health check endpoint MUST be first, before ANY middleware
+// Plain text response with zero parsing overhead for instant Cloud Run health checks
+// Cloud Run should be configured to check /health, not /
 
-// Liveness probe - always returns 200 immediately (for Cloud Run health checks)
+// Liveness probe - always returns 200 with plain text instantly
 app.get('/health', (req, res) => {
-  res.status(200).json({ 
-    status: 'healthy',
-    timestamp: new Date().toISOString(),
-    service: 'planettogether-api'
-  });
+  res.status(200).send('OK');
 });
 
 // Readiness probe - returns 503 until critical initialization completes
@@ -57,21 +54,8 @@ app.get('/readiness', async (req, res) => {
   }
 });
 
-// Root endpoint - fast health check for non-browser requests, serve app for browsers
-// Health checkers don't send HTML Accept header, so they get fast JSON response
-// Browsers request HTML, so they fall through to serve the React app
-app.get('/', (req, res, next) => {
-  // If this is a health check (no Accept header for HTML), return JSON immediately
-  if (!req.headers.accept || !req.headers.accept.includes('text/html')) {
-    return res.status(200).json({ 
-      status: 'healthy',
-      timestamp: new Date().toISOString(),
-      service: 'planettogether'
-    });
-  }
-  // Browser requesting HTML - let it fall through to Vite/static serving
-  next();
-});
+// NOTE: Root endpoint (/) will be handled by Vite/static serving middleware below
+// to serve the React application to users
 
 // Middleware (after health checks)
 app.use(express.json({ limit: '10mb' }));
