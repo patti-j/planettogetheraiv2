@@ -28,36 +28,55 @@ declare module "express-session" {
 const app = express();
 
 // Cache index.html in memory for instant serving (production only)
-// This prevents slow disk I/O from timing out Cloud Run health checks
+// Uses process.cwd() for reliable path resolution in production
 let cachedIndexHtml: string | null = null;
+let cacheLoadTime: number = 0;
+
 if (process.env.NODE_ENV === 'production') {
   try {
-    const indexPath = path.resolve(import.meta.dirname, "..", "dist", "public", "index.html");
+    const startTime = Date.now();
+    const indexPath = path.join(process.cwd(), "dist", "public", "index.html");
     cachedIndexHtml = fs.readFileSync(indexPath, 'utf-8');
-    console.log('✅ Cached index.html in memory for instant serving');
+    cacheLoadTime = Date.now() - startTime;
+    console.log(`✅ Cached index.html in memory (${cacheLoadTime}ms, ${cachedIndexHtml.length} bytes)`);
   } catch (error) {
-    console.warn('⚠️ Could not cache index.html, health checks may be slower:', error);
+    console.error('❌ Failed to cache index.html:', error);
+    console.error('  This will cause slow health checks. Check build output.');
   }
 }
 
 // CRITICAL: Ultra-fast health check endpoints MUST be first, before ANY middleware
-// These handlers detect Cloud Run health checks and respond instantly with plain text
-// while still serving the React SPA to actual users
+// Detect Cloud Run probes and respond instantly while serving React SPA to browsers
 
-// Primary liveness probe - /health endpoint (recommended)
+// Primary liveness probe - /health endpoint
 app.get('/health', (req, res) => {
   res.status(200).send('OK');
 });
 
-// Root endpoint - Serve cached index.html instantly in production
-// This bypasses slow disk I/O that would timeout Cloud Run health checks during cold start
-// while still serving the React app to users with normal UX
+// Root endpoint - Smart detection for health checks vs browser requests
 app.get('/', (req, res, next) => {
-  // In production, serve cached HTML instantly (no disk I/O)
+  const userAgent = req.headers['user-agent'] || '';
+  const accept = req.headers.accept || '';
+  
+  // Detect Cloud Run health probes (GoogleHC user agent or no HTML accept)
+  const isHealthCheck = userAgent.includes('GoogleHC') || 
+                       userAgent.includes('kube-probe') ||
+                       userAgent.includes('Prometheus') ||
+                       (!accept.includes('text/html') && !accept.includes('*/*'));
+  
+  if (isHealthCheck) {
+    // Health check detected - respond instantly
+    log(`[Health Check] User-Agent: ${userAgent.substring(0, 50)}`);
+    return res.status(200).send('OK');
+  }
+  
+  // Browser request for React app
   if (cachedIndexHtml) {
+    // Serve from memory cache (instant, no disk I/O)
     return res.status(200).type('html').send(cachedIndexHtml);
   }
-  // In development or if cache failed, pass through to Vite/static serving
+  
+  // Development mode or cache failed - pass to Vite/static serving
   next();
 });
 

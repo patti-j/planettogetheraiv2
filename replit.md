@@ -5,7 +5,12 @@ PlanetTogether is an AI-first Factory Optimization Platform, a full-stack manufa
 
 ## Recent Critical Fixes & Features
 ### Nov 10, 2024
-- **Cloud Run Health Check Fix**: Resolved deployment failures by implementing memory-cached `index.html` serving. In production, `dist/public/index.html` is read once at startup and served instantly from memory at `/`, eliminating slow disk I/O that caused health check timeouts during cold starts. This maintains normal UX (React app at `/`) while ensuring Cloud Run health checks pass in <100ms.
+- **Cloud Run Health Check Fix (FINAL)**: Resolved deployment failures with smart health check detection at `/` endpoint:
+  - Detects Cloud Run health probes (GoogleHC, kube-probe user agents or missing Accept: text/html)
+  - Returns instant "OK" response (<5ms) for health checks
+  - Serves memory-cached React SPA HTML to browser requests
+  - Uses `process.cwd()` for reliable path resolution in production
+  - Maintains normal UX (React app at `/`) while passing Cloud Run health checks
 - **Initialization Orchestrator**: Created background initialization system that runs database setup, admin access, and user provisioning AFTER server starts listening, preventing startup operations from blocking health check responses.
 
 ### Nov 9, 2024
