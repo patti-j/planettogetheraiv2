@@ -27,13 +27,33 @@ declare module "express-session" {
 
 const app = express();
 
-// CRITICAL: Ultra-fast health check endpoint MUST be first, before ANY middleware
-// Plain text response with zero parsing overhead for instant Cloud Run health checks
-// Cloud Run should be configured to check /health, not /
+// CRITICAL: Ultra-fast health check endpoints MUST be first, before ANY middleware
+// These handlers detect Cloud Run health checks and respond instantly with plain text
+// while still serving the React SPA to actual users
 
-// Liveness probe - always returns 200 with plain text instantly
+// Primary liveness probe - /health endpoint (recommended)
 app.get('/health', (req, res) => {
   res.status(200).send('OK');
+});
+
+// Root endpoint handler - smart detection for health checks vs browser requests
+// Cloud Run defaults to checking / so we must handle both health checks AND serve React app
+app.get('/', (req, res, next) => {
+  const userAgent = req.headers['user-agent'] || '';
+  const acceptHeader = req.headers.accept || '';
+  
+  // Detect health check requests (Cloud Run uses GoogleHC user agent)
+  const isHealthCheck = userAgent.includes('GoogleHC') || 
+                       userAgent.includes('kube-probe') ||
+                       !acceptHeader.includes('text/html');
+  
+  if (isHealthCheck) {
+    // Health check detected - respond instantly with plain text
+    return res.status(200).send('OK');
+  }
+  
+  // Browser request for HTML - pass through to Vite/static serving
+  next();
 });
 
 // Readiness probe - returns 503 until critical initialization completes
@@ -53,9 +73,6 @@ app.get('/readiness', async (req, res) => {
     });
   }
 });
-
-// NOTE: Root endpoint (/) will be handled by Vite/static serving middleware below
-// to serve the React application to users
 
 // Middleware (after health checks)
 app.use(express.json({ limit: '10mb' }));
