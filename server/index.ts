@@ -27,7 +27,33 @@ declare module "express-session" {
 
 const app = express();
 
-// Middleware
+// CRITICAL: Health check endpoints MUST be first, before ANY middleware
+// This ensures deployment health checks pass immediately without delays
+app.get('/health', (req, res) => {
+  res.status(200).json({ 
+    status: 'healthy',
+    timestamp: new Date().toISOString(),
+    service: 'planettogether-api'
+  });
+});
+
+// Root endpoint - fast health check for non-browser requests, serve app for browsers
+// Health checkers don't send HTML Accept header, so they get fast JSON response
+// Browsers request HTML, so they fall through to serve the React app
+app.get('/', (req, res, next) => {
+  // If this is a health check (no Accept header for HTML), return JSON immediately
+  if (!req.headers.accept || !req.headers.accept.includes('text/html')) {
+    return res.status(200).json({ 
+      status: 'healthy',
+      timestamp: new Date().toISOString(),
+      service: 'planettogether'
+    });
+  }
+  // Browser requesting HTML - let it fall through to Vite/static serving
+  next();
+});
+
+// Middleware (after health checks)
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: false, limit: '10mb' }));
 
@@ -96,29 +122,6 @@ app.use(session({
   }
 }));
 
-// Health check endpoint - must be early in middleware chain for deployment
-app.get('/health', (req, res) => {
-  res.status(200).json({ 
-    status: 'healthy',
-    timestamp: new Date().toISOString(),
-    service: 'planettogether-api'
-  });
-});
-
-// Root health check for deployment (Replit checks the / endpoint)
-app.get('/', (req, res, next) => {
-  // If this is an API health check (no Accept header for HTML), return JSON
-  if (!req.headers.accept || !req.headers.accept.includes('text/html')) {
-    return res.status(200).json({ 
-      status: 'healthy',
-      timestamp: new Date().toISOString(),
-      service: 'planettogether'
-    });
-  }
-  // Otherwise, let it fall through to serve the app
-  next();
-});
-
 // Logging middleware
 app.use((req, res, next) => {
   const start = Date.now();
@@ -157,36 +160,6 @@ app.use((req, res, next) => {
     log("✅ OpenAI API key configured");
   } else {
     log("⚠️  OpenAI API key not configured - AI features will be limited");
-  }
-  
-  // Ensure dashboard with id=1 exists for Max AI Canvas widgets
-  try {
-    const { dashboards } = await import("../shared/schema");
-    const existingDashboard = await db.select().from(dashboards).where(eq(dashboards.id, 1)).limit(1);
-    
-    if (existingDashboard.length === 0) {
-      log("📊 Creating default Max AI Canvas dashboard...");
-      await db.insert(dashboards).values({
-        name: "Max AI Canvas",
-        description: "Default dashboard for Max AI generated widgets",
-        configuration: {
-          layout: [],
-          settings: {
-            refreshInterval: 60,
-            theme: "light"
-          }
-        },
-        userId: null,
-        isActive: true,
-        isDefault: false
-      });
-      log("✅ Default Max AI Canvas dashboard created");
-    } else {
-      log("✅ Max AI Canvas dashboard exists");
-    }
-  } catch (error) {
-    log(`⚠️  Could not check/create default dashboard: ${error instanceof Error ? error.message : 'Unknown error'}`);
-    // Continue startup even if dashboard creation fails
   }
   
   // Serve scheduler-test specifically
@@ -514,6 +487,35 @@ app.use((req, res, next) => {
       log(`✅ Database initialized successfully`);
     } catch (error) {
       log(`ℹ️ Database seeding skipped (already seeded or error): ${error}`);
+    }
+    
+    // Ensure Max AI Canvas dashboard exists (moved to background)
+    try {
+      const { dashboards } = await import("../shared/schema");
+      const existingDashboard = await db.select().from(dashboards).where(eq(dashboards.id, 1)).limit(1);
+      
+      if (existingDashboard.length === 0) {
+        log("📊 Creating default Max AI Canvas dashboard...");
+        await db.insert(dashboards).values({
+          name: "Max AI Canvas",
+          description: "Default dashboard for Max AI generated widgets",
+          configuration: {
+            layout: [],
+            settings: {
+              refreshInterval: 60,
+              theme: "light"
+            }
+          },
+          userId: null,
+          isActive: true,
+          isDefault: false
+        });
+        log("✅ Default Max AI Canvas dashboard created");
+      } else {
+        log("✅ Max AI Canvas dashboard exists");
+      }
+    } catch (error) {
+      log(`⚠️  Could not check/create default dashboard: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
     
     // Initialize admin user for production login
