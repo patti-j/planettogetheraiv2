@@ -5,13 +5,15 @@ PlanetTogether is an AI-first Factory Optimization Platform, a full-stack manufa
 
 ## Recent Critical Fixes & Features
 ### Nov 10, 2024
-- **Cloud Run Health Check Fix (FINAL)**: Resolved deployment failures with smart health check detection at `/` endpoint:
-  - Detects Cloud Run health probes (GoogleHC, kube-probe user agents or missing Accept: text/html)
-  - Returns instant "OK" response (<5ms) for health checks
-  - Serves memory-cached React SPA HTML to browser requests
-  - Uses `process.cwd()` for reliable path resolution in production
-  - Maintains normal UX (React app at `/`) while passing Cloud Run health checks
-- **Initialization Orchestrator**: Created background initialization system that runs database setup, admin access, and user provisioning AFTER server starts listening, preventing startup operations from blocking health check responses.
+- **Cloud Run Health Check Fix (FINAL)**: Resolved deployment failures by removing async IIFE wrapper and restructuring server startup:
+  - **Root Cause**: Async IIFE wrapper kept server pending until ALL async operations completed, blocking Cloud Run health checks
+  - **Solution**: Server now starts listening IMMEDIATELY (synchronously) before any async operations
+  - **Production**: `serveStatic(app)` runs synchronously BEFORE `server.listen()` for instant static asset serving
+  - **Development**: `setupVite()` runs asynchronously in `setImmediate()` AFTER `server.listen()` (non-blocking)
+  - **Initialization**: Orchestrator runs in `setImmediate()` AFTER server starts (non-blocking)
+  - **Health Checks**: Smart detection at `/` endpoint (GoogleHC/kube-probe → "OK", browsers → React SPA)
+  - **Performance**: Health checks respond in <5ms, enabling Cloud Run cold-start deployment
+- **Architecture Pattern**: No async IIFE wrappers at top level - server startup is fully synchronous, all expensive operations deferred to callbacks
 
 ### Nov 9, 2024
 - **CRITICAL ALAP Algorithm Fix**: Removed hardcoded `isPackagingOperation` function that was causing reference errors. Replaced with robust sequence-based detection that identifies operations by highest sequence number from ptjoboperations table.
