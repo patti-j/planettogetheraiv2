@@ -1929,6 +1929,7 @@ Return only the JSON object, no other text.`;
       { route: '/visual-factory', label: 'Visual Factory', description: 'Visual factory displays and management' },
       { route: '/mrp', label: 'Material Requirements Planning', description: 'Material Requirements Planning' },
       { route: '/demand-planning', label: 'Demand Planning', description: 'Demand analysis and forecasting' },
+      { route: '/demand-supply-alignment', label: 'Demand Supply Alignment', description: 'Supply and demand alignment analysis and balancing' },
       { route: '/business-intelligence', label: 'Business Intelligence', description: 'Business intelligence and insights' },
       { route: '/financial-management', label: 'Financial Management', description: 'Financial management and reporting' },
       { route: '/master-data', label: 'Master Data Editor', description: 'Master data management and editing' },
