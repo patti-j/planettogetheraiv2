@@ -3,6 +3,246 @@ run = "npm run dev"
 hidden = [".config", ".git", "generated-icon.png", "node_modules", "dist"]
 
 [nix]
+modules = ["nodejs-20", "web", "bash", "postgresql-16", "python-3.11", "python3"]
+run = "npm run dev"
+hidden = [".config", ".git", "generated-icon.png", "node_modules", "dist"]
+
+[nix]
+channel = "stable-25_05"
+packages = ["freetds", "glibcLocales", "jq", "redis", "unixODBC", "unzip", "nano", "vim-full"]
+
+[deployment]
+deploymentTarget = "autoscale"
+build = ["npm", "run", "build"]
+run = ["bash", "-c", "NODE_ENV=production REPLIT_DEPLOYMENT=1 node dist/index.js"]
+
+[workflows]
+runButton = "Project"
+
+[[workflows.workflow]]
+name = "Project"
+mode = "parallel"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "Start application"
+
+[[workflows.workflow]]
+name = "Start application"
+author = "agent"
+
+[workflows.workflow.metadata]
+outputType = "webview"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "npm run dev"
+waitForPort = 5000
+
+[[ports]]
+localPort = 5000
+externalPort = 80
+
+[[ports]]
+localPort = 8000
+externalPort = 8000
+
+[[ports]]
+localPort = 33497
+externalPort = 3003
+
+[[ports]]
+localPort = 35123
+externalPort = 5000
+
+[[ports]]
+localPort = 35309
+externalPort = 8080
+
+[[ports]]
+localPort = 37527
+externalPort = 6000
+
+[[ports]]
+localPort = 38407
+externalPort = 8008
+
+[[ports]]
+localPort = 39085
+externalPort = 8000
+
+[[ports]]
+localPort = 39793
+externalPort = 8099
+
+[[ports]]
+localPort = 39953
+externalPort = 6800
+
+[[ports]]
+localPort = 40349
+externalPort = 3002
+
+[[ports]]
+localPort = 41077
+externalPort = 9000
+
+[[ports]]
+localPort = 41193
+externalPort = 3001
+
+[[ports]]
+localPort = 43627
+externalPort = 3003
+
+[[ports]]
+localPort = 43783
+externalPort = 5173
+
+[[ports]]
+localPort = 44205
+externalPort = 3000
+
+[[ports]]
+localPort = 45079
+externalPort = 8081
+
+[[ports]]
+localPort = 45281
+externalPort = 4200
+
+[agent]
+integrations = ["javascript_openai:1.0.0", "javascript_database:1.0.0"]
+expertMode = true
+
+
+Saved progress at the end of the loop
+
+Agent 3
+
+
+Show previous events
+
+13 messages & 37 actions
+Let me check how static files are served in production:
+2 days ago
+Improve platform stability and deployment reliability
+
+Rollback here
+
+Changes
+
+Preview
+8 minutes of work
+promotion failed
+
+2 days ago
+
+9 messages & 23 actions
+I see three critical issues! Let me check the logs and fix them:
+2 days ago
+Improve health check reliability and serving speed for faster deployments
+
+Rollback here
+
+Changes
+
+Preview
+5 minutes of work
+Health checks timeout because initialization tasks run synchronously before the server can respond to requests
+
+2 days ago
+
+20 messages & 46 actions
+I see the issue! Despite using `setImmediate()`, the initialization is STILL blocking. Let me check what's actually running during startup:
+2 days ago
+Improve server startup to prevent health check timeouts
+
+Rollback here
+
+Changes
+
+Preview
+8 minutes of work
+i am going to have to engage replit support to help us with the deployment. could you make me a copy of .replit file so I can show it to them
+
+2 days ago
+
+3 messages & 7 actions
+I'll help you create a copy of the `.replit` file for Replit support. Let me first check what's in your current `.replit` file and search for relevant documentation:
+2 days ago
+Create detailed documentation for a Cloud Run deployment issue
+
+Rollback here
+
+Changes
+
+Preview
+1 minute of work
+looking at the copy of .replit file you created, I see a number of port entries. since we deleted all but 1 port earlier today, where did all these new port entries come from
+
+2 days ago
+
+Decided on port entry management
+You're absolutely right to question that - let me check what's happening with the ports in your .replit file:
+
+
+Show 2 more
+
+Decided on port mapping management (4 seconds)
+Excellent catch! According to the Replit documentation, Replit automatically generates and manages port entries in the .replit file. Here's what's happening:
+
+Why Ports Keep Coming Back
+From the Replit docs:
+
+"By default, Replit automatically binds ports that are opened in your Replit App to available external ports and records this binding in the .replit config file."
+
+So even though you deleted them earlier today, whenever your server opens a port (like WebSocket servers, development servers, etc.), Replit automatically:
+
+Detects the port being opened
+Assigns an external port mapping
+Writes it back to the .replit file
+What Ports Are Currently Auto-Generated
+Looking at your .replit file, you have these mappings:
+
+Port 5000 → External 80 (your main frontend)
+Port 8000 → External 8000
+Plus ~15 other auto-generated port mappings
+These are likely being opened by:
+
+Your Express server (5000)
+WebSocket servers (voice chat, agent connections)
+Development tools
+Various internal services
+Should You Clean Them Up for Support?
+Let me create a cleaner version with just the essential port for your deployment:
+
+
+Created replit-config-MINIMAL-for-support.toml
+
+Decided on port explanation approach
+Perfect! I've created two versions for you:
+
+📄 Files for Replit Support
+1. replit-config-for-support.toml (Full Version)
+Shows ALL auto-generated ports (the current state)
+Useful for support to see what's actually running
+2. replit-config-MINIMAL-for-support.toml (Clean Version) ✨
+Just created this for you
+Contains only the essential port 5000 → 80 mapping
+Includes a note explaining that other ports are auto-generated
+💡 Recommendation
+I'd suggest sharing both files with support and explaining:
+
+"Our .replit file keeps auto-generating port mappings. We've cleaned it 
+multiple times but Replit adds them back whenever ports are opened. 
+The minimal config (replit-config-MINIMAL-for-support.toml) shows what 
+we actually need for deployment. The full version 
+(replit-config-for-support.toml) shows what Replit auto-generates."
+
+🔧 Can You Stop Auto-Generation?
+According to Replit docs, you can control this behavior in User Settings → "automatic
 channel = "stable-25_05"
 packages = ["freetds", "glibcLocales", "jq", "redis", "unixODBC", "unzip", "nano", "vim-full"]
 
