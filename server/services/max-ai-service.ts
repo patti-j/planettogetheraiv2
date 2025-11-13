@@ -2818,6 +2818,23 @@ All are located at the Main Brewery. Would you like details on any specific reso
   // Use AI flexibly to understand user intent and determine appropriate actions
   private async getAIFlexibleResponse(query: string, context: MaxContext, playbooks: PlaybookReference[] = [], agentTraining: any = null): Promise<MaxResponse | null> {
     try {
+      // CRITICAL: Check for specific navigation keywords FIRST before AI classification
+      const queryLower = query.toLowerCase();
+      
+      // Supply/Demand navigation triggers
+      if (queryLower.match(/\b(show|display|view|open)\s+(supply\s*demand|demand\s*supply|supply\s*and\s*demand)\b/) ||
+          queryLower.match(/\bdemand\s*supply\s*alignment\b/) ||
+          queryLower.match(/\bsupply\s*demand\s*balance\b/)) {
+        console.log(`[Max AI] 🎯 Detected supply/demand navigation request`);
+        return {
+          content: "Opening the Demand Supply Alignment page...",
+          action: {
+            type: 'navigate',
+            target: '/demand-supply-alignment'
+          }
+        };
+      }
+      
       // Build agent-specific context
       const agentContext = agentTraining ? `
 AGENT CONTEXT:
