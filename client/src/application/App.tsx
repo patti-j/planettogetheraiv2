@@ -93,7 +93,6 @@ import GuidedTourPage from "@/pages/guided-tour-page";
 import UserAccessManagement from "@/pages/user-access-management";
 import VisualFactory from "@/pages/visual-factory";
 import AIScenarioCreator from "@/pages/ai-scenario-creator";
-import MemoryBookPage from "@/pages/memory-book";
 import AgentHistory from "@/pages/agent-history";
 import { AgentMonitoring } from "@/pages/agent-monitoring";
 import OrderOptimization from "@/pages/order-optimization";
@@ -400,8 +399,7 @@ export default function ApplicationApp() {
               <Route path="/design-studio" component={DesignStudio} />
               <Route path="/ai-scenario-creator" component={AIScenarioCreator} />
               <Route path="/canvas" component={CanvasPage} />
-              <Route path="/playbooks" component={MemoryBookPage} />
-              <Route path="/memory-books" component={MemoryBooks} />
+              <Route path="/playbooks" component={MemoryBooks} />
               <Route path="/agent-history" component={AgentHistory} />
               <Route path="/agent-monitoring" component={AgentMonitoring} />
               <Route path="/functional-map" component={FunctionalMap} />
