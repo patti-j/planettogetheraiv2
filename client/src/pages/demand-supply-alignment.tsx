@@ -750,8 +750,9 @@ export default function DemandSupplyAlignmentPage() {
               </Select>
             </div>
 
-            <div className="flex items-end">
-              <Button className="w-full">
+            <div className="space-y-2">
+              <Label htmlFor="refresh">Actions</Label>
+              <Button className="w-full" data-testid="button-refresh-data">
                 <RefreshCw className="w-4 h-4 mr-2" />
                 Refresh
               </Button>
