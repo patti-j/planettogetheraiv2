@@ -12,12 +12,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Search, Plus, Sparkles, FileText, Clock, Users, Target, Bot, Edit } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Search, Plus, Sparkles, FileText, Clock, Users, Target, Bot, Edit, BookTemplate } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { insertPlaybookSchema } from "@shared/schema";
 import type { Playbook, InsertPlaybook } from "@shared/schema";
 import { z } from "zod";
+import { INDUSTRY_TEMPLATES, type PlaybookTemplate } from "@/config/playbook-templates";
 
 const AI_AGENTS = [
   { id: 'max', name: 'Max AI', description: 'System orchestrator and production intelligence' },
@@ -34,6 +36,8 @@ export default function MemoryBooksPage() {
   const [selectedBook, setSelectedBook] = useState<Playbook | null>(null);
   const [createBookOpen, setCreateBookOpen] = useState(false);
   const [editBookOpen, setEditBookOpen] = useState(false);
+  const [templatePickerOpen, setTemplatePickerOpen] = useState(false);
+  const [appliedTemplate, setAppliedTemplate] = useState<PlaybookTemplate | null>(null);
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
@@ -90,6 +94,7 @@ export default function MemoryBooksPage() {
       queryClient.invalidateQueries({ queryKey: ["/api/playbooks"] });
       setCreateBookOpen(false);
       form.reset();
+      setAppliedTemplate(null); // Clear applied template state
       toast({
         title: "Success",
         description: "Playbook created successfully",
@@ -111,6 +116,22 @@ export default function MemoryBooksPage() {
       createdBy: 1,
     };
     createBookMutation.mutate(bookData);
+  };
+
+  const handleApplyTemplate = (template: PlaybookTemplate) => {
+    form.reset({
+      title: template.title,
+      description: template.description,
+      content: template.content,
+      agentId: template.agentId,
+      category: template.category,
+    });
+    setAppliedTemplate(template);
+    setTemplatePickerOpen(false);
+    toast({
+      title: "Template Applied",
+      description: `"${template.title}" template has been applied. You can edit before creating.`,
+    });
   };
 
   // Update playbook mutation
@@ -173,17 +194,53 @@ export default function MemoryBooksPage() {
         </div>
         
         <div>
-          <Dialog open={createBookOpen} onOpenChange={setCreateBookOpen}>
+          <Dialog 
+            open={createBookOpen} 
+            onOpenChange={(open) => {
+              setCreateBookOpen(open);
+              if (!open) {
+                // Clear applied template when dialog is closed
+                setAppliedTemplate(null);
+              }
+            }}
+          >
             <DialogTrigger asChild>
               <Button data-testid="button-create-playbook">
                 <Plus className="h-4 w-4 mr-2" />
                 Create Playbook
               </Button>
             </DialogTrigger>
-          <DialogContent className="max-w-2xl">
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Create New Playbook</DialogTitle>
             </DialogHeader>
+
+            {/* Template Selection Banner */}
+            <div className="flex items-center justify-between p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg border border-purple-200 dark:border-purple-800">
+              <div className="flex items-center gap-2">
+                <BookTemplate className="h-5 w-5 text-purple-600" />
+                <div>
+                  <p className="text-sm font-medium text-purple-900 dark:text-purple-200">
+                    {appliedTemplate ? `Template: ${appliedTemplate.title}` : "Start from a template"}
+                  </p>
+                  <p className="text-xs text-purple-700 dark:text-purple-300">
+                    {appliedTemplate ? "You can still edit before creating" : "Choose from industry-specific templates"}
+                  </p>
+                </div>
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setTemplatePickerOpen(true)}
+                className="border-purple-300 text-purple-700 hover:bg-purple-100 dark:border-purple-700 dark:text-purple-300"
+                data-testid="button-choose-template"
+              >
+                <Sparkles className="h-4 w-4 mr-1" />
+                {appliedTemplate ? "Change" : "Choose Template"}
+              </Button>
+            </div>
+
             <Form {...form}>
               <form onSubmit={form.handleSubmit(handleCreateBook)} className="space-y-4">
                 <FormField
@@ -513,6 +570,120 @@ export default function MemoryBooksPage() {
               </div>
             </form>
           </Form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Template Picker Dialog */}
+      <Dialog open={templatePickerOpen} onOpenChange={setTemplatePickerOpen}>
+        <DialogContent className="max-w-5xl max-h-[90vh] overflow-hidden flex flex-col">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Sparkles className="h-5 w-5 text-purple-600" />
+              Choose Industry Template
+            </DialogTitle>
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              Select a template from specific manufacturing industries to get started quickly
+            </p>
+          </DialogHeader>
+
+          <Tabs defaultValue={INDUSTRY_TEMPLATES[0].id} className="flex-1 flex flex-col overflow-hidden">
+            <TabsList className="w-full justify-start overflow-x-auto flex-wrap h-auto">
+              {INDUSTRY_TEMPLATES.map((industry) => (
+                <TabsTrigger
+                  key={industry.id}
+                  value={industry.id}
+                  className="flex-shrink-0"
+                  data-testid={`tab-${industry.id}`}
+                >
+                  {industry.label}
+                </TabsTrigger>
+              ))}
+            </TabsList>
+
+            {INDUSTRY_TEMPLATES.map((industry) => (
+              <TabsContent
+                key={industry.id}
+                value={industry.id}
+                className="flex-1 overflow-y-auto mt-4"
+              >
+                <div className="mb-3 pb-2 border-b">
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    {industry.description}
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {industry.templates.map((template) => (
+                    <Card
+                      key={template.id}
+                      className="cursor-pointer hover:border-purple-400 hover:shadow-md transition-all"
+                      onClick={() => handleApplyTemplate(template)}
+                      data-testid={`template-card-${template.id}`}
+                    >
+                      <CardHeader className="pb-3">
+                        <CardTitle className="text-base flex items-start justify-between">
+                          <span className="flex-1">{template.title}</span>
+                          <Badge variant="outline" className="ml-2 flex-shrink-0 text-xs">
+                            {template.category}
+                          </Badge>
+                        </CardTitle>
+                        <CardDescription className="text-xs">
+                          {template.scenario}
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent className="pt-0">
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-400">
+                            <Bot className="h-3 w-3" />
+                            <span>
+                              {AI_AGENTS.find(a => a.id === template.agentId)?.name || template.agentId}
+                            </span>
+                          </div>
+                          
+                          {template.useCases && template.useCases.length > 0 && (
+                            <div>
+                              <p className="text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                Use Cases:
+                              </p>
+                              <div className="flex flex-wrap gap-1">
+                                {template.useCases.slice(0, 3).map((useCase, idx) => (
+                                  <Badge
+                                    key={idx}
+                                    variant="secondary"
+                                    className="text-xs px-2 py-0"
+                                  >
+                                    {useCase}
+                                  </Badge>
+                                ))}
+                                {template.useCases.length > 3 && (
+                                  <Badge variant="secondary" className="text-xs px-2 py-0">
+                                    +{template.useCases.length - 3} more
+                                  </Badge>
+                                )}
+                              </div>
+                            </div>
+                          )}
+
+                          <Button
+                            size="sm"
+                            className="w-full mt-2"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleApplyTemplate(template);
+                            }}
+                            data-testid={`button-apply-${template.id}`}
+                          >
+                            <Sparkles className="h-3 w-3 mr-1" />
+                            Apply Template
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </TabsContent>
+            ))}
+          </Tabs>
         </DialogContent>
       </Dialog>
     </div>
