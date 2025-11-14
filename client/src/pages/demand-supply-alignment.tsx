@@ -722,7 +722,7 @@ export default function DemandSupplyAlignmentPage() {
             </div>
 
             <div>
-              <Label htmlFor="horizon">Time Horizon (Weeks)</Label>
+              <Label htmlFor="horizon">Time Horizon</Label>
               <Select value={timeHorizon.toString()} onValueChange={(value) => setTimeHorizon(parseInt(value))}>
                 <SelectTrigger>
                   <SelectValue />
