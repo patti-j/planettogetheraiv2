@@ -7,6 +7,44 @@ import { eq, and } from 'drizzle-orm';
 
 const JWT_SECRET = process.env.SESSION_SECRET || 'dev-secret-key-change-in-production';
 
+// In-memory cache for role permissions (roleId → permission strings[])
+const rolePermissionsCache = new Map<number, string[]>();
+const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
+const cacheTimestamps = new Map<number, number>();
+
+// Helper to get cached or fetch permissions for a role
+async function getRolePermissions(roleId: number): Promise<string[]> {
+  const now = Date.now();
+  const cachedTime = cacheTimestamps.get(roleId);
+  
+  // Return cached if still valid
+  if (cachedTime && (now - cachedTime) < CACHE_TTL_MS) {
+    const cached = rolePermissionsCache.get(roleId);
+    if (cached) {
+      return cached;
+    }
+  }
+  
+  // Fetch from database using single join query
+  const rolePermissionRows = await db.select({
+    feature: permissions.feature,
+    action: permissions.action
+  })
+    .from(rolePermissions)
+    .innerJoin(permissions, eq(rolePermissions.permissionId, permissions.id))
+    .where(eq(rolePermissions.roleId, roleId));
+
+  const permissionStrings = rolePermissionRows.map(row => 
+    `${row.feature}:${row.action}`
+  );
+  
+  // Cache the result
+  rolePermissionsCache.set(roleId, permissionStrings);
+  cacheTimestamps.set(roleId, now);
+  
+  return permissionStrings;
+}
+
 // Extended Request interface for authentication context
 export interface AuthenticatedRequest extends Request {
   user?: {
@@ -109,22 +147,26 @@ async function authenticateJWT(token: string, req: AuthenticatedRequest): Promis
       return { success: false, error: 'User not found or inactive' };
     }
 
-    // Fetch user roles and permissions
-    const userRoleRows = await db.select()
-      .from(userRoles)
-      .innerJoin(roles, eq(userRoles.roleId, roles.id))
-      .innerJoin(rolePermissions, eq(roles.id, rolePermissions.roleId))
-      .innerJoin(permissions, eq(rolePermissions.permissionId, permissions.id))
-      .where(eq(userRoles.userId, userId));
-
-    let permissionStrings = userRoleRows.map(row => 
-      `${row.permissions.feature}:${row.permissions.action}`
-    );
-
-    // Special handling for admin users - grant wildcard permission
+    // Special handling for admin users - grant wildcard permission first
     // Admin user should have full access in both development and production
+    let permissionStrings: string[] = [];
+    
     if (userRecord.username === 'admin' || userRecord.email === 'admin@planettogether.com') {
       permissionStrings = ['*'];
+    } else {
+      // Fetch ALL roles for the user to support multi-role permissions
+      const userRoleRows = await db.select()
+        .from(userRoles)
+        .where(eq(userRoles.userId, userId));
+      
+      // Collect permissions from all user roles
+      const allPermissions = new Set<string>();
+      for (const userRole of userRoleRows) {
+        const rolePerms = await getRolePermissions(userRole.roleId);
+        rolePerms.forEach(perm => allPermissions.add(perm));
+      }
+      
+      permissionStrings = Array.from(allPermissions);
     }
 
     return {
@@ -159,23 +201,14 @@ async function authenticateApiKey(token: string, req: AuthenticatedRequest): Pro
     const keyId = parts[2];
     const secret = parts.slice(3).join('_');
 
-    // Find the API key
+    // Find the API key with basic info only (no nested relations to avoid N+1)
     const apiKey = await db.query.apiKeys.findFirst({
       where: and(
         eq(apiKeys.keyId, keyId),
         eq(apiKeys.isActive, true)
       ),
       with: {
-        user: true,
-        role: {
-          with: {
-            rolePermissions: {
-              with: {
-                permission: true
-              }
-            }
-          }
-        }
+        user: true
       }
     });
 
@@ -194,18 +227,22 @@ async function authenticateApiKey(token: string, req: AuthenticatedRequest): Pro
       return { success: false, error: 'Invalid API key secret' };
     }
 
-    // Update last used timestamp
-    await db.update(apiKeys)
+    // Update last used timestamp (non-blocking)
+    db.update(apiKeys)
       .set({ lastUsedAt: new Date() })
-      .where(eq(apiKeys.id, apiKey.id));
+      .where(eq(apiKeys.id, apiKey.id))
+      .then(() => {})
+      .catch(err => console.error('Failed to update last used timestamp:', err));
 
-    // Log usage
-    await logApiKeyUsage(apiKey.id, req);
+    // Log usage (non-blocking)
+    logApiKeyUsage(apiKey.id, req);
 
-    // Extract permissions from role
-    const permissions = apiKey.role?.rolePermissions.map(rp => 
-      `${rp.permission.feature}:${rp.permission.action}`
-    ) || [];
+    // Fetch permissions using cached helper to avoid N+1 query problem
+    let permissionStrings: string[] = [];
+    
+    if (apiKey.roleId) {
+      permissionStrings = await getRolePermissions(apiKey.roleId);
+    }
 
     return {
       success: true,
@@ -215,7 +252,7 @@ async function authenticateApiKey(token: string, req: AuthenticatedRequest): Pro
         email: apiKey.user.email,
         type: 'api_key',
         apiKeyId: apiKey.id,
-        permissions,
+        permissions: permissionStrings,
         roleId: apiKey.roleId || undefined
       }
     };

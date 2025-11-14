@@ -66,7 +66,9 @@ import {
   goalRisks,
   goalIssues,
   goalActions,
-  goalKpis
+  goalKpis,
+  rolePermissions,
+  permissions
 } from "@shared/schema";
 import { insertUserSchema, insertCompanyOnboardingSchema, insertUserPreferencesSchema, insertSchedulingMessageSchema, widgets, scheduleVersions, agentRecommendations } from "@shared/schema";
 import { systemMonitoringAgent } from "./monitoring-agent";
@@ -238,7 +240,7 @@ router.post("/api/auth/login", async (req, res) => {
       return res.status(401).json({ message: "Invalid credentials" });
     }
 
-    // Get user roles and permissions
+    // Get user roles and permissions (optimized to avoid N+1 queries)
     const userRoles = await storage.getUserRoles(user.id);
     const roles = [];
     const allPermissions: string[] = [];
@@ -246,27 +248,33 @@ router.post("/api/auth/login", async (req, res) => {
     for (const userRole of userRoles) {
       const role = await storage.getRole(userRole.roleId);
       if (role) {
-        const rolePermissions = await storage.getRolePermissions(role.id);
-        const permissions = [];
+        // Get role permissions with single join query to avoid N+1
+        const rolePerms = await db.select({
+          permissionId: rolePermissions.permissionId,
+          permissionName: permissions.name,
+          feature: permissions.feature,
+          action: permissions.action,
+          description: permissions.description
+        })
+        .from(rolePermissions)
+        .innerJoin(permissions, eq(rolePermissions.permissionId, permissions.id))
+        .where(eq(rolePermissions.roleId, role.id));
         
-        for (const rp of rolePermissions) {
-          const permission = await storage.getPermission(rp.permissionId);
-          if (permission) {
-            allPermissions.push(permission.name);
-            permissions.push({
-              id: permission.id,
-              name: permission.name,
-              feature: permission.feature,
-              action: permission.action,
-              description: permission.description || `${permission.action} access to ${permission.feature}`
-            });
-          }
-        }
+        const permissionsArray = rolePerms.map(rp => ({
+          id: rp.permissionId,
+          name: rp.permissionName,
+          feature: rp.feature,
+          action: rp.action,
+          description: rp.description || `${rp.action} access to ${rp.feature}`
+        }));
+        
+        allPermissions.push(...rolePerms.map(rp => rp.permissionName));
+        
         roles.push({
           id: role.id,
           name: role.name,
           description: role.description || `${role.name} role with assigned permissions`,
-          permissions: permissions
+          permissions: permissionsArray
         });
       }
     }
@@ -434,7 +442,7 @@ router.get("/api/auth/me", async (req, res) => {
         try {
           const user = await storage.getUser(userId);
           if (user && user.isActive) {
-            // Get user roles and permissions from database
+            // Get user roles and permissions from database (optimized to avoid N+1 queries)
             const userRoles = await storage.getUserRoles(user.id);
             const roles = [];
             const allPermissions = [];
@@ -442,29 +450,33 @@ router.get("/api/auth/me", async (req, res) => {
             for (const userRole of userRoles) {
               const role = await storage.getRole(userRole.roleId);
               if (role) {
-                // Get role permissions
-                const rolePermissions = await storage.getRolePermissions(role.id);
-                const permissions = [];
+                // Get role permissions with a single join query to avoid N+1
+                const rolePerms = await db.select({
+                  permissionId: rolePermissions.permissionId,
+                  permissionName: permissions.name,
+                  feature: permissions.feature,
+                  action: permissions.action,
+                  description: permissions.description
+                })
+                .from(rolePermissions)
+                .innerJoin(permissions, eq(rolePermissions.permissionId, permissions.id))
+                .where(eq(rolePermissions.roleId, role.id));
                 
-                for (const rp of rolePermissions) {
-                  const permission = await storage.getPermission(rp.permissionId);
-                  if (permission) {
-                    allPermissions.push(permission.name);
-                    permissions.push({
-                      id: permission.id,
-                      name: permission.name,
-                      feature: permission.feature,
-                      action: permission.action,
-                      description: permission.description || `${permission.action} access to ${permission.feature}`
-                    });
-                  }
-                }
+                const permissionsArray = rolePerms.map(rp => ({
+                  id: rp.permissionId,
+                  name: rp.permissionName,
+                  feature: rp.feature,
+                  action: rp.action,
+                  description: rp.description || `${rp.action} access to ${rp.feature}`
+                }));
+                
+                allPermissions.push(...rolePerms.map(rp => rp.permissionName));
                 
                 roles.push({
                   id: role.id,
                   name: role.name,
                   description: role.description || `${role.name} role with assigned permissions`,
-                  permissions: permissions
+                  permissions: permissionsArray
                 });
               }
             }
@@ -504,7 +516,7 @@ router.get("/api/auth/me", async (req, res) => {
     try {
       const user = await storage.getUser(req.session.userId);
       if (user && user.isActive) {
-        // Get user roles and permissions from database
+        // Get user roles and permissions from database (optimized to avoid N+1)
         const userRoles = await storage.getUserRoles(user.id);
         const roles = [];
         const allPermissions = [];
@@ -512,29 +524,33 @@ router.get("/api/auth/me", async (req, res) => {
         for (const userRole of userRoles) {
           const role = await storage.getRole(userRole.roleId);
           if (role) {
-            // Get role permissions
-            const rolePermissions = await storage.getRolePermissions(role.id);
-            const permissions = [];
+            // Get role permissions with single join query to avoid N+1
+            const rolePerms = await db.select({
+              permissionId: rolePermissions.permissionId,
+              permissionName: permissions.name,
+              feature: permissions.feature,
+              action: permissions.action,
+              description: permissions.description
+            })
+            .from(rolePermissions)
+            .innerJoin(permissions, eq(rolePermissions.permissionId, permissions.id))
+            .where(eq(rolePermissions.roleId, role.id));
             
-            for (const rp of rolePermissions) {
-              const permission = await storage.getPermission(rp.permissionId);
-              if (permission) {
-                allPermissions.push(permission.name);
-                permissions.push({
-                  id: permission.id,
-                  name: permission.name,
-                  feature: permission.feature,
-                  action: permission.action,
-                  description: permission.description || `${permission.action} access to ${permission.feature}`
-                });
-              }
-            }
+            const permissionsArray = rolePerms.map(rp => ({
+              id: rp.permissionId,
+              name: rp.permissionName,
+              feature: rp.feature,
+              action: rp.action,
+              description: rp.description || `${rp.action} access to ${rp.feature}`
+            }));
+            
+            allPermissions.push(...rolePerms.map(rp => rp.permissionName));
             
             roles.push({
               id: role.id,
               name: role.name,
               description: role.description || `${role.name} role with assigned permissions`,
-              permissions: permissions
+              permissions: permissionsArray
             });
           }
         }
