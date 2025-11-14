@@ -93,7 +93,7 @@ export default function DemandSupplyAlignmentPage() {
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [selectedItem, setSelectedItem] = useState<string>("all");
   const [timeHorizon, setTimeHorizon] = useState<number>(26); // weeks
-  const [viewMode, setViewMode] = useState<"summary" | "detailed" | "drill-down">("summary");
+  const [viewMode, setViewMode] = useState<"summary" | "detailed" | "drill-down">("detailed");
   const [selectedCriticality, setSelectedCriticality] = useState<string>("all");
   const [selectedRiskLevel, setSelectedRiskLevel] = useState<string>("all");
   const [selectedAlignmentLevel, setSelectedAlignmentLevel] = useState<string>("all");
@@ -845,10 +845,10 @@ export default function DemandSupplyAlignmentPage() {
 
       {/* Quick Filter Actions */}
       <Card className="mb-6">
-        <CardHeader className="pb-2">
+        <CardHeader className="py-2">
           <CardTitle className="text-sm font-medium text-gray-600">Quick Actions</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="py-3">
           <div className="flex flex-wrap gap-2">
             <Button 
               variant={selectedAlignmentLevel === "poor" ? "default" : "outline"} 
