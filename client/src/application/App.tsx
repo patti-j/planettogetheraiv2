@@ -130,6 +130,7 @@ import MobileDashboardView from "@/pages/mobile-dashboard-view";
 import MemoryBooks from "@/pages/memory-books";
 import Workflows from "@/pages/Workflows";
 import DataImportClean from "@/pages/data-import-clean";
+import ContinuousImprovement from "@/pages/continuous-improvement";
 import DataImportSimple from "@/pages/data-import-simple";
 import Help from "@/pages/help";
 import PaginatedReports from "@/pages/paginated-reports";
@@ -474,6 +475,13 @@ export default function ApplicationApp() {
               <Route path="/control-tower">
                 <ProtectedRoute feature="analytics" action="view">
                   <ControlTower />
+                </ProtectedRoute>
+              </Route>
+              
+              {/* Continuous Improvement Center */}
+              <Route path="/continuous-improvement">
+                <ProtectedRoute feature="analytics" action="view">
+                  <ContinuousImprovement />
                 </ProtectedRoute>
               </Route>
 
