@@ -480,7 +480,7 @@ export default function ApplicationApp() {
               
               {/* Continuous Improvement Center */}
               <Route path="/continuous-improvement">
-                <ProtectedRoute feature="analytics" action="view">
+                <ProtectedRoute feature="continuous-improvement" action="view">
                   <ContinuousImprovement />
                 </ProtectedRoute>
               </Route>
