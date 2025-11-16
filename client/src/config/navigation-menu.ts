@@ -114,6 +114,7 @@ export const navigationGroups: NavigationGroup[] = [
       { icon: Globe, label: "Company Onboarding Overview", href: "/company-onboarding-overview", feature: "systems-management", action: "view", color: "bg-gradient-to-r from-blue-600 to-purple-600" },
       { icon: Sparkles, label: "Autonomous Optimization", href: "/autonomous-optimization", feature: "analytics", action: "view", color: "bg-gradient-to-r from-blue-500 to-purple-600" },
       { icon: BarChart3, label: "Analytics", href: "/analytics", feature: "analytics", action: "view", color: "bg-teal-500" },
+      { icon: TrendingUp, label: "Continuous Improvement", href: "/continuous-improvement", feature: "", action: "", color: "bg-gradient-to-r from-green-500 to-blue-600" },
       { icon: TrendingUp, label: "AI Insights", href: "/ai-insights", feature: "analytics", action: "view", color: "bg-gradient-to-r from-purple-500 to-pink-600" },
       { icon: FileText, label: "Reports", href: "/reports", feature: "reports", action: "view", color: "bg-blue-600" },
       { icon: Database, label: "Paginated Reports", href: "/paginated-reports", feature: "reports", action: "view", color: "bg-indigo-600" },

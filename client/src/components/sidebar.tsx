@@ -100,7 +100,6 @@ export default function Sidebar() {
     isExternal?: boolean;
   }> = [
     { icon: Home, label: "Home", href: "/", active: location === "/", feature: "", action: "" },
-    { icon: TrendingUp, label: "Continuous Improvement", href: "/continuous-improvement", active: location === "/continuous-improvement", feature: "", action: "" },
     { icon: BookOpen, label: "Getting Started", href: "/help", active: location === "/help", feature: "getting-started", action: "view" },
     { icon: TrendingUp, label: "Business Goals", href: "/business-goals", active: location === "/business-goals", feature: "business-goals", action: "view" },
     { icon: Briefcase, label: "Implementation Projects", href: "/implementation-projects", active: location === "/implementation-projects", feature: "implementation-projects", action: "view" },
