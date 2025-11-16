@@ -169,7 +169,7 @@ export default function Sidebar() {
     const hasPermissionForItem = hasPermission(item.feature || "", item.action || "");
     
     // Enhanced debug logging for specific menu items
-    if (item.label === "Widgets" || item.label === "User & Access Management") {
+    if (item.label === "Widgets" || item.label === "User & Access Management" || item.label === "Continuous Improvement") {
       console.log(`🔍 ${item.label.toUpperCase()} MENU DEBUG:`, {
         label: item.label,
         href: item.href,
