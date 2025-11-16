@@ -3736,6 +3736,214 @@ export const companyOnboardingOverview = pgTable("company_onboarding_overview", 
   createdAt: timestamp("created_at").defaultNow()
 });
 
+// ============================================
+// Continuous Improvement Center
+// ============================================
+
+export const improvementInitiatives = pgTable("improvement_initiatives", {
+  id: serial("id").primaryKey(),
+  title: varchar("title", { length: 255 }).notNull(),
+  description: text("description"),
+  category: varchar("category", { length: 100 }).notNull(), // "productivity", "quality", "cost", "safety", "delivery", "sustainability"
+  subcategory: varchar("subcategory", { length: 100 }), // More specific categorization
+  status: varchar("status", { length: 50 }).default("identified"), // identified, simulated, approved, in_progress, completed, on_hold, cancelled
+  priority: varchar("priority", { length: 20 }).default("medium"), // low, medium, high, critical
+  plantId: integer("plant_id").references(() => ptplants.id),
+  departmentId: integer("department_id"),
+  
+  // Improvement Details
+  problemStatement: text("problem_statement"),
+  rootCause: text("root_cause"),
+  proposedSolution: text("proposed_solution"),
+  implementationApproach: text("implementation_approach"),
+  
+  // Baseline and Target
+  baselineMetrics: jsonb("baseline_metrics"), // Current state metrics
+  targetMetrics: jsonb("target_metrics"), // Desired state metrics
+  actualMetrics: jsonb("actual_metrics"), // Achieved metrics after implementation
+  
+  // Value and Impact
+  estimatedAnnualValue: decimal("estimated_annual_value", { precision: 15, scale: 2 }),
+  actualAnnualValue: decimal("actual_annual_value", { precision: 15, scale: 2 }),
+  costToImplement: decimal("cost_to_implement", { precision: 15, scale: 2 }),
+  paybackPeriodMonths: integer("payback_period_months"),
+  
+  // Risk and Complexity
+  riskLevel: varchar("risk_level", { length: 20 }).default("medium"), // low, medium, high
+  complexity: varchar("complexity", { length: 20 }).default("medium"), // simple, medium, complex
+  riskMitigation: text("risk_mitigation"),
+  
+  // People and Resources
+  initiatedBy: integer("initiated_by").references(() => users.id),
+  leadBy: integer("lead_by").references(() => users.id),
+  teamMembers: jsonb("team_members"), // Array of user IDs
+  resourcesRequired: jsonb("resources_required"),
+  
+  // Timelines
+  identifiedDate: timestamp("identified_date").defaultNow(),
+  approvalDate: timestamp("approval_date"),
+  startDate: timestamp("start_date"),
+  targetCompletionDate: timestamp("target_completion_date"),
+  actualCompletionDate: timestamp("actual_completion_date"),
+  
+  // Related Data
+  relatedAIRecommendationId: integer("related_ai_recommendation_id"),
+  linkedInitiatives: jsonb("linked_initiatives"), // Array of related initiative IDs
+  affectedJobsOperations: jsonb("affected_jobs_operations"), // Jobs/operations impacted
+  
+  // Tracking
+  lastReviewedAt: timestamp("last_reviewed_at"),
+  nextReviewDate: timestamp("next_review_date"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow()
+});
+
+export const improvementMetrics = pgTable("improvement_metrics", {
+  id: serial("id").primaryKey(),
+  initiativeId: integer("initiative_id").references(() => improvementInitiatives.id).notNull(),
+  metricName: varchar("metric_name", { length: 255 }).notNull(),
+  metricCategory: varchar("metric_category", { length: 100 }).notNull(), // "efficiency", "quality", "cost", "time", "safety"
+  metricType: varchar("metric_type", { length: 50 }).notNull(), // "percentage", "count", "currency", "time"
+  unit: varchar("unit", { length: 50 }), // "%", "units/hour", "$", "minutes", etc.
+  
+  // Values
+  baselineValue: decimal("baseline_value", { precision: 15, scale: 4 }),
+  targetValue: decimal("target_value", { precision: 15, scale: 4 }),
+  currentValue: decimal("current_value", { precision: 15, scale: 4 }),
+  bestAchievedValue: decimal("best_achieved_value", { precision: 15, scale: 4 }),
+  
+  // Tracking
+  measurementFrequency: varchar("measurement_frequency", { length: 50 }), // "daily", "weekly", "monthly"
+  lastMeasuredAt: timestamp("last_measured_at"),
+  trendDirection: varchar("trend_direction", { length: 20 }), // "improving", "stable", "declining"
+  
+  // Data Source
+  dataSource: varchar("data_source", { length: 255 }), // Where the metric comes from
+  calculationMethod: text("calculation_method"), // How it's calculated
+  
+  isKPI: boolean("is_kpi").default(false), // Is this a key performance indicator?
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow()
+});
+
+export const improvementSimulations = pgTable("improvement_simulations", {
+  id: serial("id").primaryKey(),
+  initiativeId: integer("initiative_id").references(() => improvementInitiatives.id).notNull(),
+  simulationName: varchar("simulation_name", { length: 255 }).notNull(),
+  simulationType: varchar("simulation_type", { length: 100 }).notNull(), // "schedule", "capacity", "cost", "quality", "what-if"
+  
+  // Simulation Parameters
+  scenarioDescription: text("scenario_description"),
+  inputParameters: jsonb("input_parameters"), // What was changed
+  assumptions: jsonb("assumptions"), // Assumptions made
+  constraints: jsonb("constraints"), // Constraints applied
+  
+  // Results
+  simulationResults: jsonb("simulation_results"), // Detailed results
+  keyFindings: jsonb("key_findings"), // Important discoveries
+  projectedImpact: jsonb("projected_impact"), // Expected improvements
+  
+  // Metrics Comparison
+  baselineMetrics: jsonb("baseline_metrics"),
+  simulatedMetrics: jsonb("simulated_metrics"),
+  improvementPercentage: decimal("improvement_percentage", { precision: 5, scale: 2 }),
+  
+  // Confidence and Validation
+  confidenceLevel: decimal("confidence_level", { precision: 5, scale: 2 }), // 0-100%
+  validationStatus: varchar("validation_status", { length: 50 }), // "pending", "validated", "rejected"
+  validationNotes: text("validation_notes"),
+  
+  // Execution Details
+  simulationEngineUsed: varchar("simulation_engine_used", { length: 100 }), // "ai", "discrete-event", "monte-carlo"
+  executionTime: integer("execution_time_ms"),
+  simulationData: jsonb("simulation_data"), // Raw simulation data
+  
+  createdBy: integer("created_by").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow()
+});
+
+export const improvementMilestones = pgTable("improvement_milestones", {
+  id: serial("id").primaryKey(),
+  initiativeId: integer("initiative_id").references(() => improvementInitiatives.id).notNull(),
+  milestoneName: varchar("milestone_name", { length: 255 }).notNull(),
+  milestoneType: varchar("milestone_type", { length: 100 }), // "planning", "implementation", "measurement", "review"
+  description: text("description"),
+  
+  // Timeline
+  plannedDate: timestamp("planned_date").notNull(),
+  actualDate: timestamp("actual_date"),
+  status: varchar("status", { length: 50 }).default("pending"), // "pending", "in_progress", "completed", "delayed", "cancelled"
+  
+  // Success Criteria
+  successCriteria: jsonb("success_criteria"),
+  deliverables: jsonb("deliverables"),
+  
+  // Completion Details
+  completionPercentage: integer("completion_percentage").default(0),
+  completionNotes: text("completion_notes"),
+  blockers: jsonb("blockers"),
+  
+  responsibleUserId: integer("responsible_user_id").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow()
+});
+
+export const improvementValueTracking = pgTable("improvement_value_tracking", {
+  id: serial("id").primaryKey(),
+  initiativeId: integer("initiative_id").references(() => improvementInitiatives.id).notNull(),
+  trackingPeriod: varchar("tracking_period", { length: 50 }).notNull(), // "2024-Q1", "2024-M01", "2024-W01"
+  periodType: varchar("period_type", { length: 20 }).notNull(), // "weekly", "monthly", "quarterly"
+  
+  // Value Realized
+  plannedValue: decimal("planned_value", { precision: 15, scale: 2 }),
+  actualValue: decimal("actual_value", { precision: 15, scale: 2 }),
+  cumulativeValue: decimal("cumulative_value", { precision: 15, scale: 2 }),
+  
+  // Cost Tracking
+  plannedCost: decimal("planned_cost", { precision: 15, scale: 2 }),
+  actualCost: decimal("actual_cost", { precision: 15, scale: 2 }),
+  cumulativeCost: decimal("cumulative_cost", { precision: 15, scale: 2 }),
+  
+  // ROI Calculation
+  periodROI: decimal("period_roi", { precision: 10, scale: 2 }), // (Value - Cost) / Cost * 100
+  cumulativeROI: decimal("cumulative_roi", { precision: 10, scale: 2 }),
+  
+  // Detailed Breakdown
+  valueBreakdown: jsonb("value_breakdown"), // By category: productivity, quality, etc.
+  costBreakdown: jsonb("cost_breakdown"), // By type: labor, materials, etc.
+  
+  // Supporting Data
+  supportingMetrics: jsonb("supporting_metrics"),
+  notes: text("notes"),
+  
+  verifiedBy: integer("verified_by").references(() => users.id),
+  verifiedAt: timestamp("verified_at"),
+  createdAt: timestamp("created_at").defaultNow()
+});
+
+export const improvementLessonsLearned = pgTable("improvement_lessons_learned", {
+  id: serial("id").primaryKey(),
+  initiativeId: integer("initiative_id").references(() => improvementInitiatives.id).notNull(),
+  lessonType: varchar("lesson_type", { length: 100 }).notNull(), // "success", "challenge", "best_practice", "risk"
+  title: varchar("title", { length: 255 }).notNull(),
+  description: text("description").notNull(),
+  
+  // Impact and Applicability
+  impactLevel: varchar("impact_level", { length: 20 }), // "low", "medium", "high"
+  applicableAreas: jsonb("applicable_areas"), // Where else this could apply
+  
+  // Recommendations
+  recommendations: jsonb("recommendations"),
+  preventiveActions: jsonb("preventive_actions"), // For challenges/risks
+  
+  // Tags and Search
+  tags: jsonb("tags"),
+  isShareable: boolean("is_shareable").default(true), // Can be shared across plants
+  
+  documentedBy: integer("documented_by").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow()
+});
+
 // Create insert schemas and types for Plant Onboarding tables
 export const insertOnboardingTemplateSchema = createInsertSchema(onboardingTemplates).omit({
   id: true,
@@ -3776,3 +3984,49 @@ export const insertTourSchema = createInsertSchema(tours).omit({
 });
 export type InsertTour = z.infer<typeof insertTourSchema>;
 export type Tour = typeof tours.$inferSelect;
+
+// Create insert schemas and types for Continuous Improvement tables
+export const insertImprovementInitiativeSchema = createInsertSchema(improvementInitiatives).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true
+});
+export type InsertImprovementInitiative = z.infer<typeof insertImprovementInitiativeSchema>;
+export type ImprovementInitiative = typeof improvementInitiatives.$inferSelect;
+
+export const insertImprovementMetricSchema = createInsertSchema(improvementMetrics).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true
+});
+export type InsertImprovementMetric = z.infer<typeof insertImprovementMetricSchema>;
+export type ImprovementMetric = typeof improvementMetrics.$inferSelect;
+
+export const insertImprovementSimulationSchema = createInsertSchema(improvementSimulations).omit({
+  id: true,
+  createdAt: true
+});
+export type InsertImprovementSimulation = z.infer<typeof insertImprovementSimulationSchema>;
+export type ImprovementSimulation = typeof improvementSimulations.$inferSelect;
+
+export const insertImprovementMilestoneSchema = createInsertSchema(improvementMilestones).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true
+});
+export type InsertImprovementMilestone = z.infer<typeof insertImprovementMilestoneSchema>;
+export type ImprovementMilestone = typeof improvementMilestones.$inferSelect;
+
+export const insertImprovementValueTrackingSchema = createInsertSchema(improvementValueTracking).omit({
+  id: true,
+  createdAt: true
+});
+export type InsertImprovementValueTracking = z.infer<typeof insertImprovementValueTrackingSchema>;
+export type ImprovementValueTracking = typeof improvementValueTracking.$inferSelect;
+
+export const insertImprovementLessonsLearnedSchema = createInsertSchema(improvementLessonsLearned).omit({
+  id: true,
+  createdAt: true
+});
+export type InsertImprovementLessonsLearned = z.infer<typeof insertImprovementLessonsLearnedSchema>;
+export type ImprovementLessonsLearned = typeof improvementLessonsLearned.$inferSelect;
