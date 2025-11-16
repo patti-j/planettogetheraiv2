@@ -160,6 +160,7 @@ export default function Sidebar() {
       item.href === "#max" ||
       item.href === "/constraints" || // TEMPORARY: Always show constraints for debugging
       item.href === "/analytics" ||  // Show analytics for admin
+      item.href === "/continuous-improvement" ||  // Show Continuous Improvement for all users
       item.href === "/reports" ||  // Show reports for admin
       item.href === "/schedule" || // Show schedule for admin
       item.href === "/user-access-management"; // TEMPORARY: Always show User & Access Management
