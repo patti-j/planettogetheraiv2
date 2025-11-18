@@ -149,6 +149,7 @@ export default function Sidebar() {
     { icon: Factory, label: "Visual Factory", href: "/visual-factory", active: location === "/visual-factory", feature: "visual-factory", action: "view" },
 
     { icon: DollarSign, label: "Sales", href: "/sales", active: location === "/sales", feature: "sales", action: "view" },
+    { icon: DollarSign, label: "FP&A Dashboard", href: "/fpa-dashboard", active: location === "/fpa-dashboard", feature: "fpa", action: "view" },
     { icon: Headphones, label: "Customer Service", href: "/customer-service", active: location === "/customer-service", feature: "customer-service", action: "view" },
     { icon: MessageSquare, label: "Feedback", href: "/feedback", active: location === "/feedback", feature: "feedback", action: "view" },
 
@@ -273,6 +274,7 @@ export default function Sidebar() {
     { icon: Columns3, label: "Boards", href: "/boards", active: location === "/boards", feature: "boards", action: "view" },
     { icon: Factory, label: "Visual Factory", href: "/visual-factory", active: location === "/visual-factory", feature: "visual-factory", action: "view" },
     { icon: DollarSign, label: "Sales", href: "/sales", active: location === "/sales", feature: "sales", action: "view" },
+    { icon: DollarSign, label: "FP&A Dashboard", href: "/fpa-dashboard", active: location === "/fpa-dashboard", feature: "fpa", action: "view" },
     { icon: Headphones, label: "Customer Service", href: "/customer-service", active: location === "/customer-service", feature: "customer-service", action: "view" },
     { icon: MessageSquare, label: "Feedback", href: "/feedback", active: location === "/feedback", feature: "feedback", action: "view" },
   ];

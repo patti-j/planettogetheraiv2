@@ -3748,7 +3748,7 @@ export const improvementInitiatives = pgTable("improvement_initiatives", {
   subcategory: varchar("subcategory", { length: 100 }), // More specific categorization
   status: varchar("status", { length: 50 }).default("identified"), // identified, simulated, approved, in_progress, completed, on_hold, cancelled
   priority: varchar("priority", { length: 20 }).default("medium"), // low, medium, high, critical
-  plantId: integer("plant_id").references(() => ptplants.id),
+  plantId: integer("plant_id").references(() => ptPlants.id),
   departmentId: integer("department_id"),
   
   // Improvement Details
@@ -3941,6 +3941,292 @@ export const improvementLessonsLearned = pgTable("improvement_lessons_learned", 
   isShareable: boolean("is_shareable").default(true), // Can be shared across plants
   
   documentedBy: integer("documented_by").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow()
+});
+
+// ============================================
+// FP&A (Financial Planning & Analysis)
+// ============================================
+
+export const fpaBudgets = pgTable("fpa_budgets", {
+  id: serial("id").primaryKey(),
+  budgetName: varchar("budget_name", { length: 255 }).notNull(),
+  budgetType: varchar("budget_type", { length: 50 }).notNull(), // "annual", "quarterly", "monthly", "project", "capital"
+  budgetCategory: varchar("budget_category", { length: 100 }), // "operating", "capital", "revenue", "expense"
+  fiscalYear: integer("fiscal_year").notNull(),
+  fiscalPeriod: varchar("fiscal_period", { length: 20 }), // "Q1", "Q2", "Q3", "Q4", "M1-M12"
+  
+  // Budget Ownership
+  plantId: integer("plant_id").references(() => ptPlants.id),
+  departmentId: integer("department_id"),
+  costCenterId: integer("cost_center_id"),
+  ownerId: integer("owner_id").references(() => users.id),
+  
+  // Budget Amounts
+  totalBudget: decimal("total_budget", { precision: 15, scale: 2 }).notNull(),
+  allocatedBudget: decimal("allocated_budget", { precision: 15, scale: 2 }).default("0"),
+  committedBudget: decimal("committed_budget", { precision: 15, scale: 2 }).default("0"),
+  actualSpent: decimal("actual_spent", { precision: 15, scale: 2 }).default("0"),
+  remainingBudget: decimal("remaining_budget", { precision: 15, scale: 2 }),
+  
+  // Budget Details
+  budgetItems: jsonb("budget_items"), // Detailed line items
+  assumptions: jsonb("assumptions"), // Budget assumptions
+  justification: text("justification"),
+  
+  // Status and Approval
+  status: varchar("status", { length: 50 }).default("draft"), // "draft", "submitted", "approved", "revised", "frozen"
+  approvalStatus: varchar("approval_status", { length: 50 }), // "pending", "approved", "rejected"
+  approvedBy: integer("approved_by").references(() => users.id),
+  approvalDate: timestamp("approval_date"),
+  approvalNotes: text("approval_notes"),
+  
+  // Versions and Tracking
+  version: integer("version").default(1),
+  parentBudgetId: integer("parent_budget_id"), // For revised budgets
+  isActive: boolean("is_active").default(true),
+  
+  effectiveFrom: date("effective_from").notNull(),
+  effectiveTo: date("effective_to").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow()
+});
+
+export const fpaForecasts = pgTable("fpa_forecasts", {
+  id: serial("id").primaryKey(),
+  forecastName: varchar("forecast_name", { length: 255 }).notNull(),
+  forecastType: varchar("forecast_type", { length: 50 }).notNull(), // "revenue", "expense", "cashflow", "demand", "production"
+  forecastPeriod: varchar("forecast_period", { length: 50 }).notNull(), // "monthly", "quarterly", "annual"
+  forecastHorizon: integer("forecast_horizon_months").notNull(), // How many months ahead
+  
+  // Context
+  plantId: integer("plant_id").references(() => ptPlants.id),
+  departmentId: integer("department_id"),
+  productId: integer("product_id"), // Reference to product (ptProducts table not available)
+  customerId: integer("customer_id"), // Reference to customer (ptCustomers table not available)
+  
+  // Forecast Data
+  forecastDate: date("forecast_date").notNull(),
+  baselineValue: decimal("baseline_value", { precision: 15, scale: 2 }),
+  forecastValue: decimal("forecast_value", { precision: 15, scale: 2 }).notNull(),
+  bestCase: decimal("best_case", { precision: 15, scale: 2 }),
+  worstCase: decimal("worst_case", { precision: 15, scale: 2 }),
+  mostLikely: decimal("most_likely", { precision: 15, scale: 2 }),
+  
+  // Accuracy Tracking
+  actualValue: decimal("actual_value", { precision: 15, scale: 2 }),
+  variance: decimal("variance", { precision: 15, scale: 2 }),
+  variancePercentage: decimal("variance_percentage", { precision: 5, scale: 2 }),
+  accuracyScore: decimal("accuracy_score", { precision: 5, scale: 2 }), // 0-100%
+  
+  // Method and Assumptions
+  forecastMethod: varchar("forecast_method", { length: 100 }), // "moving_average", "exponential_smoothing", "regression", "ai_ml"
+  assumptions: jsonb("assumptions"),
+  drivers: jsonb("drivers"), // Key drivers affecting forecast
+  risks: jsonb("risks"), // Risk factors
+  
+  // Confidence
+  confidenceLevel: varchar("confidence_level", { length: 20 }), // "high", "medium", "low"
+  confidenceScore: decimal("confidence_score", { precision: 5, scale: 2 }), // 0-100%
+  
+  // Review and Approval
+  status: varchar("status", { length: 50 }).default("draft"), // "draft", "reviewed", "approved", "actual_recorded"
+  reviewedBy: integer("reviewed_by").references(() => users.id),
+  reviewDate: timestamp("review_date"),
+  
+  createdBy: integer("created_by").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow()
+});
+
+export const fpaCostCenters = pgTable("fpa_cost_centers", {
+  id: serial("id").primaryKey(),
+  costCenterCode: varchar("cost_center_code", { length: 50 }).unique().notNull(),
+  costCenterName: varchar("cost_center_name", { length: 255 }).notNull(),
+  costCenterType: varchar("cost_center_type", { length: 50 }).notNull(), // "production", "service", "administrative", "sales"
+  
+  // Hierarchy
+  parentCostCenterId: integer("parent_cost_center_id"),
+  level: integer("level").default(1),
+  path: varchar("path", { length: 500 }), // Hierarchical path like "1.2.3"
+  
+  // Ownership
+  plantId: integer("plant_id").references(() => ptPlants.id),
+  departmentId: integer("department_id"),
+  managerId: integer("manager_id").references(() => users.id),
+  
+  // Budget Allocation
+  annualBudget: decimal("annual_budget", { precision: 15, scale: 2 }),
+  quarterlyBudget: decimal("quarterly_budget", { precision: 15, scale: 2 }),
+  monthlyBudget: decimal("monthly_budget", { precision: 15, scale: 2 }),
+  
+  // Cost Allocation
+  allocationBasis: varchar("allocation_basis", { length: 100 }), // "headcount", "machine_hours", "direct_labor", "square_footage"
+  allocationPercentage: decimal("allocation_percentage", { precision: 5, scale: 2 }),
+  
+  // Overhead Rates
+  overheadRate: decimal("overhead_rate", { precision: 10, scale: 4 }),
+  laborRate: decimal("labor_rate", { precision: 10, scale: 2 }),
+  machineRate: decimal("machine_rate", { precision: 10, scale: 2 }),
+  
+  // Status
+  isActive: boolean("is_active").default(true),
+  effectiveFrom: date("effective_from"),
+  effectiveTo: date("effective_to"),
+  
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow()
+});
+
+export const fpaVarianceAnalysis = pgTable("fpa_variance_analysis", {
+  id: serial("id").primaryKey(),
+  analysisName: varchar("analysis_name", { length: 255 }).notNull(),
+  analysisType: varchar("analysis_type", { length: 50 }).notNull(), // "budget_actual", "forecast_actual", "period_comparison"
+  periodType: varchar("period_type", { length: 20 }).notNull(), // "monthly", "quarterly", "annual"
+  periodStart: date("period_start").notNull(),
+  periodEnd: date("period_end").notNull(),
+  
+  // Context
+  budgetId: integer("budget_id").references(() => fpaBudgets.id),
+  forecastId: integer("forecast_id").references(() => fpaForecasts.id),
+  costCenterId: integer("cost_center_id").references(() => fpaCostCenters.id),
+  plantId: integer("plant_id").references(() => ptPlants.id),
+  
+  // Variance Amounts
+  plannedValue: decimal("planned_value", { precision: 15, scale: 2 }).notNull(),
+  actualValue: decimal("actual_value", { precision: 15, scale: 2 }).notNull(),
+  varianceAmount: decimal("variance_amount", { precision: 15, scale: 2 }).notNull(),
+  variancePercentage: decimal("variance_percentage", { precision: 10, scale: 2 }).notNull(),
+  
+  // Variance Categories
+  varianceCategory: varchar("variance_category", { length: 100 }), // "price", "volume", "mix", "efficiency", "spending"
+  isFavorable: boolean("is_favorable"),
+  
+  // Root Cause Analysis
+  rootCauses: jsonb("root_causes"), // Array of identified causes
+  impactAssessment: text("impact_assessment"),
+  correctiveActions: jsonb("corrective_actions"),
+  preventiveActions: jsonb("preventive_actions"),
+  
+  // Responsibility
+  responsiblePerson: integer("responsible_person").references(() => users.id),
+  actionDeadline: date("action_deadline"),
+  
+  // Status
+  status: varchar("status", { length: 50 }).default("identified"), // "identified", "analyzed", "action_planned", "resolved"
+  priority: varchar("priority", { length: 20 }).default("medium"), // "low", "medium", "high", "critical"
+  
+  // Review
+  reviewedBy: integer("reviewed_by").references(() => users.id),
+  reviewDate: timestamp("review_date"),
+  reviewNotes: text("review_notes"),
+  
+  createdBy: integer("created_by").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow()
+});
+
+export const fpaProfitabilityAnalysis = pgTable("fpa_profitability_analysis", {
+  id: serial("id").primaryKey(),
+  analysisName: varchar("analysis_name", { length: 255 }).notNull(),
+  analysisLevel: varchar("analysis_level", { length: 50 }).notNull(), // "product", "customer", "plant", "order", "channel"
+  periodStart: date("period_start").notNull(),
+  periodEnd: date("period_end").notNull(),
+  
+  // Entity References
+  productId: integer("product_id"), // Reference to product (ptProducts table not available)
+  customerId: integer("customer_id"), // Reference to customer (ptCustomers table not available)
+  plantId: integer("plant_id").references(() => ptPlants.id),
+  orderId: integer("order_id"), // Reference to order (ptOrders table not available)
+  
+  // Revenue
+  grossRevenue: decimal("gross_revenue", { precision: 15, scale: 2 }),
+  discounts: decimal("discounts", { precision: 15, scale: 2 }),
+  returns: decimal("returns", { precision: 15, scale: 2 }),
+  netRevenue: decimal("net_revenue", { precision: 15, scale: 2 }),
+  
+  // Direct Costs
+  directMaterials: decimal("direct_materials", { precision: 15, scale: 2 }),
+  directLabor: decimal("direct_labor", { precision: 15, scale: 2 }),
+  directOverhead: decimal("direct_overhead", { precision: 15, scale: 2 }),
+  totalDirectCost: decimal("total_direct_cost", { precision: 15, scale: 2 }),
+  
+  // Indirect Costs
+  allocatedOverhead: decimal("allocated_overhead", { precision: 15, scale: 2 }),
+  sgaAllocation: decimal("sga_allocation", { precision: 15, scale: 2 }), // Sales, General & Administrative
+  otherIndirectCosts: decimal("other_indirect_costs", { precision: 15, scale: 2 }),
+  totalIndirectCost: decimal("total_indirect_cost", { precision: 15, scale: 2 }),
+  
+  // Profitability Metrics
+  grossProfit: decimal("gross_profit", { precision: 15, scale: 2 }),
+  grossProfitMargin: decimal("gross_profit_margin", { precision: 5, scale: 2 }), // Percentage
+  contributionMargin: decimal("contribution_margin", { precision: 15, scale: 2 }),
+  contributionMarginRatio: decimal("contribution_margin_ratio", { precision: 5, scale: 2 }), // Percentage
+  operatingProfit: decimal("operating_profit", { precision: 15, scale: 2 }),
+  operatingProfitMargin: decimal("operating_profit_margin", { precision: 5, scale: 2 }), // Percentage
+  netProfit: decimal("net_profit", { precision: 15, scale: 2 }),
+  netProfitMargin: decimal("net_profit_margin", { precision: 5, scale: 2 }), // Percentage
+  
+  // Volume Metrics
+  unitsProduced: integer("units_produced"),
+  unitsSold: integer("units_sold"),
+  averageSellingPrice: decimal("average_selling_price", { precision: 15, scale: 4 }),
+  costPerUnit: decimal("cost_per_unit", { precision: 15, scale: 4 }),
+  profitPerUnit: decimal("profit_per_unit", { precision: 15, scale: 4 }),
+  
+  // Activity-Based Costing
+  activityCosts: jsonb("activity_costs"), // Breakdown by activity
+  costDrivers: jsonb("cost_drivers"), // Key cost drivers
+  
+  // Analysis Results
+  profitabilityScore: decimal("profitability_score", { precision: 5, scale: 2 }), // 0-100 score
+  profitabilityRank: integer("profitability_rank"), // Ranking within category
+  recommendations: jsonb("recommendations"), // Action recommendations
+  
+  createdBy: integer("created_by").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow()
+});
+
+export const fpaKPIs = pgTable("fpa_kpis", {
+  id: serial("id").primaryKey(),
+  kpiName: varchar("kpi_name", { length: 255 }).notNull(),
+  kpiCategory: varchar("kpi_category", { length: 100 }).notNull(), // "financial", "operational", "quality", "customer", "growth"
+  kpiType: varchar("kpi_type", { length: 50 }).notNull(), // "lagging", "leading", "diagnostic"
+  
+  // Definition
+  description: text("description"),
+  formula: text("formula"), // How to calculate
+  unit: varchar("unit", { length: 50 }), // "$", "%", "days", "units", etc.
+  frequency: varchar("frequency", { length: 50 }), // "daily", "weekly", "monthly", "quarterly"
+  
+  // Targets
+  targetValue: decimal("target_value", { precision: 15, scale: 4 }),
+  stretchTarget: decimal("stretch_target", { precision: 15, scale: 4 }),
+  minimumThreshold: decimal("minimum_threshold", { precision: 15, scale: 4 }),
+  
+  // Current Performance
+  currentValue: decimal("current_value", { precision: 15, scale: 4 }),
+  previousValue: decimal("previous_value", { precision: 15, scale: 4 }),
+  yearToDateValue: decimal("year_to_date_value", { precision: 15, scale: 4 }),
+  
+  // Trend
+  trendDirection: varchar("trend_direction", { length: 20 }), // "improving", "stable", "declining"
+  percentageChange: decimal("percentage_change", { precision: 10, scale: 2 }),
+  
+  // Ownership
+  ownerId: integer("owner_id").references(() => users.id),
+  departmentId: integer("department_id"),
+  plantId: integer("plant_id").references(() => ptPlants.id),
+  
+  // Status
+  status: varchar("status", { length: 20 }), // "on_target", "at_risk", "off_target"
+  ragStatus: varchar("rag_status", { length: 10 }), // "red", "amber", "green"
+  
+  // Importance
+  weight: decimal("weight", { precision: 5, scale: 2 }), // Weighting for balanced scorecard
+  isPrimary: boolean("is_primary").default(false),
+  
+  lastUpdated: timestamp("last_updated").defaultNow(),
   createdAt: timestamp("created_at").defaultNow()
 });
 

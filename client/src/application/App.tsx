@@ -134,6 +134,7 @@ import ContinuousImprovement from "@/pages/continuous-improvement";
 import DataImportSimple from "@/pages/data-import-simple";
 import Help from "@/pages/help";
 import PaginatedReports from "@/pages/paginated-reports";
+import FPADashboard from "@/pages/fpa-dashboard";
 
 // Import other application-specific components  
 import { useAuth, usePermissions } from "@/hooks/useAuth";
@@ -463,6 +464,11 @@ export default function ApplicationApp() {
               <Route path="/financial-management">
                 <ProtectedRoute feature="analytics" action="view">
                   <Dashboard />
+                </ProtectedRoute>
+              </Route>
+              <Route path="/fpa-dashboard">
+                <ProtectedRoute feature="fpa" action="view">
+                  <FPADashboard />
                 </ProtectedRoute>
               </Route>
               <Route path="/smart-kpi-tracking">
