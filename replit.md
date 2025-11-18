@@ -4,6 +4,14 @@
 PlanetTogether is an AI-first Factory Optimization Platform, a full-stack manufacturing SCM + APS system. Its core purpose is to leverage AI for optimized production planning, dynamic resource allocation, and intelligent dashboarding, providing complete supply chain visibility through a visual Gantt chart interface. The system is designed for enterprise-grade production deployment in pharmaceutical, chemical, and industrial manufacturing, emphasizing real-time optimization, data integrity, and comprehensive reporting. It supports multi-agent functionality, modular federation, and advanced AI integration for scheduling and system intelligence, aiming to be a global control tower for autonomous optimization and real-time plant monitoring.
 
 ## Recent Critical Fixes & Features
+### Nov 18, 2024
+- **FP&A Dashboard with AI Integration**: Added comprehensive Financial Planning & Analysis dashboard with:
+  - **FP&A Agent**: New financial analysis agent with expertise in budgeting, forecasting, variance analysis, and profitability tracking
+  - **AI Recommendations**: Financial insights panel with actionable recommendations for cost reduction, cash flow optimization, and forecast accuracy
+  - **Financial KPIs**: Real-time tracking of budget variance, revenue growth, gross margin, operating cash flow, DSO, and working capital
+  - **Interactive AI Features**: AI Assistant button for FP&A analysis, Apply/Dismiss actions for recommendations, integrated with Max AI context
+  - **Navigation Integration**: Added to both desktop sidebar and mobile menu with purple accent, proper permissions (fpa-view, fpa-manage)
+
 ### Nov 10, 2024
 - **Cloud Run Health Check Fix (FINAL)**: Resolved deployment failures by removing async IIFE wrapper and restructuring server startup:
   - **Root Cause**: Async IIFE wrapper kept server pending until ALL async operations completed, blocking Cloud Run health checks
