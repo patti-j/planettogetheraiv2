@@ -48,25 +48,32 @@ if (process.env.NODE_ENV === 'production') {
 // CRITICAL: Ultra-fast health check endpoints MUST be first, before ANY middleware
 // Detect Cloud Run probes and respond instantly while serving React SPA to browsers
 
-// Primary liveness probe - /health endpoint
+// Primary health check endpoints - respond instantly
 app.get('/health', (req, res) => {
   res.status(200).send('OK');
 });
 
-// Root endpoint - Smart detection for health checks vs browser requests
+app.get('/ping', (req, res) => {
+  res.status(200).send('pong');
+});
+
+// Root endpoint - Optimized for both health checks and browser requests
 app.get('/', (req, res, next) => {
   const userAgent = req.headers['user-agent'] || '';
   const accept = req.headers.accept || '';
   
-  // Detect Cloud Run health probes (GoogleHC user agent or no HTML accept)
-  const isHealthCheck = userAgent.includes('GoogleHC') || 
-                       userAgent.includes('kube-probe') ||
-                       userAgent.includes('Prometheus') ||
-                       (!accept.includes('text/html') && !accept.includes('*/*'));
-  
-  if (isHealthCheck) {
+  // Fast path for health checks - check user agent first (most efficient)
+  if (userAgent.includes('GoogleHC') || 
+      userAgent.includes('kube-probe') ||
+      userAgent.includes('Google-Cloud-Scheduler') ||
+      userAgent.includes('Prometheus')) {
     // Health check detected - respond instantly
-    log(`[Health Check] User-Agent: ${userAgent.substring(0, 50)}`);
+    return res.status(200).send('OK');
+  }
+  
+  // Check accept header for non-browser requests
+  if (!accept.includes('text/html') && !accept.includes('*/*')) {
+    // Likely a health check or API call
     return res.status(200).send('OK');
   }
   
@@ -856,13 +863,6 @@ if (process.env.NODE_ENV === 'development') {
 // Make broadcast function available globally for other modules
 (global as any).broadcastToAgents = broadcastToAgents;
 
-// Serve static assets in PRODUCTION before starting server (synchronous)
-// In development, Vite middleware is loaded asynchronously AFTER server starts
-if (app.get("env") !== "development") {
-serveStatic(app);
-log("📦 Static assets configured for production");
-}
-
 // Error handler (must be registered before starting server)
 app.use((err: any, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
 const status = err.status || err.statusCode || 500;
@@ -885,6 +885,14 @@ log(`📊 Database: ${process.env.DATABASE_URL ? 'Connected' : 'No DATABASE_URL'
 // ═══════════════════════════════════════════════════════════════════════════
 // BACKGROUND INITIALIZATION (non-blocking, runs AFTER server starts)
 // ═══════════════════════════════════════════════════════════════════════════
+
+// Production: Configure static assets AFTER server starts (non-blocking)
+if (app.get("env") !== "development") {
+  setImmediate(() => {
+    serveStatic(app);
+    log("📦 Static assets configured for production");
+  });
+}
 
 // Development: Load Vite middleware asynchronously (don't block health checks)
 if (app.get("env") === "development") {
