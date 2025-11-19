@@ -225,6 +225,61 @@ export const CORE_AGENTS: Agent[] = [
     department: 'planning'
   },
   {
+    id: 'fpa',
+    name: 'fpa',
+    displayName: 'FP&A Agent',
+    description: 'Financial planning, budgeting, forecasting, and variance analysis expert for manufacturing operations',
+    icon: 'DollarSign',
+    color: '#9333EA', // purple
+    specialties: [
+      'Budget management',
+      'Financial forecasting',
+      'Variance analysis',
+      'Profitability analysis',
+      'Cost optimization',
+      'Cash flow management',
+      'Manufacturing KPIs',
+      'ROI analysis'
+    ],
+    capabilities: [
+      {
+        id: 'budget_analysis',
+        name: 'Budget Performance Analysis',
+        description: 'Analyze budget vs actual performance with variance insights',
+        inputTypes: ['budget_data', 'actual_costs', 'revenue_data'],
+        outputTypes: ['variance_report', 'budget_recommendations'],
+        requiresData: ['fpa_budgets', 'fpa_actuals']
+      },
+      {
+        id: 'financial_forecast',
+        name: 'Financial Forecasting',
+        description: 'Create rolling forecasts with accuracy tracking and scenario planning',
+        inputTypes: ['historical_data', 'trends', 'assumptions'],
+        outputTypes: ['forecast_models', 'scenario_analysis', 'accuracy_metrics'],
+        requiresData: ['fpa_forecasts', 'historical_financials']
+      },
+      {
+        id: 'profitability_analysis',
+        name: 'Profitability Analysis',
+        description: 'Analyze profitability by plant, product, and customer',
+        inputTypes: ['cost_data', 'revenue_data', 'production_data'],
+        outputTypes: ['profitability_report', 'margin_analysis', 'improvement_opportunities'],
+        requiresData: ['fpa_profitability', 'cost_centers']
+      },
+      {
+        id: 'cost_management',
+        name: 'Cost Analysis & Optimization',
+        description: 'Identify cost drivers and optimization opportunities',
+        inputTypes: ['cost_breakdown', 'activity_data', 'resource_usage'],
+        outputTypes: ['cost_analysis', 'reduction_opportunities', 'abc_costing'],
+        requiresData: ['fpa_cost_centers', 'activity_costs']
+      }
+    ],
+    status: 'active',
+    priority: 7,
+    department: 'planning'
+  },
+  {
     id: 'supply_plan',
     name: 'supply_plan',
     displayName: 'Supply Planning',

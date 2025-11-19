@@ -7,9 +7,12 @@ PlanetTogether is an AI-first Factory Optimization Platform, a full-stack manufa
 ### Nov 18, 2024
 - **FP&A Dashboard with AI Integration**: Added comprehensive Financial Planning & Analysis dashboard with:
   - **FP&A Agent**: New financial analysis agent with expertise in budgeting, forecasting, variance analysis, and profitability tracking
+  - **Frontend Agent Registration**: Added FP&A agent to frontend config (agents.ts) with proper icon (DollarSign), color (purple), and capabilities
+  - **Agent Auto-Selection**: FP&A agent automatically selected when navigating to /fpa-dashboard or /financial-management pages
   - **AI Recommendations**: Financial insights panel with actionable recommendations for cost reduction, cash flow optimization, and forecast accuracy
+  - **State Management**: Apply/Dismiss actions properly update UI state and remove recommendations from display
   - **Financial KPIs**: Real-time tracking of budget variance, revenue growth, gross margin, operating cash flow, DSO, and working capital
-  - **Interactive AI Features**: AI Assistant button for FP&A analysis, Apply/Dismiss actions for recommendations, integrated with Max AI context
+  - **Interactive AI Features**: AI Assistant button for FP&A analysis, integrated with MaxDock context for seamless agent switching
   - **Navigation Integration**: Added to both desktop sidebar and mobile menu with purple accent, proper permissions (fpa-view, fpa-manage)
 
 ### Nov 10, 2024

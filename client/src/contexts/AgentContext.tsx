@@ -54,7 +54,9 @@ export function AgentProvider({ children }: { children: React.ReactNode }) {
       '/quality-control': 'quality_analysis',
       '/quality-management': 'quality_analysis',
       '/predictive-maintenance': 'predictive_maintenance',
-      '/maintenance': 'predictive_maintenance'
+      '/maintenance': 'predictive_maintenance',
+      '/fpa-dashboard': 'fpa',
+      '/financial-management': 'fpa'
     };
     
     const agentId = pageToAgentMap[location];
