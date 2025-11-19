@@ -124,31 +124,47 @@ export default function FPADashboard() {
   const dso = 45; // Days Sales Outstanding
   const workingCapital = 1850000;
   
-  // AI Recommendations data
+  // APS-Driven Financial Recommendations
   const [recommendations, setRecommendations] = useState([
     {
       id: 1,
-      title: "Reduce Material Costs",
-      description: "Lock in 6-month contracts with suppliers to avoid 8% price volatility",
-      impact: "$180K annual savings",
+      title: "Reduce Changeover Costs 40%",
+      description: "Optimize production sequencing to group similar products. Run simulation: 487→280 changeovers/month",
+      impact: "$185K monthly savings",
       priority: "high",
-      type: "cost-reduction"
+      type: "changeover-optimization"
     },
     {
       id: 2,
-      title: "Optimize Cash Flow",
-      description: "Accelerate collections to reduce DSO from 45 to 38 days",
-      impact: "$450K working capital improvement",
-      priority: "medium",
-      type: "working-capital"
+      title: "Eliminate Weekend Overtime",
+      description: "Level capacity using finite scheduling. Shift 1,400 OT hours to regular production time",
+      impact: "$328K monthly savings",
+      priority: "high",
+      type: "overtime-reduction"
     },
     {
       id: 3,
-      title: "Improve Forecast Accuracy",
-      description: "Implement rolling forecasts with weekly updates for better visibility",
-      impact: "Reduce variance by 15%",
+      title: "Reduce Setup Times 60%",
+      description: "Apply SMED to top 5 changeover types. Target: 3.2 hrs → 1.3 hrs average setup",
+      impact: "$145K monthly savings",
       priority: "medium",
-      type: "planning"
+      type: "setup-reduction"
+    },
+    {
+      id: 4,
+      title: "Optimize Material Yield",
+      description: "Improve nesting algorithms to reduce scrap from 8% to 5%. Run cutting pattern simulation",
+      impact: "$95K monthly savings",
+      priority: "medium",
+      type: "material-efficiency"
+    },
+    {
+      id: 5,
+      title: "Campaign Production Mode",
+      description: "Group orders by product family on Line 3. Simulate monthly schedule optimization",
+      impact: "$78K monthly savings",
+      priority: "medium",
+      type: "production-efficiency"
     }
   ]);
 
