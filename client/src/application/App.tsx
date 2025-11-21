@@ -13,133 +13,149 @@ import { HintSystem } from "@/components/HintBubble";
 import { SplitScreenLayout } from "@/components/split-screen-layout";
 import { initializeFederation } from "@/lib/federation-bootstrap";
 
-// Application Pages
-import Dashboard from "@/pages/dashboard";
+// Application Pages - Using lazy loading for better performance
+import { lazy, Suspense } from "react";
+
+// Core pages loaded immediately
 import HomePage from "@/pages/home";
 import { SmartHomeWrapper } from "@/components/smart-home-wrapper";
-import Analytics from "@/pages/analytics";
-import KPIPage from "@/pages/kpi";
-import Reports from "@/pages/reports";
-import Boards from "@/pages/boards";
-import ShopFloor from "@/pages/shop-floor";
-import Sales from "@/pages/sales";
-import CustomerService from "@/pages/customer-service";
-import OperatorDashboard from "@/pages/operator-dashboard";
-import Maintenance from "@/pages/maintenance";
-import Feedback from "@/pages/feedback";
-import InboxPage from "@/pages/inbox";
-import AlertsPage from "@/pages/alerts";
-import AIAnalysisConfig from "@/pages/ai-analysis-config";
-import AIInsightsPage from "@/pages/ai-insights";
-import ForkliftDriver from "@/pages/forklift-driver";
-import EmailSettings from "@/pages/email-settings";
-import Settings from "@/pages/settings";
-import LLMSettings from "@/pages/llm-settings";
-import LaborPlanning from "@/pages/labor-planning";
-import EnterpriseMap from "@/pages/enterprise-map";
+import Dashboard from "@/pages/dashboard";
+
+// Lazy load all other pages to reduce initial bundle size
+const Analytics = lazy(() => import("@/pages/analytics"));
+const KPIPage = lazy(() => import("@/pages/kpi"));
+const Reports = lazy(() => import("@/pages/reports"));
+const Boards = lazy(() => import("@/pages/boards"));
+const ShopFloor = lazy(() => import("@/pages/shop-floor"));
+const Sales = lazy(() => import("@/pages/sales"));
+const CustomerService = lazy(() => import("@/pages/customer-service"));
+const OperatorDashboard = lazy(() => import("@/pages/operator-dashboard"));
+const Maintenance = lazy(() => import("@/pages/maintenance"));
+const Feedback = lazy(() => import("@/pages/feedback"));
+const InboxPage = lazy(() => import("@/pages/inbox"));
+const AlertsPage = lazy(() => import("@/pages/alerts"));
+const AIAnalysisConfig = lazy(() => import("@/pages/ai-analysis-config"));
+const AIInsightsPage = lazy(() => import("@/pages/ai-insights"));
+const ForkliftDriver = lazy(() => import("@/pages/forklift-driver"));
+const EmailSettings = lazy(() => import("@/pages/email-settings"));
+const Settings = lazy(() => import("@/pages/settings"));
+const LLMSettings = lazy(() => import("@/pages/llm-settings"));
+const LaborPlanning = lazy(() => import("@/pages/labor-planning"));
+const EnterpriseMap = lazy(() => import("@/pages/enterprise-map"));
 // import DemoPage from "@/pages/demo"; // Commented out - file doesn't exist
-import Onboarding from "@/pages/onboarding";
-import OptimizationStudio from "@/pages/optimization-studio";
-import CapacityPlanning from "@/pages/capacity-planning";
-import BusinessGoals from "@/pages/business-goals";
-import MasterProductionSchedule from "@/pages/master-production-schedule";
-import IntegrationsPage from "@/pages/integrations";
-import SystemIntegrationsPage from "@/pages/system-integrations";
-import DemandManagement from "@/pages/demand-management";
-import AtpCtpReservations from "@/pages/atp-ctp-reservations";
-import PlanningOverview from "@/pages/planning-overview";
-import PlantsManagement from "@/pages/plants-management";
-import DemandSupplyAlignment from "@/pages/demand-supply-alignment";
-import InventoryOptimization from "@/pages/inventory-optimization";
-import MRP from "@/pages/mrp";
-import DDMRP from "@/pages/ddmrp";
-import ProductionPlanning from "@/pages/production-planning";
-import ScheduleSequences from "@/pages/schedule-sequences";
-import ShiftManagement from "@/pages/shift-management";
-import TimeTracking from "@/pages/time-tracking";
+const Onboarding = lazy(() => import("@/pages/onboarding"));
+const OptimizationStudio = lazy(() => import("@/pages/optimization-studio"));
+const CapacityPlanning = lazy(() => import("@/pages/capacity-planning"));
+const BusinessGoals = lazy(() => import("@/pages/business-goals"));
+const MasterProductionSchedule = lazy(() => import("@/pages/master-production-schedule"));
+const IntegrationsPage = lazy(() => import("@/pages/integrations"));
+const SystemIntegrationsPage = lazy(() => import("@/pages/system-integrations"));
+const DemandManagement = lazy(() => import("@/pages/demand-management"));
+const AtpCtpReservations = lazy(() => import("@/pages/atp-ctp-reservations"));
+const PlanningOverview = lazy(() => import("@/pages/planning-overview"));
+const PlantsManagement = lazy(() => import("@/pages/plants-management"));
+const DemandSupplyAlignment = lazy(() => import("@/pages/demand-supply-alignment"));
+const InventoryOptimization = lazy(() => import("@/pages/inventory-optimization"));
+const MRP = lazy(() => import("@/pages/mrp"));
+const DDMRP = lazy(() => import("@/pages/ddmrp"));
+const ProductionPlanning = lazy(() => import("@/pages/production-planning"));
+const ScheduleSequences = lazy(() => import("@/pages/schedule-sequences"));
+const ShiftManagement = lazy(() => import("@/pages/shift-management"));
+const TimeTracking = lazy(() => import("@/pages/time-tracking"));
 
-// Additional page imports for missing routes
-import AutonomousOptimization from "@/pages/autonomous-optimization";
-import Chat from "@/pages/chat";
-import Constraints from "@/pages/constraints";
-import DataImport from "@/pages/data-import";
-import DataMap from "@/pages/data-map";
-import DataRelationships from "@/pages/data-relationships";
-import DataSchema from "@/pages/data-schema";
-import DataValidation from "@/pages/data-validation";
-import { RoutingIntelligence } from "@/pages/routing-intelligence";
-import DemandForecasting from "@/pages/demand-forecasting";
-import DemandForecastingSimple from "@/pages/demand-forecasting-simple";
-import DesignStudio from "@/pages/design-studio";
-import DisruptionManagement from "@/pages/disruption-management";
-import ErrorLogs from "@/pages/error-logs";
-import ExtensionStudio from "@/pages/extension-studio";
-import OnboardingAssistant from "@/pages/onboarding-assistant";
-import CompanyOnboardingOverview from "@/pages/company-onboarding-overview";
-import ImplementationProjects from "@/pages/implementation-projects";
-import IndustryTemplates from "@/pages/industry-templates";
-import MasterDataManagement from "@/pages/master-data-management";
-import PlanningAreaManagement from "@/pages/planning-area-management";
-import ResourcePlanningAssignment from "@/pages/resource-planning-assignment";
-import ResourceDeploymentOrder from "@/pages/resource-deployment-order";
-import DatabaseExplorer from "@/pages/database-explorer";
-import PresentationSystem from "@/pages/presentation-system";
-import SystemsManagementDashboard from "@/pages/systems-management-dashboard";
-import TableFieldViewer from "@/pages/table-field-viewer";
-import TechnologyStack from "@/pages/technology-stack";
-import TenantAdmin from "@/pages/tenant-admin";
-import Training from "@/pages/training";
-import GuidedTourPage from "@/pages/guided-tour-page";
-import UserAccessManagement from "@/pages/user-access-management";
-import VisualFactory from "@/pages/visual-factory";
-import AIScenarioCreator from "@/pages/ai-scenario-creator";
-import AgentHistory from "@/pages/agent-history";
-import { AgentMonitoring } from "@/pages/agent-monitoring";
-import OrderOptimization from "@/pages/order-optimization";
-import CanvasPage from "@/pages/canvas";
-import SMSPage from "@/pages/sms";
-import { FederationPerformanceDashboard } from "@/components/federation-performance-dashboard";
-import FederationDashboard from "@/pages/federation-dashboard";
-import ProductionScheduler from "@/pages/production-scheduler";
-import ProductionSchedulerReact from "@/pages/ProductionSchedulerReact";
-import Scheduler from "@/pages/Scheduler";
-import ProductWheels from "@/pages/product-wheels";
-import CalendarManagementPage from "@/pages/CalendarManagementPage";
+// Additional page imports for missing routes - All lazy loaded
+const AutonomousOptimization = lazy(() => import("@/pages/autonomous-optimization"));
+const Chat = lazy(() => import("@/pages/chat"));
+const Constraints = lazy(() => import("@/pages/constraints"));
+const DataImport = lazy(() => import("@/pages/data-import"));
+const DataMap = lazy(() => import("@/pages/data-map"));
+const DataRelationships = lazy(() => import("@/pages/data-relationships"));
+const DataSchema = lazy(() => import("@/pages/data-schema"));
+const DataValidation = lazy(() => import("@/pages/data-validation"));
+const RoutingIntelligence = lazy(() => import("@/pages/routing-intelligence").then(m => ({ default: m.RoutingIntelligence })));
+const DemandForecasting = lazy(() => import("@/pages/demand-forecasting"));
+const DemandForecastingSimple = lazy(() => import("@/pages/demand-forecasting-simple"));
+const DesignStudio = lazy(() => import("@/pages/design-studio"));
+const DisruptionManagement = lazy(() => import("@/pages/disruption-management"));
+const ErrorLogs = lazy(() => import("@/pages/error-logs"));
+const ExtensionStudio = lazy(() => import("@/pages/extension-studio"));
+const OnboardingAssistant = lazy(() => import("@/pages/onboarding-assistant"));
+const CompanyOnboardingOverview = lazy(() => import("@/pages/company-onboarding-overview"));
+const ImplementationProjects = lazy(() => import("@/pages/implementation-projects"));
+const IndustryTemplates = lazy(() => import("@/pages/industry-templates"));
+const MasterDataManagement = lazy(() => import("@/pages/master-data-management"));
+const PlanningAreaManagement = lazy(() => import("@/pages/planning-area-management"));
+const ResourcePlanningAssignment = lazy(() => import("@/pages/resource-planning-assignment"));
+const ResourceDeploymentOrder = lazy(() => import("@/pages/resource-deployment-order"));
+const DatabaseExplorer = lazy(() => import("@/pages/database-explorer"));
+const PresentationSystem = lazy(() => import("@/pages/presentation-system"));
+const SystemsManagementDashboard = lazy(() => import("@/pages/systems-management-dashboard"));
+const TableFieldViewer = lazy(() => import("@/pages/table-field-viewer"));
+const TechnologyStack = lazy(() => import("@/pages/technology-stack"));
+const TenantAdmin = lazy(() => import("@/pages/tenant-admin"));
+const Training = lazy(() => import("@/pages/training"));
+const GuidedTourPage = lazy(() => import("@/pages/guided-tour-page"));
+const UserAccessManagement = lazy(() => import("@/pages/user-access-management"));
+const VisualFactory = lazy(() => import("@/pages/visual-factory"));
+const AIScenarioCreator = lazy(() => import("@/pages/ai-scenario-creator"));
+const AgentHistory = lazy(() => import("@/pages/agent-history"));
+const AgentMonitoring = lazy(() => import("@/pages/agent-monitoring").then(m => ({ default: m.AgentMonitoring })));
+const OrderOptimization = lazy(() => import("@/pages/order-optimization"));
+const CanvasPage = lazy(() => import("@/pages/canvas"));
+const SMSPage = lazy(() => import("@/pages/sms"));
+const FederationPerformanceDashboard = lazy(() => import("@/components/federation-performance-dashboard").then(m => ({ default: m.FederationPerformanceDashboard })));
+const FederationDashboard = lazy(() => import("@/pages/federation-dashboard"));
+// Heavy scheduler components - definitely need lazy loading
+const ProductionScheduler = lazy(() => import("@/pages/production-scheduler"));
+const ProductionSchedulerReact = lazy(() => import("@/pages/ProductionSchedulerReact"));
+const Scheduler = lazy(() => import("@/pages/Scheduler"));
+const ProductWheels = lazy(() => import("@/pages/product-wheels"));
+const CalendarManagementPage = lazy(() => import("@/pages/CalendarManagementPage"));
 
-// Fully implemented features now being connected
-import ControlTower from "@/pages/control-tower";
-import Dashboards from "@/pages/dashboards";
-import SmartKpiTracking from "@/pages/smart-kpi-tracking";
-import SchedulingOptimizer from "@/pages/scheduling-optimizer";
+// Fully implemented features now being connected - All lazy loaded
+const ControlTower = lazy(() => import("@/pages/control-tower"));
+const Dashboards = lazy(() => import("@/pages/dashboards"));
+const SmartKpiTracking = lazy(() => import("@/pages/smart-kpi-tracking"));
+const SchedulingOptimizer = lazy(() => import("@/pages/scheduling-optimizer"));
 
-// Additional connected features
-import ProductDevelopment from "@/pages/product-development";
-import DemandPlanning from "@/pages/demand-planning";
-import RoleManagement from "@/pages/role-management";
-import ERPImport from "@/pages/erp-import";
-import ScheduleManagement from "@/pages/schedule-management";
-import FunctionalMap from "@/pages/functional-map";
-import APIIntegrations from "@/pages/api-integrations";
-import AnalyticsNew from "@/pages/analytics-new";
-import SchedulingHistory from "@/pages/scheduling-history";
-import Tasks from "@/pages/tasks";
-import AlgorithmGovernance from "@/pages/algorithm-governance";
-import Billing from "@/pages/billing";
-import AlgorithmManagement from "@/pages/algorithm-management";
-import MobileDashboardView from "@/pages/mobile-dashboard-view";
-import MemoryBooks from "@/pages/memory-books";
-import Workflows from "@/pages/Workflows";
-import DataImportClean from "@/pages/data-import-clean";
-import ContinuousImprovement from "@/pages/continuous-improvement";
-import DataImportSimple from "@/pages/data-import-simple";
-import Help from "@/pages/help";
-import PaginatedReports from "@/pages/paginated-reports";
-import FPADashboard from "@/pages/fpa-dashboard";
+// Additional connected features - All lazy loaded
+const ProductDevelopment = lazy(() => import("@/pages/product-development"));
+const DemandPlanning = lazy(() => import("@/pages/demand-planning"));
+const RoleManagement = lazy(() => import("@/pages/role-management"));
+const ERPImport = lazy(() => import("@/pages/erp-import"));
+const ScheduleManagement = lazy(() => import("@/pages/schedule-management"));
+const FunctionalMap = lazy(() => import("@/pages/functional-map"));
+const APIIntegrations = lazy(() => import("@/pages/api-integrations"));
+const AnalyticsNew = lazy(() => import("@/pages/analytics-new"));
+const SchedulingHistory = lazy(() => import("@/pages/scheduling-history"));
+const Tasks = lazy(() => import("@/pages/tasks"));
+const AlgorithmGovernance = lazy(() => import("@/pages/algorithm-governance"));
+const Billing = lazy(() => import("@/pages/billing"));
+const AlgorithmManagement = lazy(() => import("@/pages/algorithm-management"));
+const MobileDashboardView = lazy(() => import("@/pages/mobile-dashboard-view"));
+const MemoryBooks = lazy(() => import("@/pages/memory-books"));
+const Workflows = lazy(() => import("@/pages/Workflows"));
+const DataImportClean = lazy(() => import("@/pages/data-import-clean"));
+const ContinuousImprovement = lazy(() => import("@/pages/continuous-improvement"));
+const DataImportSimple = lazy(() => import("@/pages/data-import-simple"));
+const Help = lazy(() => import("@/pages/help"));
+const PaginatedReports = lazy(() => import("@/pages/paginated-reports"));
+const FPADashboard = lazy(() => import("@/pages/fpa-dashboard"));
 
 // Import other application-specific components  
 import { useAuth, usePermissions } from "@/hooks/useAuth";
 import { useQuery } from "@tanstack/react-query";
 import { useState, useEffect } from "react";
+
+// Loading fallback component for lazy-loaded pages
+const PageLoader = () => (
+  <div className="flex items-center justify-center min-h-screen">
+    <div className="text-center">
+      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+      <p className="text-gray-600">Loading page...</p>
+    </div>
+  </div>
+);
 
 export default function ApplicationApp() {
   const { isAuthenticated, user, isLoading, loginError } = useAuth();
@@ -192,7 +208,8 @@ export default function ApplicationApp() {
       <HintSystem />
       <SplitScreenLayout>
         <OnboardingGate>
-          <Switch>
+          <Suspense fallback={<PageLoader />}>
+            <Switch>
               {/* Demo and Test Pages */}
               {/* <Route path="/demo" component={DemoPage} /> */}
               <Route path="/onboarding" component={Onboarding} />
@@ -611,7 +628,8 @@ export default function ApplicationApp() {
                 }}
               </Route>
               */}
-          </Switch>
+            </Switch>
+          </Suspense>
         </OnboardingGate>
       </SplitScreenLayout>
     </>
