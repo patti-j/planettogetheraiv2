@@ -27,28 +27,11 @@ declare module "express-session" {
 
 const app = express();
 
-// Cache index.html in memory for instant serving (production only)
-// Uses process.cwd() for reliable path resolution in production
-let cachedIndexHtml: string | null = null;
-let cacheLoadTime: number = 0;
-
-if (process.env.NODE_ENV === 'production') {
-  try {
-    const startTime = Date.now();
-    const indexPath = path.join(process.cwd(), "dist", "public", "index.html");
-    cachedIndexHtml = fs.readFileSync(indexPath, 'utf-8');
-    cacheLoadTime = Date.now() - startTime;
-    console.log(`✅ Cached index.html in memory (${cacheLoadTime}ms, ${cachedIndexHtml.length} bytes)`);
-  } catch (error) {
-    console.error('❌ Failed to cache index.html:', error);
-    console.error('  This will cause slow health checks. Check build output.');
-  }
-}
-
 // CRITICAL: Ultra-fast health check endpoints MUST be first, before ANY middleware
-// Detect Cloud Run probes and respond instantly while serving React SPA to browsers
+// These endpoints respond instantly without any expensive operations
 
-// Primary health check endpoints - respond instantly
+// Primary health check endpoints - respond immediately
+// These are used by Cloud Run, Kubernetes, and Prometheus probes
 app.get('/health', (req, res) => {
   res.status(200).send('OK');
 });
@@ -57,33 +40,20 @@ app.get('/ping', (req, res) => {
   res.status(200).send('pong');
 });
 
-// Root endpoint - Optimized for both health checks and browser requests
+// Root endpoint - Minimal logic, pass through to static/Vite
+// Don't do user agent checks or cached file serving here - it slows health checks
 app.get('/', (req, res, next) => {
+  // For health check probes, respond instantly
   const userAgent = req.headers['user-agent'] || '';
-  const accept = req.headers.accept || '';
-  
-  // Fast path for health checks - check user agent first (most efficient)
   if (userAgent.includes('GoogleHC') || 
       userAgent.includes('kube-probe') ||
       userAgent.includes('Google-Cloud-Scheduler') ||
       userAgent.includes('Prometheus')) {
-    // Health check detected - respond instantly
     return res.status(200).send('OK');
   }
   
-  // Check accept header for non-browser requests
-  if (!accept.includes('text/html') && !accept.includes('*/*')) {
-    // Likely a health check or API call
-    return res.status(200).send('OK');
-  }
-  
-  // Browser request for React app
-  if (cachedIndexHtml) {
-    // Serve from memory cache (instant, no disk I/O)
-    return res.status(200).type('html').send(cachedIndexHtml);
-  }
-  
-  // Development mode or cache failed - pass to Vite/static serving
+  // For all other requests (browser, etc), pass to static/Vite
+  // Don't cache index.html here - let Vite/static middleware handle it
   next();
 });
 
