@@ -842,6 +842,15 @@ log(`Error: ${message}`);
 });
 
 // ═══════════════════════════════════════════════════════════════════════════
+// CRITICAL: Configure static assets BEFORE server starts (for production deployment)
+// ═══════════════════════════════════════════════════════════════════════════
+// Production: Must configure static assets synchronously to serve them on first request
+if (app.get("env") !== "development") {
+  serveStatic(app);
+  log("📦 Static assets configured for production");
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
 // CRITICAL: START SERVER IMMEDIATELY (synchronous, no blocking)
 // ═══════════════════════════════════════════════════════════════════════════
 // Server must start listening BEFORE any async operations to pass Cloud Run health checks
@@ -855,14 +864,6 @@ log(`📊 Database: ${process.env.DATABASE_URL ? 'Connected' : 'No DATABASE_URL'
 // ═══════════════════════════════════════════════════════════════════════════
 // BACKGROUND INITIALIZATION (non-blocking, runs AFTER server starts)
 // ═══════════════════════════════════════════════════════════════════════════
-
-// Production: Configure static assets AFTER server starts (non-blocking)
-if (app.get("env") !== "development") {
-  setImmediate(() => {
-    serveStatic(app);
-    log("📦 Static assets configured for production");
-  });
-}
 
 // Development: Load Vite middleware asynchronously (don't block health checks)
 if (app.get("env") === "development") {
