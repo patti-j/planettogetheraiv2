@@ -309,6 +309,18 @@ app.use('/api/forecasting', forecastingRoutes);  // Forecasting API routes
 // DEBUG: Database health check endpoint (for diagnosing production issues)
 app.get('/api/debug/db-health', async (req, res) => {
   try {
+    // Check if database connection is available
+    if (!db) {
+      return res.status(503).json({
+        status: 'disconnected',
+        environment: process.env.NODE_ENV,
+        isProduction: process.env.REPLIT_DEPLOYMENT === '1',
+        error: 'Database connection not available',
+        message: 'Please configure PRODUCTION_DATABASE_URL in deployment settings',
+        timestamp: new Date().toISOString()
+      });
+    }
+    
     const { users } = await import("../shared/schema");
     
     // Check if users table exists and count users
