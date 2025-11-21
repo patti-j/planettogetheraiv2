@@ -296,6 +296,33 @@ app.get('/*.html', (req, res) => {
 */
 
 
+// CRITICAL: Root health check endpoint for deployment (MUST be first)
+// Autoscale deployments require a fast-responding root endpoint
+app.get("/", (req, res) => {
+  // Quick response for health checks
+  const userAgent = req.headers['user-agent'] || '';
+  const isHealthCheck = userAgent.includes('GoogleHC') || 
+                        userAgent.includes('kube-probe') || 
+                        userAgent.includes('UptimeRobot') ||
+                        userAgent.includes('Pingdom');
+  
+  if (isHealthCheck || req.headers['x-health-check']) {
+    // Instant response for health checks
+    return res.status(200).send('OK');
+  }
+  
+  // For browsers in production, serve the index.html
+  if (app.get("env") !== "development") {
+    const indexPath = path.resolve(import.meta.dirname, "..", "dist", "public", "index.html");
+    if (fs.existsSync(indexPath)) {
+      return res.sendFile(indexPath);
+    }
+  }
+  
+  // Fallback response
+  res.status(200).send('PlanetTogether SCM + APS');
+});
+
 // Serve Bryntum static assets from public directory
 app.use(express.static(path.resolve(import.meta.dirname, "public")));
 
