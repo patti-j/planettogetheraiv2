@@ -885,8 +885,13 @@ log(`Error: ${message}`);
 // ═══════════════════════════════════════════════════════════════════════════
 // Production: Must configure static assets synchronously to serve them on first request
 if (app.get("env") !== "development") {
-  serveStatic(app);
-  log("📦 Static assets configured for production");
+  try {
+    serveStatic(app);
+    log("📦 Static assets configured for production");
+  } catch (error) {
+    log(`⚠️ Static asset configuration warning: ${error}`);
+    // Continue anyway - deployment infrastructure might handle static files differently
+  }
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
