@@ -79,9 +79,10 @@ class InitializationOrchestrator {
     });
 
     // Run critical tasks with timeout and retry
-    // Increased timeout to 8 seconds to accommodate remote database operations
+    // Production needs longer timeout for remote database operations
+    const timeoutMs = process.env.NODE_ENV === 'production' ? 30000 : 8000;
     const criticalPromises = criticalTasks.map(task => 
-      this.executeTaskWithTimeout(task, 8000)
+      this.executeTaskWithTimeout(task, timeoutMs)
     );
 
     // Wait for all critical tasks (use allSettled to not fail on single task failure)
@@ -97,7 +98,14 @@ class InitializationOrchestrator {
       const elapsed = Date.now() - this.startTime;
       console.log(`✅ [Orchestrator] Critical initialization complete in ${elapsed}ms`);
     } else {
-      console.warn('⚠️ [Orchestrator] Some critical tasks failed, system in degraded state');
+      // In production, allow the app to start even if initialization fails
+      // Users can still log in with existing credentials
+      if (process.env.NODE_ENV === 'production') {
+        this.readyFlag = true;
+        console.warn('⚠️ [Orchestrator] Some critical tasks failed in production, proceeding anyway');
+      } else {
+        console.warn('⚠️ [Orchestrator] Some critical tasks failed, system in degraded state');
+      }
     }
 
     // Fire best-effort tasks without awaiting
