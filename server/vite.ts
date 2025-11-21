@@ -131,15 +131,8 @@ export function serveStatic(app: Express) {
   }
 
   // Normal case: serve built client files from dist/public
-  app.use(express.static(distPath));
+  // NOTE: Removed express.static here as it's now handled in index.ts before routes
+  // This prevents conflicts with the static serving order
   
-  // Also serve static assets from public directory (fonts, scheduler files, etc.)
-  if (fs.existsSync(publicPath)) {
-    app.use(express.static(publicPath));
-  }
-
-  // fall through to index.html if the file doesn't exist
-  app.use("*", (_req, res) => {
-    res.sendFile(path.resolve(distPath, "index.html"));
-  });
+  console.log(`✅ Static assets directory confirmed at: ${distPath}`);
 }

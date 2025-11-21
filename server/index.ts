@@ -299,29 +299,59 @@ app.get('/*.html', (req, res) => {
 // CRITICAL: Root health check endpoint for deployment (MUST be first)
 // Autoscale deployments require a fast-responding root endpoint
 app.get("/", (req, res) => {
-  // Quick response for health checks
-  const userAgent = req.headers['user-agent'] || '';
-  const isHealthCheck = userAgent.includes('GoogleHC') || 
-                        userAgent.includes('kube-probe') || 
-                        userAgent.includes('UptimeRobot') ||
-                        userAgent.includes('Pingdom');
-  
-  if (isHealthCheck || req.headers['x-health-check']) {
-    // Instant response for health checks
-    return res.status(200).send('OK');
-  }
-  
-  // For browsers in production, serve the index.html
-  if (app.get("env") !== "development") {
-    const indexPath = path.resolve(import.meta.dirname, "..", "dist", "public", "index.html");
-    if (fs.existsSync(indexPath)) {
-      return res.sendFile(indexPath);
+  try {
+    // Quick response for health checks
+    const userAgent = req.headers['user-agent'] || '';
+    const isHealthCheck = userAgent.includes('GoogleHC') || 
+                          userAgent.includes('kube-probe') || 
+                          userAgent.includes('UptimeRobot') ||
+                          userAgent.includes('Pingdom');
+    
+    if (isHealthCheck || req.headers['x-health-check']) {
+      // Instant response for health checks
+      return res.status(200).send('OK');
     }
+    
+    // For browsers in production, serve the index.html
+    if (app.get("env") !== "development") {
+      const indexPath = path.resolve(import.meta.dirname, "..", "dist", "public", "index.html");
+      if (fs.existsSync(indexPath)) {
+        return res.sendFile(indexPath);
+      }
+      // If index.html not found, try client/index.html
+      const clientIndexPath = path.resolve(import.meta.dirname, "..", "client", "index.html");
+      if (fs.existsSync(clientIndexPath)) {
+        return res.sendFile(clientIndexPath);
+      }
+    }
+    
+    // Fallback response
+    res.status(200).send('PlanetTogether SCM + APS');
+  } catch (error) {
+    console.error('Error in root handler:', error);
+    res.status(500).send('Internal Server Error');
   }
-  
-  // Fallback response
-  res.status(200).send('PlanetTogether SCM + APS');
 });
+
+// CRITICAL: Serve production static assets BEFORE other middleware (for deployment)
+// Must be before routes and other handlers to serve JS/CSS files correctly
+if (app.get("env") !== "development") {
+  const distPublicPath = path.resolve(import.meta.dirname, "..", "dist", "public");
+  if (fs.existsSync(distPublicPath)) {
+    app.use(express.static(distPublicPath, {
+      maxAge: '1d',
+      setHeaders: (res, filePath) => {
+        // Set proper content types for JavaScript files
+        if (filePath.endsWith('.js')) {
+          res.setHeader('Content-Type', 'application/javascript');
+        } else if (filePath.endsWith('.css')) {
+          res.setHeader('Content-Type', 'text/css');
+        }
+      }
+    }));
+    log("📦 Serving static assets from dist/public");
+  }
+}
 
 // Serve Bryntum static assets from public directory
 app.use(express.static(path.resolve(import.meta.dirname, "public")));
@@ -881,17 +911,27 @@ log(`Error: ${message}`);
 });
 
 // ═══════════════════════════════════════════════════════════════════════════
-// CRITICAL: Configure static assets BEFORE server starts (for production deployment)
+// CRITICAL: Configure catch-all routes BEFORE server starts (for production deployment)
 // ═══════════════════════════════════════════════════════════════════════════
-// Production: Must configure static assets synchronously to serve them on first request
+// Production: Set up catch-all for client-side routing (AFTER static assets are configured above)
+// NOTE: Static assets are already configured earlier, this just adds the catch-all
 if (app.get("env") !== "development") {
-  try {
-    serveStatic(app);
-    log("📦 Static assets configured for production");
-  } catch (error) {
-    log(`⚠️ Static asset configuration warning: ${error}`);
-    // Continue anyway - deployment infrastructure might handle static files differently
-  }
+  // Add catch-all route for client-side routing (must be after all other routes)
+  app.get("*", (req, res) => {
+    // Don't handle API routes
+    if (req.path.startsWith('/api/')) {
+      return res.status(404).json({ error: 'API endpoint not found' });
+    }
+    
+    // Serve index.html for all other routes (client-side routing)
+    const indexPath = path.resolve(import.meta.dirname, "..", "dist", "public", "index.html");
+    if (fs.existsSync(indexPath)) {
+      res.sendFile(indexPath);
+    } else {
+      res.status(404).send('Page not found');
+    }
+  });
+  log("📦 Catch-all route configured for production");
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
