@@ -1,0 +1,763 @@
+[
+  {
+    "segment": "General Use Cases",
+    "useCases": [
+      {
+        "name": "Overreliance On a Single Scheduler and Tribal Knowledge",
+        "features": [
+          "Metrics",
+          "Routing Templates",
+          "Multi-Scenario Comparisons",
+          "Optimization Factors"
+        ]
+      },
+      {
+        "name": "Slow Quote & Customer Response Times",
+        "features": [
+          "CTP",
+          "MRP",
+          "Multi-Scenario Comparisons",
+          "Optimization Factors"
+        ]
+      }
+    ]
+  },
+  {
+    "segment": "Life Sciences",
+    "useCases": [
+      {
+        "name": "Freezing / Unfreezing (Max Delay)",
+        "features": [
+          "Max Delay"
+        ]
+      },
+      {
+        "name": "Shelf Life",
+        "features": [
+          "Lot Control",
+          "Shelf Life"
+        ]
+      },
+      {
+        "name": "Product Traceability",
+        "features": [
+          "Lot Control"
+        ]
+      },
+      {
+        "name": "Cleanout Optimization",
+        "features": [
+          "Operation Attributes",
+          "Setup Code Table"
+        ]
+      },
+      {
+        "name": "Bioreactor and Upstream Process Scheduling for Biologics",
+        "features": [
+          "Resource Constraints",
+          "Batch Scheduling",
+          "Custom Gantt Coloring",
+          "Optimize Factors"
+        ]
+      },
+      {
+        "name": "GMP-Compliant Campaign and Changeover Sequencing",
+        "features": [
+          "Sequence Dependent Setup Matrix",
+          "Clean-In-Place (CIP) Codes",
+          "Campaign Batching"
+        ]
+      },
+      {
+        "name": "Aseptic Fill-Finish Line Scheduling",
+        "features": [
+          "Job Operation Dependencies",
+          "Shelf-Life",
+          "Optimize Factors",
+          "Operation Attributes"
+        ]
+      },
+      {
+        "name": "Cold Chain Manufacturing and Inventory Expiry Planning",
+        "features": [
+          "Shelf-Life",
+          "FEFO (First Expire, First Out) Inventory Rule",
+          "Operation Attributes",
+          "Max Delay"
+        ]
+      },
+      {
+        "name": "Contract Manufacturing and CDMO Synchronization",
+        "features": [
+          "Lead Time Offsets",
+          "User Defined Fields",
+          "Metrics"
+        ]
+      },
+      {
+        "name": "Audit, Validation, and Regulatory Scheduling Windows",
+        "features": [
+          "Compatibility Codes",
+          "Clean-In-Place (CIP) Codes",
+          "Capacity Intervals",
+          "Operation Attributes"
+        ]
+      },
+      {
+        "name": "Contingency Planning for API Shortages and Demand Spikes",
+        "features": [
+          "Multi-Scenario Comparisons (What-Ifs)",
+          "Alternate Routes",
+          "Material Constraint",
+          "MRP"
+        ]
+      },
+      {
+        "name": "GMP-Credentialed Labor and Specialist Scheduling",
+        "features": [
+          "Resource Capabilities",
+          "Allowed Helpers",
+          "Recurring Capacity Intervals"
+        ]
+      },
+      {
+        "name": "NPI Launch Coordination and Legacy product Continuity",
+        "features": [
+          "Multi-Scenario Comparisons (What-Ifs)",
+          "Optimization Factors",
+          "Metrics",
+          "Web Analytics"
+        ]
+      }
+    ]
+  },
+  {
+    "segment": "Chemicals",
+    "useCases": [
+      {
+        "name": "Pipeless Scheduling and Routing",
+        "features": [
+          "Cell Scheduling",
+          "Alternate Paths",
+          "Optimize"
+        ]
+      },
+      {
+        "name": "MTS and Potential Supply-Chain Disruptions",
+        "features": [
+          "Material Constraints",
+          "Purchase Orders",
+          "Inventory Plan"
+        ]
+      },
+      {
+        "name": "SOP and Regulatory Compliance",
+        "features": [
+          "Compatibility Codes",
+          "Clean in Place (CIP)",
+          "Attributes"
+        ]
+      },
+      {
+        "name": "Chemical Batch Processing",
+        "features": [
+          "MRP",
+          "Batch Scheduling"
+        ]
+      },
+      {
+        "name": "Manage Factory Floor Disruptions",
+        "features": [
+          "Capacity Intervals",
+          "Optimize",
+          "Multi-scenario Comparisons"
+        ]
+      },
+      {
+        "name": "Reduce Changeovers and Setup Times",
+        "features": [
+          "Operation Attributes",
+          "Setup Code Tables",
+          "Optimize"
+        ]
+      },
+      {
+        "name": "Dynamic Workforce Planning",
+        "features": [
+          "Labor Pools",
+          "Capacity Intervals",
+          "Allowed Helpers"
+        ]
+      }
+    ]
+  },
+  {
+    "segment": "Printing & Packaging",
+    "useCases": [
+      {
+        "name": "Reduce Changeovers and Setup Times",
+        "features": [
+          "Operation Attributes",
+          "Setup Code Tables",
+          "Optimize"
+        ]
+      },
+      {
+        "name": "Limited Availability of Tools",
+        "features": [
+          "Material Constraints",
+          "Optimize",
+          "Attributes"
+        ]
+      },
+      {
+        "name": "Costly Factory Floor Disruptions",
+        "features": [
+          "Capacity Intervals",
+          "Optimize",
+          "Multi-scenario Comparisons"
+        ]
+      },
+      {
+        "name": "Visibility into Supply-Chain Disruptions",
+        "features": [
+          "Material Constraints",
+          "Purchase Orders",
+          "Inventory Plan"
+        ]
+      },
+      {
+        "name": "Dynamic Workforce Planning",
+        "features": [
+          "Labor Pools",
+          "Capacity Intervals",
+          "Allowed Helpers"
+        ]
+      },
+      {
+        "name": "Streamlined Order Fulfillment",
+        "features": [
+          "Capable to Promise",
+          "Multi-scenario Comparisons",
+          "Metrics"
+        ]
+      }
+    ]
+  },
+  {
+    "segment": "Mobility",
+    "useCases": [
+      {
+        "name": "Visibility into Supply-Chain Disruptions",
+        "features": [
+          "Material Constraints",
+          "Purchase Orders",
+          "Inventory Plan"
+        ]
+      },
+      {
+        "name": "JIT Production Planning",
+        "features": [
+          "Optimize",
+          "Resource Planning"
+        ]
+      },
+      {
+        "name": "Dynamic Workforce Planning",
+        "features": [
+          "Labor Pools",
+          "Capacity Intervals",
+          "Allowed Helpers"
+        ]
+      },
+      {
+        "name": "Costly Factory Floor Disruptions",
+        "features": [
+          "Capacity Intervals",
+          "Optimize",
+          "Multi-scenario Comparisons"
+        ]
+      },
+      {
+        "name": "Market Volatility",
+        "features": [
+          "Forecast",
+          "MRP",
+          "CTP"
+        ]
+      },
+      {
+        "name": "Quality Control and Traceability",
+        "features": [
+          "Lot Control",
+          "Optimize"
+        ]
+      }
+    ]
+  },
+  {
+    "segment": "Food Production",
+    "useCases": [
+      {
+        "name": "Variability of Raw Materials & Supply Chain Disruptions",
+        "features": [
+          "Material Constraints",
+          "Inventory Plan",
+          "Purchase Orders"
+        ]
+      },
+      {
+        "name": "Demand Fluctuations and Forecasting Volatility",
+        "features": [
+          "Multi-Scenario Comparisons",
+          "Capable to Promise (CTP)",
+          "MRP",
+          "Forecast"
+        ]
+      },
+      {
+        "name": "Complex Production Processes",
+        "features": [
+          "Batch Scheduling",
+          "Optimize",
+          "Setup Code Tables"
+        ]
+      },
+      {
+        "name": "Shelf Life Management",
+        "features": [
+          "Lot Control",
+          "Shelf Life",
+          "Safety Stock Warnings",
+          "Optimize"
+        ]
+      },
+      {
+        "name": "Regulatory Compliance",
+        "features": [
+          "Compatibility Codes",
+          "Attributes",
+          "Clean In Place (CIP)"
+        ]
+      },
+      {
+        "name": "Labor and Machine Capacity Constraints",
+        "features": [
+          "Allowed Helpers",
+          "Labor Pools",
+          "Optimize",
+          "Operation Attributes"
+        ]
+      }
+    ]
+  },
+  {
+    "segment": "High-Tech and Electronics",
+    "useCases": [
+      {
+        "name": "HMLV Demand Fluctations",
+        "features": [
+          "Forecast",
+          "MRP",
+          "Optimize"
+        ]
+      },
+      {
+        "name": "Supply Chain Disruptions",
+        "features": [
+          "Material Constraints",
+          "Inventory Plan",
+          "Purchase Orders"
+        ]
+      },
+      {
+        "name": "Highly Skilled Workforce",
+        "features": [
+          "Labor Pools",
+          "Allowed Helpers",
+          "Capacity Intervals"
+        ]
+      },
+      {
+        "name": "Highly Customized Products",
+        "features": [
+          "Setup Code Tables",
+          "Optimize",
+          "Operation Attributes"
+        ]
+      },
+      {
+        "name": "Resource Constraints",
+        "features": [
+          "Optimize",
+          "Material Constraints",
+          "Attributes"
+        ]
+      },
+      {
+        "name": "Stringent Quality Controls",
+        "features": [
+          "Compatibility Codes",
+          "Attributes"
+        ]
+      },
+      {
+        "name": "Time-to-Market Pressures",
+        "features": [
+          "Forecast",
+          "Capable to Promise (CTP)",
+          "Metrics"
+        ]
+      },
+      {
+        "name": "Reduce Impact of Unexpected Machine Downtimes",
+        "features": [
+          "Capacity Intervals",
+          "Multi-Scenario Comparisons (What-Ifs)",
+          "Optimize"
+        ]
+      }
+    ]
+  },
+  {
+    "segment": "Beverage",
+    "useCases": [
+      {
+        "name": "Frequent Changeovers & Downtime",
+        "features": [
+          "Campaign Scheduling",
+          "Optimization",
+          "Operation Attributes"
+        ]
+      },
+      {
+        "name": "Fermentation & Aging Cycle Management",
+        "features": [
+          "Tank Resources",
+          "Operation Batching",
+          "JIT Optimization",
+          "Minimum Aging Hours"
+        ]
+      },
+      {
+        "name": "Forecast Volatility & Promotional Impact",
+        "features": [
+          "Multi-Scenario Comparisons (What-Ifs)",
+          "Metrics",
+          "Web Analytics"
+        ]
+      },
+      {
+        "name": "Shelf Life & Expiry Driven Scheduling",
+        "features": [
+          "Lot Control",
+          "Material Allocation (Use Oldest First)",
+          "Optimization Factors"
+        ]
+      },
+      {
+        "name": "SKU Proliferation with Packaging Constraints",
+        "features": [
+          "Alternate Paths",
+          "Routing Templates",
+          "Setup Code Tables"
+        ]
+      },
+      {
+        "name": "Labor Scheduling Variability",
+        "features": [
+          "Capacity Intervals",
+          "Recurring Capacity Intervals",
+          "Allowed Helpers",
+          "Assigned Capabilities"
+        ]
+      },
+      {
+        "name": "Regulatory Compliance & Quality Hold Times",
+        "features": [
+          "Buffer Management",
+          "Tank Post-Processing",
+          "Resource Connectors"
+        ]
+      },
+      {
+        "name": "Capacity Planning for Co-Packed Products",
+        "features": [
+          "Material Pegging",
+          "Capacity Planning",
+          "Capable to Promise (CTP)",
+          "Metrics"
+        ]
+      }
+    ]
+  },
+  {
+    "segment": "Aerospace and Defense",
+    "useCases": [
+      {
+        "name": "Complex, Multi-Tiered Supply Chains",
+        "features": [
+          "Material Constraints",
+          "Inventory Plan",
+          "Purchase Orders",
+          "Resource Planning"
+        ]
+      },
+      {
+        "name": "Strict Regulatory & Compliance Requirements",
+        "features": [
+          "Operation Attributes",
+          "Lot Control",
+          "Compatibility Codes"
+        ]
+      },
+      {
+        "name": "Managing Engineering Change Orders (ECOs)",
+        "features": [
+          "Multi-Scenario Comparisons",
+          "MRP",
+          "Metrics",
+          "Setup Codes Tables"
+        ]
+      },
+      {
+        "name": "Long Lead Times & Project Lifecycles",
+        "features": [
+          "CTP",
+          "Forecast",
+          "MRP",
+          "Safety Stock Warnings"
+        ]
+      },
+      {
+        "name": "Workforce Challenges",
+        "features": [
+          "Labor Pools",
+          "Allowed Helpers",
+          "Capacity Intervals",
+          "Optimize"
+        ]
+      },
+      {
+        "name": "Resource & Capcity Constraints",
+        "features": [
+          "Operation Attributes",
+          "Setup Code Tables",
+          "Material Constraints",
+          "Resource Capabilities"
+        ]
+      },
+      {
+        "name": "High Mix, Low Volume (HMLV) Production",
+        "features": [
+          "Forecast",
+          "MRP",
+          "Optimize"
+        ]
+      },
+      {
+        "name": "Unplanned Maintenance & Machine Downtime",
+        "features": [
+          "Capacity Intervals",
+          "Optimize",
+          "Multi-Scenario Comparisons"
+        ]
+      }
+    ]
+  },
+  {
+    "segment": "Metal Fabrication",
+    "useCases": [
+      {
+        "name": "Supply Chain Disruptions and Material Shortages",
+        "features": [
+          "Inventory Plan",
+          "Material Constraints",
+          "MRP/MPS",
+          "Purchase Orders"
+        ]
+      },
+      {
+        "name": "Labor Shortages and Resource Allocation",
+        "features": [
+          "Labor Pools",
+          "Allowed Helpers",
+          "Optimize",
+          "Resource Capabilities"
+        ]
+      },
+      {
+        "name": "Custom Orders and Production Complexity",
+        "features": [
+          "Multi-Scenario Comparisons (What-Ifs)",
+          "Capacity Intervals",
+          "Alternate Paths"
+        ]
+      },
+      {
+        "name": "Production Scheduling and Capacity Planning",
+        "features": [
+          "Metrics",
+          "Setup Code Tables",
+          "Optimize",
+          "Operation Attributes"
+        ]
+      },
+      {
+        "name": "Inventory, WIP, and Cost Management",
+        "features": [
+          "Inventory Plan",
+          "MRP/MPS",
+          "Forecast"
+        ]
+      },
+      {
+        "name": "Quality Control and Rework Management",
+        "features": [
+          "Compatibility Codes",
+          "Operation Attributes",
+          "Product Rules"
+        ]
+      },
+      {
+        "name": "Order Tracking and Change Order Management",
+        "features": [
+          "Capable to Promise (CTP)",
+          "Optimize",
+          "Multi-Scenario Comparisons (What-Ifs)"
+        ]
+      }
+    ]
+  },
+  {
+    "segment": "Industrial Machines",
+    "useCases": [
+      {
+        "name": "Optimize Production Lines to Boost Throughput",
+        "features": [
+          "Multi-Scenario Comparisons (What-Ifs)",
+          "Capacity Intervals",
+          "Alternate Paths",
+          "Optimization Factors"
+        ]
+      },
+      {
+        "name": "Reduce Downtime and Utilize Predictive Maintenance",
+        "features": [
+          "Capable to Promise (CTP)",
+          "Optimize",
+          "Multi-Scenario Comparisons (What-Ifs)"
+        ]
+      },
+      {
+        "name": "Forecast Demand to Align Production",
+        "features": [
+          "Multi-Scenario Comparisons (What-Ifs)",
+          "Capable to Promise (CTP)",
+          "Forecast"
+        ]
+      },
+      {
+        "name": "Synchronize Supply to Avoid Delays and Balance Inventory",
+        "features": [
+          "Inventory Plan",
+          "Material Constraints",
+          "MRP/MPS",
+          "Purchase Orders"
+        ]
+      },
+      {
+        "name": "Changeover Time Reduction",
+        "features": [
+          "Compatibility Codes",
+          "Operation Attributes",
+          "Product Rules",
+          "Optimize"
+        ]
+      },
+      {
+        "name": "Ensure Regulatory Compliance to Uphold Quality Standards",
+        "features": [
+          "Multi-Scenario Comparisons (What-Ifs)",
+          "Optimization Factors",
+          "Routing Templates"
+        ]
+      },
+      {
+        "name": "Align Labor and Machines to Maximize Output",
+        "features": [
+          "Labor Pools",
+          "Allowed Helpers",
+          "Optimize",
+          "Resource Capabilities"
+        ]
+      },
+      {
+        "name": "Cut Energy Waste to Lower Costs",
+        "features": [
+          "Multi-Scenario Comparisons (What-Ifs)",
+          "Capacity Intervals",
+          "Alternate Paths"
+        ]
+      },
+      {
+        "name": "Simulate Lifecycle Costs for Smarter Investments",
+        "features": [
+          "Multi-Scenario Comparisons (What-Ifs)",
+          "KPI Reports",
+          "Web Analytics"
+        ]
+      },
+      {
+        "name": "Gemini",
+        "features": [
+          "Perplexity"
+        ]
+      },
+      {
+        "name": "High Product Complexity and Customization",
+        "features": [
+          "Scheduling Complexity"
+        ]
+      },
+      {
+        "name": "Resource Constraints and Management",
+        "features": [
+          "Resource Constraints"
+        ]
+      },
+      {
+        "name": "Demand Volatility and Forecasting Challenges",
+        "features": [
+          "Demand Volatility"
+        ]
+      },
+      {
+        "name": "Dynamic and Unforeseen Disruptions",
+        "features": [
+          "Supply Chain Disruptions"
+        ]
+      },
+      {
+        "name": "Lack of Real-Time Visibility and Communication",
+        "features": [
+          "Poor Communication & Inaccurate / Outdated data"
+        ]
+      },
+      {
+        "name": "Managing Changeovers and Setups",
+        "features": []
+      },
+      {
+        "name": "Inventory Management Complexity",
+        "features": []
+      },
+      {
+        "name": "Ensuring Quality and Compliance",
+        "features": [
+          "Quality Control Issues"
+        ]
+      }
+    ]
+  }
+]
