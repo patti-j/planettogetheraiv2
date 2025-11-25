@@ -154,7 +154,8 @@ export function VersionHistory({ scheduleId, currentVersionId }: VersionHistoryP
   // Handle loading a version into the production scheduler
   const handleLoadVersion = (version: Version) => {
     // Send message to production scheduler iframe to load the version
-    const iframe = document.querySelector('iframe[src="/production-scheduler.html"]') as HTMLIFrameElement;
+    // Use data-testid selector since the src contains dynamic query params
+    const iframe = document.querySelector('iframe[data-testid="production-scheduler-iframe"]') as HTMLIFrameElement;
     if (iframe && iframe.contentWindow) {
       iframe.contentWindow.postMessage({
         type: 'LOAD_VERSION',

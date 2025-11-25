@@ -4,6 +4,16 @@
 PlanetTogether is an AI-first Factory Optimization Platform, a full-stack manufacturing SCM + APS system. Its core purpose is to leverage AI for optimized production planning, dynamic resource allocation, and intelligent dashboarding, providing complete supply chain visibility through a visual Gantt chart interface. The system is designed for enterprise-grade production deployment in pharmaceutical, chemical, and industrial manufacturing, emphasizing real-time optimization, data integrity, and comprehensive reporting. It supports multi-agent functionality, modular federation, and advanced AI integration for scheduling and system intelligence, aiming to be a global control tower for autonomous optimization and real-time plant monitoring.
 
 ## Recent Critical Fixes & Features
+### Nov 25, 2024
+- **Version History Auto-Load Fix**: Fixed scheduler not loading latest version on page open:
+  - Added `tryAutoLoadLatestVersion()` function that's triggered when auth token is received from parent
+  - Scheduler now properly applies scheduled times from the latest version after initial data load
+  - Added `versionAlreadyLoaded` flag to prevent duplicate loading attempts
+- **Version History Load Button Fix**: Fixed "Scheduler Not Available" error when loading versions from Version History tab:
+  - Updated iframe selector from `iframe[src="/production-scheduler.html"]` to `iframe[data-testid="production-scheduler-iframe"]`
+  - The iframe src now includes dynamic query params, making the old selector fail
+- **Version History User Attribution**: Version history now correctly shows the authenticated user (e.g., "Patti") instead of hardcoded user
+
 ### Nov 18, 2024
 - **FP&A Dashboard with AI Integration**: Added comprehensive Financial Planning & Analysis dashboard with:
   - **FP&A Agent**: New financial analysis agent with expertise in budgeting, forecasting, variance analysis, and profitability tracking

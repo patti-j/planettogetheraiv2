@@ -1175,8 +1175,82 @@
                 globalAuthToken = event.data.token;
                 // Also store in localStorage for persistence
                 localStorage.setItem('auth_token', event.data.token);
+                
+                // If scheduler is already initialized and we haven't loaded a version yet, try now
+                if (window.scheduler && window.schedulerReady && !window.versionAlreadyLoaded) {
+                    console.log('🔄 Auth token received - attempting to load latest version...');
+                    window.tryAutoLoadLatestVersion();
+                }
             }
         });
+        
+        // Function to try auto-loading the latest version (can be called after auth is ready)
+        window.tryAutoLoadLatestVersion = async function() {
+            try {
+                const authToken = getAuthToken();
+                if (!authToken) {
+                    console.log('📂 No auth token available yet, skipping version auto-load');
+                    return;
+                }
+                
+                const authHeaders = { 'Authorization': `Bearer ${authToken}` };
+                console.log('📂 Fetching latest version for auto-load...');
+                
+                const versionsResponse = await fetch('/api/schedules/1/versions', { headers: authHeaders });
+                if (versionsResponse.ok) {
+                    const versions = await versionsResponse.json();
+                    if (versions && versions.length > 0) {
+                        const latestVersion = versions[0];
+                        
+                        // Update the "Last updated" display
+                        const lastUpdateTime = new Date(latestVersion.createdAt);
+                        document.getElementById('lastUpdate').textContent = 
+                            `Last updated: ${lastUpdateTime.toLocaleString()}`;
+                        
+                        // Parse and apply the snapshot data
+                        const snapshotData = typeof latestVersion.snapshotData === 'string' 
+                            ? JSON.parse(latestVersion.snapshotData) 
+                            : latestVersion.snapshotData;
+                        
+                        if (snapshotData && snapshotData.operations && window.scheduler) {
+                            const versionOperations = snapshotData.operations;
+                            let updatedCount = 0;
+                            
+                            console.log(`📚 Auto-loading ${versionOperations.length} operations from latest version`);
+                            
+                            versionOperations.forEach(op => {
+                                const event = window.scheduler.eventStore.getById(op.id);
+                                if (event && op.scheduledStart && op.scheduledEnd) {
+                                    event.startDate = new Date(op.scheduledStart);
+                                    event.endDate = new Date(op.scheduledEnd);
+                                    if (op.manuallyScheduled !== undefined) {
+                                        event.manuallyScheduled = op.manuallyScheduled;
+                                    }
+                                    updatedCount++;
+                                }
+                            });
+                            
+                            if (updatedCount > 0) {
+                                console.log(`✅ Auto-loaded ${updatedCount} operations from latest version`);
+                                window.scheduler.refresh();
+                                window.versionAlreadyLoaded = true;
+                                
+                                // Show notification
+                                if (bryntum.schedulerpro && bryntum.schedulerpro.Toast) {
+                                    bryntum.schedulerpro.Toast.show({
+                                        html: `Loaded latest version (${latestVersion.versionNumber || 'v' + latestVersion.id})`,
+                                        color: 'b-green',
+                                        timeout: 2000
+                                    });
+                                }
+                            }
+                        }
+                    }
+                }
+            } catch (error) {
+                console.warn('Could not auto-load latest version:', error);
+            }
+        };
         
         // Helper function to get authentication token
         function getAuthToken() {
@@ -1563,6 +1637,7 @@
                     // FIRST: Try to load the latest version from version history
                     // Note: This may fail with 401 if auth token isn't available yet (iframe loading)
                     console.log('📂 Checking for latest saved version...');
+                    let latestVersionToLoad = null;
                     try {
                         const versionsResponse = await fetch('/api/schedules/1/versions', { headers: authHeaders });
                         if (versionsResponse.ok) {
@@ -1571,6 +1646,7 @@
                                 // Versions are ordered by createdAt desc, so first is latest
                                 const latestVersion = versions[0];
                                 latestVersionTimestamp = new Date(latestVersion.createdAt);
+                                latestVersionToLoad = latestVersion; // Store for auto-loading after data loads
                                 console.log('📂 Found latest version:', latestVersion.id, 'created at:', latestVersionTimestamp.toLocaleString());
                                 
                                 // Update "Last updated" display with version timestamp
@@ -1595,6 +1671,9 @@
                     } catch (versionError) {
                         console.warn('Could not check version history:', versionError);
                     }
+                    
+                    // Store the latest version globally so it can be applied after data loads
+                    window.pendingVersionToLoad = latestVersionToLoad;
                     
                     // Fetch resources, PT operations, jobs, and dependencies from the backend APIs
                     // NOTE: Dependencies are for visual display only - ALAP uses sequence numbers for scheduling
@@ -6134,6 +6213,63 @@
                     
                     // Fetch and display the actual last update time from version history
                     await updateLastScheduleTime();
+                    
+                    // AUTO-LOAD LATEST VERSION: Apply scheduled times from the latest version if available
+                    if (window.pendingVersionToLoad) {
+                        console.log('🔄 Auto-loading latest version:', window.pendingVersionToLoad.id);
+                        try {
+                            // Parse the snapshot data from the version
+                            const snapshotData = typeof window.pendingVersionToLoad.snapshotData === 'string' 
+                                ? JSON.parse(window.pendingVersionToLoad.snapshotData) 
+                                : window.pendingVersionToLoad.snapshotData;
+                            
+                            if (snapshotData && snapshotData.operations) {
+                                const versionOperations = snapshotData.operations;
+                                const versionDependencies = snapshotData.dependencies || [];
+                                let updatedCount = 0;
+                                
+                                console.log(`📚 Applying scheduled times from version with ${versionOperations.length} operations`);
+                                
+                                // Update each operation with its scheduled times from the version
+                                versionOperations.forEach(op => {
+                                    const event = scheduler.eventStore.getById(op.id);
+                                    if (event && op.scheduledStart && op.scheduledEnd) {
+                                        event.startDate = new Date(op.scheduledStart);
+                                        event.endDate = new Date(op.scheduledEnd);
+                                        if (op.manuallyScheduled !== undefined) {
+                                            event.manuallyScheduled = op.manuallyScheduled;
+                                        }
+                                        updatedCount++;
+                                    }
+                                });
+                                
+                                console.log(`✅ Updated ${updatedCount} operations with scheduled times from latest version`);
+                                window.versionAlreadyLoaded = true; // Mark as loaded to prevent duplicate loading
+                                
+                                // Load dependencies if visual store exists
+                                if (window.visualDependencyStore && versionDependencies.length > 0) {
+                                    console.log('📚 Loading dependencies from version into visual store...');
+                                    window.visualDependencyStore.data = versionDependencies;
+                                    console.log(`✅ Loaded ${versionDependencies.length} dependencies`);
+                                }
+                                
+                                // Refresh the scheduler view to show updated times
+                                scheduler.refresh();
+                                
+                                // Show a subtle notification
+                                if (bryntum.schedulerpro && bryntum.schedulerpro.Toast) {
+                                    bryntum.schedulerpro.Toast.show({
+                                        html: `Loaded latest version (${window.pendingVersionToLoad.versionNumber || 'v' + window.pendingVersionToLoad.id})`,
+                                        color: 'b-green',
+                                        timeout: 2000
+                                    });
+                                }
+                            }
+                        } catch (versionLoadError) {
+                            console.warn('Could not auto-load latest version:', versionLoadError);
+                        }
+                        window.pendingVersionToLoad = null; // Clear after loading
+                    }
                     
                     // Zoom to fit after loading
                     if (scheduler.zoomToFit) {
