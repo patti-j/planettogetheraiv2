@@ -6423,8 +6423,11 @@
                     if (event.data?.type === 'LOAD_VERSION') {
                         const version = event.data.version;
                         console.log('📚 Version History requested version load:', version);
+                        console.log('📚 window.loadSelectedVersion exists:', !!window.loadSelectedVersion);
+                        console.log('📚 window.scheduler exists:', !!window.scheduler);
                         
                         if (version && window.loadSelectedVersion) {
+                            console.log('📚 Calling loadSelectedVersion...');
                             window.loadSelectedVersion(version).then(() => {
                                 console.log('✅ Version loaded successfully');
                                 parent.postMessage({
@@ -7232,11 +7235,25 @@
             window.loadSelectedVersion = async function(selectedVersion) {
                 try {
                     console.log('📚 Loading version:', selectedVersion);
+                    console.log('📚 snapshotData type:', typeof selectedVersion.snapshotData);
                     
-                    // Parse the snapshot data from the version
-                    const snapshotData = typeof selectedVersion.snapshotData === 'string' 
-                        ? JSON.parse(selectedVersion.snapshotData) 
-                        : selectedVersion.snapshotData;
+                    // Parse the snapshot data from the version - handle double-encoding
+                    let snapshotData = selectedVersion.snapshotData;
+                    
+                    // First parse if it's a string
+                    if (typeof snapshotData === 'string') {
+                        console.log('📚 First parse - snapshotData is string');
+                        snapshotData = JSON.parse(snapshotData);
+                    }
+                    
+                    // Check if it's still a string (double-encoded)
+                    if (typeof snapshotData === 'string') {
+                        console.log('📚 Second parse - snapshotData was double-encoded');
+                        snapshotData = JSON.parse(snapshotData);
+                    }
+                    
+                    console.log('📚 Parsed snapshotData:', snapshotData);
+                    console.log('📚 snapshotData.operations length:', snapshotData?.operations?.length);
                     
                     if (!snapshotData) {
                         throw new Error('No snapshot data found in version');
@@ -7252,11 +7269,30 @@
                     
                     console.log(`📚 Loading ${operations.length} operations and ${dependencies.length} dependencies from version`);
                     
+                    // Debug: Log event store state
+                    const allEvents = window.scheduler.eventStore.records;
+                    console.log(`📚 Event store has ${allEvents.length} events`);
+                    if (allEvents.length > 0) {
+                        console.log('📚 Sample event IDs in store:', allEvents.slice(0, 5).map(e => ({ id: e.id, type: typeof e.id })));
+                    }
+                    if (operations.length > 0) {
+                        console.log('📚 Sample operation IDs in version:', operations.slice(0, 5).map(o => ({ id: o.id, type: typeof o.id })));
+                    }
+                    
                     let updatedCount = 0;
+                    let notFoundCount = 0;
                     
                     // Update operations with their scheduled times from the version
                     operations.forEach(op => {
-                        const event = window.scheduler.eventStore.getById(op.id);
+                        // Try both string and number ID lookups
+                        let event = window.scheduler.eventStore.getById(op.id);
+                        if (!event) {
+                            event = window.scheduler.eventStore.getById(String(op.id));
+                        }
+                        if (!event) {
+                            event = window.scheduler.eventStore.getById(Number(op.id));
+                        }
+                        
                         if (event && op.scheduledStart && op.scheduledEnd) {
                             event.startDate = new Date(op.scheduledStart);
                             event.endDate = new Date(op.scheduledEnd);
@@ -7264,8 +7300,15 @@
                                 event.manuallyScheduled = op.manuallyScheduled;
                             }
                             updatedCount++;
+                        } else if (!event) {
+                            notFoundCount++;
+                            if (notFoundCount <= 3) {
+                                console.log(`📚 Event not found for operation ID ${op.id} (type: ${typeof op.id})`);
+                            }
                         }
                     });
+                    
+                    console.log(`📚 Update summary: ${updatedCount} updated, ${notFoundCount} not found`);
                     
                     console.log(`✅ Updated ${updatedCount} of ${operations.length} operations with times from version`);
                     
