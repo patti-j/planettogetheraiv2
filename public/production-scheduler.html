@@ -6056,6 +6056,9 @@
                     // Update status bar
                     window.updateStatus();
                     
+                    // Fetch and display the actual last update time from version history
+                    await updateLastScheduleTime();
+                    
                     // Zoom to fit after loading
                     if (scheduler.zoomToFit) {
                         setTimeout(() => {
