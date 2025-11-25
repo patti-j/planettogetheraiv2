@@ -6422,27 +6422,34 @@
                     // Handle load version request from version history component
                     if (event.data?.type === 'LOAD_VERSION') {
                         const version = event.data.version;
-                        console.log('📚 Version History requested version load:', version);
-                        console.log('📚 window.loadSelectedVersion exists:', !!window.loadSelectedVersion);
-                        console.log('📚 window.scheduler exists:', !!window.scheduler);
+                        console.log('📚 [Scheduler] LOAD_VERSION message received!');
+                        console.log('📚 [Scheduler] Version data:', version);
+                        console.log('📚 [Scheduler] window.loadSelectedVersion exists:', !!window.loadSelectedVersion);
+                        console.log('📚 [Scheduler] window.scheduler exists:', !!window.scheduler);
                         
                         if (version && window.loadSelectedVersion) {
-                            console.log('📚 Calling loadSelectedVersion...');
+                            console.log('📚 [Scheduler] Calling loadSelectedVersion...');
                             window.loadSelectedVersion(version).then(() => {
-                                console.log('✅ Version loaded successfully');
+                                console.log('✅ [Scheduler] Version loaded successfully');
                                 parent.postMessage({
                                     type: 'VERSION_LOAD_COMPLETE',
                                     versionId: version.id,
                                     success: true
                                 }, '*');
                             }).catch(error => {
-                                console.error('❌ Failed to load version:', error);
+                                console.error('❌ [Scheduler] Failed to load version:', error);
+                                console.error('❌ [Scheduler] Error stack:', error.stack);
                                 parent.postMessage({
                                     type: 'VERSION_LOAD_COMPLETE',
                                     versionId: version.id,
                                     success: false,
                                     error: error.message
                                 }, '*');
+                            });
+                        } else {
+                            console.error('📚 [Scheduler] Cannot load version - missing:', {
+                                hasVersion: !!version,
+                                hasLoadFunction: !!window.loadSelectedVersion
                             });
                         }
                     }

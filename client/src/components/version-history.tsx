@@ -153,10 +153,15 @@ export function VersionHistory({ scheduleId, currentVersionId }: VersionHistoryP
 
   // Handle loading a version into the production scheduler
   const handleLoadVersion = (version: Version) => {
+    console.log('📚 [VersionHistory] handleLoadVersion called with version:', version.id);
+    
     // Send message to production scheduler iframe to load the version
     // Use data-testid selector since the src contains dynamic query params
     const iframe = document.querySelector('iframe[data-testid="production-scheduler-iframe"]') as HTMLIFrameElement;
+    console.log('📚 [VersionHistory] Found iframe:', !!iframe, iframe?.contentWindow ? 'has contentWindow' : 'no contentWindow');
+    
     if (iframe && iframe.contentWindow) {
+      console.log('📚 [VersionHistory] Posting LOAD_VERSION message to iframe');
       iframe.contentWindow.postMessage({
         type: 'LOAD_VERSION',
         version: version
@@ -167,6 +172,12 @@ export function VersionHistory({ scheduleId, currentVersionId }: VersionHistoryP
         description: `Loading version ${version.versionNumber} into the scheduler`,
       });
     } else {
+      console.log('📚 [VersionHistory] Iframe not found or no contentWindow - listing all iframes:');
+      const allIframes = document.querySelectorAll('iframe');
+      allIframes.forEach((f, i) => {
+        console.log(`  Iframe ${i}: src=${f.src}, data-testid=${f.getAttribute('data-testid')}`);
+      });
+      
       toast({
         title: 'Scheduler Not Available',
         description: 'Please navigate to the Production Scheduler tab first',
