@@ -665,7 +665,10 @@ export class ScheduleVersionService {
     };
   }
 
-  private async getVersionById(versionId: number): Promise<any> {
+  /**
+   * Get a specific version by ID (public method)
+   */
+  async getVersion(versionId: number): Promise<any> {
     const [version] = await db
       .select()
       .from(scheduleVersions)
@@ -673,6 +676,10 @@ export class ScheduleVersionService {
       .limit(1);
 
     return version;
+  }
+
+  private async getVersionById(versionId: number): Promise<any> {
+    return this.getVersion(versionId);
   }
 
   private async applyVersionSnapshot(snapshot: VersionSnapshot): Promise<void> {

@@ -2511,14 +2511,16 @@
                     },
 
                     startDate: (() => {
-                        // Start from today (September 3, 2025)
-                        const start = new Date(2025, 8, 3); // Month is 0-indexed, so 8 = September
+                        // Use current date or 7 days ago as default start
+                        const start = new Date();
+                        start.setDate(start.getDate() - 7);
                         start.setHours(0, 0, 0, 0);
                         return start;
                     })(),
                     endDate: (() => {
-                        // Show 4 weeks from today to ensure all operations are visible
-                        const end = new Date(2025, 9, 3); // October 3, 2025
+                        // Show 4 weeks from now to ensure scheduled operations are visible
+                        const end = new Date();
+                        end.setDate(end.getDate() + 28);
                         end.setHours(23, 59, 59, 999);
                         return end;
                     })(),
@@ -5375,6 +5377,14 @@
                             console.error('  ❌ Failed to repair all overlaps');
                         }
                     }
+                    
+                    // Zoom to fit so user can see the scheduled operations
+                    if (scheduler.zoomToFit) {
+                        console.log('📍 Zooming to fit ALAP scheduled operations...');
+                        scheduler.zoomToFit({ leftMargin: 50, rightMargin: 50 });
+                    }
+                    
+                    console.log('✅ ALAP scheduling complete and view updated');
                 }
                 
                 async function criticalPathScheduling() {
