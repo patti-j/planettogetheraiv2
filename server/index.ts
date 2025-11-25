@@ -321,7 +321,7 @@ app.get('/*.html', (req, res) => {
 
 // CRITICAL: Root health check endpoint for deployment (MUST be first)
 // Autoscale deployments require a fast-responding root endpoint
-app.get("/", (req, res) => {
+app.get("/", (req, res, next) => {
   try {
     // Quick response for health checks
     const userAgent = req.headers['user-agent'] || '';
@@ -335,20 +335,23 @@ app.get("/", (req, res) => {
       return res.status(200).send('OK');
     }
     
-    // For browsers in production, serve the index.html
-    if (app.get("env") !== "development") {
-      const indexPath = path.resolve(import.meta.dirname, "..", "dist", "public", "index.html");
-      if (fs.existsSync(indexPath)) {
-        return res.sendFile(indexPath);
-      }
-      // If index.html not found, try client/index.html
-      const clientIndexPath = path.resolve(import.meta.dirname, "..", "client", "index.html");
-      if (fs.existsSync(clientIndexPath)) {
-        return res.sendFile(clientIndexPath);
-      }
+    // In development, let Vite middleware handle the request
+    if (app.get("env") === "development") {
+      return next();
     }
     
-    // Fallback response
+    // For browsers in production, serve the index.html
+    const indexPath = path.resolve(import.meta.dirname, "..", "dist", "public", "index.html");
+    if (fs.existsSync(indexPath)) {
+      return res.sendFile(indexPath);
+    }
+    // If index.html not found, try client/index.html
+    const clientIndexPath = path.resolve(import.meta.dirname, "..", "client", "index.html");
+    if (fs.existsSync(clientIndexPath)) {
+      return res.sendFile(clientIndexPath);
+    }
+    
+    // Fallback response (production only if no index.html found)
     res.status(200).send('PlanetTogether SCM + APS');
   } catch (error) {
     console.error('Error in root handler:', error);
