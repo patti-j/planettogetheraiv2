@@ -45,7 +45,7 @@ const Toast = React.forwardRef<
       autoClose?: boolean
       onToggleAutoClose?: () => void
     }
->(({ className, variant, ...props }, ref) => {
+>(({ className, variant, autoClose, onToggleAutoClose, ...props }, ref) => {
   return (
     <ToastPrimitives.Root
       ref={ref}
