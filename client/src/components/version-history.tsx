@@ -153,6 +153,12 @@ export function VersionHistory({ scheduleId, currentVersionId }: VersionHistoryP
 
   // Handle loading a version into the production scheduler
   const handleLoadVersion = (version: Version) => {
+    // IMMEDIATE feedback to user that button was clicked
+    toast({
+      title: 'Button Clicked!',
+      description: `Attempting to load version ${version.versionNumber}...`,
+    });
+    
     console.log('📚 [VersionHistory] handleLoadVersion called with version:', version.id);
     
     // Send message to production scheduler iframe to load the version
