@@ -3046,7 +3046,6 @@ router.get("/api/pt-operations", async (req, res) => {
         -- Resource assignment from ptjobresources
         jr.id as job_resource_id,
         jr.default_resource_id as actual_resource_id,
-        jr.is_primary,
         
         -- Resource information from ptresources
         r.id as resource_db_id,           -- numeric PK (internal only)
@@ -3065,7 +3064,7 @@ router.get("/api/pt-operations", async (req, res) => {
         
       FROM ptjoboperations jo
       LEFT JOIN ptjobs j ON jo.job_id = j.id
-      LEFT JOIN ptjobresources jr ON jr.operation_id = jo.id AND jr.is_primary = true
+      LEFT JOIN ptjobresources jr ON jr.operation_id = jo.id
       LEFT JOIN ptresources r ON jr.default_resource_id = r.id::text
       LEFT JOIN ptplants p ON r.plant_id = p.id
       ORDER BY 
