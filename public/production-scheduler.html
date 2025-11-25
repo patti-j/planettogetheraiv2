@@ -7264,53 +7264,85 @@
                         throw new Error('Scheduler not initialized');
                     }
                     
-                    const operations = snapshotData.operations || [];
+                    const versionOperations = snapshotData.operations || [];
                     const dependencies = snapshotData.dependencies || [];
                     
-                    console.log(`📚 Loading ${operations.length} operations and ${dependencies.length} dependencies from version`);
+                    console.log(`📚 Loading ${versionOperations.length} operations and ${dependencies.length} dependencies from version`);
                     
-                    // Debug: Log event store state
-                    const allEvents = window.scheduler.eventStore.records;
-                    console.log(`📚 Event store has ${allEvents.length} events`);
-                    if (allEvents.length > 0) {
-                        console.log('📚 Sample event IDs in store:', allEvents.slice(0, 5).map(e => ({ id: e.id, type: typeof e.id })));
-                    }
-                    if (operations.length > 0) {
-                        console.log('📚 Sample operation IDs in version:', operations.slice(0, 5).map(o => ({ id: o.id, type: typeof o.id })));
-                    }
-                    
-                    let updatedCount = 0;
-                    let notFoundCount = 0;
-                    
-                    // Update operations with their scheduled times from the version
-                    operations.forEach(op => {
-                        // Try both string and number ID lookups
-                        let event = window.scheduler.eventStore.getById(op.id);
-                        if (!event) {
-                            event = window.scheduler.eventStore.getById(String(op.id));
-                        }
-                        if (!event) {
-                            event = window.scheduler.eventStore.getById(Number(op.id));
-                        }
-                        
-                        if (event && op.scheduledStart && op.scheduledEnd) {
-                            event.startDate = new Date(op.scheduledStart);
-                            event.endDate = new Date(op.scheduledEnd);
-                            if (op.manuallyScheduled !== undefined) {
-                                event.manuallyScheduled = op.manuallyScheduled;
-                            }
-                            updatedCount++;
-                        } else if (!event) {
-                            notFoundCount++;
-                            if (notFoundCount <= 3) {
-                                console.log(`📚 Event not found for operation ID ${op.id} (type: ${typeof op.id})`);
-                            }
-                        }
+                    // Create a lookup map from version operations for quick access
+                    const versionOpMap = new Map();
+                    versionOperations.forEach(op => {
+                        versionOpMap.set(op.id, op);
+                        versionOpMap.set(String(op.id), op);
                     });
                     
-                    console.log(`📚 Update summary: ${updatedCount} updated, ${notFoundCount} not found`);
+                    console.log('📚 Version operation map created with', versionOpMap.size / 2, 'operations');
                     
-                    console.log(`✅ Updated ${updatedCount} of ${operations.length} operations with times from version`);
+                    // Fetch current operations from database to get full data (job names, resource mappings, etc.)
+                    const authHeaders = getAuthHeaders();
+                    const timestamp = new Date().getTime();
+                    
+                    const [operationsResponse, jobsResponse] = await Promise.all([
+                        fetch('/api/pt-operations?_=' + timestamp, { headers: authHeaders }),
+                        fetch('/api/jobs?_=' + timestamp, { headers: authHeaders })
+                    ]);
+                    
+                    if (!operationsResponse.ok) {
+                        throw new Error('Failed to fetch operations data');
+                    }
+                    
+                    const currentOperations = await operationsResponse.json();
+                    const jobs = jobsResponse.ok ? await jobsResponse.json() : [];
+                    
+                    console.log('📚 Fetched', currentOperations.length, 'current operations from database');
+                    
+                    // Clear current event store
+                    window.scheduler.eventStore.removeAll();
+                    console.log('📚 Cleared event store');
+                    
+                    // Build events using current operation data but with version times
+                    const events = currentOperations.map(op => {
+                        const job = jobs.find(j => j.id === op.job_id);
+                        const resourceMapping = resourceMappings[op.resource_id] || 
+                            (op.resource_id && op.resource_id !== '0' ? op.resource_id : 'unscheduled');
+                        
+                        // Look up version data for this operation
+                        const versionOp = versionOpMap.get(op.id) || versionOpMap.get(String(op.id));
+                        
+                        // Use version times if available, otherwise fall back to current data
+                        let startDate, endDate;
+                        if (versionOp && versionOp.scheduledStart && versionOp.scheduledEnd) {
+                            startDate = new Date(versionOp.scheduledStart);
+                            endDate = new Date(versionOp.scheduledEnd);
+                        } else {
+                            startDate = op.scheduled_start ? new Date(op.scheduled_start) : new Date();
+                            endDate = op.scheduled_end ? new Date(op.scheduled_end) : 
+                                new Date(new Date().getTime() + (parseFloat(op.cycle_hrs || 1) * 3600000));
+                        }
+                        
+                        return {
+                            id: op.id,
+                            name: op.name || `Operation ${op.sequence_number}`,
+                            startDate: startDate,
+                            endDate: endDate,
+                            resourceId: resourceMapping,
+                            jobId: op.job_id,
+                            jobName: job?.name || 'Unknown Job',
+                            priority: job?.priority || 999,
+                            jobPriority: job?.priority || 999,
+                            eventColor: priorityColors[job?.priority] || priorityColors['default'],
+                            durationUnit: 'hour',
+                            duration: parseFloat(op.cycle_hrs || 1),
+                            percentDone: 0,
+                            resizable: true,
+                            draggable: true,
+                            manuallyScheduled: versionOp?.manuallyScheduled || false
+                        };
+                    });
+                    
+                    // Add events to scheduler
+                    window.scheduler.eventStore.add(events);
+                    console.log('📚 Added', events.length, 'events to scheduler');
                     
                     // Load dependencies if visual store exists
                     if (window.visualDependencyStore && dependencies.length > 0) {
@@ -7322,23 +7354,31 @@
                     // Refresh the scheduler view to show the updated positions
                     window.scheduler.refresh();
                     
+                    // Zoom to fit all events
+                    window.scheduler.zoomToFit();
+                    
                     // Update the "Last updated" display with version info
                     const versionTime = new Date(selectedVersion.createdAt);
                     document.getElementById('lastUpdate').textContent = 
                         `Loaded v${selectedVersion.versionNumber} from ${versionTime.toLocaleString()}`;
+                    
+                    // Update status display
+                    if (window.updateStatus) {
+                        window.updateStatus();
+                    }
                     
                     console.log('✅ Version loaded successfully');
                     
                     // Show success message using Bryntum Toast
                     if (bryntum && bryntum.schedulerpro && bryntum.schedulerpro.Toast) {
                         bryntum.schedulerpro.Toast.show({
-                            html: `Loaded version ${selectedVersion.versionNumber} (${updatedCount} operations updated)`,
+                            html: `Loaded version ${selectedVersion.versionNumber} (${events.length} operations)`,
                             color: 'b-green',
                             timeout: 3000
                         });
                     }
                     
-                    return { success: true, updatedCount };
+                    return { success: true, updatedCount: events.length };
                     
                 } catch (error) {
                     console.error('❌ Error loading version:', error);
