@@ -1520,6 +1520,35 @@
                 // No need for duplicate listener here
                 console.log('✅ Planning area filter button handler already attached via document click delegation');
                 
+                // Track the latest version for "Last updated" display
+                let latestVersionTimestamp = null;
+                let loadedFromVersion = false;
+                
+                // Helper function to update the "Last updated" display
+                window.updateLastScheduleTime = async function() {
+                    try {
+                        const authToken = getAuthToken();
+                        const authHeaders = authToken ? { 'Authorization': `Bearer ${authToken}` } : {};
+                        
+                        const versionsResponse = await fetch('/api/schedules/1/versions', { headers: authHeaders });
+                        if (versionsResponse.ok) {
+                            const versions = await versionsResponse.json();
+                            if (versions && versions.length > 0) {
+                                // Versions are ordered by createdAt desc, so first is latest
+                                const latestVersion = versions[0];
+                                const lastUpdateTime = new Date(latestVersion.createdAt);
+                                document.getElementById('lastUpdate').textContent = 
+                                    `Last updated: ${lastUpdateTime.toLocaleString()}`;
+                                console.log('📅 Last schedule update time:', lastUpdateTime.toLocaleString());
+                                return lastUpdateTime;
+                            }
+                        }
+                    } catch (error) {
+                        console.warn('Could not fetch last update time from version history:', error);
+                    }
+                    return null;
+                };
+                
                 // Fetch real PT operations and resources from the backend
                 let resources = [];
                 let ptOperations = [];
@@ -1530,6 +1559,42 @@
                     // Get auth token using helper function
                     const authToken = getAuthToken();
                     const authHeaders = authToken ? { 'Authorization': `Bearer ${authToken}` } : {};
+                    
+                    // FIRST: Try to load the latest version from version history
+                    // Note: This may fail with 401 if auth token isn't available yet (iframe loading)
+                    console.log('📂 Checking for latest saved version...');
+                    try {
+                        const versionsResponse = await fetch('/api/schedules/1/versions', { headers: authHeaders });
+                        if (versionsResponse.ok) {
+                            const versions = await versionsResponse.json();
+                            if (versions && versions.length > 0) {
+                                // Versions are ordered by createdAt desc, so first is latest
+                                const latestVersion = versions[0];
+                                latestVersionTimestamp = new Date(latestVersion.createdAt);
+                                console.log('📂 Found latest version:', latestVersion.id, 'created at:', latestVersionTimestamp.toLocaleString());
+                                
+                                // Update "Last updated" display with version timestamp
+                                document.getElementById('lastUpdate').textContent = 
+                                    `Last updated: ${latestVersionTimestamp.toLocaleString()}`;
+                            } else {
+                                console.log('📂 No saved versions found, will load from database');
+                                document.getElementById('lastUpdate').textContent = 'Last updated: Not yet saved';
+                            }
+                        } else if (versionsResponse.status === 401) {
+                            // Auth not ready yet - will update after auth token is received
+                            console.log('📂 Auth not ready, will fetch version history later');
+                            document.getElementById('lastUpdate').textContent = 'Last updated: Loading...';
+                            
+                            // Try again after a short delay when auth might be available
+                            setTimeout(async () => {
+                                if (window.updateLastScheduleTime) {
+                                    await window.updateLastScheduleTime();
+                                }
+                            }, 2000);
+                        }
+                    } catch (versionError) {
+                        console.warn('Could not check version history:', versionError);
+                    }
                     
                     // Fetch resources, PT operations, jobs, and dependencies from the backend APIs
                     // NOTE: Dependencies are for visual display only - ALAP uses sequence numbers for scheduling
@@ -2681,7 +2746,7 @@
                     const utilization = totalResourceCapacity > 0 ? Math.round((totalOperationHours / totalResourceCapacity) * 100) : 0;
                     
                     document.getElementById('resourceUtilization').textContent = `Resource utilization: ${utilization}% (${totalOperationHours.toFixed(1)}h total)`;
-                    document.getElementById('lastUpdate').textContent = `Last updated: ${new Date().toLocaleTimeString()}`;
+                    // Note: "Last updated" is now set from version history timestamp, not current time
                     
                     // Store utilization data for Max AI analysis
                     window.currentUtilization = resourceUtilization;
@@ -3483,7 +3548,18 @@
                             });
                             
                             if (versionResponse.ok) {
+                                const versionResult = await versionResponse.json();
                                 console.log('✅ Version history entry created successfully');
+                                
+                                // Update "Last updated" display with the new version's timestamp
+                                if (versionResult.version && versionResult.version.createdAt) {
+                                    const versionTime = new Date(versionResult.version.createdAt);
+                                    document.getElementById('lastUpdate').textContent = 
+                                        `Last updated: ${versionTime.toLocaleString()}`;
+                                } else {
+                                    // Fallback: fetch the latest from version history
+                                    await window.updateLastScheduleTime();
+                                }
                             } else {
                                 const errorText = await versionResponse.text();
                                 if (!errorText.includes('Provider') && !errorText.includes('useContext')) {
@@ -6770,9 +6846,6 @@
                         if (response.ok) {
                             const result = await response.json();
                             
-                            // Update last update time
-                            document.getElementById('lastUpdate').textContent = `Last updated: ${new Date().toLocaleTimeString()}`;
-                            
                             console.log(`✅ Updated ${result.updated}/${result.total} operations in database`);
                             
                             // Show success message
@@ -6821,6 +6894,16 @@
                                 if (versionResponse.ok) {
                                     const versionResult = await versionResponse.json();
                                     console.log('✅ Version history entry created for manual save:', versionResult);
+                                    
+                                    // Update "Last updated" display with the new version's timestamp
+                                    if (versionResult.version && versionResult.version.createdAt) {
+                                        const versionTime = new Date(versionResult.version.createdAt);
+                                        document.getElementById('lastUpdate').textContent = 
+                                            `Last updated: ${versionTime.toLocaleString()}`;
+                                    } else {
+                                        // Fallback: fetch the latest from version history
+                                        await window.updateLastScheduleTime();
+                                    }
                                     
                                     // Auto-load the newly created version if autoLoad flag is set
                                     if (versionResult.autoLoad && versionResult.version) {
