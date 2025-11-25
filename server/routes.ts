@@ -3102,7 +3102,7 @@ router.get("/api/pt-operations", async (req, res) => {
       jobName: op.job_name || op.job_external_id || op.job_description || 'No Job',
       operationName: op.operation_name,
       resourceName: op.resource_name || 'Unassigned',
-      resourceId: op.resource_id ? String(op.resource_id) : null,  // Convert to string to match Bryntum requirements
+      resourceId: op.resource_db_id ? Number(op.resource_db_id) : null,  // Use database ID as number to match frontend resource mapping
       startDate: op.scheduled_start,  // Use camelCase for Bryntum
       endDate: op.scheduled_end,      // Use camelCase for Bryntum
       duration: (op.cycle_hrs || 2) * 60, // Convert hours to minutes
