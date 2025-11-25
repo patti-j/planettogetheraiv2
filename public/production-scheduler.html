@@ -1190,6 +1190,9 @@
             // Handle LOAD_VERSION messages from VersionHistory component
             // This is an EARLY listener - if scheduler isn't ready, queue the request
             if (event.data?.type === 'LOAD_VERSION') {
+                // VERY VISIBLE DEBUG - Alert to confirm message received
+                alert('LOAD_VERSION message received in iframe! Version: ' + (event.data.version?.versionNumber || 'unknown'));
+                
                 console.log('📚 [EARLY] LOAD_VERSION message received!');
                 console.log('📚 [EARLY] Scheduler ready:', !!window.scheduler);
                 console.log('📚 [EARLY] loadSelectedVersion exists:', !!window.loadSelectedVersion);

@@ -168,6 +168,10 @@ export function VersionHistory({ scheduleId, currentVersionId }: VersionHistoryP
     
     if (iframe && iframe.contentWindow) {
       console.log('📚 [VersionHistory] Posting LOAD_VERSION message to iframe');
+      
+      // VERY VISIBLE DEBUG - confirm we're about to post message
+      alert('About to post LOAD_VERSION to iframe! Version: ' + version.versionNumber);
+      
       iframe.contentWindow.postMessage({
         type: 'LOAD_VERSION',
         version: version
