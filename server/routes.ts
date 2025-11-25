@@ -6171,17 +6171,25 @@ router.get("/api/saved-schedules/:id", requireAuth, async (req, res) => {
 });
 
 // Create new version history entry (POST)
-router.post("/api/schedules/:id/versions", async (req, res) => {
+router.post("/api/schedules/:id/versions", requireAuth, async (req, res) => {
   try {
     const scheduleId = parseInt(req.params.id);
     const { scheduleName, changeType, changeDescription, comment, userId } = req.body;
+    
+    // Get the authenticated user's ID from the session/JWT token
+    const authenticatedUserId = (req as any).user?.id;
+    
+    // Use provided userId if given, otherwise fall back to authenticated user
+    const effectiveUserId = userId || authenticatedUserId || 1;
+    
+    console.log('📝 Creating version with userId:', effectiveUserId, '(body:', userId, ', auth:', authenticatedUserId, ')');
     
     // Use ScheduleVersionService which fetches current operations and dependencies
     const { scheduleVersionService } = await import('./services/schedule-version-service');
     
     const versionId = await scheduleVersionService.createVersion(
       scheduleId,
-      userId || 1,
+      effectiveUserId,
       changeType || 'manual',
       comment || changeDescription || "No description provided",
       changeType === 'optimization' ? 'optimized' : (changeType === 'manual_save' ? 'manual' : undefined)
