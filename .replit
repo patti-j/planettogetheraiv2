@@ -9,7 +9,11 @@ packages = ["freetds", "glibcLocales", "jq", "redis", "unixODBC", "unzip", "nano
 [deployment]
 deploymentTarget = "autoscale"
 build = ["npm", "run", "build"]
+<<<<<<< HEAD
 run = ["bash", "-c", "NODE_ENV=production REPLIT_DEPLOYMENT=1 node dist/index.js"]
+=======
+run = ["npm", "run", "start"]
+>>>>>>> e7fb08eadd5daf992ed53a67d4916ddcf998e9cd
 
 [workflows]
 runButton = "Project"
@@ -35,6 +39,7 @@ task = "shell.exec"
 args = "npm run dev"
 waitForPort = 5000
 
+<<<<<<< HEAD
 [[ports]]
 localPort = 3050
 externalPort = 3001
@@ -43,6 +48,8 @@ externalPort = 3001
 localPort = 3060
 externalPort = 3002
 
+=======
+>>>>>>> e7fb08eadd5daf992ed53a67d4916ddcf998e9cd
 [[ports]]
 localPort = 5000
 externalPort = 80
