@@ -3043,12 +3043,6 @@ router.get("/api/pt-operations", async (req, res) => {
         j.need_date_time as job_due_date,
         j.scheduled_status as job_status,
         
-        -- Activity information from ptjobactivities
-        ja.id as activity_id,
-        ja.external_id as activity_external_id,
-        ja.production_status as activity_status,
-        ja.comments as activity_comments,
-        
         -- Resource assignment from ptjobresources
         jr.id as job_resource_id,
         jr.default_resource_id as actual_resource_id,
@@ -3071,7 +3065,6 @@ router.get("/api/pt-operations", async (req, res) => {
         
       FROM ptjoboperations jo
       LEFT JOIN ptjobs j ON jo.job_id = j.id
-      LEFT JOIN ptjobactivities ja ON ja.operation_id = jo.id
       LEFT JOIN ptjobresources jr ON jr.operation_id = jo.id AND jr.is_primary = true
       LEFT JOIN ptresources r ON jr.default_resource_id = r.id::text
       LEFT JOIN ptplants p ON r.plant_id = p.id
@@ -3115,7 +3108,7 @@ router.get("/api/pt-operations", async (req, res) => {
       endDate: op.scheduled_end,      // Use camelCase for Bryntum
       duration: (op.cycle_hrs || 2) * 60, // Convert hours to minutes
       percent_done: op.percent_finished || 0,
-      status: op.activity_status || 'Not Started',
+      status: op.job_status || 'Not Started',
       priority: op.job_priority || 'Medium',
       jobPriority: op.job_priority || 3,  // Pass numeric priority for ALAP scheduling (1=highest, 5=lowest)
       dueDate: op.job_due_date,
