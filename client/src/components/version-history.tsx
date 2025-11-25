@@ -151,6 +151,47 @@ export function VersionHistory({ scheduleId, currentVersionId }: VersionHistoryP
     }
   });
 
+  // Listen for messages from iframe confirming version load
+  useEffect(() => {
+    const handleMessage = (event: MessageEvent) => {
+      if (event.data?.type === 'VERSION_LOAD_RECEIVED') {
+        console.log('📚 [VersionHistory] Received confirmation from iframe:', event.data);
+        toast({
+          title: 'Iframe Received Message',
+          description: `Version ${event.data.versionNumber} - Scheduler ready: ${event.data.schedulerReady}, Load function: ${event.data.loadFunctionExists}`,
+        });
+      }
+      
+      if (event.data?.type === 'VERSION_LOAD_QUEUED') {
+        console.log('📚 [VersionHistory] Version load queued:', event.data);
+        toast({
+          title: 'Version Queued',
+          description: `Version ${event.data.versionNumber} queued - scheduler not ready yet`,
+          variant: 'default',
+        });
+      }
+      
+      if (event.data?.type === 'VERSION_LOAD_COMPLETE') {
+        console.log('📚 [VersionHistory] Version load complete:', event.data);
+        if (event.data.success) {
+          toast({
+            title: 'Version Loaded Successfully',
+            description: `Version has been loaded into the scheduler`,
+          });
+        } else {
+          toast({
+            title: 'Version Load Failed',
+            description: event.data.error || 'Unknown error',
+            variant: 'destructive',
+          });
+        }
+      }
+    };
+    
+    window.addEventListener('message', handleMessage);
+    return () => window.removeEventListener('message', handleMessage);
+  }, [toast]);
+
   // Handle loading a version into the production scheduler
   const handleLoadVersion = (version: Version) => {
     // IMMEDIATE feedback to user that button was clicked
@@ -169,17 +210,14 @@ export function VersionHistory({ scheduleId, currentVersionId }: VersionHistoryP
     if (iframe && iframe.contentWindow) {
       console.log('📚 [VersionHistory] Posting LOAD_VERSION message to iframe');
       
-      // VERY VISIBLE DEBUG - confirm we're about to post message
-      alert('About to post LOAD_VERSION to iframe! Version: ' + version.versionNumber);
-      
       iframe.contentWindow.postMessage({
         type: 'LOAD_VERSION',
         version: version
       }, '*');
       
       toast({
-        title: 'Loading Version',
-        description: `Loading version ${version.versionNumber} into the scheduler`,
+        title: 'Message Sent to Iframe',
+        description: `Loading version ${version.versionNumber} - waiting for confirmation...`,
       });
     } else {
       console.log('📚 [VersionHistory] Iframe not found or no contentWindow - listing all iframes:');

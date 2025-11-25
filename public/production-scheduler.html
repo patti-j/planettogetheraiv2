@@ -1190,12 +1190,28 @@
             // Handle LOAD_VERSION messages from VersionHistory component
             // This is an EARLY listener - if scheduler isn't ready, queue the request
             if (event.data?.type === 'LOAD_VERSION') {
-                // VERY VISIBLE DEBUG - Alert to confirm message received
-                alert('LOAD_VERSION message received in iframe! Version: ' + (event.data.version?.versionNumber || 'unknown'));
-                
                 console.log('📚 [EARLY] LOAD_VERSION message received!');
                 console.log('📚 [EARLY] Scheduler ready:', !!window.scheduler);
                 console.log('📚 [EARLY] loadSelectedVersion exists:', !!window.loadSelectedVersion);
+                
+                // IMMEDIATELY send confirmation back to parent that we received the message
+                if (window.parent !== window) {
+                    window.parent.postMessage({
+                        type: 'VERSION_LOAD_RECEIVED',
+                        versionNumber: event.data.version?.versionNumber || 'unknown',
+                        schedulerReady: !!window.scheduler,
+                        loadFunctionExists: !!window.loadSelectedVersion
+                    }, '*');
+                }
+                
+                // Show Bryntum toast to confirm message received (more reliable than alert)
+                if (window.bryntum && window.bryntum.schedulerpro && window.bryntum.schedulerpro.Toast) {
+                    window.bryntum.schedulerpro.Toast.show({
+                        html: `Received request to load version ${event.data.version?.versionNumber}`,
+                        color: 'b-blue',
+                        timeout: 2000
+                    });
+                }
                 
                 const version = event.data.version;
                 
@@ -1226,6 +1242,14 @@
                     // Scheduler not ready yet, queue the request
                     console.log('📚 [EARLY] Scheduler not ready, queuing version load...');
                     window.pendingVersionLoad = version;
+                    
+                    // Notify parent that we're queuing the request
+                    if (window.parent !== window) {
+                        window.parent.postMessage({
+                            type: 'VERSION_LOAD_QUEUED',
+                            versionNumber: version?.versionNumber || 'unknown'
+                        }, '*');
+                    }
                 }
             }
         });
