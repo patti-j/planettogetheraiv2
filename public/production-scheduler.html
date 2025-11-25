@@ -7228,7 +7228,8 @@
             };
             
             // Helper function to load a selected version from version history
-            async function loadSelectedVersion(selectedVersion) {
+            // Assign to window so it can be called from postMessage handler
+            window.loadSelectedVersion = async function(selectedVersion) {
                 try {
                     console.log('📚 Loading version:', selectedVersion);
                     
@@ -7237,146 +7238,78 @@
                         ? JSON.parse(selectedVersion.snapshotData) 
                         : selectedVersion.snapshotData;
                     
-                    // Load the schedule data including dependencies
-                    if (window.scheduler && window.scheduler.project) {
-                        try {
-                            // First, we need to reload the operations to get the scheduled times from the version
-                            // The version contains operations with their scheduled start/end times
-                            const operations = snapshotData.operations || [];
-                            const dependencies = snapshotData.dependencies || [];
-                            
-                            console.log(`📚 Loading ${operations.length} operations and ${dependencies.length} dependencies from version`);
-                            
-                            // Update operations with their scheduled times from the version
-                            operations.forEach(op => {
-                                const event = window.scheduler.eventStore.getById(op.id);
-                                if (event && op.scheduledStart && op.scheduledEnd) {
-                                    event.startDate = new Date(op.scheduledStart);
-                                    event.endDate = new Date(op.scheduledEnd);
-                                    event.manuallyScheduled = op.manuallyScheduled || false;
-                                    console.log(`✅ Updated operation ${op.id} with times from version`);
-                                }
-                            });
-                            
-                            // Load dependencies if visual store exists
-                            if (window.visualDependencyStore && dependencies.length > 0) {
-                                console.log('📚 Loading dependencies into visual store...');
-                                window.visualDependencyStore.data = dependencies;
-                                console.log(`✅ Loaded ${dependencies.length} dependencies`);
-                            }
-                            
-                            // Refresh the scheduler view
-                            window.scheduler.refresh();
-                            
-                            console.log('✅ Version loaded successfully');
-                            
-                            // Show success message
-                            if (window.scheduler && window.scheduler.bryntum) {
-                                window.scheduler.bryntum.Toast.show({
-                                    html: `Loaded version ${selectedVersion.versionNumber} with ${dependencies.length} dependencies`,
-                                    color: 'b-green',
-                                    timeout: 3000
-                                });
-                            }
-                        } catch (loadError) {
-                            console.warn('Could not use loadInlineData, trying manual load:', loadError);
-                            
-                            // Fallback: manually load the data into stores
-                            try {
-                                // Clear existing data first
-                                window.scheduler.eventStore.removeAll();
-                                
-                                // Load events manually
-                                if (selectedSchedule.scheduleData.events && Array.isArray(selectedSchedule.scheduleData.events)) {
-                                    const events = selectedSchedule.scheduleData.events.map(event => {
-                                        // Ensure dates are properly parsed
-                                        return {
-                                            ...event,
-                                            startDate: event.startDate ? new Date(event.startDate) : null,
-                                            endDate: event.endDate ? new Date(event.endDate) : null
-                                        };
-                                    });
-                                    window.scheduler.eventStore.add(events);
-                                    loadSuccess = true;
-                                }
-                                
-                                // Resources should already be loaded from the API, so skip loading them
-                                // This prevents overwriting the current resource structure
-                                
-                                // Dependencies are visual-only and optional, skip them to avoid errors
-                            } catch (manualLoadError) {
-                                console.error('Manual load also failed:', manualLoadError);
-                                throw new Error('Could not load schedule data');
-                            }
-                        }
-                        
-                        if (!loadSuccess) {
-                            throw new Error('Failed to load schedule data');
-                        }
-                        
-                        // Restore metadata if available
-                        if (selectedSchedule.metadata) {
-                            if (selectedSchedule.metadata.algorithm) {
-                                document.getElementById('schedulingAlgorithm').value = selectedSchedule.metadata.algorithm;
-                            }
-                            if (selectedSchedule.metadata.constraints) {
-                                window.activeConstraints = selectedSchedule.metadata.constraints;
-                            }
-                        }
-                        
-                        // Store the schedule ID for future updates
-                        window.currentScheduleId = selectedSchedule.id;
-                        
-                        // Zoom to fit the entire schedule in view
-                        const events = window.scheduler.eventStore.records;
-                    if (events && events.length > 0) {
-                        // Find the earliest and latest dates in the schedule
-                        let minDate = null;
-                        let maxDate = null;
-                        
-                        events.forEach(event => {
-                            if (!minDate || event.startDate < minDate) {
-                                minDate = new Date(event.startDate);
-                            }
-                            if (!maxDate || event.endDate > maxDate) {
-                                maxDate = new Date(event.endDate);
-                            }
-                        });
-                        
-                        if (minDate && maxDate) {
-                            // Add some padding (1 day before and after)
-                            minDate.setDate(minDate.getDate() - 1);
-                            maxDate.setDate(maxDate.getDate() + 1);
-                            
-                            // Set the time span to show all events
-                            window.scheduler.setTimeSpan(minDate, maxDate);
-                            
-                            // Adjust zoom level to fit the view
-                            // Calculate the number of days to show
-                            const daysDiff = Math.ceil((maxDate - minDate) / (1000 * 60 * 60 * 24));
-                            
-                            // Set appropriate zoom level based on days
-                            if (daysDiff <= 7) {
-                                window.scheduler.zoomLevel = 10; // Hour view
-                            } else if (daysDiff <= 14) {
-                                window.scheduler.zoomLevel = 8; // Day view
-                            } else if (daysDiff <= 30) {
-                                window.scheduler.zoomLevel = 6; // Week view
-                            } else {
-                                window.scheduler.zoomLevel = 4; // Month view
-                            }
-                        }
+                    if (!snapshotData) {
+                        throw new Error('No snapshot data found in version');
                     }
                     
-                        // Update status
-                        document.getElementById('lastUpdate').textContent = `Loaded: ${selectedSchedule.name}`;
-                        window.updateStatus();
-                        
-                        console.log('✅ Schedule loaded successfully:', selectedSchedule.name);
+                    // Load the schedule data including dependencies
+                    if (!window.scheduler) {
+                        throw new Error('Scheduler not initialized');
                     }
+                    
+                    const operations = snapshotData.operations || [];
+                    const dependencies = snapshotData.dependencies || [];
+                    
+                    console.log(`📚 Loading ${operations.length} operations and ${dependencies.length} dependencies from version`);
+                    
+                    let updatedCount = 0;
+                    
+                    // Update operations with their scheduled times from the version
+                    operations.forEach(op => {
+                        const event = window.scheduler.eventStore.getById(op.id);
+                        if (event && op.scheduledStart && op.scheduledEnd) {
+                            event.startDate = new Date(op.scheduledStart);
+                            event.endDate = new Date(op.scheduledEnd);
+                            if (op.manuallyScheduled !== undefined) {
+                                event.manuallyScheduled = op.manuallyScheduled;
+                            }
+                            updatedCount++;
+                        }
+                    });
+                    
+                    console.log(`✅ Updated ${updatedCount} of ${operations.length} operations with times from version`);
+                    
+                    // Load dependencies if visual store exists
+                    if (window.visualDependencyStore && dependencies.length > 0) {
+                        console.log('📚 Loading dependencies into visual store...');
+                        window.visualDependencyStore.data = dependencies;
+                        console.log(`✅ Loaded ${dependencies.length} dependencies`);
+                    }
+                    
+                    // Refresh the scheduler view to show the updated positions
+                    window.scheduler.refresh();
+                    
+                    // Update the "Last updated" display with version info
+                    const versionTime = new Date(selectedVersion.createdAt);
+                    document.getElementById('lastUpdate').textContent = 
+                        `Loaded v${selectedVersion.versionNumber} from ${versionTime.toLocaleString()}`;
+                    
+                    console.log('✅ Version loaded successfully');
+                    
+                    // Show success message using Bryntum Toast
+                    if (bryntum && bryntum.schedulerpro && bryntum.schedulerpro.Toast) {
+                        bryntum.schedulerpro.Toast.show({
+                            html: `Loaded version ${selectedVersion.versionNumber} (${updatedCount} operations updated)`,
+                            color: 'b-green',
+                            timeout: 3000
+                        });
+                    }
+                    
+                    return { success: true, updatedCount };
+                    
                 } catch (error) {
-                    console.error('❌ Error loading schedule:', error);
-                    alert(`Failed to load schedule: ${error.message || 'Unknown error'}. Please try again or select a different schedule.`);
+                    console.error('❌ Error loading version:', error);
+                    
+                    // Show error toast
+                    if (bryntum && bryntum.schedulerpro && bryntum.schedulerpro.Toast) {
+                        bryntum.schedulerpro.Toast.show({
+                            html: `Failed to load version: ${error.message}`,
+                            color: 'b-red',
+                            timeout: 5000
+                        });
+                    }
+                    
+                    throw error;
                 }
             }
             
