@@ -166,8 +166,14 @@ export class ScheduleVersionService {
         .returning();
 
       // Track individual operation changes if there's a parent version
+      // This is optional and shouldn't fail the version creation
       if (parentVersion) {
-        await this.trackOperationChanges(newVersion.id, parentVersion, snapshotData);
+        try {
+          await this.trackOperationChanges(newVersion.id, parentVersion, snapshotData);
+        } catch (trackError) {
+          // Log but don't fail - operation_versions table may not exist yet
+          console.warn('Could not track operation changes (optional):', trackError instanceof Error ? trackError.message : 'Unknown error');
+        }
       }
 
       return newVersion.id;
