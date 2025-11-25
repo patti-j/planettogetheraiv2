@@ -1171,6 +1171,14 @@
         // Queue for pending version load requests (if received before scheduler is ready)
         window.pendingVersionLoad = null;
         
+        // Helper function to get authentication headers for API calls
+        function getAuthHeaders() {
+            const authToken = globalAuthToken || 
+                              localStorage.getItem('auth_token') || 
+                              window.parent?.localStorage?.getItem('auth_token');
+            return authToken ? { 'Authorization': `Bearer ${authToken}` } : {};
+        }
+        
         // Listen for authentication token AND version load requests from parent window
         // This listener is added EARLY before Bryntum loads
         window.addEventListener('message', function(event) {
