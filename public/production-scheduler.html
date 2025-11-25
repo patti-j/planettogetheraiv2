@@ -7269,14 +7269,24 @@
                     
                     console.log(`📚 Loading ${versionOperations.length} operations and ${dependencies.length} dependencies from version`);
                     
-                    // Create a lookup map from version operations for quick access
-                    const versionOpMap = new Map();
+                    // Create lookup maps from version operations for quick access
+                    // Map by ID (for exact matches)
+                    const versionOpMapById = new Map();
+                    // Map by name+sequenceNumber (for matching when IDs differ)
+                    const versionOpMapByNameSeq = new Map();
+                    
                     versionOperations.forEach(op => {
-                        versionOpMap.set(op.id, op);
-                        versionOpMap.set(String(op.id), op);
+                        versionOpMapById.set(op.id, op);
+                        versionOpMapById.set(String(op.id), op);
+                        // Create a composite key: name + sequenceNumber
+                        const nameSeqKey = `${op.name}_${op.sequenceNumber}`;
+                        versionOpMapByNameSeq.set(nameSeqKey, op);
                     });
                     
-                    console.log('📚 Version operation map created with', versionOpMap.size / 2, 'operations');
+                    console.log('📚 Version operation maps created:', {
+                        byId: versionOpMapById.size / 2,
+                        byNameSeq: versionOpMapByNameSeq.size
+                    });
                     
                     // Fetch current operations from database to get full data (job names, resource mappings, etc.)
                     const authHeaders = getAuthHeaders();
@@ -7301,13 +7311,33 @@
                     console.log('📚 Cleared event store');
                     
                     // Build events using current operation data but with version times
+                    let matchedByIdCount = 0;
+                    let matchedByNameSeqCount = 0;
+                    let unmatchedCount = 0;
+                    
                     const events = currentOperations.map(op => {
                         const job = jobs.find(j => j.id === op.job_id);
                         const resourceMapping = resourceMappings[op.resource_id] || 
                             (op.resource_id && op.resource_id !== '0' ? op.resource_id : 'unscheduled');
                         
                         // Look up version data for this operation
-                        const versionOp = versionOpMap.get(op.id) || versionOpMap.get(String(op.id));
+                        // First try by ID
+                        let versionOp = versionOpMapById.get(op.id) || versionOpMapById.get(String(op.id));
+                        
+                        // If not found by ID, try by name + sequence number
+                        if (!versionOp) {
+                            const nameSeqKey = `${op.name}_${op.sequence_number}`;
+                            versionOp = versionOpMapByNameSeq.get(nameSeqKey);
+                            if (versionOp) {
+                                matchedByNameSeqCount++;
+                            }
+                        } else {
+                            matchedByIdCount++;
+                        }
+                        
+                        if (!versionOp) {
+                            unmatchedCount++;
+                        }
                         
                         // Use version times if available, otherwise fall back to current data
                         let startDate, endDate;
@@ -7343,6 +7373,11 @@
                     // Add events to scheduler
                     window.scheduler.eventStore.add(events);
                     console.log('📚 Added', events.length, 'events to scheduler');
+                    console.log('📚 Matching stats:', {
+                        matchedById: matchedByIdCount,
+                        matchedByNameSeq: matchedByNameSeqCount,
+                        unmatched: unmatchedCount
+                    });
                     
                     // Load dependencies if visual store exists
                     if (window.visualDependencyStore && dependencies.length > 0) {
