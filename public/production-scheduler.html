@@ -1168,7 +1168,11 @@
         // Store authentication token globally
         let globalAuthToken = null;
         
-        // Listen for authentication token from parent window
+        // Queue for pending version load requests (if received before scheduler is ready)
+        window.pendingVersionLoad = null;
+        
+        // Listen for authentication token AND version load requests from parent window
+        // This listener is added EARLY before Bryntum loads
         window.addEventListener('message', function(event) {
             if (event.data?.type === 'SET_AUTH_TOKEN' && event.data?.token) {
                 console.log('🔐 Received auth token from parent window');
@@ -1180,6 +1184,45 @@
                 if (window.scheduler && window.schedulerReady && !window.versionAlreadyLoaded) {
                     console.log('🔄 Auth token received - attempting to load latest version...');
                     window.tryAutoLoadLatestVersion();
+                }
+            }
+            
+            // Handle LOAD_VERSION messages from VersionHistory component
+            // This is an EARLY listener - if scheduler isn't ready, queue the request
+            if (event.data?.type === 'LOAD_VERSION') {
+                console.log('📚 [EARLY] LOAD_VERSION message received!');
+                console.log('📚 [EARLY] Scheduler ready:', !!window.scheduler);
+                console.log('📚 [EARLY] loadSelectedVersion exists:', !!window.loadSelectedVersion);
+                
+                const version = event.data.version;
+                
+                if (window.scheduler && window.loadSelectedVersion) {
+                    // Scheduler is ready, load immediately
+                    console.log('📚 [EARLY] Scheduler ready, loading version now...');
+                    window.loadSelectedVersion(version).then(() => {
+                        console.log('✅ [EARLY] Version loaded successfully');
+                        if (window.parent !== window) {
+                            window.parent.postMessage({
+                                type: 'VERSION_LOAD_COMPLETE',
+                                versionId: version.id,
+                                success: true
+                            }, '*');
+                        }
+                    }).catch(error => {
+                        console.error('❌ [EARLY] Failed to load version:', error);
+                        if (window.parent !== window) {
+                            window.parent.postMessage({
+                                type: 'VERSION_LOAD_COMPLETE',
+                                versionId: version.id,
+                                success: false,
+                                error: error.message
+                            }, '*');
+                        }
+                    });
+                } else {
+                    // Scheduler not ready yet, queue the request
+                    console.log('📚 [EARLY] Scheduler not ready, queuing version load...');
+                    window.pendingVersionLoad = version;
                 }
             }
         });
@@ -6295,6 +6338,29 @@
                 // This allows external code to know when the scheduler is ready without waiting
                 if (eventCount > 0) {
                     window.schedulerReady = true;
+                    
+                    // Process any pending version load that was queued before scheduler was ready
+                    if (window.pendingVersionLoad && window.loadSelectedVersion) {
+                        console.log('📚 Processing pending version load...');
+                        const pendingVersion = window.pendingVersionLoad;
+                        window.pendingVersionLoad = null; // Clear the queue
+                        
+                        setTimeout(() => {
+                            window.loadSelectedVersion(pendingVersion).then(() => {
+                                console.log('✅ Pending version loaded successfully');
+                                if (window.parent !== window) {
+                                    window.parent.postMessage({
+                                        type: 'VERSION_LOAD_COMPLETE',
+                                        versionId: pendingVersion.id,
+                                        success: true
+                                    }, '*');
+                                }
+                            }).catch(error => {
+                                console.error('❌ Failed to load pending version:', error);
+                            });
+                        }, 500); // Short delay to ensure scheduler is fully ready
+                    }
+                    
                     window.dispatchEvent(new CustomEvent('schedulerOperationsLoaded', {
                         detail: {
                             eventCount,
