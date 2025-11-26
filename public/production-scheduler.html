@@ -1926,6 +1926,12 @@
                     const resourceMap = new Map();
                     const resourceByName = new Map();
                     const originalIdMap = new Map(); // Map original numeric IDs to new string IDs
+                    
+                    // Make maps available globally for version loading
+                    window.resourceMap = resourceMap;
+                    window.resourceByName = resourceByName;
+                    window.originalIdMap = originalIdMap;
+                    
                     resources.forEach(resource => {
                     resourceMap.set(resource.id, resource);
                     resourceMap.set(resource.name, resource);
@@ -7435,8 +7441,23 @@
                     
                     const events = currentOperations.map(op => {
                         const job = jobs.find(j => j.id === op.job_id);
-                        // Get resource ID directly - use 'unscheduled' as fallback
-                        const resourceId = op.resource_id && op.resource_id !== '0' ? op.resource_id : 'unscheduled';
+                        
+                        // Use global resource maps for proper ID lookup (same as initial load)
+                        let resourceId = 'unscheduled';
+                        if (op.resource_id && op.resource_id !== '0') {
+                            // Try originalIdMap first (maps DB IDs to scheduler IDs)
+                            if (window.originalIdMap && window.originalIdMap.has(op.resource_id)) {
+                                resourceId = window.originalIdMap.get(op.resource_id);
+                            } else if (window.originalIdMap && window.originalIdMap.has(Number(op.resource_id))) {
+                                resourceId = window.originalIdMap.get(Number(op.resource_id));
+                            } else if (window.resourceByName && op.resource_name) {
+                                // Try by resource name
+                                const matchedResource = window.resourceByName.get(op.resource_name?.toLowerCase());
+                                if (matchedResource) {
+                                    resourceId = matchedResource.id;
+                                }
+                            }
+                        }
                         
                         // Look up version data for this operation
                         // First try by ID
