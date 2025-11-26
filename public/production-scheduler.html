@@ -1171,6 +1171,16 @@
         // Queue for pending version load requests (if received before scheduler is ready)
         window.pendingVersionLoad = null;
         
+        // Priority colors for job events (maps priority level to color)
+        const priorityColors = {
+            1: '#dc2626',  // Critical - red
+            2: '#f97316',  // High - orange
+            3: '#eab308',  // Medium - yellow
+            4: '#22c55e',  // Low - green
+            5: '#3b82f6',  // Normal - blue
+            'default': '#6366f1'  // Default - indigo
+        };
+        
         // Helper function to get authentication headers for API calls
         function getAuthHeaders() {
             const authToken = globalAuthToken || 
