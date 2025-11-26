@@ -2961,8 +2961,8 @@
                             // Process and load new operations
                             const events = operations.map(op => {
                                 const job = jobs.find(j => j.id === op.job_id);
-                                const resourceMapping = resourceMappings[op.resource_id] || 
-                                    (op.resource_id && op.resource_id !== '0' ? op.resource_id : 'unscheduled');
+                                // Get resource ID directly - use 'unscheduled' as fallback
+                                const resourceId = op.resource_id && op.resource_id !== '0' ? op.resource_id : 'unscheduled';
                                 
                                 return {
                                     id: op.id,
@@ -2970,7 +2970,7 @@
                                     startDate: op.scheduled_start ? new Date(op.scheduled_start) : new Date(),
                                     endDate: op.scheduled_end ? new Date(op.scheduled_end) : 
                                         new Date(new Date().getTime() + (parseFloat(op.cycle_hrs || 1) * 3600000)),
-                                    resourceId: resourceMapping,
+                                    resourceId: resourceId,
                                     jobId: op.job_id,
                                     jobName: job?.name || 'Unknown Job',
                                     priority: job?.priority || 999,
@@ -7425,8 +7425,8 @@
                     
                     const events = currentOperations.map(op => {
                         const job = jobs.find(j => j.id === op.job_id);
-                        const resourceMapping = resourceMappings[op.resource_id] || 
-                            (op.resource_id && op.resource_id !== '0' ? op.resource_id : 'unscheduled');
+                        // Get resource ID directly - use 'unscheduled' as fallback
+                        const resourceId = op.resource_id && op.resource_id !== '0' ? op.resource_id : 'unscheduled';
                         
                         // Look up version data for this operation
                         // First try by ID
@@ -7463,7 +7463,7 @@
                             name: op.name || `Operation ${op.sequence_number}`,
                             startDate: startDate,
                             endDate: endDate,
-                            resourceId: resourceMapping,
+                            resourceId: resourceId,
                             jobId: op.job_id,
                             jobName: job?.name || 'Unknown Job',
                             priority: job?.priority || 999,
