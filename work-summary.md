@@ -17,3 +17,9 @@ Production Scheduler
 - Fixed version loading resource ID mapping
 - Made global resource maps (originalIdMap, resourceMap, resourceByName) available for version loading
 - Operations now correctly appear on their proper resource rows when loading saved versions
+
+Deployment Fix
+- Fixed ensureAdminAccess crash on fresh production database deployment
+- Added database table existence check before running admin setup
+- Made error handling non-fatal - server now continues starting even if admin setup fails
+- This allows deployment to succeed when database is being initialized for the first time

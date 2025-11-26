@@ -7,6 +7,25 @@ export async function ensureAdminAccess() {
   try {
     console.log('🔧 Ensuring admin user has full access...');
     
+    // First, verify the database tables exist
+    try {
+      const tableCheck = await db.execute(sql`
+        SELECT EXISTS (
+          SELECT FROM information_schema.tables 
+          WHERE table_name = 'users'
+        ) as exists
+      `);
+      
+      const tableExists = tableCheck.rows?.[0]?.exists;
+      if (!tableExists) {
+        console.log('⏳ Database tables not ready yet, skipping admin setup (will retry on next startup)');
+        return;
+      }
+    } catch (tableCheckError) {
+      console.log('⏳ Database not ready for admin setup, skipping (will retry on next startup)');
+      return;
+    }
+    
     // 1. Check if admin user exists, create if not
     let adminUser = await db.select().from(users)
       .where(eq(users.username, 'admin'))
@@ -134,9 +153,11 @@ export async function ensureAdminAccess() {
     console.log('Both users have full Administrator access');
     console.log('═══════════════════════════════════════════');
     
-  } catch (error) {
-    console.error('❌ Error ensuring admin access:', error);
-    throw error;
+  } catch (error: any) {
+    // Don't crash the server if admin setup fails - log and continue
+    console.error('⚠️ Warning: Admin access setup encountered an issue:', error?.message || error);
+    console.log('The server will continue starting. Admin setup will retry on next restart.');
+    // Don't throw - allow server to start anyway
   }
 }
 
