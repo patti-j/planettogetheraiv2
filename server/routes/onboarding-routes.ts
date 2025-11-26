@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import multer from 'multer';
+import * as XLSX from 'xlsx';
 import { db } from '../db';
 import { 
   plantOnboarding, 
@@ -11,9 +12,11 @@ import {
   onboardingAIRecommendations,
   onboardingRequirements,
   companyOnboardingOverview,
+  customerRequirements,
+  customerRequirementHistory,
   ptPlants
 } from '@shared/schema';
-import { eq, sql, and, or } from 'drizzle-orm';
+import { eq, sql, and, or, desc, count } from 'drizzle-orm';
 import { onboardingAIService, SAMPLE_TEMPLATES } from '../services/onboarding-ai-service';
 import { z } from 'zod';
 
@@ -668,6 +671,441 @@ router.post('/api/onboarding/generate-sample-data', async (req, res) => {
     console.error('Error generating sample data:', error);
     res.status(500).json({ error: 'Failed to generate sample data' });
   }
+});
+
+// ============================================
+// Customer Requirements API Endpoints
+// ============================================
+
+// Configure multer for spreadsheet uploads
+const spreadsheetUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
+  fileFilter: (req, file, cb) => {
+    const allowedTypes = [
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'application/vnd.ms-excel',
+      'text/csv'
+    ];
+    if (allowedTypes.includes(file.mimetype) || file.originalname.match(/\.(xlsx|xls|csv)$/)) {
+      cb(null, true);
+    } else {
+      cb(new Error('Invalid file type. Only Excel (xlsx, xls) and CSV files are allowed.'));
+    }
+  }
+});
+
+// Get all customer requirements
+router.get('/api/customer-requirements', async (req, res) => {
+  try {
+    const { segment, status, customerId, onboardingId, limit = 100, offset = 0 } = req.query;
+    
+    const conditions = [];
+    if (segment && segment !== 'all') {
+      conditions.push(eq(customerRequirements.segment, segment as string));
+    }
+    if (status) {
+      conditions.push(eq(customerRequirements.lifecycleStatus, status as any));
+    }
+    if (customerId) {
+      conditions.push(eq(customerRequirements.customerId, parseInt(customerId as string)));
+    }
+    if (onboardingId) {
+      conditions.push(eq(customerRequirements.onboardingId, parseInt(onboardingId as string)));
+    }
+    
+    const requirements = await db.select()
+      .from(customerRequirements)
+      .where(conditions.length > 0 ? and(...conditions) : undefined)
+      .orderBy(desc(customerRequirements.createdAt))
+      .limit(parseInt(limit as string))
+      .offset(parseInt(offset as string));
+    
+    res.json(requirements);
+  } catch (error) {
+    console.error('Error fetching customer requirements:', error);
+    res.status(500).json({ error: 'Failed to fetch customer requirements' });
+  }
+});
+
+// Get customer requirements summary/statistics
+router.get('/api/customer-requirements/stats', async (req, res) => {
+  try {
+    // Get counts by lifecycle status
+    const statusCounts = await db.select({
+      status: customerRequirements.lifecycleStatus,
+      count: count()
+    })
+    .from(customerRequirements)
+    .groupBy(customerRequirements.lifecycleStatus);
+    
+    // Get counts by segment
+    const segmentCounts = await db.select({
+      segment: customerRequirements.segment,
+      count: count()
+    })
+    .from(customerRequirements)
+    .groupBy(customerRequirements.segment);
+    
+    // Get total counts
+    const totalResult = await db.select({ count: count() }).from(customerRequirements);
+    const total = totalResult[0]?.count || 0;
+    
+    // Calculate lifecycle stage aggregates
+    const modelingCount = statusCounts.filter(s => 
+      s.status?.includes('modeling')
+    ).reduce((sum, s) => sum + Number(s.count), 0);
+    
+    const testingCount = statusCounts.filter(s => 
+      s.status?.includes('testing')
+    ).reduce((sum, s) => sum + Number(s.count), 0);
+    
+    const deploymentCount = statusCounts.filter(s => 
+      s.status?.includes('deployment') || s.status === 'deployed'
+    ).reduce((sum, s) => sum + Number(s.count), 0);
+    
+    const uploadedCount = statusCounts.find(s => s.status === 'uploaded')?.count || 0;
+    const deployedCount = statusCounts.find(s => s.status === 'deployed')?.count || 0;
+    
+    res.json({
+      total,
+      byStatus: statusCounts,
+      bySegment: segmentCounts,
+      summary: {
+        uploaded: Number(uploadedCount),
+        inModeling: modelingCount,
+        inTesting: testingCount,
+        inDeployment: deploymentCount,
+        deployed: Number(deployedCount),
+        completionRate: total > 0 ? Math.round((Number(deployedCount) / Number(total)) * 100) : 0
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching customer requirements stats:', error);
+    res.status(500).json({ error: 'Failed to fetch statistics' });
+  }
+});
+
+// Upload customer requirements from spreadsheet
+router.post('/api/customer-requirements/upload', spreadsheetUpload.single('file'), async (req, res) => {
+  try {
+    const file = req.file;
+    const { onboardingId, customerId, customerName } = req.body;
+    
+    if (!file) {
+      return res.status(400).json({ error: 'No file uploaded' });
+    }
+    
+    // Parse the spreadsheet
+    const workbook = XLSX.read(file.buffer, { type: 'buffer' });
+    const sheetName = workbook.SheetNames[0];
+    const worksheet = workbook.Sheets[sheetName];
+    const data = XLSX.utils.sheet_to_json(worksheet);
+    
+    if (!data || data.length === 0) {
+      return res.status(400).json({ error: 'No data found in spreadsheet' });
+    }
+    
+    const insertedRequirements = [];
+    const errors: string[] = [];
+    
+    for (let i = 0; i < data.length; i++) {
+      const row = data[i] as any;
+      try {
+        // Map spreadsheet columns to database fields
+        // Expected columns: Segment, Requirement Name, Description, Features, Priority
+        const segment = row['Segment'] || row['segment'] || row['Industry'] || row['industry'] || 'General';
+        const requirementName = row['Requirement Name'] || row['requirement_name'] || row['Name'] || row['name'] || row['Use Case'] || row['use_case'];
+        const description = row['Description'] || row['description'] || '';
+        const priority = row['Priority'] || row['priority'] || 'medium';
+        
+        // Handle features - can be comma-separated string or already an array
+        let features: string[] = [];
+        const featuresRaw = row['Features'] || row['features'] || '';
+        if (typeof featuresRaw === 'string') {
+          features = featuresRaw.split(',').map((f: string) => f.trim()).filter((f: string) => f);
+        } else if (Array.isArray(featuresRaw)) {
+          features = featuresRaw;
+        }
+        
+        if (!requirementName) {
+          errors.push(`Row ${i + 2}: Missing requirement name`);
+          continue;
+        }
+        
+        const [inserted] = await db.insert(customerRequirements).values({
+          customerId: customerId ? parseInt(customerId) : null,
+          customerName: customerName || 'Unknown Customer',
+          segment,
+          requirementName,
+          description,
+          features,
+          priority: priority.toLowerCase(),
+          lifecycleStatus: 'uploaded',
+          onboardingId: onboardingId ? parseInt(onboardingId) : null,
+          sourceFile: file.originalname,
+          uploadedBy: (req as any).user?.id || 1
+        }).returning();
+        
+        insertedRequirements.push(inserted);
+      } catch (rowError) {
+        console.error(`Error processing row ${i + 2}:`, rowError);
+        errors.push(`Row ${i + 2}: ${rowError instanceof Error ? rowError.message : 'Unknown error'}`);
+      }
+    }
+    
+    res.json({
+      success: true,
+      message: `Successfully imported ${insertedRequirements.length} requirements`,
+      imported: insertedRequirements.length,
+      errors: errors.length > 0 ? errors : undefined,
+      requirements: insertedRequirements
+    });
+  } catch (error) {
+    console.error('Error uploading requirements:', error);
+    res.status(500).json({ error: 'Failed to upload requirements' });
+  }
+});
+
+// Update requirement lifecycle status
+router.patch('/api/customer-requirements/:id/status', async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    const { status, reason } = req.body;
+    
+    if (!status) {
+      return res.status(400).json({ error: 'Status is required' });
+    }
+    
+    // Get current requirement
+    const [current] = await db.select()
+      .from(customerRequirements)
+      .where(eq(customerRequirements.id, id));
+    
+    if (!current) {
+      return res.status(404).json({ error: 'Requirement not found' });
+    }
+    
+    // Prepare update data based on new status
+    const updateData: any = {
+      lifecycleStatus: status,
+      updatedAt: new Date()
+    };
+    
+    // Set appropriate date fields based on status transition
+    if (status === 'modeling_in_progress' && !current.modelingStartDate) {
+      updateData.modelingStartDate = new Date();
+    }
+    if (status === 'modeling_complete') {
+      updateData.modelingCompleteDate = new Date();
+      updateData.modelingProgress = 100;
+    }
+    if (status === 'testing_in_progress' && !current.testingStartDate) {
+      updateData.testingStartDate = new Date();
+    }
+    if (status === 'testing_complete') {
+      updateData.testingCompleteDate = new Date();
+      updateData.testingProgress = 100;
+    }
+    if (status === 'deployment_in_progress' && !current.deploymentStartDate) {
+      updateData.deploymentStartDate = new Date();
+    }
+    if (status === 'deployed') {
+      updateData.deploymentCompleteDate = new Date();
+      updateData.deploymentProgress = 100;
+    }
+    
+    // Update requirement
+    const [updated] = await db.update(customerRequirements)
+      .set(updateData)
+      .where(eq(customerRequirements.id, id))
+      .returning();
+    
+    // Record history
+    await db.insert(customerRequirementHistory).values({
+      requirementId: id,
+      previousStatus: current.lifecycleStatus,
+      newStatus: status,
+      changedBy: (req as any).user?.id || 1,
+      changeReason: reason
+    });
+    
+    res.json(updated);
+  } catch (error) {
+    console.error('Error updating requirement status:', error);
+    res.status(500).json({ error: 'Failed to update status' });
+  }
+});
+
+// Update requirement progress
+router.patch('/api/customer-requirements/:id/progress', async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    const { modelingProgress, testingProgress, deploymentProgress } = req.body;
+    
+    const updateData: any = { updatedAt: new Date() };
+    
+    if (modelingProgress !== undefined) updateData.modelingProgress = modelingProgress;
+    if (testingProgress !== undefined) updateData.testingProgress = testingProgress;
+    if (deploymentProgress !== undefined) updateData.deploymentProgress = deploymentProgress;
+    
+    const [updated] = await db.update(customerRequirements)
+      .set(updateData)
+      .where(eq(customerRequirements.id, id))
+      .returning();
+    
+    if (!updated) {
+      return res.status(404).json({ error: 'Requirement not found' });
+    }
+    
+    res.json(updated);
+  } catch (error) {
+    console.error('Error updating requirement progress:', error);
+    res.status(500).json({ error: 'Failed to update progress' });
+  }
+});
+
+// Get single requirement with history
+router.get('/api/customer-requirements/:id', async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    
+    const [requirement] = await db.select()
+      .from(customerRequirements)
+      .where(eq(customerRequirements.id, id));
+    
+    if (!requirement) {
+      return res.status(404).json({ error: 'Requirement not found' });
+    }
+    
+    const history = await db.select()
+      .from(customerRequirementHistory)
+      .where(eq(customerRequirementHistory.requirementId, id))
+      .orderBy(desc(customerRequirementHistory.changedAt));
+    
+    res.json({ ...requirement, history });
+  } catch (error) {
+    console.error('Error fetching requirement:', error);
+    res.status(500).json({ error: 'Failed to fetch requirement' });
+  }
+});
+
+// Delete requirement
+router.delete('/api/customer-requirements/:id', async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    
+    // Delete history first
+    await db.delete(customerRequirementHistory)
+      .where(eq(customerRequirementHistory.requirementId, id));
+    
+    // Delete requirement
+    const [deleted] = await db.delete(customerRequirements)
+      .where(eq(customerRequirements.id, id))
+      .returning();
+    
+    if (!deleted) {
+      return res.status(404).json({ error: 'Requirement not found' });
+    }
+    
+    res.json({ success: true, deleted });
+  } catch (error) {
+    console.error('Error deleting requirement:', error);
+    res.status(500).json({ error: 'Failed to delete requirement' });
+  }
+});
+
+// Bulk update requirements status
+router.post('/api/customer-requirements/bulk-update-status', async (req, res) => {
+  try {
+    const { ids, status, reason } = req.body;
+    
+    if (!ids || !Array.isArray(ids) || ids.length === 0) {
+      return res.status(400).json({ error: 'No requirement IDs provided' });
+    }
+    if (!status) {
+      return res.status(400).json({ error: 'Status is required' });
+    }
+    
+    const updatedRequirements = [];
+    
+    for (const id of ids) {
+      const [current] = await db.select()
+        .from(customerRequirements)
+        .where(eq(customerRequirements.id, id));
+      
+      if (current) {
+        const updateData: any = {
+          lifecycleStatus: status,
+          updatedAt: new Date()
+        };
+        
+        const [updated] = await db.update(customerRequirements)
+          .set(updateData)
+          .where(eq(customerRequirements.id, id))
+          .returning();
+        
+        await db.insert(customerRequirementHistory).values({
+          requirementId: id,
+          previousStatus: current.lifecycleStatus,
+          newStatus: status,
+          changedBy: (req as any).user?.id || 1,
+          changeReason: reason || 'Bulk update'
+        });
+        
+        updatedRequirements.push(updated);
+      }
+    }
+    
+    res.json({
+      success: true,
+      updated: updatedRequirements.length,
+      requirements: updatedRequirements
+    });
+  } catch (error) {
+    console.error('Error bulk updating requirements:', error);
+    res.status(500).json({ error: 'Failed to bulk update requirements' });
+  }
+});
+
+// Download template for requirements upload
+router.get('/api/customer-requirements/template', (req, res) => {
+  const templateData = [
+    {
+      'Segment': 'Life Sciences',
+      'Requirement Name': 'Example: Batch Traceability',
+      'Description': 'Ability to track batches through production process',
+      'Features': 'Lot Control, Shelf Life, Batch Scheduling',
+      'Priority': 'high'
+    },
+    {
+      'Segment': 'Chemicals',
+      'Requirement Name': 'Example: Tank Scheduling',
+      'Description': 'Optimize tank usage and cleaning schedules',
+      'Features': 'Resource Constraints, Setup Optimization',
+      'Priority': 'medium'
+    }
+  ];
+  
+  const workbook = XLSX.utils.book_new();
+  const worksheet = XLSX.utils.json_to_sheet(templateData);
+  
+  // Set column widths
+  worksheet['!cols'] = [
+    { wch: 20 },  // Segment
+    { wch: 40 },  // Requirement Name
+    { wch: 50 },  // Description
+    { wch: 40 },  // Features
+    { wch: 10 }   // Priority
+  ];
+  
+  XLSX.utils.book_append_sheet(workbook, worksheet, 'Requirements');
+  
+  const buffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
+  
+  res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+  res.setHeader('Content-Disposition', 'attachment; filename=customer-requirements-template.xlsx');
+  res.send(buffer);
 });
 
 export default router;

@@ -3737,6 +3737,63 @@ export const companyOnboardingOverview = pgTable("company_onboarding_overview", 
 });
 
 // ============================================
+// Customer Requirements (Uploaded from Spreadsheet)
+// ============================================
+
+export const requirementLifecycleStatusEnum = pgEnum('requirement_lifecycle_status', [
+  'uploaded',
+  'modeling_pending',
+  'modeling_in_progress',
+  'modeling_complete',
+  'testing_pending',
+  'testing_in_progress',
+  'testing_complete',
+  'deployment_pending',
+  'deployment_in_progress',
+  'deployed',
+  'on_hold'
+]);
+
+export const customerRequirements = pgTable("customer_requirements", {
+  id: serial("id").primaryKey(),
+  customerId: integer("customer_id"),
+  customerName: varchar("customer_name", { length: 255 }).notNull(),
+  segment: varchar("segment", { length: 100 }).notNull(),
+  requirementName: varchar("requirement_name", { length: 255 }).notNull(),
+  description: text("description"),
+  features: jsonb("features").default(sql`'[]'::jsonb`),
+  priority: varchar("priority", { length: 20 }).default("medium"),
+  lifecycleStatus: requirementLifecycleStatusEnum("lifecycle_status").default('uploaded'),
+  modelingProgress: integer("modeling_progress").default(0),
+  testingProgress: integer("testing_progress").default(0),
+  deploymentProgress: integer("deployment_progress").default(0),
+  modelingStartDate: timestamp("modeling_start_date"),
+  modelingCompleteDate: timestamp("modeling_complete_date"),
+  testingStartDate: timestamp("testing_start_date"),
+  testingCompleteDate: timestamp("testing_complete_date"),
+  deploymentStartDate: timestamp("deployment_start_date"),
+  deploymentCompleteDate: timestamp("deployment_complete_date"),
+  assignedTo: integer("assigned_to").references(() => users.id),
+  onboardingId: integer("onboarding_id").references(() => plantOnboarding.id),
+  notes: text("notes"),
+  sourceFile: varchar("source_file", { length: 255 }),
+  uploadedBy: integer("uploaded_by").references(() => users.id),
+  uploadedAt: timestamp("uploaded_at").defaultNow(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow()
+});
+
+export const customerRequirementHistory = pgTable("customer_requirement_history", {
+  id: serial("id").primaryKey(),
+  requirementId: integer("requirement_id").references(() => customerRequirements.id).notNull(),
+  previousStatus: varchar("previous_status", { length: 50 }),
+  newStatus: varchar("new_status", { length: 50 }).notNull(),
+  changedBy: integer("changed_by").references(() => users.id),
+  changeReason: text("change_reason"),
+  changedAt: timestamp("changed_at").defaultNow()
+});
+
+// ============================================
 // Continuous Improvement Center
 // ============================================
 
@@ -4316,3 +4373,20 @@ export const insertImprovementLessonsLearnedSchema = createInsertSchema(improvem
 });
 export type InsertImprovementLessonsLearned = z.infer<typeof insertImprovementLessonsLearnedSchema>;
 export type ImprovementLessonsLearned = typeof improvementLessonsLearned.$inferSelect;
+
+// Customer Requirements schemas and types
+export const insertCustomerRequirementSchema = createInsertSchema(customerRequirements).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  uploadedAt: true
+});
+export type InsertCustomerRequirement = z.infer<typeof insertCustomerRequirementSchema>;
+export type CustomerRequirement = typeof customerRequirements.$inferSelect;
+
+export const insertCustomerRequirementHistorySchema = createInsertSchema(customerRequirementHistory).omit({
+  id: true,
+  changedAt: true
+});
+export type InsertCustomerRequirementHistory = z.infer<typeof insertCustomerRequirementHistorySchema>;
+export type CustomerRequirementHistory = typeof customerRequirementHistory.$inferSelect;

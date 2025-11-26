@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Card } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
@@ -7,8 +7,25 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { ChevronDown, ChevronUp, CheckCircle, Package, Settings, Factory, Sparkles, FileText, AlertCircle } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Progress } from "@/components/ui/progress";
+import { useToast } from "@/hooks/use-toast";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
+import { 
+  ChevronDown, ChevronUp, CheckCircle, Package, Settings, Factory, 
+  Sparkles, FileText, AlertCircle, Upload, Download, FileSpreadsheet,
+  Play, Pause, Check, Clock, Loader2, MoreVertical, Eye, Trash2
+} from "lucide-react";
 import { cn } from "@/lib/utils";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 import mfgUseCasesData from "@/data/manufacturing-requirements.json";
 
@@ -22,13 +39,135 @@ interface Segment {
   useCases: Requirement[];
 }
 
+interface CustomerRequirement {
+  id: number;
+  customerId: number | null;
+  customerName: string;
+  segment: string;
+  requirementName: string;
+  description: string | null;
+  features: string[];
+  priority: string;
+  lifecycleStatus: string;
+  modelingProgress: number;
+  testingProgress: number;
+  deploymentProgress: number;
+  modelingStartDate: string | null;
+  modelingCompleteDate: string | null;
+  testingStartDate: string | null;
+  testingCompleteDate: string | null;
+  deploymentStartDate: string | null;
+  deploymentCompleteDate: string | null;
+  sourceFile: string | null;
+  createdAt: string;
+}
+
+const LIFECYCLE_STATUSES = [
+  { value: 'uploaded', label: 'Uploaded', color: 'bg-gray-500' },
+  { value: 'modeling_pending', label: 'Modeling Pending', color: 'bg-yellow-500' },
+  { value: 'modeling_in_progress', label: 'Modeling In Progress', color: 'bg-blue-500' },
+  { value: 'modeling_complete', label: 'Modeling Complete', color: 'bg-green-500' },
+  { value: 'testing_pending', label: 'Testing Pending', color: 'bg-yellow-500' },
+  { value: 'testing_in_progress', label: 'Testing In Progress', color: 'bg-blue-500' },
+  { value: 'testing_complete', label: 'Testing Complete', color: 'bg-green-500' },
+  { value: 'deployment_pending', label: 'Deployment Pending', color: 'bg-yellow-500' },
+  { value: 'deployment_in_progress', label: 'Deployment In Progress', color: 'bg-blue-500' },
+  { value: 'deployed', label: 'Deployed', color: 'bg-green-600' },
+  { value: 'on_hold', label: 'On Hold', color: 'bg-red-500' }
+];
+
 export default function ManufacturingRequirements() {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  
   const [data] = useState<Segment[]>(mfgUseCasesData as Segment[]);
   const [selectedSegment, setSelectedSegment] = useState<string>("");
   const [selectedRequirements, setSelectedRequirements] = useState<Set<string>>(new Set());
   const [requiredFeatures, setRequiredFeatures] = useState<Map<string, { count: number; requirements: string[] }>>(new Map());
   const [expandedSegments, setExpandedSegments] = useState<Set<string>>(new Set());
   const [showImplementationPlan, setShowImplementationPlan] = useState(false);
+  const [showUploadDialog, setShowUploadDialog] = useState(false);
+  const [uploadFile, setUploadFile] = useState<File | null>(null);
+  const [customerName, setCustomerName] = useState("");
+  const [isUploading, setIsUploading] = useState(false);
+  const [activeTab, setActiveTab] = useState("library");
+  const [selectedCustomerReqs, setSelectedCustomerReqs] = useState<Set<number>>(new Set());
+
+  const { data: customerRequirements = [], isLoading: loadingRequirements } = useQuery<CustomerRequirement[]>({
+    queryKey: ['/api/customer-requirements']
+  });
+
+  const { data: requirementsStats } = useQuery<{
+    total: number;
+    byStatus: Array<{ status: string; count: number }>;
+    bySegment: Array<{ segment: string; count: number }>;
+    summary: {
+      uploaded: number;
+      inModeling: number;
+      inTesting: number;
+      inDeployment: number;
+      deployed: number;
+      completionRate: number;
+    };
+  }>({
+    queryKey: ['/api/customer-requirements/stats']
+  });
+
+  const uploadMutation = useMutation({
+    mutationFn: async (formData: FormData) => {
+      const response = await fetch('/api/customer-requirements/upload', {
+        method: 'POST',
+        body: formData
+      });
+      if (!response.ok) throw new Error('Upload failed');
+      return response.json();
+    },
+    onSuccess: (data) => {
+      toast({
+        title: "Upload Successful",
+        description: `Imported ${data.imported} requirements${data.errors?.length ? ` with ${data.errors.length} errors` : ''}`
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/customer-requirements'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/customer-requirements/stats'] });
+      setShowUploadDialog(false);
+      setUploadFile(null);
+      setCustomerName("");
+      setActiveTab("uploaded");
+    },
+    onError: () => {
+      toast({
+        title: "Upload Failed",
+        description: "Failed to upload requirements. Please check your file format.",
+        variant: "destructive"
+      });
+    }
+  });
+
+  const updateStatusMutation = useMutation({
+    mutationFn: async ({ id, status }: { id: number; status: string }) => {
+      return apiRequest(`/api/customer-requirements/${id}/status`, {
+        method: 'PATCH',
+        body: JSON.stringify({ status })
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/customer-requirements'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/customer-requirements/stats'] });
+      toast({ title: "Status Updated" });
+    }
+  });
+
+  const deleteRequirementMutation = useMutation({
+    mutationFn: async (id: number) => {
+      return apiRequest(`/api/customer-requirements/${id}`, { method: 'DELETE' });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/customer-requirements'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/customer-requirements/stats'] });
+      toast({ title: "Requirement Deleted" });
+    }
+  });
 
   useEffect(() => {
     const featureData = new Map<string, { count: number; requirements: string[] }>();
@@ -49,6 +188,32 @@ export default function ManufacturingRequirements() {
     
     setRequiredFeatures(featureData);
   }, [selectedRequirements, data]);
+
+  const handleUpload = async () => {
+    if (!uploadFile || !customerName.trim()) {
+      toast({
+        title: "Missing Information",
+        description: "Please provide a customer name and select a file",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsUploading(true);
+    const formData = new FormData();
+    formData.append('file', uploadFile);
+    formData.append('customerName', customerName);
+    
+    try {
+      await uploadMutation.mutateAsync(formData);
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const downloadTemplate = () => {
+    window.location.href = '/api/customer-requirements/template';
+  };
 
   const toggleRequirement = (segmentName: string, reqName: string) => {
     const key = `${segmentName}:${reqName}`;
@@ -121,6 +286,31 @@ export default function ManufacturingRequirements() {
     return "Medium";
   };
 
+  const getStatusInfo = (status: string) => {
+    return LIFECYCLE_STATUSES.find(s => s.value === status) || LIFECYCLE_STATUSES[0];
+  };
+
+  const getNextStatus = (currentStatus: string): string | null => {
+    const statusOrder = ['uploaded', 'modeling_pending', 'modeling_in_progress', 'modeling_complete', 
+                         'testing_pending', 'testing_in_progress', 'testing_complete',
+                         'deployment_pending', 'deployment_in_progress', 'deployed'];
+    const currentIndex = statusOrder.indexOf(currentStatus);
+    if (currentIndex < statusOrder.length - 1) {
+      return statusOrder[currentIndex + 1];
+    }
+    return null;
+  };
+
+  const getPhaseProgress = (req: CustomerRequirement) => {
+    if (req.lifecycleStatus.includes('deploy') || req.lifecycleStatus === 'deployed') {
+      return { phase: 'Deployment', progress: req.deploymentProgress };
+    }
+    if (req.lifecycleStatus.includes('testing')) {
+      return { phase: 'Testing', progress: req.testingProgress };
+    }
+    return { phase: 'Modeling', progress: req.modelingProgress };
+  };
+
   const sortedFeatures = Array.from(requiredFeatures.entries())
     .sort((a, b) => b[1].count - a[1].count);
 
@@ -137,287 +327,533 @@ export default function ManufacturingRequirements() {
               Manufacturing Requirements Analyzer
             </h1>
             <p className="text-muted-foreground mt-2">
-              Select your manufacturing requirements to identify needed PlanetTogether features
+              Select your manufacturing requirements or upload custom requirements from a spreadsheet
             </p>
           </div>
           <div className="flex items-center gap-3">
-            <Badge variant="secondary" className="px-3 py-1">
-              <CheckCircle className="h-4 w-4 mr-1" />
-              {selectedRequirements.size} Requirements Selected
-            </Badge>
-            <Badge variant="default" className="px-3 py-1">
-              <Sparkles className="h-4 w-4 mr-1" />
-              {requiredFeatures.size} Features Required
-            </Badge>
+            <Button variant="outline" onClick={downloadTemplate} data-testid="button-download-template">
+              <Download className="h-4 w-4 mr-2" />
+              Download Template
+            </Button>
+            <Button onClick={() => setShowUploadDialog(true)} data-testid="button-upload-requirements">
+              <Upload className="h-4 w-4 mr-2" />
+              Upload Requirements
+            </Button>
           </div>
         </div>
 
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Select value={selectedSegment} onValueChange={(value) => setSelectedSegment(value)}>
-              <SelectTrigger className="w-[250px]" data-testid="select-segment-filter">
-                <SelectValue placeholder="Filter by Segment" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all" data-testid="select-item-all">All Segments</SelectItem>
-                {data.map(segment => (
-                  <SelectItem key={segment.segment} value={segment.segment} data-testid={`select-item-${segment.segment}`}>
-                    {segment.segment}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Button variant="outline" onClick={clearAll} data-testid="button-clear-all">
-              Clear All
-            </Button>
+        {requirementsStats?.summary && (
+          <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
+            <Card className="p-4">
+              <div className="text-2xl font-bold">{requirementsStats.summary.uploaded}</div>
+              <div className="text-sm text-muted-foreground">Uploaded</div>
+            </Card>
+            <Card className="p-4">
+              <div className="text-2xl font-bold text-blue-600">{requirementsStats.summary.inModeling}</div>
+              <div className="text-sm text-muted-foreground">In Modeling</div>
+            </Card>
+            <Card className="p-4">
+              <div className="text-2xl font-bold text-purple-600">{requirementsStats.summary.inTesting}</div>
+              <div className="text-sm text-muted-foreground">In Testing</div>
+            </Card>
+            <Card className="p-4">
+              <div className="text-2xl font-bold text-orange-600">{requirementsStats.summary.inDeployment}</div>
+              <div className="text-sm text-muted-foreground">In Deployment</div>
+            </Card>
+            <Card className="p-4">
+              <div className="text-2xl font-bold text-green-600">{requirementsStats.summary.deployed}</div>
+              <div className="text-sm text-muted-foreground">Deployed</div>
+            </Card>
+            <Card className="p-4">
+              <div className="text-2xl font-bold">{requirementsStats.summary.completionRate}%</div>
+              <div className="text-sm text-muted-foreground">Completion Rate</div>
+            </Card>
           </div>
-          
-          {sortedFeatures.length > 0 && (
-            <Button 
-              onClick={() => setShowImplementationPlan(!showImplementationPlan)} 
-              data-testid="button-show-plan"
-              variant={showImplementationPlan ? "default" : "outline"}
-            >
-              <FileText className="h-4 w-4 mr-2" />
-              {showImplementationPlan ? "Hide" : "Show"} Implementation Plan
-            </Button>
-          )}
-        </div>
-
-        {showImplementationPlan && sortedFeatures.length > 0 && (
-          <Card className="p-6 border-2 border-primary/20 bg-primary/5">
-            <div className="flex items-center gap-2 mb-4">
-              <Sparkles className="h-5 w-5 text-primary" />
-              <h2 className="text-xl font-bold">Implementation Plan</h2>
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-              <Card className="p-4 bg-background">
-                <div className="text-3xl font-bold text-primary">{selectedRequirements.size}</div>
-                <div className="text-sm text-muted-foreground">Requirements Selected</div>
-              </Card>
-              <Card className="p-4 bg-background">
-                <div className="text-3xl font-bold text-primary">{requiredFeatures.size}</div>
-                <div className="text-sm text-muted-foreground">Features Required</div>
-              </Card>
-              <Card className="p-4 bg-background">
-                <div className="text-3xl font-bold text-red-500">{criticalFeatures.length}</div>
-                <div className="text-sm text-muted-foreground">Critical Priority</div>
-              </Card>
-            </div>
-
-            {criticalFeatures.length > 0 && (
-              <div className="mb-6">
-                <h3 className="font-semibold text-red-600 flex items-center gap-2 mb-3">
-                  <AlertCircle className="h-4 w-4" />
-                  Critical Priority Features (Required by 5+ requirements)
-                </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  {criticalFeatures.map(([feature, data]) => (
-                    <Card key={feature} className="p-3 border-red-200 bg-red-50 dark:bg-red-950/20">
-                      <div className="font-medium">{feature}</div>
-                      <div className="text-sm text-muted-foreground mt-1">
-                        Required by {data.count} requirements
-                      </div>
-                      <Collapsible>
-                        <CollapsibleTrigger className="text-xs text-primary hover:underline mt-2">
-                          View requirements →
-                        </CollapsibleTrigger>
-                        <CollapsibleContent className="mt-2">
-                          <ul className="text-xs text-muted-foreground space-y-1">
-                            {data.requirements.map((req, i) => (
-                              <li key={i}>• {req}</li>
-                            ))}
-                          </ul>
-                        </CollapsibleContent>
-                      </Collapsible>
-                    </Card>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {highFeatures.length > 0 && (
-              <div className="mb-6">
-                <h3 className="font-semibold text-orange-600 flex items-center gap-2 mb-3">
-                  <AlertCircle className="h-4 w-4" />
-                  High Priority Features (Required by 3-4 requirements)
-                </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                  {highFeatures.map(([feature, data]) => (
-                    <Card key={feature} className="p-3 border-orange-200 bg-orange-50 dark:bg-orange-950/20">
-                      <div className="font-medium text-sm">{feature}</div>
-                      <div className="text-xs text-muted-foreground">
-                        {data.count} requirements
-                      </div>
-                    </Card>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {mediumFeatures.length > 0 && (
-              <div>
-                <h3 className="font-semibold text-blue-600 flex items-center gap-2 mb-3">
-                  Medium Priority Features (Required by 1-2 requirements)
-                </h3>
-                <div className="flex flex-wrap gap-2">
-                  {mediumFeatures.map(([feature, data]) => (
-                    <Badge key={feature} variant="secondary" className="px-3 py-1">
-                      {feature} ({data.count})
-                    </Badge>
-                  ))}
-                </div>
-              </div>
-            )}
-          </Card>
         )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2">
-            <Card className="p-4">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-xl font-semibold">Manufacturing Requirements</h2>
-                <span className="text-sm text-muted-foreground">
-                  Select requirements that apply to your operations
-                </span>
-              </div>
-              
-              <ScrollArea className="h-[600px] pr-4">
-                <div className="space-y-4">
-                  {data
-                    .filter(segment => !selectedSegment || selectedSegment === "" || selectedSegment === "all" || segment.segment === selectedSegment)
-                    .map(segment => (
-                      <Card key={segment.segment} className="p-4">
-                        <div className="flex items-center justify-between mb-3">
-                          <div className="flex items-center gap-2">
-                            {getSegmentIcon(segment.segment)}
-                            <h3 className="font-semibold text-lg">{segment.segment}</h3>
-                            <Badge variant="outline" className="ml-2">
-                              {segment.useCases.length} requirements
-                            </Badge>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => selectAllInSegment(segment)}
-                              data-testid={`button-select-all-${segment.segment}`}
-                            >
-                              {segment.useCases.every(req => selectedRequirements.has(`${segment.segment}:${req.name}`)) 
-                                ? "Deselect All" 
-                                : "Select All"}
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => toggleSegment(segment.segment)}
-                              data-testid={`button-toggle-${segment.segment}`}
-                            >
-                              {expandedSegments.has(segment.segment) ? <ChevronUp /> : <ChevronDown />}
-                            </Button>
-                          </div>
-                        </div>
-                        
-                        {expandedSegments.has(segment.segment) && (
-                          <div className="space-y-2 mt-3">
-                            {segment.useCases.map(req => (
-                              <div 
-                                key={req.name}
-                                className={cn(
-                                  "flex items-start gap-3 p-3 rounded-lg hover:bg-muted/50 transition-colors",
-                                  selectedRequirements.has(`${segment.segment}:${req.name}`) && "bg-primary/5"
-                                )}
-                              >
-                                <Checkbox
-                                  checked={selectedRequirements.has(`${segment.segment}:${req.name}`)}
-                                  onCheckedChange={() => toggleRequirement(segment.segment, req.name)}
-                                  data-testid={`checkbox-requirement-${req.name}`}
-                                />
-                                <div className="flex-1">
-                                  <label className="font-medium cursor-pointer" 
-                                         onClick={() => toggleRequirement(segment.segment, req.name)}>
-                                    {req.name}
-                                  </label>
-                                  <div className="flex flex-wrap gap-1 mt-1">
-                                    {req.features.slice(0, 3).map(feature => (
-                                      <Badge key={feature} variant="secondary" className="text-xs">
-                                        {feature}
-                                      </Badge>
-                                    ))}
-                                    {req.features.length > 3 && (
-                                      <Badge variant="outline" className="text-xs">
-                                        +{req.features.length - 3} more
-                                      </Badge>
-                                    )}
-                                  </div>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </Card>
-                    ))}
-                </div>
-              </ScrollArea>
-            </Card>
-          </div>
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <TabsList>
+            <TabsTrigger value="library" data-testid="tab-library">Requirements Library</TabsTrigger>
+            <TabsTrigger value="uploaded" data-testid="tab-uploaded">
+              Uploaded Requirements
+              {customerRequirements.length > 0 && (
+                <Badge variant="secondary" className="ml-2">{customerRequirements.length}</Badge>
+              )}
+            </TabsTrigger>
+          </TabsList>
 
-          <div>
-            <Card className="p-4">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-xl font-semibold">Required Features</h2>
-                <Badge variant="default">{requiredFeatures.size} Total</Badge>
+          <TabsContent value="library" className="space-y-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <Select value={selectedSegment} onValueChange={(value) => setSelectedSegment(value)}>
+                  <SelectTrigger className="w-[250px]" data-testid="select-segment-filter">
+                    <SelectValue placeholder="Filter by Segment" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all" data-testid="select-item-all">All Segments</SelectItem>
+                    {data.map(segment => (
+                      <SelectItem key={segment.segment} value={segment.segment} data-testid={`select-item-${segment.segment}`}>
+                        {segment.segment}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Button variant="outline" onClick={clearAll} data-testid="button-clear-all">
+                  Clear All
+                </Button>
+                <Badge variant="secondary" className="px-3 py-1">
+                  <CheckCircle className="h-4 w-4 mr-1" />
+                  {selectedRequirements.size} Selected
+                </Badge>
               </div>
               
-              <ScrollArea className="h-[600px] pr-4">
-                {sortedFeatures.length === 0 ? (
-                  <div className="text-center py-8">
-                    <p className="text-muted-foreground">
-                      Select requirements to see required features
-                    </p>
-                  </div>
-                ) : (
-                  <div className="space-y-2">
-                    {sortedFeatures.map(([feature, data]) => (
-                      <Collapsible key={feature}>
-                        <div 
-                          className="flex items-center justify-between p-3 bg-muted/30 rounded-lg"
-                          data-testid={`feature-${feature}`}
-                        >
-                          <div className="flex-1">
-                            <span className="font-medium text-sm">{feature}</span>
+              {sortedFeatures.length > 0 && (
+                <Button 
+                  onClick={() => setShowImplementationPlan(!showImplementationPlan)} 
+                  data-testid="button-show-plan"
+                  variant={showImplementationPlan ? "default" : "outline"}
+                >
+                  <FileText className="h-4 w-4 mr-2" />
+                  {showImplementationPlan ? "Hide" : "Show"} Implementation Plan
+                </Button>
+              )}
+            </div>
+
+            {showImplementationPlan && sortedFeatures.length > 0 && (
+              <Card className="p-6 border-2 border-primary/20 bg-primary/5">
+                <div className="flex items-center gap-2 mb-4">
+                  <Sparkles className="h-5 w-5 text-primary" />
+                  <h2 className="text-xl font-bold">Implementation Plan</h2>
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                  <Card className="p-4 bg-background">
+                    <div className="text-3xl font-bold text-primary">{selectedRequirements.size}</div>
+                    <div className="text-sm text-muted-foreground">Requirements Selected</div>
+                  </Card>
+                  <Card className="p-4 bg-background">
+                    <div className="text-3xl font-bold text-primary">{requiredFeatures.size}</div>
+                    <div className="text-sm text-muted-foreground">Features Required</div>
+                  </Card>
+                  <Card className="p-4 bg-background">
+                    <div className="text-3xl font-bold text-red-500">{criticalFeatures.length}</div>
+                    <div className="text-sm text-muted-foreground">Critical Priority</div>
+                  </Card>
+                </div>
+
+                {criticalFeatures.length > 0 && (
+                  <div className="mb-6">
+                    <h3 className="font-semibold text-red-600 flex items-center gap-2 mb-3">
+                      <AlertCircle className="h-4 w-4" />
+                      Critical Priority Features (Required by 5+ requirements)
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      {criticalFeatures.map(([feature, featureData]) => (
+                        <Card key={feature} className="p-3 border-red-200 bg-red-50 dark:bg-red-950/20">
+                          <div className="font-medium">{feature}</div>
+                          <div className="text-sm text-muted-foreground mt-1">
+                            Required by {featureData.count} requirements
                           </div>
-                          <div className="flex items-center gap-2">
-                            <Badge 
-                              className={cn("text-white", getPriorityColor(data.count))}
-                            >
-                              {getPriorityLabel(data.count)}
-                            </Badge>
-                            <CollapsibleTrigger asChild>
-                              <Button variant="ghost" size="sm" className="h-6 px-2">
-                                <ChevronDown className="h-3 w-3" />
-                              </Button>
+                          <Collapsible>
+                            <CollapsibleTrigger className="text-xs text-primary hover:underline mt-2">
+                              View requirements →
                             </CollapsibleTrigger>
-                          </div>
-                        </div>
-                        <CollapsibleContent className="px-3 pb-2">
-                          <div className="text-xs text-muted-foreground mt-2 space-y-1">
-                            <div className="font-medium">Required by {data.count} requirement{data.count !== 1 ? 's' : ''}:</div>
-                            {data.requirements.map((req, i) => (
-                              <div key={i}>• {req}</div>
-                            ))}
-                          </div>
-                        </CollapsibleContent>
-                      </Collapsible>
-                    ))}
+                            <CollapsibleContent className="mt-2">
+                              <ul className="text-xs text-muted-foreground space-y-1">
+                                {featureData.requirements.map((req, i) => (
+                                  <li key={i}>• {req}</li>
+                                ))}
+                              </ul>
+                            </CollapsibleContent>
+                          </Collapsible>
+                        </Card>
+                      ))}
+                    </div>
                   </div>
                 )}
-              </ScrollArea>
-            </Card>
-          </div>
-        </div>
+
+                {highFeatures.length > 0 && (
+                  <div className="mb-6">
+                    <h3 className="font-semibold text-orange-600 flex items-center gap-2 mb-3">
+                      <AlertCircle className="h-4 w-4" />
+                      High Priority Features (Required by 3-4 requirements)
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                      {highFeatures.map(([feature, featureData]) => (
+                        <Card key={feature} className="p-3 border-orange-200 bg-orange-50 dark:bg-orange-950/20">
+                          <div className="font-medium text-sm">{feature}</div>
+                          <div className="text-xs text-muted-foreground">
+                            {featureData.count} requirements
+                          </div>
+                        </Card>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {mediumFeatures.length > 0 && (
+                  <div>
+                    <h3 className="font-semibold text-blue-600 flex items-center gap-2 mb-3">
+                      Medium Priority Features (Required by 1-2 requirements)
+                    </h3>
+                    <div className="flex flex-wrap gap-2">
+                      {mediumFeatures.map(([feature, featureData]) => (
+                        <Badge key={feature} variant="secondary" className="px-3 py-1">
+                          {feature} ({featureData.count})
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </Card>
+            )}
+
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <div className="lg:col-span-2">
+                <Card className="p-4">
+                  <div className="flex items-center justify-between mb-4">
+                    <h2 className="text-xl font-semibold">Manufacturing Requirements</h2>
+                    <span className="text-sm text-muted-foreground">
+                      Select requirements that apply to your operations
+                    </span>
+                  </div>
+                  
+                  <ScrollArea className="h-[600px] pr-4">
+                    <div className="space-y-4">
+                      {data
+                        .filter(segment => !selectedSegment || selectedSegment === "" || selectedSegment === "all" || segment.segment === selectedSegment)
+                        .map(segment => (
+                          <Card key={segment.segment} className="p-4">
+                            <div className="flex items-center justify-between mb-3">
+                              <div className="flex items-center gap-2">
+                                {getSegmentIcon(segment.segment)}
+                                <h3 className="font-semibold text-lg">{segment.segment}</h3>
+                                <Badge variant="outline" className="ml-2">
+                                  {segment.useCases.length} requirements
+                                </Badge>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => selectAllInSegment(segment)}
+                                  data-testid={`button-select-all-${segment.segment}`}
+                                >
+                                  {segment.useCases.every(req => selectedRequirements.has(`${segment.segment}:${req.name}`)) 
+                                    ? "Deselect All" 
+                                    : "Select All"}
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => toggleSegment(segment.segment)}
+                                  data-testid={`button-toggle-${segment.segment}`}
+                                >
+                                  {expandedSegments.has(segment.segment) ? <ChevronUp /> : <ChevronDown />}
+                                </Button>
+                              </div>
+                            </div>
+                            
+                            {expandedSegments.has(segment.segment) && (
+                              <div className="space-y-2 mt-3">
+                                {segment.useCases.map(req => (
+                                  <div 
+                                    key={req.name}
+                                    className={cn(
+                                      "flex items-start gap-3 p-3 rounded-lg hover:bg-muted/50 transition-colors",
+                                      selectedRequirements.has(`${segment.segment}:${req.name}`) && "bg-primary/5"
+                                    )}
+                                  >
+                                    <Checkbox
+                                      checked={selectedRequirements.has(`${segment.segment}:${req.name}`)}
+                                      onCheckedChange={() => toggleRequirement(segment.segment, req.name)}
+                                      data-testid={`checkbox-requirement-${req.name}`}
+                                    />
+                                    <div className="flex-1">
+                                      <label className="font-medium cursor-pointer" 
+                                             onClick={() => toggleRequirement(segment.segment, req.name)}>
+                                        {req.name}
+                                      </label>
+                                      <div className="flex flex-wrap gap-1 mt-1">
+                                        {req.features.slice(0, 3).map(feature => (
+                                          <Badge key={feature} variant="secondary" className="text-xs">
+                                            {feature}
+                                          </Badge>
+                                        ))}
+                                        {req.features.length > 3 && (
+                                          <Badge variant="outline" className="text-xs">
+                                            +{req.features.length - 3} more
+                                          </Badge>
+                                        )}
+                                      </div>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </Card>
+                        ))}
+                    </div>
+                  </ScrollArea>
+                </Card>
+              </div>
+
+              <div>
+                <Card className="p-4">
+                  <div className="flex items-center justify-between mb-4">
+                    <h2 className="text-xl font-semibold">Required Features</h2>
+                    <Badge variant="default">{requiredFeatures.size} Total</Badge>
+                  </div>
+                  
+                  <ScrollArea className="h-[600px] pr-4">
+                    {sortedFeatures.length === 0 ? (
+                      <div className="text-center py-8">
+                        <p className="text-muted-foreground">
+                          Select requirements to see required features
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="space-y-2">
+                        {sortedFeatures.map(([feature, featureData]) => (
+                          <Collapsible key={feature}>
+                            <div 
+                              className="flex items-center justify-between p-3 bg-muted/30 rounded-lg"
+                              data-testid={`feature-${feature}`}
+                            >
+                              <div className="flex-1">
+                                <span className="font-medium text-sm">{feature}</span>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <Badge 
+                                  className={cn("text-white", getPriorityColor(featureData.count))}
+                                >
+                                  {getPriorityLabel(featureData.count)}
+                                </Badge>
+                                <CollapsibleTrigger asChild>
+                                  <Button variant="ghost" size="sm" className="h-6 px-2">
+                                    <ChevronDown className="h-3 w-3" />
+                                  </Button>
+                                </CollapsibleTrigger>
+                              </div>
+                            </div>
+                            <CollapsibleContent className="px-3 pb-2">
+                              <div className="text-xs text-muted-foreground mt-2 space-y-1">
+                                <div className="font-medium">Required by {featureData.count} requirement{featureData.count !== 1 ? 's' : ''}:</div>
+                                {featureData.requirements.map((req, i) => (
+                                  <div key={i}>• {req}</div>
+                                ))}
+                              </div>
+                            </CollapsibleContent>
+                          </Collapsible>
+                        ))}
+                      </div>
+                    )}
+                  </ScrollArea>
+                </Card>
+              </div>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="uploaded" className="space-y-6">
+            {loadingRequirements ? (
+              <div className="flex items-center justify-center py-12">
+                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+              </div>
+            ) : customerRequirements.length === 0 ? (
+              <Card className="p-12 text-center">
+                <FileSpreadsheet className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
+                <h3 className="text-xl font-semibold mb-2">No Customer Requirements Uploaded</h3>
+                <p className="text-muted-foreground mb-6">
+                  Upload a spreadsheet with your customer's specific requirements to track their implementation.
+                </p>
+                <div className="flex items-center justify-center gap-4">
+                  <Button variant="outline" onClick={downloadTemplate}>
+                    <Download className="h-4 w-4 mr-2" />
+                    Download Template
+                  </Button>
+                  <Button onClick={() => setShowUploadDialog(true)}>
+                    <Upload className="h-4 w-4 mr-2" />
+                    Upload Requirements
+                  </Button>
+                </div>
+              </Card>
+            ) : (
+              <div className="space-y-4">
+                {customerRequirements.map((req) => {
+                  const statusInfo = getStatusInfo(req.lifecycleStatus);
+                  const phaseInfo = getPhaseProgress(req);
+                  const nextStatus = getNextStatus(req.lifecycleStatus);
+                  
+                  return (
+                    <Card key={req.id} className="p-4" data-testid={`card-requirement-${req.id}`}>
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-3 mb-2">
+                            <h3 className="font-semibold text-lg">{req.requirementName}</h3>
+                            <Badge variant="outline">{req.segment}</Badge>
+                            <Badge className={cn("text-white", statusInfo.color)}>
+                              {statusInfo.label}
+                            </Badge>
+                          </div>
+                          <p className="text-sm text-muted-foreground mb-3">
+                            Customer: {req.customerName}
+                            {req.sourceFile && ` • Source: ${req.sourceFile}`}
+                          </p>
+                          {req.description && (
+                            <p className="text-sm mb-3">{req.description}</p>
+                          )}
+                          {req.features && Array.isArray(req.features) && req.features.length > 0 && (
+                            <div className="flex flex-wrap gap-1 mb-3">
+                              {req.features.map((feature: string) => (
+                                <Badge key={feature} variant="secondary" className="text-xs">
+                                  {feature}
+                                </Badge>
+                              ))}
+                            </div>
+                          )}
+                          <div className="flex items-center gap-4">
+                            <div className="flex-1 max-w-xs">
+                              <div className="flex items-center justify-between text-xs mb-1">
+                                <span>{phaseInfo.phase}</span>
+                                <span>{phaseInfo.progress}%</span>
+                              </div>
+                              <Progress value={phaseInfo.progress} className="h-2" />
+                            </div>
+                            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                              <Clock className="h-3 w-3" />
+                              <span>Created {new Date(req.createdAt).toLocaleDateString()}</span>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          {nextStatus && req.lifecycleStatus !== 'deployed' && (
+                            <Button 
+                              size="sm" 
+                              onClick={() => updateStatusMutation.mutate({ id: req.id, status: nextStatus })}
+                              disabled={updateStatusMutation.isPending}
+                              data-testid={`button-advance-${req.id}`}
+                            >
+                              {updateStatusMutation.isPending ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : (
+                                <Play className="h-4 w-4 mr-1" />
+                              )}
+                              Advance
+                            </Button>
+                          )}
+                          {req.lifecycleStatus === 'deployed' && (
+                            <Badge className="bg-green-600 text-white">
+                              <Check className="h-3 w-3 mr-1" />
+                              Complete
+                            </Badge>
+                          )}
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="icon">
+                                <MoreVertical className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem>
+                                <Eye className="h-4 w-4 mr-2" />
+                                View Details
+                              </DropdownMenuItem>
+                              <DropdownMenuItem 
+                                className="text-red-600"
+                                onClick={() => deleteRequirementMutation.mutate(req.id)}
+                              >
+                                <Trash2 className="h-4 w-4 mr-2" />
+                                Delete
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
+                      </div>
+                    </Card>
+                  );
+                })}
+              </div>
+            )}
+          </TabsContent>
+        </Tabs>
       </div>
+
+      <Dialog open={showUploadDialog} onOpenChange={setShowUploadDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Upload Customer Requirements</DialogTitle>
+            <DialogDescription>
+              Upload an Excel spreadsheet with customer requirements. Download the template for the correct format.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="customerName">Customer Name</Label>
+              <Input
+                id="customerName"
+                value={customerName}
+                onChange={(e) => setCustomerName(e.target.value)}
+                placeholder="Enter customer name"
+                data-testid="input-customer-name"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Requirements File</Label>
+              <div 
+                className={cn(
+                  "border-2 border-dashed rounded-lg p-6 text-center cursor-pointer hover:border-primary/50 transition-colors",
+                  uploadFile && "border-primary bg-primary/5"
+                )}
+                onClick={() => fileInputRef.current?.click()}
+              >
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".xlsx,.xls,.csv"
+                  className="hidden"
+                  onChange={(e) => setUploadFile(e.target.files?.[0] || null)}
+                  data-testid="input-file"
+                />
+                {uploadFile ? (
+                  <div className="flex items-center justify-center gap-2">
+                    <FileSpreadsheet className="h-6 w-6 text-primary" />
+                    <span className="font-medium">{uploadFile.name}</span>
+                  </div>
+                ) : (
+                  <>
+                    <Upload className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
+                    <p className="text-sm text-muted-foreground">
+                      Click to select or drag and drop
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Excel (.xlsx, .xls) or CSV files
+                    </p>
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={downloadTemplate}>
+              <Download className="h-4 w-4 mr-2" />
+              Template
+            </Button>
+            <Button onClick={handleUpload} disabled={isUploading || !uploadFile || !customerName.trim()}>
+              {isUploading ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Uploading...
+                </>
+              ) : (
+                <>
+                  <Upload className="h-4 w-4 mr-2" />
+                  Upload
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
