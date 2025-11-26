@@ -1,55 +1,7 @@
 # PlanetTogether - Manufacturing SCM + APS System
 
 ## Overview
-PlanetTogether is an AI-first Factory Optimization Platform, a full-stack manufacturing SCM + APS system. Its core purpose is to leverage AI for optimized production planning, dynamic resource allocation, and intelligent dashboarding, providing complete supply chain visibility through a visual Gantt chart interface. The system is designed for enterprise-grade production deployment in pharmaceutical, chemical, and industrial manufacturing, emphasizing real-time optimization, data integrity, and comprehensive reporting. It supports multi-agent functionality, modular federation, and advanced AI integration for scheduling and system intelligence, aiming to be a global control tower for autonomous optimization and real-time plant monitoring.
-
-## Recent Critical Fixes & Features
-### Nov 25, 2024
-- **Version History Auto-Load Fix**: Fixed scheduler not loading latest version on page open:
-  - Added `tryAutoLoadLatestVersion()` function that's triggered when auth token is received from parent
-  - Scheduler now properly applies scheduled times from the latest version after initial data load
-  - Added `versionAlreadyLoaded` flag to prevent duplicate loading attempts
-- **Version History Load Button Fix**: Fixed "Scheduler Not Available" error when loading versions from Version History tab:
-  - Updated iframe selector from `iframe[src="/production-scheduler.html"]` to `iframe[data-testid="production-scheduler-iframe"]`
-  - The iframe src now includes dynamic query params, making the old selector fail
-- **Version History User Attribution**: Version history now correctly shows the authenticated user (e.g., "Patti") instead of hardcoded user
-
-### Nov 18, 2024
-- **FP&A Dashboard with AI Integration**: Added comprehensive Financial Planning & Analysis dashboard with:
-  - **FP&A Agent**: New financial analysis agent with expertise in budgeting, forecasting, variance analysis, and profitability tracking
-  - **Frontend Agent Registration**: Added FP&A agent to frontend config (agents.ts) with proper icon (DollarSign), color (purple), and capabilities
-  - **Agent Auto-Selection**: FP&A agent automatically selected when navigating to /fpa-dashboard or /financial-management pages
-  - **AI Recommendations**: Financial insights panel with actionable recommendations for cost reduction, cash flow optimization, and forecast accuracy
-  - **State Management**: Apply/Dismiss actions properly update UI state and remove recommendations from display
-  - **Financial KPIs**: Real-time tracking of budget variance, revenue growth, gross margin, operating cash flow, DSO, and working capital
-  - **Interactive AI Features**: AI Assistant button for FP&A analysis, integrated with MaxDock context for seamless agent switching
-  - **Navigation Integration**: Added to both desktop sidebar and mobile menu with purple accent, proper permissions (fpa-view, fpa-manage)
-
-### Nov 10, 2024
-- **Cloud Run Health Check Fix (FINAL)**: Resolved deployment failures by removing async IIFE wrapper and restructuring server startup:
-  - **Root Cause**: Async IIFE wrapper kept server pending until ALL async operations completed, blocking Cloud Run health checks
-  - **Solution**: Server now starts listening IMMEDIATELY (synchronously) before any async operations
-  - **Production**: `serveStatic(app)` runs synchronously BEFORE `server.listen()` for instant static asset serving
-  - **Development**: `setupVite()` runs asynchronously in `setImmediate()` AFTER `server.listen()` (non-blocking)
-  - **Initialization**: Orchestrator runs in `setImmediate()` AFTER server starts (non-blocking)
-  - **Health Checks**: Smart detection at `/` endpoint (GoogleHC/kube-probe → "OK", browsers → React SPA)
-  - **Performance**: Health checks respond in <5ms, enabling Cloud Run cold-start deployment
-- **Architecture Pattern**: No async IIFE wrappers at top level - server startup is fully synchronous, all expensive operations deferred to callbacks
-
-### Nov 9, 2024
-- **CRITICAL ALAP Algorithm Fix**: Removed hardcoded `isPackagingOperation` function that was causing reference errors. Replaced with robust sequence-based detection that identifies operations by highest sequence number from ptjoboperations table.
-- **Defensive Sequence Handling**: Added precomputed max sequence validation with NaN filtering and fallback to position-based logic when no valid sequences exist. Ensures algorithm never fails due to missing or invalid sequence data.
-- **Menu Favorites Persistence Fix**: Fixed authentication issue in PUT /api/user-preferences route. Changed from session-based to JWT authentication to properly save user favorites.
-- **Operator Dashboard Auth Context Fix**: Fixed operator dashboard making direct useQuery to /api/auth/me which overwrote the auth context. Replaced with useAuthAdapter to maintain consistent auth state across navigation.
-- **ALAP Scheduling Algorithm Improvements**: 
-  - Removed legacy ALAP implementation that used projectEnd+30 days and ignored job due dates
-  - Refactored window.alapScheduling to consistently use backward packer (findLatestFreeSlotOnResource) for ALL operations
-  - Ensures operations with highest sequence number end exactly on November 15, 2025
-  - Fixed duplicate busy interval tracking that was causing scheduling conflicts
-  - Implemented proper job priority-based interleaved scheduling (Priority 5 schedules first for latest position)
-  - All operations now use unified backward scheduling approach with proper latestEnd constraints
-- **Plant Onboarding System**: Created comprehensive plant-specific onboarding system with database tables, API endpoints, and Company Onboarding Overview page. Sample data populated for 5 brewery plants showing different onboarding statuses (completed, in-progress, paused, not-started).
-- **Database Schema Updates**: Fixed ptPlants table references and added companyOnboardingOverview table to schema. All onboarding-related tables successfully created in production database.
+PlanetTogether is an AI-first Factory Optimization Platform, a full-stack manufacturing SCM + APS system. Its core purpose is to leverage AI for optimized production planning, dynamic resource allocation, and intelligent dashboarding, providing complete supply chain visibility through a visual Gantt chart interface. The system is designed for enterprise-grade production deployment, emphasizing real-time optimization, data integrity, and comprehensive reporting. It supports multi-agent functionality, modular federation, and advanced AI integration for scheduling and system intelligence, aiming to be a global control tower for autonomous optimization and real-time plant monitoring. Key capabilities include customer requirements lifecycle tracking, an FP&A dashboard with AI integration, and a comprehensive plant-specific onboarding system.
 
 ## User Preferences
 Preferred communication style: Simple, everyday language.
@@ -70,13 +22,7 @@ Note on concurrent work:
 The system prioritizes user experience, data integrity, performance, accessibility, and consistency, with a focus on quality assurance.
 
 ### Agent Architecture
-The system uses a modular agent architecture designed for role-based access control and independent agent deployment. It features an Agent Registry Pattern for managing available agents, Agent Bridge Communication for real-time bidirectional interaction, and a Delegation Architecture where Max AI delegates to specialized, self-contained agents.
-
-**CRITICAL**: Each agent has two synchronized files that MUST be kept in sync:
-1. **Training Document** (`server/training/agents/[agent-name].md`) - Defines the agent's knowledge, personality, and behavior specifications.
-2. **Service Implementation** (`server/services/agents/[agent-name].service.ts`) - Implements the actual code based on the training document.
-
-These files must be synchronized for features like trigger arrays, handler methods, database queries, and response formatting.
+The system uses a modular agent architecture designed for role-based access control and independent agent deployment. It features an Agent Registry Pattern, Agent Bridge Communication for real-time bidirectional interaction, and a Delegation Architecture where Max AI delegates to specialized, self-contained agents. Each agent's knowledge and behavior are defined in a training document (`server/training/agents/[agent-name].md`) and synchronized with its service implementation (`server/services/agents/[agent-name].service.ts`).
 
 ### Frontend
 -   **Framework**: React 18 with TypeScript.
@@ -102,8 +48,8 @@ These files must be synchronized for features like trigger arrays, handler metho
 -   **Inventory Management**: Stock-centric system tracking specific records.
 -   **Master Data Management**: Unified interface with AI-powered modification and validation.
 -   **Algorithm Requirements Management System**: Manages optimization algorithms (functional/policy requirements, priorities, validation, API for CRUD).
--   **Resource Deployment Ordering**: Database-driven resource ordering system using deployment_order field in ptresources table. Resources are automatically ordered by their position in the production flow (milling → mashing → lautering → boiling → packaging, etc.). Management interface at `/resource-deployment-order` allows drag-and-drop reordering.
--   **Production Scheduling**: Visual Gantt chart with operation sequencer and algorithms (ASAP, ALAP, Drum/TOC), auto-save, calendar management, theme switching, and enhanced version control with snapshots, rollback, and comprehensive version comparison. ASAP/ALAP algorithms use sequence_number from ptjoboperations table, never hardcoded logic.
+-   **Resource Deployment Ordering**: Database-driven resource ordering system using `deployment_order` field in `ptresources` table, with a management interface for drag-and-drop reordering.
+-   **Production Scheduling**: Visual Gantt chart with operation sequencer and algorithms (ASAP, ALAP, Drum/TOC), auto-save, calendar management, theme switching, and enhanced version control with snapshots, rollback, and comprehensive version comparison. ASAP/ALAP algorithms use `sequence_number` from `ptjoboperations` table.
 -   **Dashboarding & Analytics**: UI Design Studio for custom visualizations, AI-powered dashboard generation, and a drag-and-drop designer.
 -   **Role-Based Access Control**: Unified permission system with feature-action permissions.
 -   **AI Workflow Automation**: Natural language-powered workflow creation with template library, visual builder, and execution tracking.
@@ -111,20 +57,13 @@ These files must be synchronized for features like trigger arrays, handler metho
 -   **AI Automation Rules System**: Comprehensive system for automatic resolution of recurring issues from AI recommendations, with inline enablement, advanced options, rule management, and safety features.
 -   **AI Recommendations Resolution**: Interactive resolution workflows with "Resolve Now" and "Show Plan First" options.
 -   **Global Control Tower**: Enhanced with KPI target management, weighted performance tracking, autonomous optimization, and real-time plant monitoring.
--   **Plant-Specific Onboarding System**: Comprehensive onboarding assistant that tracks implementation progress by plant with template support, phase tracking, metrics monitoring, and progress visualization. Enables customers to onboard one plant at a time with reusable templates.
+-   **Plant-Specific Onboarding System**: Comprehensive onboarding assistant that tracks implementation progress by plant with template support, phase tracking, metrics monitoring, and progress visualization.
 -   **Production Scheduler Architecture**: Hybrid iframe/React architecture loading Bryntum Scheduler Pro via a backend API route.
--   **Voice Chat**: Integrates real-time voice chat with OpenAI's gpt-realtime-mini model using WebSocket and SSE.
+-   **Voice Chat**: Integrates real-time voice chat with OpenAI's `gpt-realtime-mini` model using WebSocket and SSE.
 -   **Demand Forecasting**: Native React-based forecasting application with SQL Server integration, dynamic table/column selection, and time-series forecasting with Recharts visualization, including intermittent demand handling.
--   **Advanced Paginated Reports Designer**: Professional report builder with split-pane layout, resizable columns, "include totals row," an advanced column chooser, smart aggregation with "show distinct rows" (default), report templates, grouping and aggregation with subtotals, conditional formatting, save/load configurations, enhanced export capabilities (CSV, Excel, PDF with complete datasets and aggregation-aware headers), server-side totals and grouping, keyboard shortcuts, print preview, and full SQL Server/Power BI dataset support (pagination, filtering, sorting, DAX queries).
-
-## Production Deployment Configuration
--   **Deployment Type**: Autoscale
--   **Environment Variables Required**: NODE_ENV=production, REPLIT_DEPLOYMENT=1
--   **Run Command**: `NODE_ENV=production REPLIT_DEPLOYMENT=1 node dist/index.js`
--   **Build Command**: `npm run build`
--   **Critical Fix (Nov 7, 2024)**: Must explicitly set NODE_ENV=production in run command to avoid server defaulting to development mode and looking for non-existent Vite dev server in production
--   **Database Configuration**: Production uses PRODUCTION_DATABASE_URL, development uses DATABASE_URL
--   **Required Secrets**: PRODUCTION_DATABASE_URL, JWT_SECRET, SESSION_SECRET, OPENAI_API_KEY
+-   **Advanced Paginated Reports Designer**: Professional report builder with split-pane layout, advanced column chooser, smart aggregation, report templates, grouping, conditional formatting, save/load configurations, enhanced export capabilities (CSV, Excel, PDF), server-side totals, and full SQL Server/Power BI dataset support.
+-   **Customer Requirements Upload & Lifecycle Tracking**: Spreadsheet upload capability for importing custom customer requirements with full lifecycle tracking through modeling, testing, and deployment phases, supported by dedicated database tables, API endpoints, and a "Requirements Tracking" tab.
+-   **FP&A Dashboard with AI Integration**: Comprehensive Financial Planning & Analysis dashboard with an FP&A agent, AI recommendations for cost reduction and cash flow optimization, real-time financial KPIs, and interactive AI features.
 
 ## External Dependencies
 -   **Database Provider**: Neon Database (serverless PostgreSQL)
