@@ -16,6 +16,7 @@ import { seedDatabase } from "./seed";
 import { RealtimeVoiceService } from "./realtime-voice-service";
 import { db } from "./db";
 import { eq, sql } from "drizzle-orm";
+import { backgroundJobManager } from "./background-jobs";
 
 // Extend session interface
 declare module "express-session" {
@@ -997,4 +998,10 @@ setImmediate(async () => {
     log(`⚠️ Initialization orchestrator error: ${error}`);
     // Don't exit - server should continue running in degraded state
   }
+});
+
+// Initialize background job manager for periodic tasks (database cleanup, etc.)
+setImmediate(() => {
+  const stats = backgroundJobManager.getStats();
+  log(`🏭 Background Jobs: Manager initialized with ${stats.workerTypes.length} worker types`);
 });

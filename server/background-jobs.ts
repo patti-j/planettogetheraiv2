@@ -2,6 +2,9 @@
 // Infrastructure Scaling - Async Operation Management
 
 import { cacheManager } from './redis';
+import { db } from './db';
+import { agentRecommendations } from '@shared/schema';
+import { sql, desc } from 'drizzle-orm';
 
 // Job types for manufacturing ERP system
 export enum JobType {
@@ -12,7 +15,8 @@ export enum JobType {
   INVENTORY_SYNC = 'inventory_sync',
   PRODUCTION_SCHEDULE = 'production_schedule',
   QUALITY_ANALYSIS = 'quality_analysis',
-  SYSTEM_BACKUP = 'system_backup'
+  SYSTEM_BACKUP = 'system_backup',
+  DATABASE_CLEANUP = 'database_cleanup'
 }
 
 // Job status tracking
@@ -74,8 +78,34 @@ export class BackgroundJobManager {
     this.workers.set(JobType.PRODUCTION_SCHEDULE, new ProductionScheduleWorker());
     this.workers.set(JobType.QUALITY_ANALYSIS, new QualityAnalysisWorker());
     this.workers.set(JobType.SYSTEM_BACKUP, new SystemBackupWorker());
+    this.workers.set(JobType.DATABASE_CLEANUP, new DatabaseCleanupWorker());
 
     console.log('🏭 Background Jobs: Workers initialized for manufacturing operations');
+    
+    // Schedule periodic database cleanup (every hour)
+    this.schedulePeriodicCleanup();
+  }
+  
+  private cleanupInterval?: NodeJS.Timeout;
+  
+  private schedulePeriodicCleanup(): void {
+    // Run cleanup every hour (3600000 ms)
+    this.cleanupInterval = setInterval(async () => {
+      console.log('🧹 Background Jobs: Scheduling periodic database cleanup');
+      await this.addJob(JobType.DATABASE_CLEANUP, { 
+        tables: ['agent_recommendations'],
+        maxRows: 1000 
+      }, JobPriority.LOW);
+    }, 3600000); // 1 hour
+    
+    // Also run once on startup after a short delay
+    setTimeout(async () => {
+      console.log('🧹 Background Jobs: Running initial database cleanup check');
+      await this.addJob(JobType.DATABASE_CLEANUP, { 
+        tables: ['agent_recommendations'],
+        maxRows: 1000 
+      }, JobPriority.LOW);
+    }, 30000); // 30 seconds after startup
   }
 
   public async addJob(
@@ -390,6 +420,82 @@ class SystemBackupWorker extends JobWorker {
 
   private delay(ms: number): Promise<void> {
     return new Promise(resolve => setTimeout(resolve, ms));
+  }
+}
+
+class DatabaseCleanupWorker extends JobWorker {
+  async execute(data: any, progressCallback: (progress: number) => void): Promise<any> {
+    const { maxRows = 1000 } = data;
+    const results: Record<string, { before: number; after: number; deleted: number }> = {};
+    
+    progressCallback(10);
+    
+    if (!db) {
+      throw new Error('Database connection not available');
+    }
+    
+    try {
+      // Get current count of agent_recommendations
+      const countResult = await db.select({ 
+        count: sql<number>`count(*)::int` 
+      }).from(agentRecommendations);
+      
+      const currentCount = countResult[0]?.count || 0;
+      progressCallback(30);
+      
+      if (currentCount > maxRows) {
+        // Calculate how many to delete
+        const toDelete = currentCount - maxRows;
+        
+        console.log(`🧹 Database Cleanup: agent_recommendations has ${currentCount} rows, deleting oldest ${toDelete} rows`);
+        
+        // Delete oldest rows beyond the limit
+        // Keep the newest 1000 rows by deleting where id is NOT in the top 1000 by created_at
+        await db.execute(sql`
+          DELETE FROM agent_recommendations 
+          WHERE id IN (
+            SELECT id FROM agent_recommendations 
+            ORDER BY created_at ASC 
+            LIMIT ${toDelete}
+          )
+        `);
+        
+        progressCallback(80);
+        
+        // Verify new count
+        const newCountResult = await db.select({ 
+          count: sql<number>`count(*)::int` 
+        }).from(agentRecommendations);
+        
+        const newCount = newCountResult[0]?.count || 0;
+        
+        results['agent_recommendations'] = {
+          before: currentCount,
+          after: newCount,
+          deleted: currentCount - newCount
+        };
+        
+        console.log(`✅ Database Cleanup: agent_recommendations trimmed from ${currentCount} to ${newCount} rows`);
+      } else {
+        results['agent_recommendations'] = {
+          before: currentCount,
+          after: currentCount,
+          deleted: 0
+        };
+        console.log(`✅ Database Cleanup: agent_recommendations has ${currentCount} rows (within limit of ${maxRows})`);
+      }
+      
+      progressCallback(100);
+      return { 
+        success: true, 
+        results,
+        message: `Cleanup completed. Tables checked: ${Object.keys(results).length}`
+      };
+      
+    } catch (error) {
+      console.error('❌ Database Cleanup failed:', error);
+      throw error;
+    }
   }
 }
 
