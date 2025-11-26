@@ -89,14 +89,14 @@ export class BackgroundJobManager {
   private cleanupInterval?: NodeJS.Timeout;
   
   private schedulePeriodicCleanup(): void {
-    // Run cleanup every hour (3600000 ms)
+    // Run cleanup once daily (86400000 ms = 24 hours)
     this.cleanupInterval = setInterval(async () => {
-      console.log('🧹 Background Jobs: Scheduling periodic database cleanup');
+      console.log('🧹 Background Jobs: Scheduling daily database cleanup');
       await this.addJob(JobType.DATABASE_CLEANUP, { 
         tables: ['agent_recommendations'],
         maxRows: 1000 
       }, JobPriority.LOW);
-    }, 3600000); // 1 hour
+    }, 86400000); // 24 hours
     
     // Also run once on startup after a short delay
     setTimeout(async () => {
