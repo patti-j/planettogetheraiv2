@@ -300,13 +300,6 @@ export default function DevelopmentRoadmap() {
           icon: Globe
         },
         {
-          title: "IoT Device Integration",
-          description: "Direct connectivity to PLCs, SCADA systems, and shop floor sensors for real-time data collection",
-          category: "integration",
-          impact: "medium",
-          icon: Network
-        },
-        {
           title: "Customer Success AI",
           description: "Automated onboarding, in-app guidance, and proactive support recommendations",
           category: "ux",
@@ -386,6 +379,13 @@ export default function DevelopmentRoadmap() {
           category: "analytics",
           impact: "high",
           icon: TrendingUp
+        },
+        {
+          title: "IoT Device Integration",
+          description: "Direct connectivity to PLCs, SCADA systems, and shop floor sensors for real-time data collection",
+          category: "integration",
+          impact: "medium",
+          icon: Network
         }
       ]
     },
