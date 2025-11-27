@@ -386,6 +386,20 @@ export default function DevelopmentRoadmap() {
           category: "integration",
           impact: "medium",
           icon: Network
+        },
+        {
+          title: "Multi-Plant Orchestration",
+          description: "Intelligent work distribution across facilities based on capacity, cost, and delivery constraints with centralized visibility",
+          category: "enterprise",
+          impact: "high",
+          icon: Factory
+        },
+        {
+          title: "Supply Chain Risk Monitoring",
+          description: "AI-powered alerts for supplier delays, material shortages, and disruption prediction with proactive mitigation recommendations",
+          category: "ai-ml",
+          impact: "high",
+          icon: Shield
         }
       ]
     },
