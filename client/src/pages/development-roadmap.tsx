@@ -7,7 +7,7 @@ import {
   Workflow, Bot, MessageSquare, FileSpreadsheet, Calendar,
   Settings, Sparkles, Target, Package, Truck, Factory,
   PieChart, Layers, CheckSquare, Gauge, MapPin, Timer,
-  Eye, ClipboardList, Wrench, GraduationCap, BookOpen, DollarSign
+  Eye, ClipboardList, Wrench, GraduationCap, BookOpen, DollarSign, Code
 } from "lucide-react";
 
 interface RoadmapQuarter {
@@ -140,6 +140,34 @@ export default function DevelopmentRoadmap() {
           category: "ux",
           impact: "medium",
           icon: Globe
+        },
+        {
+          title: "Shop Floor Interface",
+          description: "Operator-facing production execution with work order dispatch, material tracking, and quality data collection",
+          category: "ux",
+          impact: "high",
+          icon: Factory
+        },
+        {
+          title: "Operator Dashboard",
+          description: "Personalized workstation view with current jobs, instructions, and performance metrics",
+          category: "ux",
+          impact: "medium",
+          icon: Settings
+        },
+        {
+          title: "Inventory Optimization",
+          description: "AI-driven inventory management with safety stock optimization, reorder point calculations, and ABC analysis",
+          category: "platform",
+          impact: "high",
+          icon: Package
+        },
+        {
+          title: "Master Production Schedule",
+          description: "Long-range production planning with demand aggregation, rough-cut capacity, and S&OP integration",
+          category: "platform",
+          impact: "high",
+          icon: Calendar
         }
       ]
     },
@@ -254,6 +282,27 @@ export default function DevelopmentRoadmap() {
           category: "ux",
           impact: "high",
           icon: GraduationCap
+        },
+        {
+          title: "Disruption Management",
+          description: "Real-time exception handling for machine breakdowns, material shortages, and rush orders with automated rescheduling",
+          category: "platform",
+          impact: "high",
+          icon: Settings
+        },
+        {
+          title: "Order Optimization",
+          description: "Intelligent order sequencing and batching to minimize changeovers and maximize throughput",
+          category: "ai-ml",
+          impact: "high",
+          icon: Sparkles
+        },
+        {
+          title: "Shift Management",
+          description: "Crew scheduling with skill matching, overtime tracking, and shift handoff documentation",
+          category: "platform",
+          impact: "medium",
+          icon: Clock
         }
       ]
     },
@@ -326,6 +375,20 @@ export default function DevelopmentRoadmap() {
           category: "integration",
           impact: "medium",
           icon: Truck
+        },
+        {
+          title: "Advanced Capacity Planning",
+          description: "What-if capacity modeling with resource load balancing, bottleneck analysis, and investment planning",
+          category: "platform",
+          impact: "high",
+          icon: BarChart3
+        },
+        {
+          title: "Implementation Projects",
+          description: "Project management for system deployments with milestone tracking, resource allocation, and go-live checklists",
+          category: "enterprise",
+          impact: "medium",
+          icon: ClipboardList
         }
       ]
     },
@@ -370,6 +433,20 @@ export default function DevelopmentRoadmap() {
           category: "platform",
           impact: "medium",
           icon: Package
+        },
+        {
+          title: "Kanban Boards",
+          description: "Visual project and task management with customizable workflows, WIP limits, and team collaboration",
+          category: "ux",
+          impact: "medium",
+          icon: Layers
+        },
+        {
+          title: "Algorithm Governance",
+          description: "Version control, testing, and deployment management for scheduling algorithms with audit trails",
+          category: "enterprise",
+          impact: "high",
+          icon: Shield
         }
       ]
     },
@@ -414,6 +491,20 @@ export default function DevelopmentRoadmap() {
           category: "ai-ml",
           impact: "high",
           icon: Shield
+        },
+        {
+          title: "AI Agent Monitoring",
+          description: "Real-time visibility into AI agent activities, decisions, and performance with intervention controls",
+          category: "ai-ml",
+          impact: "medium",
+          icon: Eye
+        },
+        {
+          title: "Continuous Improvement",
+          description: "Automated performance tracking with improvement recommendations, A3 problem solving, and Kaizen event management",
+          category: "analytics",
+          impact: "high",
+          icon: TrendingUp
         }
       ]
     },
@@ -472,6 +563,20 @@ export default function DevelopmentRoadmap() {
           category: "ux",
           impact: "high",
           icon: Eye
+        },
+        {
+          title: "Extension Studio",
+          description: "Low-code development environment for custom modules, screens, and business logic extensions",
+          category: "platform",
+          impact: "high",
+          icon: Code
+        },
+        {
+          title: "Optimization Studio",
+          description: "Visual optimization modeling with drag-and-drop constraints, objectives, and algorithm configuration",
+          category: "ai-ml",
+          impact: "high",
+          icon: Sparkles
         }
       ]
     }
