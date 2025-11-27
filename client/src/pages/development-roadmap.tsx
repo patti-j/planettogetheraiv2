@@ -235,13 +235,6 @@ export default function DevelopmentRoadmap() {
           icon: TrendingUp
         },
         {
-          title: "Supply Chain Visibility Portal",
-          description: "Supplier collaboration platform with order tracking, delivery confirmations, and automated PO management",
-          category: "integration",
-          impact: "medium",
-          icon: Truck
-        },
-        {
           title: "AI Custom Report Builder",
           description: "AI-assisted report designer with natural language queries, auto-generated insights, and predictive analytics",
           category: "analytics",
@@ -312,6 +305,13 @@ export default function DevelopmentRoadmap() {
           category: "analytics",
           impact: "high",
           icon: DollarSign
+        },
+        {
+          title: "Supply Chain Visibility Portal",
+          description: "Supplier collaboration platform with order tracking, delivery confirmations, and automated PO management",
+          category: "integration",
+          impact: "medium",
+          icon: Truck
         }
       ]
     },
