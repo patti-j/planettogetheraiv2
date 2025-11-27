@@ -240,6 +240,20 @@ export default function DevelopmentRoadmap() {
           category: "analytics",
           impact: "medium",
           icon: FileSpreadsheet
+        },
+        {
+          title: "Manufacturing Requirements Upload",
+          description: "Spreadsheet upload for custom customer requirements with full lifecycle tracking through modeling, testing, and deployment phases",
+          category: "platform",
+          impact: "high",
+          icon: Package
+        },
+        {
+          title: "AI-Assisted Onboarding System",
+          description: "Intelligent plant-specific onboarding with progress tracking, template support, phase management, and AI-powered guidance",
+          category: "ux",
+          impact: "high",
+          icon: GraduationCap
         }
       ]
     },
