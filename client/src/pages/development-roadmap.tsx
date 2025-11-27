@@ -444,6 +444,20 @@ export default function DevelopmentRoadmap() {
           category: "analytics",
           impact: "medium",
           icon: Database
+        },
+        {
+          title: "Automated Root Cause Analysis",
+          description: "AI-powered tracing through operations, materials, and equipment to automatically identify causes of production issues",
+          category: "ai-ml",
+          impact: "high",
+          icon: Target
+        },
+        {
+          title: "Digital Work Instructions with AR",
+          description: "Shop floor guidance with visual overlays for operators, reducing training time and errors through augmented reality",
+          category: "ux",
+          impact: "high",
+          icon: Eye
         }
       ]
     }
