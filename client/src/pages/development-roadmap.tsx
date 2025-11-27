@@ -7,7 +7,7 @@ import {
   Workflow, Bot, MessageSquare, FileSpreadsheet, Calendar,
   Settings, Sparkles, Target, Package, Truck, Factory,
   PieChart, Layers, CheckSquare, Gauge, MapPin, Timer,
-  Eye, ClipboardList, Wrench, GraduationCap, BookOpen
+  Eye, ClipboardList, Wrench, GraduationCap, BookOpen, DollarSign
 } from "lucide-react";
 
 interface RoadmapQuarter {
@@ -312,6 +312,13 @@ export default function DevelopmentRoadmap() {
           category: "ux",
           impact: "medium",
           icon: Bot
+        },
+        {
+          title: "FP&A Dashboard with AI Integration",
+          description: "Comprehensive Financial Planning & Analysis dashboard with AI-powered recommendations for cost reduction, cash flow optimization, budget variance analysis, and profitability tracking",
+          category: "analytics",
+          impact: "high",
+          icon: DollarSign
         }
       ]
     },
