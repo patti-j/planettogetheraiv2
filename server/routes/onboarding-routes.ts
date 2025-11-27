@@ -965,6 +965,50 @@ router.patch('/api/customer-requirements/:id/progress', async (req, res) => {
   }
 });
 
+// Download template for requirements upload - MUST be before :id route
+router.get('/api/customer-requirements/template', (req, res) => {
+  try {
+    const templateData = [
+      {
+        'Segment': 'Life Sciences',
+        'Requirement Name': 'Example: Batch Traceability',
+        'Description': 'Ability to track batches through production process',
+        'Features': 'Lot Control, Shelf Life, Batch Scheduling',
+        'Priority': 'high'
+      },
+      {
+        'Segment': 'Chemicals',
+        'Requirement Name': 'Example: Tank Scheduling',
+        'Description': 'Optimize tank usage and cleaning schedules',
+        'Features': 'Resource Constraints, Setup Optimization',
+        'Priority': 'medium'
+      }
+    ];
+    
+    const workbook = XLSX.utils.book_new();
+    const worksheet = XLSX.utils.json_to_sheet(templateData);
+    
+    worksheet['!cols'] = [
+      { wch: 20 },
+      { wch: 40 },
+      { wch: 50 },
+      { wch: 40 },
+      { wch: 10 }
+    ];
+    
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Requirements');
+    
+    const buffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
+    
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', 'attachment; filename=customer-requirements-template.xlsx');
+    res.send(buffer);
+  } catch (error) {
+    console.error('Error generating template:', error);
+    res.status(500).json({ error: 'Failed to generate template' });
+  }
+});
+
 // Get single requirement with history
 router.get('/api/customer-requirements/:id', async (req, res) => {
   try {
@@ -1066,46 +1110,6 @@ router.post('/api/customer-requirements/bulk-update-status', async (req, res) =>
     console.error('Error bulk updating requirements:', error);
     res.status(500).json({ error: 'Failed to bulk update requirements' });
   }
-});
-
-// Download template for requirements upload
-router.get('/api/customer-requirements/template', (req, res) => {
-  const templateData = [
-    {
-      'Segment': 'Life Sciences',
-      'Requirement Name': 'Example: Batch Traceability',
-      'Description': 'Ability to track batches through production process',
-      'Features': 'Lot Control, Shelf Life, Batch Scheduling',
-      'Priority': 'high'
-    },
-    {
-      'Segment': 'Chemicals',
-      'Requirement Name': 'Example: Tank Scheduling',
-      'Description': 'Optimize tank usage and cleaning schedules',
-      'Features': 'Resource Constraints, Setup Optimization',
-      'Priority': 'medium'
-    }
-  ];
-  
-  const workbook = XLSX.utils.book_new();
-  const worksheet = XLSX.utils.json_to_sheet(templateData);
-  
-  // Set column widths
-  worksheet['!cols'] = [
-    { wch: 20 },  // Segment
-    { wch: 40 },  // Requirement Name
-    { wch: 50 },  // Description
-    { wch: 40 },  // Features
-    { wch: 10 }   // Priority
-  ];
-  
-  XLSX.utils.book_append_sheet(workbook, worksheet, 'Requirements');
-  
-  const buffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
-  
-  res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-  res.setHeader('Content-Disposition', 'attachment; filename=customer-requirements-template.xlsx');
-  res.send(buffer);
 });
 
 export default router;
