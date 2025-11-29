@@ -1,5 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
-import { useDeviceType } from '@/hooks/useDeviceType';
+import { useState, useEffect } from 'react';
 import { CustomizableHeader } from '@/components/customizable-header';
 import { AILeftPanel } from './ai-left-panel';
 import { SlideOutMenu } from './slide-out-menu';
@@ -8,21 +7,12 @@ import TopMenu from '@/components/top-menu';
 import IntegratedAIAssistant from '@/components/integrated-ai-assistant';
 import { useFullScreen } from '@/contexts/FullScreenContext';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Minimize, Send, Sparkles, Menu, Eye, EyeOff, Sidebar, ChevronDown, Calendar, Factory, Shield, Package, Users, Maximize, Mic, MicOff, Paperclip, StopCircle, Wrench, TrendingUp, Layers } from 'lucide-react';
+import { Minimize, Menu, Eye, EyeOff, Sidebar, ChevronDown, Maximize, Send, Sparkles } from 'lucide-react';
 import { getActiveAgents } from '@/config/agents';
-import { useMutation, useQuery } from '@tanstack/react-query';
-import { queryClient } from '@/lib/queryClient';
-import { useAuth } from '@/hooks/useAuth';
-import { useChatSync } from '@/hooks/useChatSync';
 import { useLocation } from 'wouter';
-import { useSplitScreen } from '@/contexts/SplitScreenContext';
 import { useMaxDock } from '@/contexts/MaxDockContext';
-import { useAgent } from '@/contexts/AgentContext';
-import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 
 interface DesktopLayoutProps {
@@ -30,16 +20,9 @@ interface DesktopLayoutProps {
 }
 
 export function DesktopLayout({ children }: DesktopLayoutProps) {
-  const deviceType = useDeviceType();
-  const isDesktop = deviceType === 'desktop';
   const { isFullScreen, toggleFullScreen } = useFullScreen();
-  const { user } = useAuth();
-  const { addMessage } = useChatSync();
-  const [location, setLocation] = useLocation();
-  const { handleNavigation } = useSplitScreen();
-  const { setCanvasVisible, setCanvasItems, maxOpen } = useMaxDock();
-  const { currentAgent, switchToAgent } = useAgent();
-  const { toast } = useToast();
+  const [location] = useLocation();
+  const { maxOpen } = useMaxDock();
   const [isNavigationOpen, setIsNavigationOpen] = useState(false);
   
   // Panel force-show state for small screens
@@ -236,66 +219,6 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [isFullScreen, toggleFullScreen]);
-
-  // Focus the floating input when the bubble expands
-  useEffect(() => {
-    if (!isFloatingBubbleMinimized && floatingInputRef.current) {
-      floatingInputRef.current.focus();
-    }
-  }, [isFloatingBubbleMinimized]);
-
-  // MEMORY LEAK FIX: Clean up voice recording resources on unmount
-  useEffect(() => {
-    return () => {
-      console.log('🧹 Cleaning up voice recording resources on unmount...');
-      
-      // Stop any active recording
-      if (floatingMediaRecorder && floatingMediaRecorder.state === 'recording') {
-        try {
-          floatingMediaRecorder.stop();
-        } catch (err) {
-          console.log('Error stopping MediaRecorder:', err);
-        }
-      }
-      
-      // Clear all timers
-      if (floatingRecordingTimeout) {
-        clearTimeout(floatingRecordingTimeout);
-      }
-      if (floatingSilenceTimerRef.current) {
-        clearTimeout(floatingSilenceTimerRef.current);
-      }
-      
-      // Stop Web Speech API
-      if (floatingRecognitionRef.current) {
-        try {
-          floatingRecognitionRef.current.stop();
-          floatingRecognitionRef.current = null;
-        } catch (err) {
-          console.log('Error stopping Web Speech API:', err);
-        }
-      }
-      
-      // Clear audio chunks to free memory
-      floatingAudioChunksRef.current = [];
-      
-      // Clear text refs
-      floatingLastTranscriptRef.current = '';
-      floatingAccumulatedTextRef.current = '';
-      
-      // Clear attachments to free memory
-      setFloatingAttachments([]);
-      
-      // Release MediaRecorder and stream
-      if (floatingMediaRecorder) {
-        const stream = floatingMediaRecorder.stream;
-        if (stream) {
-          stream.getTracks().forEach(track => track.stop());
-        }
-        setFloatingMediaRecorder(null);
-      }
-    };
-  }, [floatingMediaRecorder, floatingRecordingTimeout]);
 
   // Determine if panels should be hidden - only hide on actual mobile devices (touch + small screen)
   // Never hide panels on desktop, regardless of window size
