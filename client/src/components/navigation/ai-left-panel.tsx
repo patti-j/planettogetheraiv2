@@ -1943,6 +1943,157 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
                   </Button>
                 )}
               </div>
+              
+              {/* Chat Input Area - Always visible at bottom of chat tab */}
+              <div className="border-t bg-background/95 p-3 space-y-2">
+                {/* Attachments display */}
+                {attachments.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5 mb-2">
+                    {attachments.map((attachment) => (
+                      <div
+                        key={attachment.id}
+                        className="flex items-center gap-1.5 bg-muted text-muted-foreground px-2 py-1 rounded-full text-xs"
+                      >
+                        <Paperclip className="w-3 h-3" />
+                        <span className="truncate max-w-[100px]">{attachment.name}</span>
+                        <Button
+                          onClick={() => removeAttachment(attachment.id)}
+                          size="sm"
+                          variant="ghost"
+                          className="h-4 w-4 p-0 hover:bg-muted-foreground/20 rounded-full"
+                        >
+                          <X className="w-3 h-3" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                
+                {/* Input row with textarea and send button */}
+                <div className="flex items-end gap-2">
+                  <div className="flex-1 relative">
+                    <textarea
+                      value={prompt}
+                      onChange={(e) => setPrompt(e.target.value)}
+                      onKeyPress={(e) => {
+                        if (e.key === 'Enter' && !e.shiftKey) {
+                          e.preventDefault();
+                          handleSendMessage();
+                        }
+                      }}
+                      placeholder={isRecording ? "Speak now - text appears instantly..." : "Ask Max anything..."}
+                      className={cn(
+                        "w-full resize-none border rounded-lg px-3 py-2 text-sm",
+                        "bg-background focus:outline-none focus:ring-2 focus:ring-primary/50",
+                        "placeholder:text-muted-foreground",
+                        isRecording && "border-red-400 text-green-600"
+                      )}
+                      disabled={isSending}
+                      rows={1}
+                      style={{ minHeight: '40px', maxHeight: '120px' }}
+                      onInput={(e) => {
+                        const target = e.target as HTMLTextAreaElement;
+                        target.style.height = 'auto';
+                        target.style.height = Math.min(target.scrollHeight, 120) + 'px';
+                      }}
+                      data-testid="input-chat-message"
+                    />
+                  </div>
+                  
+                  {/* Send Button */}
+                  <Button
+                    onClick={() => handleSendMessage()}
+                    size="sm"
+                    className="h-10 w-10 rounded-lg flex-shrink-0"
+                    disabled={(!prompt.trim() && attachments.length === 0) || isSending}
+                    data-testid="button-send-message"
+                  >
+                    {isSending ? (
+                      <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                    ) : (
+                      <Send className="w-4 h-4" />
+                    )}
+                  </Button>
+                </div>
+                
+                {/* Action buttons row */}
+                <div className="flex items-center gap-2">
+                  {/* Hidden file input */}
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    multiple
+                    className="hidden"
+                    onChange={handleFilesSelected}
+                    accept=".txt,.md,.json,.csv,.xml,.html,.css,.js,.ts,.tsx,.jsx,.py,.sql,.log,image/*"
+                  />
+                  
+                  {/* File Attachment Button */}
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          onClick={() => fileInputRef.current?.click()}
+                          size="sm"
+                          variant="ghost"
+                          className="h-8 w-8 rounded-full"
+                          disabled={isProcessingFiles || isSending}
+                          data-testid="button-attach-file"
+                        >
+                          {isProcessingFiles ? (
+                            <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                          ) : (
+                            <Paperclip className="w-4 h-4" />
+                          )}
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent side="top">
+                        <p>Attach files</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                  
+                  {/* Voice Recording Button */}
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          onClick={() => {
+                            if (isRecording) {
+                              stopListening();
+                            } else {
+                              startListening(true);
+                            }
+                          }}
+                          size="sm"
+                          variant="ghost"
+                          className={cn(
+                            "h-8 w-8 rounded-full relative",
+                            isRecording && "bg-red-100 dark:bg-red-900/30 hover:bg-red-200 dark:hover:bg-red-900/50"
+                          )}
+                          disabled={isTranscribing || isSending}
+                          data-testid="button-voice-record"
+                        >
+                          {isTranscribing ? (
+                            <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                          ) : isRecording ? (
+                            <div className="voice-recording-container flex items-center justify-center">
+                              <div className="absolute w-6 h-6 bg-red-500 rounded-full opacity-30 voice-pulse-ring-1"></div>
+                              <div className="absolute w-6 h-6 bg-red-500 rounded-full opacity-20 voice-pulse-ring-2"></div>
+                              <div className="relative z-10 w-2 h-2 bg-red-500 rounded-full"></div>
+                            </div>
+                          ) : (
+                            <Mic className="w-4 h-4" />
+                          )}
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent side="top">
+                        <p>{isRecording ? 'Stop recording' : isTranscribing ? 'Processing...' : 'Voice input'}</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </div>
+              </div>
             </TabsContent>
 
             {/* Active Agents Tab */}
