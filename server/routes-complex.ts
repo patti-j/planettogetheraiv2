@@ -10620,12 +10620,14 @@ Focus on realistic, actionable scenarios that help with decision making.`;
         return res.status(400).json({ error: "Invalid business goal data", details: validation.error.errors });
       }
 
-      // Convert date strings to Date objects
-      const data = {
-        ...validation.data,
-        startDate: new Date(validation.data.startDate),
-        targetDate: new Date(validation.data.targetDate)
-      };
+      // Convert date strings to Date objects if present
+      const data: any = { ...validation.data };
+      if (data.startDate) {
+        data.startDate = data.startDate instanceof Date ? data.startDate : new Date(data.startDate);
+      }
+      if (data.targetDate) {
+        data.targetDate = data.targetDate instanceof Date ? data.targetDate : new Date(data.targetDate);
+      }
 
       const goal = await storage.createBusinessGoal(data);
       res.status(201).json(goal);
