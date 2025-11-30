@@ -1806,7 +1806,7 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
                 )}
                 
                 <div 
-                  className="absolute inset-0 p-3 overflow-y-auto" 
+                  className="absolute inset-0 px-4 py-3 overflow-y-auto" 
                   ref={scrollAreaRef}
                   onScroll={handleScroll}
                   style={{ height: '100%' }}
@@ -1946,7 +1946,7 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
               </div>
               
               {/* Chat Input Area - Always visible at bottom of chat tab */}
-              <div className="border-t bg-background/95 p-3 space-y-2">
+              <div className="border-t bg-background/95 px-4 py-3 space-y-2">
                 {/* Attachments display */}
                 {attachments.length > 0 && (
                   <div className="flex flex-wrap gap-1.5 mb-2">
