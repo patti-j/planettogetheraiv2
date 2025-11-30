@@ -542,8 +542,8 @@ export default function OnboardingPage() {
               targetValue: goal.targetValue.toString(),
               targetUnit: '%',
               status: 'not_started',
-              startDate: now,
-              targetDate: targetDate
+              startDate: now.toISOString(),
+              targetDate: targetDate.toISOString()
             });
           }
         }
