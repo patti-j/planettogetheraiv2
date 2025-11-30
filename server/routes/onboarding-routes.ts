@@ -78,6 +78,63 @@ router.post('/api/onboarding/templates/initialize', async (req, res) => {
   }
 });
 
+// Initialize company onboarding (called when user completes step 0)
+router.post('/api/onboarding/initialize', async (req, res) => {
+  try {
+    const { companyName, industry, size, description } = req.body;
+    
+    console.log('Initializing onboarding for company:', companyName);
+    
+    // Check if company onboarding already exists
+    const existing = await db.select().from(companyOnboardingOverview).limit(1);
+    
+    if (existing.length > 0) {
+      // Update existing record
+      await db.update(companyOnboardingOverview)
+        .set({
+          companyName: companyName || existing[0].companyName,
+          industry: industry || existing[0].industry,
+          companySize: size || existing[0].companySize,
+          status: 'in_progress',
+          updatedAt: new Date()
+        })
+        .where(eq(companyOnboardingOverview.id, existing[0].id));
+      
+      return res.json({ 
+        success: true, 
+        message: 'Company onboarding updated',
+        id: existing[0].id
+      });
+    }
+    
+    // Create new company onboarding record
+    const [newOnboarding] = await db.insert(companyOnboardingOverview)
+      .values({
+        companyName: companyName || 'New Company',
+        industry: industry || 'Manufacturing',
+        companySize: size || 'medium',
+        totalPlants: 0,
+        onboardedPlants: 0,
+        inProgressPlants: 0,
+        overallProgress: 0,
+        status: 'in_progress',
+        startDate: new Date(),
+        createdAt: new Date(),
+        updatedAt: new Date()
+      })
+      .returning();
+    
+    res.json({ 
+      success: true, 
+      message: 'Company onboarding initialized',
+      id: newOnboarding.id
+    });
+  } catch (error) {
+    console.error('Error initializing onboarding:', error);
+    res.status(500).json({ error: 'Failed to initialize onboarding' });
+  }
+});
+
 // Get plant onboardings with optional filtering
 router.get('/api/onboarding/plants', async (req, res) => {
   try {
