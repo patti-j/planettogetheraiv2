@@ -181,9 +181,12 @@ router.post('/api/onboarding/plants', async (req, res) => {
   try {
     const { plantId, templateId, name, startDate, targetCompletionDate, assignedTo, notes } = req.body;
     
+    console.log('Creating plant onboarding with data:', { plantId, templateId, name, startDate, targetCompletionDate });
+    
     // Get template if specified
     let phases: any[] = [];
     let goals: any[] = [];
+    let estimatedDuration = 90; // Default 90 days
     if (templateId) {
       const template = await db.select()
         .from(onboardingTemplates)
@@ -193,23 +196,41 @@ router.post('/api/onboarding/plants', async (req, res) => {
       if (template.length > 0) {
         phases = (template[0].phases as any[]) || [];
         goals = (template[0].goals as any[]) || [];
+        estimatedDuration = template[0].estimatedDurationDays || 90;
       }
+    }
+    
+    // Handle dates - use current date if not provided
+    const now = new Date();
+    const parsedStartDate = startDate ? new Date(startDate) : now;
+    const parsedTargetDate = targetCompletionDate 
+      ? new Date(targetCompletionDate) 
+      : new Date(now.getTime() + estimatedDuration * 24 * 60 * 60 * 1000);
+    
+    // Validate dates are valid
+    if (isNaN(parsedStartDate.getTime())) {
+      console.error('Invalid start date:', startDate);
+      return res.status(400).json({ error: 'Invalid start date format' });
+    }
+    if (isNaN(parsedTargetDate.getTime())) {
+      console.error('Invalid target date:', targetCompletionDate);
+      return res.status(400).json({ error: 'Invalid target completion date format' });
     }
     
     // Create onboarding
     const [newOnboarding] = await db.insert(plantOnboarding).values({
-      plantId,
-      templateId,
-      name,
+      plantId: plantId || null,
+      templateId: templateId || null,
+      name: name || 'New Plant Onboarding',
       status: 'in-progress',
-      startDate: new Date(startDate),
-      targetCompletionDate: new Date(targetCompletionDate),
+      startDate: parsedStartDate,
+      targetCompletionDate: parsedTargetDate,
       overallProgress: 0,
       customPhases: phases,
       customGoals: goals,
-      notes,
-      createdBy: assignedTo,
-      assignedTo
+      notes: notes || null,
+      createdBy: assignedTo || null,
+      assignedTo: assignedTo || null
     }).returning();
     
     // Create phases if template was used
