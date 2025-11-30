@@ -2005,12 +2005,12 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
                   <Button
                     onClick={() => handleSendMessage()}
                     size="sm"
-                    className="h-[42px] w-[42px] rounded-lg flex-shrink-0 self-end"
+                    className="h-[42px] w-[42px] rounded-lg flex-shrink-0 self-start bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700 text-white border-0 shadow-md"
                     disabled={(!prompt.trim() && attachments.length === 0) || isSendingCommand}
                     data-testid="button-send-message"
                   >
                     {isSendingCommand ? (
-                      <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
                     ) : (
                       <Send className="w-4 h-4" />
                     )}
