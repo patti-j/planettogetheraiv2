@@ -1984,8 +1984,8 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
                       }}
                       placeholder={isRecording ? "Speak now - text appears instantly..." : "Ask Max anything..."}
                       className={cn(
-                        "w-full resize-none border rounded-lg px-3 py-2.5 text-sm",
-                        "bg-background focus:outline-none focus:ring-2 focus:ring-primary/50",
+                        "w-full resize-none border-2 border-pink-400 dark:border-pink-500 rounded-lg px-3 py-2.5 text-sm",
+                        "bg-background focus:outline-none focus:ring-2 focus:ring-pink-500/50 focus:border-pink-500",
                         "placeholder:text-muted-foreground",
                         isRecording && "border-red-400 text-green-600"
                       )}
