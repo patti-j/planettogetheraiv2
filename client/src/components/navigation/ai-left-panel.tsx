@@ -1971,7 +1971,7 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
                 )}
                 
                 {/* Input row with textarea and send button */}
-                <div className="flex items-end gap-2">
+                <div className="flex gap-2">
                   <div className="flex-1 relative">
                     <textarea
                       value={prompt}
@@ -1984,14 +1984,14 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
                       }}
                       placeholder={isRecording ? "Speak now - text appears instantly..." : "Ask Max anything..."}
                       className={cn(
-                        "w-full resize-none border rounded-lg px-3 py-2 text-sm",
+                        "w-full resize-none border rounded-lg px-3 py-2.5 text-sm",
                         "bg-background focus:outline-none focus:ring-2 focus:ring-primary/50",
                         "placeholder:text-muted-foreground",
                         isRecording && "border-red-400 text-green-600"
                       )}
                       disabled={isSendingCommand}
                       rows={1}
-                      style={{ minHeight: '40px', maxHeight: '120px' }}
+                      style={{ minHeight: '42px', maxHeight: '120px' }}
                       onInput={(e) => {
                         const target = e.target as HTMLTextAreaElement;
                         target.style.height = 'auto';
@@ -2005,7 +2005,7 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
                   <Button
                     onClick={() => handleSendMessage()}
                     size="sm"
-                    className="h-10 w-10 rounded-lg flex-shrink-0"
+                    className="h-[42px] w-[42px] rounded-lg flex-shrink-0 self-end"
                     disabled={(!prompt.trim() && attachments.length === 0) || isSendingCommand}
                     data-testid="button-send-message"
                   >
