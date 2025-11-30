@@ -8,6 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { Input } from '@/components/ui/input';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { cn } from '@/lib/utils';
@@ -1988,7 +1989,7 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
                         "placeholder:text-muted-foreground",
                         isRecording && "border-red-400 text-green-600"
                       )}
-                      disabled={isSending}
+                      disabled={isSendingCommand}
                       rows={1}
                       style={{ minHeight: '40px', maxHeight: '120px' }}
                       onInput={(e) => {
@@ -2005,10 +2006,10 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
                     onClick={() => handleSendMessage()}
                     size="sm"
                     className="h-10 w-10 rounded-lg flex-shrink-0"
-                    disabled={(!prompt.trim() && attachments.length === 0) || isSending}
+                    disabled={(!prompt.trim() && attachments.length === 0) || isSendingCommand}
                     data-testid="button-send-message"
                   >
-                    {isSending ? (
+                    {isSendingCommand ? (
                       <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
                     ) : (
                       <Send className="w-4 h-4" />
@@ -2024,7 +2025,7 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
                     type="file"
                     multiple
                     className="hidden"
-                    onChange={handleFilesSelected}
+                    onChange={handleFileSelect}
                     accept=".txt,.md,.json,.csv,.xml,.html,.css,.js,.ts,.tsx,.jsx,.py,.sql,.log,image/*"
                   />
                   
@@ -2037,7 +2038,7 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
                           size="sm"
                           variant="ghost"
                           className="h-8 w-8 rounded-full"
-                          disabled={isProcessingFiles || isSending}
+                          disabled={isProcessingFiles || isSendingCommand}
                           data-testid="button-attach-file"
                         >
                           {isProcessingFiles ? (
@@ -2060,9 +2061,9 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
                         <Button
                           onClick={() => {
                             if (isRecording) {
-                              stopListening();
+                              stopRecording();
                             } else {
-                              startListening(true);
+                              startRecording();
                             }
                           }}
                           size="sm"
@@ -2071,7 +2072,7 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
                             "h-8 w-8 rounded-full relative",
                             isRecording && "bg-red-100 dark:bg-red-900/30 hover:bg-red-200 dark:hover:bg-red-900/50"
                           )}
-                          disabled={isTranscribing || isSending}
+                          disabled={isTranscribing || isSendingCommand}
                           data-testid="button-voice-record"
                         >
                           {isTranscribing ? (
