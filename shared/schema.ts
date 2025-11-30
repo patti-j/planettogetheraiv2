@@ -3737,6 +3737,181 @@ export const companyOnboardingOverview = pgTable("company_onboarding_overview", 
 });
 
 // ============================================
+// Implementation Framework - Multi-Plant Tracking
+// ============================================
+
+// Implementation Goals - Links business goals to plant implementations
+export const implementationGoals = pgTable("implementation_goals", {
+  id: serial("id").primaryKey(),
+  businessGoalId: integer("business_goal_id").references(() => businessGoals.id),
+  plantId: integer("plant_id").references(() => ptPlants.id),
+  onboardingId: integer("onboarding_id").references(() => plantOnboarding.id),
+  targetValue: decimal("target_value"),
+  currentValue: decimal("current_value"),
+  targetUnit: varchar("target_unit", { length: 50 }),
+  status: varchar("status", { length: 50 }).default("not_started"),
+  priority: varchar("priority", { length: 20 }).default("medium"),
+  startDate: timestamp("start_date"),
+  targetDate: timestamp("target_date"),
+  completionDate: timestamp("completion_date"),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow()
+});
+
+// Implementation Features - Tracks which features are being implemented per plant
+export const implementationFeatures = pgTable("implementation_features", {
+  id: serial("id").primaryKey(),
+  featureName: varchar("feature_name", { length: 255 }).notNull(),
+  featureCategory: varchar("feature_category", { length: 100 }),
+  description: text("description"),
+  plantId: integer("plant_id").references(() => ptPlants.id),
+  onboardingId: integer("onboarding_id").references(() => plantOnboarding.id),
+  isUniversal: boolean("is_universal").default(false),
+  implementationStatus: varchar("implementation_status", { length: 50 }).default("pending"),
+  configurationProgress: integer("configuration_progress").default(0),
+  testingProgress: integer("testing_progress").default(0),
+  deploymentProgress: integer("deployment_progress").default(0),
+  relatedGoalIds: jsonb("related_goal_ids"),
+  relatedKpiIds: jsonb("related_kpi_ids"),
+  dependencies: jsonb("dependencies"),
+  priority: varchar("priority", { length: 20 }).default("medium"),
+  estimatedHours: integer("estimated_hours"),
+  actualHours: integer("actual_hours"),
+  assignedTo: integer("assigned_to").references(() => users.id),
+  startDate: timestamp("start_date"),
+  targetDate: timestamp("target_date"),
+  completionDate: timestamp("completion_date"),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow()
+});
+
+// Implementation Data Requirements - Tracks data needed for features per plant
+export const implementationDataRequirements = pgTable("implementation_data_requirements", {
+  id: serial("id").primaryKey(),
+  dataName: varchar("data_name", { length: 255 }).notNull(),
+  dataCategory: varchar("data_category", { length: 100 }),
+  description: text("description"),
+  plantId: integer("plant_id").references(() => ptPlants.id),
+  featureId: integer("feature_id").references(() => implementationFeatures.id),
+  onboardingId: integer("onboarding_id").references(() => plantOnboarding.id),
+  sourceSystem: varchar("source_system", { length: 255 }),
+  dataFormat: varchar("data_format", { length: 100 }),
+  frequency: varchar("frequency", { length: 50 }),
+  isRequired: boolean("is_required").default(true),
+  collectionStatus: varchar("collection_status", { length: 50 }).default("not_started"),
+  validationStatus: varchar("validation_status", { length: 50 }).default("pending"),
+  qualityScore: integer("quality_score"),
+  mappingProgress: integer("mapping_progress").default(0),
+  assignedTo: integer("assigned_to").references(() => users.id),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow()
+});
+
+// Plant Manufacturing Requirements - Plant-specific or universal requirements
+export const plantManufacturingRequirements = pgTable("plant_manufacturing_requirements", {
+  id: serial("id").primaryKey(),
+  requirementName: varchar("requirement_name", { length: 255 }).notNull(),
+  requirementCategory: varchar("requirement_category", { length: 100 }),
+  description: text("description"),
+  plantId: integer("plant_id").references(() => ptPlants.id),
+  onboardingId: integer("onboarding_id").references(() => plantOnboarding.id),
+  isUniversal: boolean("is_universal").default(false),
+  lifecycleStatus: varchar("lifecycle_status", { length: 50 }).default("identified"),
+  modelingProgress: integer("modeling_progress").default(0),
+  testingProgress: integer("testing_progress").default(0),
+  deploymentProgress: integer("deployment_progress").default(0),
+  relatedFeatureIds: jsonb("related_feature_ids"),
+  relatedGoalIds: jsonb("related_goal_ids"),
+  relatedDataIds: jsonb("related_data_ids"),
+  priority: varchar("priority", { length: 20 }).default("medium"),
+  businessImpact: text("business_impact"),
+  successCriteria: jsonb("success_criteria"),
+  assignedTo: integer("assigned_to").references(() => users.id),
+  startDate: timestamp("start_date"),
+  targetDate: timestamp("target_date"),
+  completionDate: timestamp("completion_date"),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow()
+});
+
+// Implementation Milestones - Key milestones for multi-plant implementation
+export const implementationMilestones = pgTable("implementation_milestones", {
+  id: serial("id").primaryKey(),
+  milestoneName: varchar("milestone_name", { length: 255 }).notNull(),
+  description: text("description"),
+  milestoneType: varchar("milestone_type", { length: 50 }),
+  plantId: integer("plant_id").references(() => ptPlants.id),
+  onboardingId: integer("onboarding_id").references(() => plantOnboarding.id),
+  isCompanyWide: boolean("is_company_wide").default(false),
+  status: varchar("status", { length: 50 }).default("pending"),
+  targetDate: timestamp("target_date"),
+  completionDate: timestamp("completion_date"),
+  relatedGoalIds: jsonb("related_goal_ids"),
+  relatedFeatureIds: jsonb("related_feature_ids"),
+  dependencies: jsonb("dependencies"),
+  deliverables: jsonb("deliverables"),
+  successCriteria: text("success_criteria"),
+  owner: integer("owner").references(() => users.id),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow()
+});
+
+// Implementation Tasks - Granular tasks for implementation tracking
+export const implementationTasks = pgTable("implementation_tasks", {
+  id: serial("id").primaryKey(),
+  taskTitle: varchar("task_title", { length: 255 }).notNull(),
+  description: text("description"),
+  taskType: varchar("task_type", { length: 50 }),
+  milestoneId: integer("milestone_id").references(() => implementationMilestones.id),
+  featureId: integer("feature_id").references(() => implementationFeatures.id),
+  dataRequirementId: integer("data_requirement_id").references(() => implementationDataRequirements.id),
+  plantId: integer("plant_id").references(() => ptPlants.id),
+  onboardingId: integer("onboarding_id").references(() => plantOnboarding.id),
+  status: varchar("status", { length: 50 }).default("pending"),
+  priority: varchar("priority", { length: 20 }).default("medium"),
+  estimatedHours: integer("estimated_hours"),
+  actualHours: integer("actual_hours"),
+  assignedTo: integer("assigned_to").references(() => users.id),
+  startDate: timestamp("start_date"),
+  dueDate: timestamp("due_date"),
+  completionDate: timestamp("completion_date"),
+  blockedBy: jsonb("blocked_by"),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow()
+});
+
+// Implementation KPI Targets - Plant-specific KPI targets linked to goals
+export const implementationKpiTargets = pgTable("implementation_kpi_targets", {
+  id: serial("id").primaryKey(),
+  kpiName: varchar("kpi_name", { length: 255 }).notNull(),
+  kpiCategory: varchar("kpi_category", { length: 100 }),
+  description: text("description"),
+  goalId: integer("goal_id").references(() => businessGoals.id),
+  plantId: integer("plant_id").references(() => ptPlants.id),
+  onboardingId: integer("onboarding_id").references(() => plantOnboarding.id),
+  baselineValue: decimal("baseline_value"),
+  targetValue: decimal("target_value"),
+  currentValue: decimal("current_value"),
+  unit: varchar("unit", { length: 50 }),
+  measurementFrequency: varchar("measurement_frequency", { length: 50 }),
+  status: varchar("status", { length: 50 }).default("tracking"),
+  relatedFeatureIds: jsonb("related_feature_ids"),
+  dataSourceId: integer("data_source_id"),
+  owner: integer("owner").references(() => users.id),
+  startDate: timestamp("start_date"),
+  targetDate: timestamp("target_date"),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow()
+});
+
+// ============================================
 // Customer Requirements (Uploaded from Spreadsheet)
 // ============================================
 
@@ -4390,3 +4565,63 @@ export const insertCustomerRequirementHistorySchema = createInsertSchema(custome
 });
 export type InsertCustomerRequirementHistory = z.infer<typeof insertCustomerRequirementHistorySchema>;
 export type CustomerRequirementHistory = typeof customerRequirementHistory.$inferSelect;
+
+// ============================================
+// Implementation Framework Types
+// ============================================
+
+export const insertImplementationGoalSchema = createInsertSchema(implementationGoals).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true
+});
+export type InsertImplementationGoal = z.infer<typeof insertImplementationGoalSchema>;
+export type ImplementationGoal = typeof implementationGoals.$inferSelect;
+
+export const insertImplementationFeatureSchema = createInsertSchema(implementationFeatures).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true
+});
+export type InsertImplementationFeature = z.infer<typeof insertImplementationFeatureSchema>;
+export type ImplementationFeature = typeof implementationFeatures.$inferSelect;
+
+export const insertImplementationDataRequirementSchema = createInsertSchema(implementationDataRequirements).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true
+});
+export type InsertImplementationDataRequirement = z.infer<typeof insertImplementationDataRequirementSchema>;
+export type ImplementationDataRequirement = typeof implementationDataRequirements.$inferSelect;
+
+export const insertPlantManufacturingRequirementSchema = createInsertSchema(plantManufacturingRequirements).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true
+});
+export type InsertPlantManufacturingRequirement = z.infer<typeof insertPlantManufacturingRequirementSchema>;
+export type PlantManufacturingRequirement = typeof plantManufacturingRequirements.$inferSelect;
+
+export const insertImplementationMilestoneSchema = createInsertSchema(implementationMilestones).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true
+});
+export type InsertImplementationMilestone = z.infer<typeof insertImplementationMilestoneSchema>;
+export type ImplementationMilestone = typeof implementationMilestones.$inferSelect;
+
+export const insertImplementationTaskSchema = createInsertSchema(implementationTasks).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true
+});
+export type InsertImplementationTask = z.infer<typeof insertImplementationTaskSchema>;
+export type ImplementationTask = typeof implementationTasks.$inferSelect;
+
+export const insertImplementationKpiTargetSchema = createInsertSchema(implementationKpiTargets).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true
+});
+export type InsertImplementationKpiTarget = z.infer<typeof insertImplementationKpiTargetSchema>;
+export type ImplementationKpiTarget = typeof implementationKpiTargets.$inferSelect;
