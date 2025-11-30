@@ -216,7 +216,7 @@ router.patch('/api/implementation/goals/:id', async (req, res) => {
     params.push(id);
     
     const query = `UPDATE implementation_goals SET ${setClauses.join(', ')} WHERE id = $${paramIndex} RETURNING *`;
-    const result = await db.execute(sql.raw(query));
+    const result = await db.execute(query, params);
     
     res.json(result.rows[0]);
   } catch (error) {
@@ -312,25 +312,44 @@ router.patch('/api/implementation/features/:id', async (req, res) => {
     const id = parseInt(req.params.id);
     const updates = req.body;
     
-    const allowedFields = [
-      'implementation_status', 'configuration_progress', 'testing_progress',
-      'deployment_progress', 'priority', 'notes', 'actual_hours'
-    ];
-    
     const setClauses: string[] = [];
+    const params: any[] = [];
+    let paramIndex = 1;
     
-    if (updates.implementationStatus) setClauses.push(`implementation_status = '${updates.implementationStatus}'`);
-    if (updates.configurationProgress !== undefined) setClauses.push(`configuration_progress = ${updates.configurationProgress}`);
-    if (updates.testingProgress !== undefined) setClauses.push(`testing_progress = ${updates.testingProgress}`);
-    if (updates.deploymentProgress !== undefined) setClauses.push(`deployment_progress = ${updates.deploymentProgress}`);
-    if (updates.priority) setClauses.push(`priority = '${updates.priority}'`);
-    if (updates.notes !== undefined) setClauses.push(`notes = '${updates.notes}'`);
-    if (updates.actualHours !== undefined) setClauses.push(`actual_hours = ${updates.actualHours}`);
+    if (updates.implementationStatus) {
+      setClauses.push(`implementation_status = $${paramIndex++}`);
+      params.push(updates.implementationStatus);
+    }
+    if (updates.configurationProgress !== undefined) {
+      setClauses.push(`configuration_progress = $${paramIndex++}`);
+      params.push(updates.configurationProgress);
+    }
+    if (updates.testingProgress !== undefined) {
+      setClauses.push(`testing_progress = $${paramIndex++}`);
+      params.push(updates.testingProgress);
+    }
+    if (updates.deploymentProgress !== undefined) {
+      setClauses.push(`deployment_progress = $${paramIndex++}`);
+      params.push(updates.deploymentProgress);
+    }
+    if (updates.priority) {
+      setClauses.push(`priority = $${paramIndex++}`);
+      params.push(updates.priority);
+    }
+    if (updates.notes !== undefined) {
+      setClauses.push(`notes = $${paramIndex++}`);
+      params.push(updates.notes);
+    }
+    if (updates.actualHours !== undefined) {
+      setClauses.push(`actual_hours = $${paramIndex++}`);
+      params.push(updates.actualHours);
+    }
     
     setClauses.push(`updated_at = NOW()`);
+    params.push(id);
     
-    const query = `UPDATE implementation_features SET ${setClauses.join(', ')} WHERE id = ${id} RETURNING *`;
-    const result = await db.execute(sql.raw(query));
+    const query = `UPDATE implementation_features SET ${setClauses.join(', ')} WHERE id = $${paramIndex} RETURNING *`;
+    const result = await db.execute(query, params);
     
     res.json(result.rows[0]);
   } catch (error) {
@@ -419,17 +438,35 @@ router.patch('/api/implementation/data-requirements/:id', async (req, res) => {
     const updates = req.body;
     
     const setClauses: string[] = [];
+    const params: any[] = [];
+    let paramIndex = 1;
     
-    if (updates.collectionStatus) setClauses.push(`collection_status = '${updates.collectionStatus}'`);
-    if (updates.validationStatus) setClauses.push(`validation_status = '${updates.validationStatus}'`);
-    if (updates.qualityScore !== undefined) setClauses.push(`quality_score = ${updates.qualityScore}`);
-    if (updates.mappingProgress !== undefined) setClauses.push(`mapping_progress = ${updates.mappingProgress}`);
-    if (updates.notes !== undefined) setClauses.push(`notes = '${updates.notes}'`);
+    if (updates.collectionStatus) {
+      setClauses.push(`collection_status = $${paramIndex++}`);
+      params.push(updates.collectionStatus);
+    }
+    if (updates.validationStatus) {
+      setClauses.push(`validation_status = $${paramIndex++}`);
+      params.push(updates.validationStatus);
+    }
+    if (updates.qualityScore !== undefined) {
+      setClauses.push(`quality_score = $${paramIndex++}`);
+      params.push(updates.qualityScore);
+    }
+    if (updates.mappingProgress !== undefined) {
+      setClauses.push(`mapping_progress = $${paramIndex++}`);
+      params.push(updates.mappingProgress);
+    }
+    if (updates.notes !== undefined) {
+      setClauses.push(`notes = $${paramIndex++}`);
+      params.push(updates.notes);
+    }
     
     setClauses.push(`updated_at = NOW()`);
+    params.push(id);
     
-    const query = `UPDATE implementation_data_requirements SET ${setClauses.join(', ')} WHERE id = ${id} RETURNING *`;
-    const result = await db.execute(sql.raw(query));
+    const query = `UPDATE implementation_data_requirements SET ${setClauses.join(', ')} WHERE id = $${paramIndex} RETURNING *`;
+    const result = await db.execute(query, params);
     
     res.json(result.rows[0]);
   } catch (error) {
@@ -527,18 +564,39 @@ router.patch('/api/implementation/manufacturing-requirements/:id', async (req, r
     const updates = req.body;
     
     const setClauses: string[] = [];
+    const params: any[] = [];
+    let paramIndex = 1;
     
-    if (updates.lifecycleStatus) setClauses.push(`lifecycle_status = '${updates.lifecycleStatus}'`);
-    if (updates.modelingProgress !== undefined) setClauses.push(`modeling_progress = ${updates.modelingProgress}`);
-    if (updates.testingProgress !== undefined) setClauses.push(`testing_progress = ${updates.testingProgress}`);
-    if (updates.deploymentProgress !== undefined) setClauses.push(`deployment_progress = ${updates.deploymentProgress}`);
-    if (updates.priority) setClauses.push(`priority = '${updates.priority}'`);
-    if (updates.notes !== undefined) setClauses.push(`notes = '${updates.notes}'`);
+    if (updates.lifecycleStatus) {
+      setClauses.push(`lifecycle_status = $${paramIndex++}`);
+      params.push(updates.lifecycleStatus);
+    }
+    if (updates.modelingProgress !== undefined) {
+      setClauses.push(`modeling_progress = $${paramIndex++}`);
+      params.push(updates.modelingProgress);
+    }
+    if (updates.testingProgress !== undefined) {
+      setClauses.push(`testing_progress = $${paramIndex++}`);
+      params.push(updates.testingProgress);
+    }
+    if (updates.deploymentProgress !== undefined) {
+      setClauses.push(`deployment_progress = $${paramIndex++}`);
+      params.push(updates.deploymentProgress);
+    }
+    if (updates.priority) {
+      setClauses.push(`priority = $${paramIndex++}`);
+      params.push(updates.priority);
+    }
+    if (updates.notes !== undefined) {
+      setClauses.push(`notes = $${paramIndex++}`);
+      params.push(updates.notes);
+    }
     
     setClauses.push(`updated_at = NOW()`);
+    params.push(id);
     
-    const query = `UPDATE plant_manufacturing_requirements SET ${setClauses.join(', ')} WHERE id = ${id} RETURNING *`;
-    const result = await db.execute(sql.raw(query));
+    const query = `UPDATE plant_manufacturing_requirements SET ${setClauses.join(', ')} WHERE id = $${paramIndex} RETURNING *`;
+    const result = await db.execute(query, params);
     
     res.json(result.rows[0]);
   } catch (error) {
@@ -631,15 +689,27 @@ router.patch('/api/implementation/milestones/:id', async (req, res) => {
     const updates = req.body;
     
     const setClauses: string[] = [];
+    const params: any[] = [];
+    let paramIndex = 1;
     
-    if (updates.status) setClauses.push(`status = '${updates.status}'`);
-    if (updates.notes !== undefined) setClauses.push(`notes = '${updates.notes}'`);
-    if (updates.completionDate) setClauses.push(`completion_date = '${updates.completionDate}'`);
+    if (updates.status) {
+      setClauses.push(`status = $${paramIndex++}`);
+      params.push(updates.status);
+    }
+    if (updates.notes !== undefined) {
+      setClauses.push(`notes = $${paramIndex++}`);
+      params.push(updates.notes);
+    }
+    if (updates.completionDate) {
+      setClauses.push(`completion_date = $${paramIndex++}`);
+      params.push(updates.completionDate);
+    }
     
     setClauses.push(`updated_at = NOW()`);
+    params.push(id);
     
-    const query = `UPDATE implementation_milestones SET ${setClauses.join(', ')} WHERE id = ${id} RETURNING *`;
-    const result = await db.execute(sql.raw(query));
+    const query = `UPDATE implementation_milestones SET ${setClauses.join(', ')} WHERE id = $${paramIndex} RETURNING *`;
+    const result = await db.execute(query, params);
     
     res.json(result.rows[0]);
   } catch (error) {
@@ -731,15 +801,27 @@ router.patch('/api/implementation/kpi-targets/:id', async (req, res) => {
     const updates = req.body;
     
     const setClauses: string[] = [];
+    const params: any[] = [];
+    let paramIndex = 1;
     
-    if (updates.currentValue !== undefined) setClauses.push(`current_value = ${updates.currentValue}`);
-    if (updates.status) setClauses.push(`status = '${updates.status}'`);
-    if (updates.notes !== undefined) setClauses.push(`notes = '${updates.notes}'`);
+    if (updates.currentValue !== undefined) {
+      setClauses.push(`current_value = $${paramIndex++}`);
+      params.push(updates.currentValue);
+    }
+    if (updates.status) {
+      setClauses.push(`status = $${paramIndex++}`);
+      params.push(updates.status);
+    }
+    if (updates.notes !== undefined) {
+      setClauses.push(`notes = $${paramIndex++}`);
+      params.push(updates.notes);
+    }
     
     setClauses.push(`updated_at = NOW()`);
+    params.push(id);
     
-    const query = `UPDATE implementation_kpi_targets SET ${setClauses.join(', ')} WHERE id = ${id} RETURNING *`;
-    const result = await db.execute(sql.raw(query));
+    const query = `UPDATE implementation_kpi_targets SET ${setClauses.join(', ')} WHERE id = $${paramIndex} RETURNING *`;
+    const result = await db.execute(query, params);
     
     res.json(result.rows[0]);
   } catch (error) {

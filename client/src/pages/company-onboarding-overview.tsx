@@ -16,9 +16,10 @@ import {
   Factory, TrendingUp, Clock, CheckCircle2, AlertCircle, Users,
   Package, Target, Calendar, FileText, Sparkles, Building2,
   ChevronRight, Globe, Activity, Award, Layers, Upload, 
-  Play, Pause, Check, Loader2, FlaskConical, Rocket
+  Play, Pause, Check, Loader2, FlaskConical, Rocket, GitBranch
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { ImplementationFrameworkHub } from '@/components/onboarding/ImplementationFrameworkHub';
 
 const COLORS = {
   primary: '#3B82F6',
@@ -335,8 +336,12 @@ export default function CompanyOnboardingOverview() {
       </div>
 
       <Tabs defaultValue="requirements" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-6">
           <TabsTrigger value="requirements" data-testid="tab-requirements">Requirements Tracking</TabsTrigger>
+          <TabsTrigger value="implementation" data-testid="tab-implementation" className="flex items-center gap-1">
+            <GitBranch className="h-4 w-4" />
+            Implementation
+          </TabsTrigger>
           <TabsTrigger value="overview" data-testid="tab-overview">Plant Overview</TabsTrigger>
           <TabsTrigger value="regional" data-testid="tab-regional">Regional View</TabsTrigger>
           <TabsTrigger value="timeline" data-testid="tab-timeline">Timeline</TabsTrigger>
@@ -543,6 +548,10 @@ export default function CompanyOnboardingOverview() {
               </Card>
             </div>
           </div>
+        </TabsContent>
+
+        <TabsContent value="implementation" className="space-y-4">
+          <ImplementationFrameworkHub />
         </TabsContent>
 
         <TabsContent value="overview" className="space-y-4">
