@@ -10615,19 +10615,33 @@ Focus on realistic, actionable scenarios that help with decision making.`;
 
   app.post("/api/business-goals", requireAuth, async (req, res) => {
     try {
+      console.log("Business goal request body:", JSON.stringify(req.body, null, 2));
+      
       const validation = insertBusinessGoalSchema.safeParse(req.body);
       if (!validation.success) {
         return res.status(400).json({ error: "Invalid business goal data", details: validation.error.errors });
       }
+      
+      console.log("Validation data:", JSON.stringify(validation.data, null, 2));
 
-      // Convert date strings to Date objects if present
+      // Convert all date strings to Date objects
       const data: any = { ...validation.data };
-      if (data.startDate) {
-        data.startDate = data.startDate instanceof Date ? data.startDate : new Date(data.startDate);
+      
+      // List of all possible date fields in the schema
+      const dateFields = ["startDate", "targetDate", "createdAt", "updatedAt"];
+      for (const field of dateFields) {
+        if (data[field] !== undefined && data[field] !== null) {
+          console.log(`Converting ${field}: ${data[field]} (type: ${typeof data[field]})`);
+          if (!(data[field] instanceof Date)) {
+            data[field] = new Date(data[field]);
+          }
+        }
       }
-      if (data.targetDate) {
-        data.targetDate = data.targetDate instanceof Date ? data.targetDate : new Date(data.targetDate);
-      }
+      
+      console.log("Final data to insert:", JSON.stringify(data, (key, value) => {
+        if (value instanceof Date) return `[Date: ${value.toISOString()}]`;
+        return value;
+      }, 2));
 
       const goal = await storage.createBusinessGoal(data);
       res.status(201).json(goal);
@@ -10636,7 +10650,6 @@ Focus on realistic, actionable scenarios that help with decision making.`;
       res.status(500).json({ error: "Failed to create business goal" });
     }
   });
-
   app.put("/api/business-goals/:id", requireAuth, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
