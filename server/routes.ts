@@ -78,6 +78,7 @@ import path from "path";
 import fs from "fs";
 import agentTrainingRoutes from "./routes/agent-training-routes";
 import onboardingRoutes from "./routes/onboarding-routes";
+import implementationFrameworkRoutes from "./routes/implementation-framework-routes";
 import { DEFAULT_MODEL, DEFAULT_TEMPERATURE } from "./config/ai-model";
 import multer from "multer";
 import { AlgorithmRegistry } from "./services/optimization/algorithm-registry";
@@ -10614,6 +10615,9 @@ router.use('/api', agentTrainingRoutes);
 
 // Onboarding routes
 router.use(onboardingRoutes);
+
+// Implementation Framework routes
+router.use(implementationFrameworkRoutes);
 
 // Create a new real-time voice session
 router.post('/api/realtime/sessions', async (req, res) => {
