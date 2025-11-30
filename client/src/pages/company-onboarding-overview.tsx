@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ImplementationFrameworkHub } from '@/components/onboarding/ImplementationFrameworkHub';
+import { BenefitsROISection } from '@/components/onboarding/BenefitsROISection';
 
 const COLORS = {
   primary: '#3B82F6',
@@ -335,8 +336,12 @@ export default function CompanyOnboardingOverview() {
         </Card>
       </div>
 
-      <Tabs defaultValue="requirements" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-6">
+      <Tabs defaultValue="getting-started" className="space-y-4">
+        <TabsList className="grid w-full grid-cols-7">
+          <TabsTrigger value="getting-started" data-testid="tab-getting-started" className="flex items-center gap-1">
+            <Sparkles className="h-4 w-4" />
+            Getting Started
+          </TabsTrigger>
           <TabsTrigger value="requirements" data-testid="tab-requirements">Requirements Tracking</TabsTrigger>
           <TabsTrigger value="implementation" data-testid="tab-implementation" className="flex items-center gap-1">
             <GitBranch className="h-4 w-4" />
@@ -347,6 +352,10 @@ export default function CompanyOnboardingOverview() {
           <TabsTrigger value="timeline" data-testid="tab-timeline">Timeline</TabsTrigger>
           <TabsTrigger value="ai-insights" data-testid="tab-ai-insights">AI Insights</TabsTrigger>
         </TabsList>
+
+        <TabsContent value="getting-started" className="space-y-4">
+          <BenefitsROISection />
+        </TabsContent>
 
         <TabsContent value="requirements" className="space-y-4">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
