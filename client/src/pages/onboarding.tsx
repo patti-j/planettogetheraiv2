@@ -17,7 +17,7 @@ import {
   Factory, Users, BarChart3, Package, CheckCircle2, ArrowRight,
   Building, Target, Clock, Truck, Sparkles, Upload,
   Star, FileImage, Zap, TrendingUp, DollarSign, ShieldCheck,
-  Plus, X, ChevronRight, Globe, Loader2, Search
+  Plus, X, ChevronRight, Globe, Loader2, Search, MapPin, Trash2, AlertTriangle
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -283,25 +283,41 @@ const SIZE_MULTIPLIERS: Record<string, number> = {
   'enterprise': 4.0
 };
 
+interface PlantInfo {
+  id: string;
+  name: string;
+  location: string;
+  plantType: string;
+  employeeCount: string;
+  mainProducts: string;
+  currentChallenges: string;
+  priority: 'high' | 'medium' | 'low';
+}
+
 const onboardingSteps = [
   {
     id: 'company-info',
-    title: 'Company Information',
+    title: 'Company Info',
     description: 'Tell us about your company'
   },
   {
+    id: 'plants-setup',
+    title: 'Plants',
+    description: 'Define your manufacturing plants'
+  },
+  {
     id: 'roi-benefits',
-    title: 'Expected Benefits',
+    title: 'Benefits',
     description: 'See your potential ROI'
   },
   {
     id: 'goals',
-    title: 'Business Goals',
+    title: 'Goals',
     description: 'Set your objectives'
   },
   {
     id: 'continue',
-    title: 'Continue Setup',
+    title: 'Continue',
     description: 'Define requirements & features'
   }
 ];
@@ -320,6 +336,7 @@ export default function OnboardingPage() {
   });
   const [selectedBenefits, setSelectedBenefits] = useState<string[]>([]);
   const [businessGoals, setBusinessGoals] = useState<BusinessGoal[]>([]);
+  const [plants, setPlants] = useState<PlantInfo[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isLookingUpWebsite, setIsLookingUpWebsite] = useState(false);
   const [templateDialogOpen, setTemplateDialogOpen] = useState(false);
@@ -579,7 +596,7 @@ export default function OnboardingPage() {
         });
       }
 
-      if (currentStep === 2 && businessGoals.length > 0) {
+      if (currentStep === 3 && businessGoals.length > 0) {
         // Save business goals to database
         for (const goal of businessGoals) {
           if (goal.title) {
@@ -632,14 +649,42 @@ export default function OnboardingPage() {
       case 0:
         return companyInfo.name && companyInfo.industry;
       case 1:
-        return true; // Can proceed even without selecting benefits
+        return true; // Can proceed even without adding plants
       case 2:
-        return true; // Can proceed even without goals
+        return true; // Can proceed even without selecting benefits
       case 3:
+        return true; // Can proceed even without goals
+      case 4:
         return true;
       default:
         return false;
     }
+  };
+
+  // Plant management functions
+  const handleAddPlant = () => {
+    const plantCount = parseInt(companyInfo.numberOfPlants) || 1;
+    const newPlant: PlantInfo = {
+      id: `plant-${Date.now()}`,
+      name: `Plant ${plants.length + 1}`,
+      location: '',
+      plantType: 'discrete',
+      employeeCount: '',
+      mainProducts: '',
+      currentChallenges: '',
+      priority: plants.length === 0 ? 'high' : 'medium'
+    };
+    setPlants(prev => [...prev, newPlant]);
+  };
+
+  const handleRemovePlant = (plantId: string) => {
+    setPlants(prev => prev.filter(p => p.id !== plantId));
+  };
+
+  const handlePlantChange = (plantId: string, field: keyof PlantInfo, value: string) => {
+    setPlants(prev => prev.map(p => 
+      p.id === plantId ? { ...p, [field]: value } : p
+    ));
   };
 
   const progressPercentage = ((currentStep + 1) / onboardingSteps.length) * 100;
@@ -874,8 +919,196 @@ export default function OnboardingPage() {
           </Card>
         )}
 
-        {/* Step 2: ROI/Benefits */}
+        {/* Step 2: Plants Setup */}
         {currentStep === 1 && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Factory className="w-6 h-6" />
+                Plants to Optimize
+              </CardTitle>
+              <CardDescription>
+                Add the manufacturing plants you plan to optimize. Include relevant details about each plant to help us tailor your implementation.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {/* Quick add section */}
+              <div className="flex items-center justify-between">
+                <div className="text-sm text-gray-600">
+                  {plants.length === 0 ? (
+                    <span>No plants added yet. Click the button to add your first plant.</span>
+                  ) : (
+                    <span>{plants.length} plant{plants.length !== 1 ? 's' : ''} configured</span>
+                  )}
+                </div>
+                <Button onClick={handleAddPlant} data-testid="button-add-plant">
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add Plant
+                </Button>
+              </div>
+
+              {/* Plants list */}
+              <div className="space-y-4">
+                {plants.map((plant, index) => (
+                  <div 
+                    key={plant.id} 
+                    className="border rounded-lg p-4 bg-white shadow-sm"
+                    data-testid={`plant-card-${plant.id}`}
+                  >
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="flex items-center gap-3">
+                        <div className={cn(
+                          "w-10 h-10 rounded-full flex items-center justify-center text-white font-bold",
+                          plant.priority === 'high' ? 'bg-red-500' : 
+                          plant.priority === 'medium' ? 'bg-yellow-500' : 'bg-gray-400'
+                        )}>
+                          {index + 1}
+                        </div>
+                        <div>
+                          <Input
+                            value={plant.name}
+                            onChange={(e) => handlePlantChange(plant.id, 'name', e.target.value)}
+                            placeholder="Plant name"
+                            className="font-semibold text-lg border-0 p-0 h-auto focus-visible:ring-0"
+                            data-testid={`input-plant-name-${plant.id}`}
+                          />
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Select 
+                          value={plant.priority}
+                          onValueChange={(value) => handlePlantChange(plant.id, 'priority', value)}
+                        >
+                          <SelectTrigger className="w-32" data-testid={`select-plant-priority-${plant.id}`}>
+                            <SelectValue placeholder="Priority" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="high">High Priority</SelectItem>
+                            <SelectItem value="medium">Medium</SelectItem>
+                            <SelectItem value="low">Low</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <Button 
+                          variant="ghost" 
+                          size="icon"
+                          onClick={() => handleRemovePlant(plant.id)}
+                          className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                          data-testid={`button-remove-plant-${plant.id}`}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium mb-1">
+                          <MapPin className="w-3 h-3 inline mr-1" />
+                          Location
+                        </label>
+                        <Input
+                          value={plant.location}
+                          onChange={(e) => handlePlantChange(plant.id, 'location', e.target.value)}
+                          placeholder="City, State/Country"
+                          data-testid={`input-plant-location-${plant.id}`}
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium mb-1">Plant Type</label>
+                        <Select 
+                          value={plant.plantType}
+                          onValueChange={(value) => handlePlantChange(plant.id, 'plantType', value)}
+                        >
+                          <SelectTrigger data-testid={`select-plant-type-${plant.id}`}>
+                            <SelectValue placeholder="Select type" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="discrete">Discrete Manufacturing</SelectItem>
+                            <SelectItem value="process">Process Manufacturing</SelectItem>
+                            <SelectItem value="batch">Batch Manufacturing</SelectItem>
+                            <SelectItem value="continuous">Continuous Flow</SelectItem>
+                            <SelectItem value="mixed">Mixed Mode</SelectItem>
+                            <SelectItem value="assembly">Assembly</SelectItem>
+                            <SelectItem value="job_shop">Job Shop</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium mb-1">
+                          <Users className="w-3 h-3 inline mr-1" />
+                          Employee Count
+                        </label>
+                        <Input
+                          value={plant.employeeCount}
+                          onChange={(e) => handlePlantChange(plant.id, 'employeeCount', e.target.value)}
+                          placeholder="e.g., 150"
+                          data-testid={`input-plant-employees-${plant.id}`}
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium mb-1">Main Products</label>
+                        <Input
+                          value={plant.mainProducts}
+                          onChange={(e) => handlePlantChange(plant.id, 'mainProducts', e.target.value)}
+                          placeholder="What does this plant produce?"
+                          data-testid={`input-plant-products-${plant.id}`}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="mt-4">
+                      <label className="block text-sm font-medium mb-1">
+                        <AlertTriangle className="w-3 h-3 inline mr-1" />
+                        Current Challenges (Optional)
+                      </label>
+                      <Textarea
+                        value={plant.currentChallenges}
+                        onChange={(e) => handlePlantChange(plant.id, 'currentChallenges', e.target.value)}
+                        placeholder="Describe key challenges at this plant: scheduling issues, bottlenecks, delivery problems..."
+                        className="min-h-[60px]"
+                        data-testid={`textarea-plant-challenges-${plant.id}`}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Empty state */}
+              {plants.length === 0 && (
+                <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
+                  <Factory className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">No Plants Added</h3>
+                  <p className="text-gray-500 mb-4">
+                    Add your manufacturing plants to get started. You can always add more later.
+                  </p>
+                  <Button onClick={handleAddPlant} variant="outline" data-testid="button-add-first-plant">
+                    <Plus className="w-4 h-4 mr-2" />
+                    Add Your First Plant
+                  </Button>
+                </div>
+              )}
+
+              {/* Tip section */}
+              {plants.length > 0 && (
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <div className="flex items-start gap-3">
+                    <Sparkles className="w-5 h-5 text-blue-600 mt-0.5" />
+                    <div>
+                      <h4 className="font-medium text-blue-900">Tip: Prioritize Your Plants</h4>
+                      <p className="text-sm text-blue-700">
+                        Set high priority for plants where you expect the most immediate impact. 
+                        We'll focus implementation efforts there first.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Step 3: ROI/Benefits */}
+        {currentStep === 2 && (
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -883,7 +1116,7 @@ export default function OnboardingPage() {
                 Expected Benefits & ROI
               </CardTitle>
               <CardDescription>
-                Based on your {companyInfo.industry || 'industry'} profile and company size, here are the typical benefits you can expect from implementing PlanetTogether
+                Based on your {companyInfo.industry || 'industry'} profile and {plants.length || 'your'} plant{plants.length !== 1 ? 's' : ''}, here are the typical benefits you can expect
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
@@ -974,8 +1207,8 @@ export default function OnboardingPage() {
           </Card>
         )}
 
-        {/* Step 3: Goals */}
-        {currentStep === 2 && (
+        {/* Step 4: Goals */}
+        {currentStep === 3 && (
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -994,7 +1227,7 @@ export default function OnboardingPage() {
                   <div className="flex justify-center gap-4">
                     <Button
                       variant="outline"
-                      onClick={() => setCurrentStep(1)}
+                      onClick={() => setCurrentStep(2)}
                       data-testid="button-go-back-benefits"
                     >
                       <ChevronRight className="w-4 h-4 mr-2 rotate-180" />
@@ -1106,8 +1339,8 @@ export default function OnboardingPage() {
           </Card>
         )}
 
-        {/* Step 4: Continue to Implementation */}
-        {currentStep === 3 && (
+        {/* Step 5: Continue to Implementation */}
+        {currentStep === 4 && (
           <Card>
             <CardHeader className="text-center">
               <CheckCircle2 className="w-16 h-16 text-green-500 mx-auto mb-4" />
@@ -1123,6 +1356,10 @@ export default function OnboardingPage() {
                   <div className="flex items-center gap-3">
                     <CheckCircle2 className="w-5 h-5 text-green-500" />
                     <span>Company profile: <strong>{companyInfo.name}</strong> ({companyInfo.industry})</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <CheckCircle2 className="w-5 h-5 text-green-500" />
+                    <span>Configured {plants.length} plant{plants.length !== 1 ? 's' : ''} for optimization</span>
                   </div>
                   <div className="flex items-center gap-3">
                     <CheckCircle2 className="w-5 h-5 text-green-500" />
