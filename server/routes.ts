@@ -16458,5 +16458,260 @@ router.post("/api/routing-intelligence/generate", requireAuth, async (req, res) 
   }
 });
 
+// ============================================
+// Feature Roadmap API
+// ============================================
+
+// Get all roadmap features
+router.get("/api/roadmap-features", async (req, res) => {
+  try {
+    const result = await db.execute(sql`
+      SELECT * FROM roadmap_features 
+      ORDER BY display_order ASC, created_at DESC
+    `);
+    res.json(result.rows);
+  } catch (error: any) {
+    console.error("Error fetching roadmap features:", error);
+    res.status(500).json({ error: "Failed to fetch roadmap features" });
+  }
+});
+
+// Add features to roadmap (bulk)
+router.post("/api/roadmap-features/bulk", async (req, res) => {
+  try {
+    const { features } = req.body;
+    
+    if (!features || !Array.isArray(features)) {
+      return res.status(400).json({ error: "Features array is required" });
+    }
+    
+    const inserted: any[] = [];
+    const skipped: string[] = [];
+    
+    for (const feature of features) {
+      try {
+        // Check if feature already exists
+        const existing = await db.execute(sql`
+          SELECT id FROM roadmap_features WHERE feature_id = ${feature.id}
+        `);
+        
+        if (existing.rows.length > 0) {
+          skipped.push(feature.name);
+          continue;
+        }
+        
+        // Insert new feature
+        const result = await db.execute(sql`
+          INSERT INTO roadmap_features (
+            feature_id, name, description, category, source, 
+            priority, complexity, display_order, included, 
+            requirement_count, related_requirements
+          ) VALUES (
+            ${feature.id},
+            ${feature.name},
+            ${feature.description || null},
+            ${feature.category || 'optimization'},
+            ${feature.source || 'library'},
+            ${feature.priority || 'Medium'},
+            ${feature.complexity || 'medium'},
+            ${feature.order || 0},
+            ${true},
+            ${feature.requirementCount || 0},
+            ${JSON.stringify(feature.requirements || [])}
+          ) RETURNING *
+        `);
+        
+        inserted.push(result.rows[0]);
+      } catch (insertError: any) {
+        console.error(`Error inserting feature ${feature.name}:`, insertError);
+        skipped.push(feature.name);
+      }
+    }
+    
+    res.json({ 
+      inserted: inserted.length, 
+      skipped: skipped.length,
+      features: inserted,
+      skippedNames: skipped
+    });
+  } catch (error: any) {
+    console.error("Error adding roadmap features:", error);
+    res.status(500).json({ error: "Failed to add roadmap features" });
+  }
+});
+
+// Update feature order/inclusion
+router.patch("/api/roadmap-features/:id", async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    const { included, display_order, status } = req.body;
+    
+    const updates: string[] = [];
+    if (included !== undefined) updates.push(`included = ${included}`);
+    if (display_order !== undefined) updates.push(`display_order = ${display_order}`);
+    if (status !== undefined) updates.push(`status = '${status}'`);
+    updates.push(`updated_at = NOW()`);
+    
+    if (updates.length === 0) {
+      return res.status(400).json({ error: "No updates provided" });
+    }
+    
+    const result = await db.execute(sql.raw(`
+      UPDATE roadmap_features 
+      SET ${updates.join(', ')} 
+      WHERE id = ${id}
+      RETURNING *
+    `));
+    
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: "Feature not found" });
+    }
+    
+    res.json(result.rows[0]);
+  } catch (error: any) {
+    console.error("Error updating roadmap feature:", error);
+    res.status(500).json({ error: "Failed to update roadmap feature" });
+  }
+});
+
+// Reorder all features
+router.put("/api/roadmap-features/reorder", async (req, res) => {
+  try {
+    const { featureIds } = req.body;
+    
+    if (!featureIds || !Array.isArray(featureIds)) {
+      return res.status(400).json({ error: "Feature IDs array is required" });
+    }
+    
+    for (let i = 0; i < featureIds.length; i++) {
+      await db.execute(sql`
+        UPDATE roadmap_features 
+        SET display_order = ${i + 1}, updated_at = NOW()
+        WHERE id = ${featureIds[i]}
+      `);
+    }
+    
+    const result = await db.execute(sql`
+      SELECT * FROM roadmap_features ORDER BY display_order ASC
+    `);
+    
+    res.json(result.rows);
+  } catch (error: any) {
+    console.error("Error reordering roadmap features:", error);
+    res.status(500).json({ error: "Failed to reorder roadmap features" });
+  }
+});
+
+// Delete a roadmap feature
+router.delete("/api/roadmap-features/:id", async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    
+    await db.execute(sql`
+      DELETE FROM roadmap_features WHERE id = ${id}
+    `);
+    
+    res.json({ success: true });
+  } catch (error: any) {
+    console.error("Error deleting roadmap feature:", error);
+    res.status(500).json({ error: "Failed to delete roadmap feature" });
+  }
+});
+
+// Clear all roadmap features
+router.delete("/api/roadmap-features", async (req, res) => {
+  try {
+    await db.execute(sql`DELETE FROM roadmap_features`);
+    res.json({ success: true });
+  } catch (error: any) {
+    console.error("Error clearing roadmap features:", error);
+    res.status(500).json({ error: "Failed to clear roadmap features" });
+  }
+});
+
+// Finalize roadmap - promote included features to lifecycle tracking
+router.post("/api/roadmap-features/finalize", async (req, res) => {
+  try {
+    const { features } = req.body;
+    
+    if (!features || !Array.isArray(features)) {
+      return res.status(400).json({ error: "Features array is required" });
+    }
+    
+    const created: any[] = [];
+    
+    for (const feature of features) {
+      if (!feature.included) continue;
+      
+      try {
+        // Parse related requirements if string
+        const relatedReqs = typeof feature.requirements === 'string' 
+          ? JSON.parse(feature.requirements || '[]') 
+          : (feature.requirements || []);
+        
+        // Create customer requirement for this feature (entering modeling phase)
+        const result = await db.execute(sql`
+          INSERT INTO customer_requirements (
+            customer_name,
+            segment,
+            requirement_name,
+            description,
+            features,
+            priority,
+            lifecycle_status,
+            modeling_progress,
+            testing_progress,
+            deployment_progress,
+            source_file,
+            created_at,
+            updated_at
+          ) VALUES (
+            'System Generated',
+            ${feature.category || 'optimization'},
+            ${feature.name},
+            ${feature.description || ''},
+            ${JSON.stringify(relatedReqs)},
+            ${feature.priority === 1 ? 'Critical' : feature.priority <= 3 ? 'High' : 'Medium'},
+            'modeling',
+            0,
+            0,
+            0,
+            'Feature Roadmap',
+            NOW(),
+            NOW()
+          ) RETURNING *
+        `);
+        
+        created.push(result.rows[0]);
+        
+        // Mark this feature as promoted in roadmap_features
+        if (feature.dbId) {
+          await db.execute(sql`
+            UPDATE roadmap_features 
+            SET status = 'promoted', updated_at = NOW()
+            WHERE id = ${feature.dbId}
+          `);
+        }
+      } catch (insertError: any) {
+        console.error(`Error creating requirement for feature ${feature.name}:`, insertError);
+      }
+    }
+    
+    // Clear promoted features from roadmap
+    await db.execute(sql`
+      DELETE FROM roadmap_features WHERE status = 'promoted'
+    `);
+    
+    res.json({ 
+      success: true,
+      created: created.length,
+      requirements: created
+    });
+  } catch (error: any) {
+    console.error("Error finalizing roadmap:", error);
+    res.status(500).json({ error: "Failed to finalize roadmap features" });
+  }
+});
+
 // Forced rebuild - all duplicate keys fixed
 export default router;

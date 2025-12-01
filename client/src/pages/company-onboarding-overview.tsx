@@ -255,16 +255,54 @@ export default function CompanyOnboardingOverview() {
   const [selectedRegion, setSelectedRegion] = useState<string | null>(null);
   const [selectedPlant, setSelectedPlant] = useState<any>(null);
   
-  // Feature Roadmap State
-  const [featureRoadmap, setFeatureRoadmap] = useState<ImplementationFeature[]>(() => {
-    // Initialize features with priority order and included state
-    return FEATURE_CATALOG.map((feature, index) => ({
-      ...feature,
-      priority: index + 1,
-      included: true
-    }));
-  });
+  // Feature Roadmap State - Load from database API
+  const [featureRoadmap, setFeatureRoadmap] = useState<ImplementationFeature[]>([]);
   const [draggedFeature, setDraggedFeature] = useState<string | null>(null);
+  
+  // Fetch features from database
+  const { data: dbRoadmapFeatures = [], isLoading: loadingRoadmapFeatures, refetch: refetchRoadmapFeatures } = useQuery<any[]>({
+    queryKey: ['/api/roadmap-features']
+  });
+  
+  // Update featureRoadmap when database features load
+  useEffect(() => {
+    if (loadingRoadmapFeatures) return;
+    
+    if (dbRoadmapFeatures.length > 0) {
+      // Convert database features to ImplementationFeature format
+      const features = dbRoadmapFeatures.map((f: any, index: number) => {
+        const requirements = typeof f.related_requirements === 'string' 
+          ? JSON.parse(f.related_requirements || '[]') 
+          : (f.related_requirements || []);
+        
+        return {
+          id: f.feature_id || f.id?.toString(),
+          name: f.name,
+          description: f.description || `Feature derived from ${f.requirement_count || 0} manufacturing requirement${f.requirement_count !== 1 ? 's' : ''}: ${requirements.slice?.(0, 2).join(', ')}${requirements.length > 2 ? '...' : ''}`,
+          category: (f.category as 'scheduling' | 'planning' | 'analytics' | 'integration' | 'optimization') || 'optimization',
+          icon: Package,
+          goalsAlignment: [],
+          dataRequirements: [],
+          complexity: f.complexity === 'high' || f.priority === 'Critical' ? 'high' : f.complexity === 'medium' || f.priority === 'High' ? 'medium' : 'low' as const,
+          timeToImplement: f.priority === 'Critical' ? '4-6 weeks' : f.priority === 'High' ? '2-4 weeks' : '1-2 weeks',
+          dependencies: [],
+          benefits: [`Supports ${f.requirement_count || 0} requirement${f.requirement_count !== 1 ? 's' : ''}`],
+          priority: f.display_order || index + 1,
+          included: f.included !== false,
+          source: f.source || 'library',
+          dbId: f.id // Keep database ID for updates
+        };
+      });
+      setFeatureRoadmap(features);
+    } else {
+      // Fall back to hardcoded FEATURE_CATALOG if no database features
+      setFeatureRoadmap(FEATURE_CATALOG.map((feature, index) => ({
+        ...feature,
+        priority: index + 1,
+        included: true
+      })));
+    }
+  }, [dbRoadmapFeatures, loadingRoadmapFeatures]);
 
   const { data: apiData, isLoading } = useQuery<{
     overview: any;
@@ -897,6 +935,44 @@ export default function CompanyOnboardingOverview() {
                     <Check className="h-4 w-4 mr-2" />
                     Save Roadmap
                   </Button>
+                  
+                  {includedFeatures.length > 0 && (
+                    <Button 
+                      className="w-full mt-2 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700" 
+                      data-testid="button-finalize-roadmap"
+                      onClick={async () => {
+                        try {
+                          const response = await fetch('/api/roadmap-features/finalize', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ 
+                              features: includedFeatures.map(f => ({
+                                ...f,
+                                requirements: f.benefits || []
+                              }))
+                            })
+                          });
+                          
+                          if (!response.ok) {
+                            throw new Error('Failed to finalize roadmap');
+                          }
+                          
+                          const result = await response.json();
+                          
+                          // Refresh the roadmap features from database
+                          refetchRoadmapFeatures();
+                          
+                          alert(`Success! ${result.created} feature${result.created !== 1 ? 's' : ''} promoted to Implementation Lifecycle. Check the Requirements tab to track progress.`);
+                        } catch (error) {
+                          console.error('Error finalizing roadmap:', error);
+                          alert('Failed to finalize roadmap. Please try again.');
+                        }
+                      }}
+                    >
+                      <Rocket className="h-4 w-4 mr-2" />
+                      Finalize & Start Implementation
+                    </Button>
+                  )}
                 </CardContent>
               </Card>
             </div>

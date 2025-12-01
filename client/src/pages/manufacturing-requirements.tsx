@@ -17,7 +17,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { 
   ChevronDown, ChevronUp, CheckCircle, Package, Settings, Factory, 
   Sparkles, FileText, AlertCircle, Upload, Download, FileSpreadsheet,
-  Play, Pause, Check, Clock, Loader2, MoreVertical, Eye, Trash2
+  Play, Pause, Check, Clock, Loader2, MoreVertical, Eye, Trash2, X, RotateCcw, ArrowRight
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -93,6 +93,7 @@ export default function ManufacturingRequirements() {
   const [isUploading, setIsUploading] = useState(false);
   const [activeTab, setActiveTab] = useState("library");
   const [selectedCustomerReqs, setSelectedCustomerReqs] = useState<Set<number>>(new Set());
+  const [excludedFeatures, setExcludedFeatures] = useState<Set<string>>(new Set());
 
   const { data: customerRequirements = [], isLoading: loadingRequirements } = useQuery<CustomerRequirement[]>({
     queryKey: ['/api/customer-requirements']
@@ -146,10 +147,7 @@ export default function ManufacturingRequirements() {
 
   const updateStatusMutation = useMutation({
     mutationFn: async ({ id, status, reqName }: { id: number; status: string; reqName?: string }) => {
-      return apiRequest(`/api/customer-requirements/${id}/status`, {
-        method: 'PATCH',
-        body: JSON.stringify({ status })
-      });
+      return apiRequest('PATCH', `/api/customer-requirements/${id}/status`, { status });
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['/api/customer-requirements'] });
@@ -171,7 +169,7 @@ export default function ManufacturingRequirements() {
 
   const deleteRequirementMutation = useMutation({
     mutationFn: async (id: number) => {
-      return apiRequest(`/api/customer-requirements/${id}`, { method: 'DELETE' });
+      return apiRequest('DELETE', `/api/customer-requirements/${id}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/customer-requirements'] });
@@ -267,6 +265,21 @@ export default function ManufacturingRequirements() {
     setSelectedRequirements(new Set());
     setSelectedSegment("");
     setShowImplementationPlan(false);
+    setExcludedFeatures(new Set());
+  };
+
+  const toggleExcludeFeature = (feature: string) => {
+    const newExcluded = new Set(excludedFeatures);
+    if (newExcluded.has(feature)) {
+      newExcluded.delete(feature);
+    } else {
+      newExcluded.add(feature);
+    }
+    setExcludedFeatures(newExcluded);
+  };
+
+  const restoreAllFeatures = () => {
+    setExcludedFeatures(new Set());
   };
 
   const getSegmentIcon = (segmentName: string) => {
@@ -613,15 +626,38 @@ export default function ManufacturingRequirements() {
                 <Card className="p-4">
                   <div className="flex items-center justify-between mb-4">
                     <h2 className="text-xl font-semibold">Required Features</h2>
-                    <Badge variant="default">{requiredFeatures.size} Features</Badge>
+                    <div className="flex items-center gap-2">
+                      {excludedFeatures.size > 0 && (
+                        <Badge variant="outline" className="text-muted-foreground">
+                          {excludedFeatures.size} excluded
+                        </Badge>
+                      )}
+                      <Badge variant="default">
+                        {requiredFeatures.size - excludedFeatures.size} Features
+                      </Badge>
+                    </div>
                   </div>
                   {selectedRequirements.size > 0 && (
-                    <p className="text-xs text-muted-foreground mb-3">
-                      {selectedRequirements.size} requirement{selectedRequirements.size !== 1 ? 's' : ''} selected → {requiredFeatures.size} unique feature{requiredFeatures.size !== 1 ? 's' : ''} needed
-                    </p>
+                    <div className="flex items-center justify-between mb-3">
+                      <p className="text-xs text-muted-foreground">
+                        {selectedRequirements.size} requirement{selectedRequirements.size !== 1 ? 's' : ''} selected → {requiredFeatures.size - excludedFeatures.size} feature{requiredFeatures.size - excludedFeatures.size !== 1 ? 's' : ''} included
+                      </p>
+                      {excludedFeatures.size > 0 && (
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          onClick={restoreAllFeatures}
+                          className="text-xs h-6"
+                          data-testid="button-restore-features"
+                        >
+                          <RotateCcw className="h-3 w-3 mr-1" />
+                          Restore All
+                        </Button>
+                      )}
+                    </div>
                   )}
                   
-                  <ScrollArea className="h-[580px] pr-4">
+                  <ScrollArea className="h-[500px] pr-4">
                     {sortedFeatures.length === 0 ? (
                       <div className="text-center py-8">
                         <p className="text-muted-foreground">
@@ -630,41 +666,125 @@ export default function ManufacturingRequirements() {
                       </div>
                     ) : (
                       <div className="space-y-2">
-                        {sortedFeatures.map(([feature, featureData]) => (
-                          <Collapsible key={feature}>
-                            <div 
-                              className="flex items-center justify-between p-3 bg-muted/30 rounded-lg"
-                              data-testid={`feature-${feature}`}
-                            >
-                              <div className="flex-1">
-                                <span className="font-medium text-sm">{feature}</span>
-                              </div>
-                              <div className="flex items-center gap-2">
-                                <Badge 
-                                  className={cn("text-white", getPriorityColor(featureData.count))}
-                                >
-                                  {getPriorityLabel(featureData.count)}
-                                </Badge>
-                                <CollapsibleTrigger asChild>
-                                  <Button variant="ghost" size="sm" className="h-6 px-2">
-                                    <ChevronDown className="h-3 w-3" />
+                        {sortedFeatures.map(([feature, featureData]) => {
+                          const isExcluded = excludedFeatures.has(feature);
+                          return (
+                            <Collapsible key={feature}>
+                              <div 
+                                className={cn(
+                                  "flex items-center justify-between p-3 rounded-lg transition-all",
+                                  isExcluded 
+                                    ? "bg-muted/10 opacity-50" 
+                                    : "bg-muted/30"
+                                )}
+                                data-testid={`feature-${feature}`}
+                              >
+                                <div className="flex-1">
+                                  <span className={cn(
+                                    "font-medium text-sm",
+                                    isExcluded && "line-through text-muted-foreground"
+                                  )}>
+                                    {feature}
+                                  </span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  {!isExcluded && (
+                                    <Badge 
+                                      className={cn("text-white", getPriorityColor(featureData.count))}
+                                    >
+                                      {getPriorityLabel(featureData.count)}
+                                    </Badge>
+                                  )}
+                                  <CollapsibleTrigger asChild>
+                                    <Button variant="ghost" size="sm" className="h-6 px-2">
+                                      <ChevronDown className="h-3 w-3" />
+                                    </Button>
+                                  </CollapsibleTrigger>
+                                  <Button 
+                                    variant="ghost" 
+                                    size="sm" 
+                                    className={cn(
+                                      "h-6 w-6 p-0",
+                                      isExcluded 
+                                        ? "text-green-600 hover:text-green-700 hover:bg-green-100" 
+                                        : "text-red-500 hover:text-red-600 hover:bg-red-100"
+                                    )}
+                                    onClick={() => toggleExcludeFeature(feature)}
+                                    data-testid={`button-toggle-feature-${feature}`}
+                                  >
+                                    {isExcluded ? <RotateCcw className="h-3 w-3" /> : <X className="h-3 w-3" />}
                                   </Button>
-                                </CollapsibleTrigger>
+                                </div>
                               </div>
-                            </div>
-                            <CollapsibleContent className="px-3 pb-2">
-                              <div className="text-xs text-muted-foreground mt-2 space-y-1">
-                                <div className="font-medium">Needed for {featureData.count} requirement{featureData.count !== 1 ? 's' : ''}:</div>
-                                {featureData.requirements.map((req, i) => (
-                                  <div key={i}>• {req}</div>
-                                ))}
-                              </div>
-                            </CollapsibleContent>
-                          </Collapsible>
-                        ))}
+                              <CollapsibleContent className="px-3 pb-2">
+                                <div className="text-xs text-muted-foreground mt-2 space-y-1">
+                                  <div className="font-medium">Needed for {featureData.count} requirement{featureData.count !== 1 ? 's' : ''}:</div>
+                                  {featureData.requirements.map((req, i) => (
+                                    <div key={i}>• {req}</div>
+                                  ))}
+                                </div>
+                              </CollapsibleContent>
+                            </Collapsible>
+                          );
+                        })}
                       </div>
                     )}
                   </ScrollArea>
+                  
+                  {sortedFeatures.length > 0 && sortedFeatures.length > excludedFeatures.size && (
+                    <div className="mt-4 pt-4 border-t">
+                      <Button 
+                        className="w-full" 
+                        data-testid="button-add-to-roadmap"
+                        onClick={async () => {
+                          const includedFeatures = sortedFeatures
+                            .filter(([feature]) => !excludedFeatures.has(feature))
+                            .map(([feature, data], index) => ({ 
+                              id: `lib-${feature.toLowerCase().replace(/\s+/g, '-')}`,
+                              name: feature, 
+                              priority: getPriorityLabel(data.count), 
+                              requirementCount: data.count,
+                              requirements: data.requirements,
+                              source: 'library' as const,
+                              order: index + 1
+                            }));
+                          
+                          try {
+                            const response = await fetch('/api/roadmap-features/bulk', {
+                              method: 'POST',
+                              headers: { 'Content-Type': 'application/json' },
+                              body: JSON.stringify({ features: includedFeatures })
+                            });
+                            
+                            if (!response.ok) {
+                              throw new Error('Failed to add features');
+                            }
+                            
+                            const result = await response.json();
+                            
+                            // Clear selections after successful add
+                            setSelectedRequirements(new Set());
+                            setExcludedFeatures(new Set());
+                            
+                            toast({
+                              title: "Features Added to Roadmap",
+                              description: `${result.inserted} feature${result.inserted !== 1 ? 's' : ''} added${result.skipped > 0 ? `, ${result.skipped} already existed` : ''}. Go to Onboarding Overview → Feature Roadmap to prioritize.`
+                            });
+                          } catch (error) {
+                            console.error('Error adding features to roadmap:', error);
+                            toast({
+                              title: "Error",
+                              description: "Failed to add features to roadmap. Please try again.",
+                              variant: "destructive"
+                            });
+                          }
+                        }}
+                      >
+                        <ArrowRight className="h-4 w-4 mr-2" />
+                        Add to Roadmap ({requiredFeatures.size - excludedFeatures.size} features)
+                      </Button>
+                    </div>
+                  )}
                 </Card>
               </div>
             </div>

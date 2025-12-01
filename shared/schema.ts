@@ -3969,6 +3969,38 @@ export const customerRequirementHistory = pgTable("customer_requirement_history"
 });
 
 // ============================================
+// Feature Roadmap - Staging area for features before implementation
+// ============================================
+
+export const roadmapFeatures = pgTable("roadmap_features", {
+  id: serial("id").primaryKey(),
+  featureId: varchar("feature_id", { length: 255 }).notNull().unique(), // Unique identifier for the feature
+  name: varchar("name", { length: 255 }).notNull(),
+  description: text("description"),
+  category: varchar("category", { length: 100 }).default("optimization"),
+  source: varchar("source", { length: 50 }).notNull(), // 'library' or 'uploaded'
+  priority: varchar("priority", { length: 20 }).default("medium"), // Critical, High, Medium
+  complexity: varchar("complexity", { length: 20 }).default("medium"), // low, medium, high
+  displayOrder: integer("display_order").default(0),
+  included: boolean("included").default(true),
+  requirementCount: integer("requirement_count").default(0),
+  relatedRequirements: jsonb("related_requirements"), // Array of requirement names
+  status: varchar("status", { length: 50 }).default("roadmap"), // roadmap, modeling, testing, deployed
+  plantId: integer("plant_id").references(() => ptPlants.id),
+  createdBy: integer("created_by").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow()
+});
+
+export const insertRoadmapFeatureSchema = createInsertSchema(roadmapFeatures).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true
+});
+export type InsertRoadmapFeature = z.infer<typeof insertRoadmapFeatureSchema>;
+export type RoadmapFeature = typeof roadmapFeatures.$inferSelect;
+
+// ============================================
 // Continuous Improvement Center
 // ============================================
 
