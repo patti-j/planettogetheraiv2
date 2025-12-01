@@ -17,7 +17,7 @@ import {
   Factory, Users, BarChart3, Package, CheckCircle2, ArrowRight,
   Building, Target, Clock, Truck, Sparkles, Upload,
   Star, FileImage, Zap, TrendingUp, DollarSign, ShieldCheck,
-  Plus, X, ChevronRight
+  Plus, X, ChevronRight, Globe, Loader2, Search
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -321,6 +321,7 @@ export default function OnboardingPage() {
   const [selectedBenefits, setSelectedBenefits] = useState<string[]>([]);
   const [businessGoals, setBusinessGoals] = useState<BusinessGoal[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [isLookingUpWebsite, setIsLookingUpWebsite] = useState(false);
   const [templateDialogOpen, setTemplateDialogOpen] = useState(false);
   const [selectedIndustryTemplates, setSelectedIndustryTemplates] = useState<any[]>([]);
   const { toast } = useToast();
@@ -406,6 +407,59 @@ export default function OnboardingPage() {
       });
     }
   });
+
+  // Website lookup function using AI
+  const handleWebsiteLookup = async () => {
+    if (!companyInfo.website) {
+      toast({
+        title: "Website Required",
+        description: "Please enter a company website to look up.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsLookingUpWebsite(true);
+    try {
+      const response = await apiRequest('POST', '/api/company-lookup', { 
+        website: companyInfo.website 
+      });
+      const data = await response.json();
+      
+      if (data.success && data.companyInfo) {
+        const newInfo = {
+          ...companyInfo,
+          name: data.companyInfo.name || companyInfo.name,
+          industry: data.companyInfo.industry || companyInfo.industry,
+          size: data.companyInfo.size || companyInfo.size,
+          description: data.companyInfo.description || companyInfo.description,
+          products: data.companyInfo.products || companyInfo.products,
+          numberOfPlants: data.companyInfo.numberOfPlants || companyInfo.numberOfPlants
+        };
+        saveCompanyInfo(newInfo);
+        
+        toast({
+          title: "Company Info Found",
+          description: `Found information for ${data.companyInfo.name || 'your company'}. Please review and adjust as needed.`
+        });
+      } else {
+        toast({
+          title: "Limited Info Found",
+          description: data.message || "Could not find detailed company information. Please fill in manually.",
+          variant: "default"
+        });
+      }
+    } catch (error) {
+      console.error('Website lookup error:', error);
+      toast({
+        title: "Lookup Failed",
+        description: "Could not retrieve company information. Please fill in manually.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLookingUpWebsite(false);
+    }
+  };
 
   // Map industry values to templates
   const industryToTemplateMap = useMemo(() => {
@@ -701,6 +755,47 @@ export default function OnboardingPage() {
               </Button>
             </CardHeader>
             <CardContent className="space-y-6">
+              {/* Website Lookup Section */}
+              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-4">
+                <div className="flex items-center gap-2 mb-3">
+                  <Sparkles className="w-5 h-5 text-blue-600" />
+                  <span className="font-medium text-blue-900">AI-Powered Company Lookup</span>
+                </div>
+                <p className="text-sm text-blue-700 mb-3">
+                  Enter your company website and we'll automatically detect your industry, size, and recommend relevant benefits.
+                </p>
+                <div className="flex gap-2">
+                  <div className="flex-1 relative">
+                    <Globe className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                    <Input
+                      value={companyInfo.website}
+                      onChange={(e) => saveCompanyInfo({...companyInfo, website: e.target.value})}
+                      placeholder="https://yourcompany.com"
+                      className="pl-10"
+                      data-testid="input-company-website"
+                    />
+                  </div>
+                  <Button
+                    onClick={handleWebsiteLookup}
+                    disabled={isLookingUpWebsite || !companyInfo.website}
+                    className="bg-blue-600 hover:bg-blue-700"
+                    data-testid="button-lookup-website"
+                  >
+                    {isLookingUpWebsite ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Looking up...
+                      </>
+                    ) : (
+                      <>
+                        <Search className="w-4 h-4 mr-2" />
+                        Lookup
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </div>
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <label className="block text-sm font-medium mb-2">Company Name *</label>
