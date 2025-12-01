@@ -602,10 +602,15 @@ export default function ManufacturingRequirements() {
                 <Card className="p-4">
                   <div className="flex items-center justify-between mb-4">
                     <h2 className="text-xl font-semibold">Required Features</h2>
-                    <Badge variant="default">{requiredFeatures.size} Total</Badge>
+                    <Badge variant="default">{requiredFeatures.size} Features</Badge>
                   </div>
+                  {selectedRequirements.size > 0 && (
+                    <p className="text-xs text-muted-foreground mb-3">
+                      {selectedRequirements.size} requirement{selectedRequirements.size !== 1 ? 's' : ''} selected → {requiredFeatures.size} unique feature{requiredFeatures.size !== 1 ? 's' : ''} needed
+                    </p>
+                  )}
                   
-                  <ScrollArea className="h-[600px] pr-4">
+                  <ScrollArea className="h-[580px] pr-4">
                     {sortedFeatures.length === 0 ? (
                       <div className="text-center py-8">
                         <p className="text-muted-foreground">
