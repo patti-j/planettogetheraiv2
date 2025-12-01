@@ -1,10 +1,11 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Switch } from '@/components/ui/switch';
 import { useQuery } from '@tanstack/react-query';
 import { format } from 'date-fns';
 import { Link } from 'wouter';
@@ -16,10 +17,13 @@ import {
   Factory, TrendingUp, Clock, CheckCircle2, AlertCircle, Users,
   Package, Target, Calendar, FileText, Sparkles, Building2,
   ChevronRight, Globe, Activity, Award, Layers, Upload, 
-  Play, Pause, Check, Loader2, FlaskConical, Rocket, GitBranch
+  Play, Pause, Check, Loader2, FlaskConical, Rocket, GitBranch,
+  GripVertical, Database, Zap, BarChart3, Gauge, Truck, Settings,
+  Eye, EyeOff, ArrowUp, ArrowDown, Info, Shield, Wrench
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ImplementationFrameworkHub } from '@/components/onboarding/ImplementationFrameworkHub';
+import { Tooltip as UITooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 const COLORS = {
   primary: '#3B82F6',
@@ -71,9 +75,196 @@ const LIFECYCLE_STAGES = [
   { key: 'deployment', label: 'Deployment', icon: Rocket, color: 'orange' }
 ];
 
+// Feature Roadmap Types and Data
+interface ImplementationFeature {
+  id: string;
+  name: string;
+  description: string;
+  category: 'scheduling' | 'planning' | 'analytics' | 'integration' | 'optimization';
+  icon: any;
+  goalsAlignment: string[];
+  dataRequirements: {
+    name: string;
+    required: boolean;
+    availability: 'available' | 'partial' | 'missing';
+  }[];
+  complexity: 'low' | 'medium' | 'high';
+  timeToImplement: string;
+  dependencies: string[];
+  benefits: string[];
+  priority: number;
+  included: boolean;
+}
+
+const FEATURE_CATALOG: Omit<ImplementationFeature, 'priority' | 'included'>[] = [
+  {
+    id: 'production-scheduling',
+    name: 'Production Scheduling',
+    description: 'Visual Gantt-based scheduling with drag-and-drop operations and automatic conflict resolution',
+    category: 'scheduling',
+    icon: Calendar,
+    goalsAlignment: ['on-time-delivery', 'oee-improvement', 'setup-reduction', 'capacity-utilization'],
+    dataRequirements: [
+      { name: 'Work Orders / Jobs', required: true, availability: 'partial' },
+      { name: 'Resource Definitions', required: true, availability: 'partial' },
+      { name: 'Operation Routing', required: true, availability: 'missing' },
+      { name: 'Calendar / Shifts', required: false, availability: 'available' }
+    ],
+    complexity: 'high',
+    timeToImplement: '4-6 weeks',
+    dependencies: [],
+    benefits: ['Visual scheduling interface', 'Real-time conflict detection', 'What-if scenario planning']
+  },
+  {
+    id: 'capacity-planning',
+    name: 'Capacity Planning',
+    description: 'Analyze and optimize resource capacity utilization across your manufacturing operations',
+    category: 'planning',
+    icon: BarChart3,
+    goalsAlignment: ['capacity-utilization', 'oee-improvement', 'bottleneck-identification'],
+    dataRequirements: [
+      { name: 'Resource Capacity', required: true, availability: 'partial' },
+      { name: 'Demand Forecast', required: true, availability: 'missing' },
+      { name: 'Historical Load Data', required: false, availability: 'missing' }
+    ],
+    complexity: 'medium',
+    timeToImplement: '2-3 weeks',
+    dependencies: ['production-scheduling'],
+    benefits: ['Bottleneck identification', 'Load balancing', 'Future capacity planning']
+  },
+  {
+    id: 'inventory-optimization',
+    name: 'Inventory & WIP Optimization',
+    description: 'Reduce work-in-progress inventory and optimize stock levels through better scheduling',
+    category: 'optimization',
+    icon: Package,
+    goalsAlignment: ['inventory-reduction', 'lead-time-reduction', 'cost-reduction'],
+    dataRequirements: [
+      { name: 'Inventory Levels', required: true, availability: 'partial' },
+      { name: 'BOM / Materials', required: true, availability: 'missing' },
+      { name: 'Lead Times', required: true, availability: 'partial' }
+    ],
+    complexity: 'medium',
+    timeToImplement: '3-4 weeks',
+    dependencies: ['production-scheduling'],
+    benefits: ['Reduced carrying costs', 'Better cash flow', 'Less stockouts']
+  },
+  {
+    id: 'delivery-performance',
+    name: 'On-Time Delivery Tracking',
+    description: 'Track and improve delivery performance with predictive analytics and early warning alerts',
+    category: 'analytics',
+    icon: Truck,
+    goalsAlignment: ['on-time-delivery', 'customer-satisfaction', 'lead-time-reduction'],
+    dataRequirements: [
+      { name: 'Customer Orders', required: true, availability: 'available' },
+      { name: 'Due Dates', required: true, availability: 'available' },
+      { name: 'Shipping Data', required: false, availability: 'missing' }
+    ],
+    complexity: 'low',
+    timeToImplement: '1-2 weeks',
+    dependencies: ['production-scheduling'],
+    benefits: ['Proactive alerts', 'Customer communication', 'Performance metrics']
+  },
+  {
+    id: 'oee-monitoring',
+    name: 'OEE Monitoring & Analysis',
+    description: 'Track Overall Equipment Effectiveness and identify improvement opportunities',
+    category: 'analytics',
+    icon: Gauge,
+    goalsAlignment: ['oee-improvement', 'equipment-uptime', 'quality-improvement'],
+    dataRequirements: [
+      { name: 'Machine Status', required: true, availability: 'missing' },
+      { name: 'Downtime Events', required: true, availability: 'missing' },
+      { name: 'Production Counts', required: true, availability: 'partial' },
+      { name: 'Quality Metrics', required: false, availability: 'missing' }
+    ],
+    complexity: 'high',
+    timeToImplement: '4-6 weeks',
+    dependencies: [],
+    benefits: ['Real-time visibility', 'Loss categorization', 'Improvement prioritization']
+  },
+  {
+    id: 'setup-optimization',
+    name: 'Setup & Changeover Optimization',
+    description: 'Minimize setup times through intelligent job sequencing and grouping',
+    category: 'optimization',
+    icon: Settings,
+    goalsAlignment: ['setup-reduction', 'oee-improvement', 'capacity-utilization'],
+    dataRequirements: [
+      { name: 'Setup Matrix', required: true, availability: 'missing' },
+      { name: 'Product Attributes', required: true, availability: 'partial' },
+      { name: 'Historical Setup Times', required: false, availability: 'missing' }
+    ],
+    complexity: 'medium',
+    timeToImplement: '2-3 weeks',
+    dependencies: ['production-scheduling'],
+    benefits: ['Reduced changeovers', 'Better sequencing', 'Increased throughput']
+  },
+  {
+    id: 'ai-optimization',
+    name: 'AI-Powered Schedule Optimization',
+    description: 'Use artificial intelligence to automatically optimize schedules for multiple objectives',
+    category: 'optimization',
+    icon: Sparkles,
+    goalsAlignment: ['oee-improvement', 'on-time-delivery', 'setup-reduction', 'capacity-utilization'],
+    dataRequirements: [
+      { name: 'Historical Schedules', required: true, availability: 'missing' },
+      { name: 'Performance Outcomes', required: true, availability: 'missing' },
+      { name: 'Constraint Definitions', required: true, availability: 'partial' }
+    ],
+    complexity: 'high',
+    timeToImplement: '6-8 weeks',
+    dependencies: ['production-scheduling', 'capacity-planning'],
+    benefits: ['Automatic optimization', 'Multi-objective balancing', 'Continuous improvement']
+  },
+  {
+    id: 'erp-integration',
+    name: 'ERP System Integration',
+    description: 'Connect with your ERP system for seamless data flow and schedule synchronization',
+    category: 'integration',
+    icon: Database,
+    goalsAlignment: ['data-accuracy', 'process-efficiency', 'real-time-visibility'],
+    dataRequirements: [
+      { name: 'ERP API Access', required: true, availability: 'missing' },
+      { name: 'Data Mapping', required: true, availability: 'missing' },
+      { name: 'Auth Credentials', required: true, availability: 'missing' }
+    ],
+    complexity: 'high',
+    timeToImplement: '4-8 weeks',
+    dependencies: [],
+    benefits: ['Automated data sync', 'Single source of truth', 'Reduced manual entry']
+  }
+];
+
+const CATEGORY_COLORS: Record<string, string> = {
+  scheduling: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300',
+  planning: 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300',
+  analytics: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300',
+  integration: 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300',
+  optimization: 'bg-pink-100 text-pink-800 dark:bg-pink-900/30 dark:text-pink-300'
+};
+
+const COMPLEXITY_COLORS: Record<string, string> = {
+  low: 'bg-green-100 text-green-700',
+  medium: 'bg-yellow-100 text-yellow-700',
+  high: 'bg-red-100 text-red-700'
+};
+
 export default function CompanyOnboardingOverview() {
   const [selectedRegion, setSelectedRegion] = useState<string | null>(null);
   const [selectedPlant, setSelectedPlant] = useState<any>(null);
+  
+  // Feature Roadmap State
+  const [featureRoadmap, setFeatureRoadmap] = useState<ImplementationFeature[]>(() => {
+    // Initialize features with priority order and included state
+    return FEATURE_CATALOG.map((feature, index) => ({
+      ...feature,
+      priority: index + 1,
+      included: true
+    }));
+  });
+  const [draggedFeature, setDraggedFeature] = useState<string | null>(null);
 
   const { data: apiData, isLoading } = useQuery<{
     overview: any;
@@ -188,6 +379,45 @@ export default function CompanyOnboardingOverview() {
       }).length
     };
   }
+
+  // Feature Roadmap Handlers
+  const toggleFeatureIncluded = (featureId: string) => {
+    setFeatureRoadmap(prev => 
+      prev.map(f => f.id === featureId ? { ...f, included: !f.included } : f)
+    );
+  };
+
+  const moveFeature = (featureId: string, direction: 'up' | 'down') => {
+    setFeatureRoadmap(prev => {
+      const index = prev.findIndex(f => f.id === featureId);
+      if (index === -1) return prev;
+      if (direction === 'up' && index === 0) return prev;
+      if (direction === 'down' && index === prev.length - 1) return prev;
+      
+      const newFeatures = [...prev];
+      const targetIndex = direction === 'up' ? index - 1 : index + 1;
+      [newFeatures[index], newFeatures[targetIndex]] = [newFeatures[targetIndex], newFeatures[index]];
+      
+      // Update priorities
+      return newFeatures.map((f, i) => ({ ...f, priority: i + 1 }));
+    });
+  };
+
+  const getDataReadinessScore = (feature: ImplementationFeature) => {
+    const required = feature.dataRequirements.filter(d => d.required);
+    const available = required.filter(d => d.availability === 'available').length;
+    const partial = required.filter(d => d.availability === 'partial').length * 0.5;
+    return Math.round(((available + partial) / required.length) * 100) || 0;
+  };
+
+  const getDataReadinessColor = (score: number) => {
+    if (score >= 80) return 'text-green-600';
+    if (score >= 50) return 'text-yellow-600';
+    return 'text-red-600';
+  };
+
+  const includedFeatures = featureRoadmap.filter(f => f.included);
+  const excludedFeatures = featureRoadmap.filter(f => !f.included);
 
   const getStatusBadge = (status: string) => {
     const colors: any = {
@@ -335,9 +565,13 @@ export default function CompanyOnboardingOverview() {
         </Card>
       </div>
 
-      <Tabs defaultValue="requirements" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-6">
-          <TabsTrigger value="requirements" data-testid="tab-requirements">Requirements Tracking</TabsTrigger>
+      <Tabs defaultValue="feature-roadmap" className="space-y-4">
+        <TabsList className="grid w-full grid-cols-7">
+          <TabsTrigger value="feature-roadmap" data-testid="tab-feature-roadmap" className="flex items-center gap-1">
+            <Layers className="h-4 w-4" />
+            Feature Roadmap
+          </TabsTrigger>
+          <TabsTrigger value="requirements" data-testid="tab-requirements">Requirements</TabsTrigger>
           <TabsTrigger value="implementation" data-testid="tab-implementation" className="flex items-center gap-1">
             <GitBranch className="h-4 w-4" />
             Implementation
@@ -347,6 +581,327 @@ export default function CompanyOnboardingOverview() {
           <TabsTrigger value="timeline" data-testid="tab-timeline">Timeline</TabsTrigger>
           <TabsTrigger value="ai-insights" data-testid="tab-ai-insights">AI Insights</TabsTrigger>
         </TabsList>
+
+        {/* Feature Roadmap Tab */}
+        <TabsContent value="feature-roadmap" className="space-y-6">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Main Feature List */}
+            <div className="lg:col-span-2 space-y-4">
+              <Card>
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle className="flex items-center gap-2">
+                        <Layers className="h-5 w-5" />
+                        Implementation Roadmap
+                      </CardTitle>
+                      <CardDescription>
+                        Recommended features based on your goals. Drag to reorder or toggle to include/exclude.
+                      </CardDescription>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Badge variant="outline" className="bg-blue-50">
+                        {includedFeatures.length} included
+                      </Badge>
+                      {excludedFeatures.length > 0 && (
+                        <Badge variant="outline" className="bg-gray-50">
+                          {excludedFeatures.length} excluded
+                        </Badge>
+                      )}
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <ScrollArea className="h-[600px] pr-4">
+                    <div className="space-y-3">
+                      {includedFeatures.map((feature, index) => {
+                        const Icon = feature.icon;
+                        const dataReadiness = getDataReadinessScore(feature);
+                        const hasDependencies = feature.dependencies.length > 0;
+                        const dependenciesMet = feature.dependencies.every(dep => 
+                          includedFeatures.some(f => f.id === dep && 
+                            includedFeatures.indexOf(f) < includedFeatures.indexOf(feature))
+                        );
+                        
+                        return (
+                          <div 
+                            key={feature.id}
+                            className={cn(
+                              "border rounded-lg p-4 bg-white dark:bg-gray-900 transition-all",
+                              "hover:shadow-md hover:border-blue-300",
+                              !dependenciesMet && hasDependencies && "border-yellow-300 bg-yellow-50/50 dark:bg-yellow-900/10"
+                            )}
+                            data-testid={`feature-card-${feature.id}`}
+                          >
+                            <div className="flex items-start gap-4">
+                              {/* Priority & Controls */}
+                              <div className="flex flex-col items-center gap-1">
+                                <div className="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-sm">
+                                  {index + 1}
+                                </div>
+                                <div className="flex flex-col gap-0.5">
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-6 w-6"
+                                    onClick={() => moveFeature(feature.id, 'up')}
+                                    disabled={index === 0}
+                                    data-testid={`button-move-up-${feature.id}`}
+                                  >
+                                    <ArrowUp className="h-3 w-3" />
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-6 w-6"
+                                    onClick={() => moveFeature(feature.id, 'down')}
+                                    disabled={index === includedFeatures.length - 1}
+                                    data-testid={`button-move-down-${feature.id}`}
+                                  >
+                                    <ArrowDown className="h-3 w-3" />
+                                  </Button>
+                                </div>
+                              </div>
+                              
+                              {/* Feature Content */}
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-start justify-between gap-2 mb-2">
+                                  <div className="flex items-center gap-2">
+                                    <Icon className="h-5 w-5 text-blue-600" />
+                                    <h4 className="font-semibold text-lg">{feature.name}</h4>
+                                  </div>
+                                  <div className="flex items-center gap-2">
+                                    <Badge className={CATEGORY_COLORS[feature.category]}>
+                                      {feature.category}
+                                    </Badge>
+                                    <TooltipProvider>
+                                      <UITooltip>
+                                        <TooltipTrigger asChild>
+                                          <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            className="h-8 w-8 text-red-500 hover:text-red-700 hover:bg-red-50"
+                                            onClick={() => toggleFeatureIncluded(feature.id)}
+                                            data-testid={`button-exclude-${feature.id}`}
+                                          >
+                                            <EyeOff className="h-4 w-4" />
+                                          </Button>
+                                        </TooltipTrigger>
+                                        <TooltipContent>
+                                          <p>Exclude from roadmap</p>
+                                        </TooltipContent>
+                                      </UITooltip>
+                                    </TooltipProvider>
+                                  </div>
+                                </div>
+                                
+                                <p className="text-sm text-muted-foreground mb-3">{feature.description}</p>
+                                
+                                {/* Dependency Warning */}
+                                {hasDependencies && !dependenciesMet && (
+                                  <div className="flex items-center gap-2 text-yellow-700 text-sm mb-3 bg-yellow-100 dark:bg-yellow-900/30 rounded px-2 py-1">
+                                    <AlertCircle className="h-4 w-4" />
+                                    <span>
+                                      Requires: {feature.dependencies.map(dep => 
+                                        FEATURE_CATALOG.find(f => f.id === dep)?.name
+                                      ).join(', ')}
+                                    </span>
+                                  </div>
+                                )}
+                                
+                                {/* Metrics Row */}
+                                <div className="grid grid-cols-3 gap-4 text-sm">
+                                  <div>
+                                    <span className="text-muted-foreground">Data Ready:</span>
+                                    <span className={cn("ml-2 font-medium", getDataReadinessColor(dataReadiness))}>
+                                      {dataReadiness}%
+                                    </span>
+                                  </div>
+                                  <div>
+                                    <span className="text-muted-foreground">Complexity:</span>
+                                    <Badge className={cn("ml-2", COMPLEXITY_COLORS[feature.complexity])}>
+                                      {feature.complexity}
+                                    </Badge>
+                                  </div>
+                                  <div>
+                                    <span className="text-muted-foreground">Time:</span>
+                                    <span className="ml-2 font-medium">{feature.timeToImplement}</span>
+                                  </div>
+                                </div>
+                                
+                                {/* Benefits */}
+                                <div className="mt-3 flex flex-wrap gap-1">
+                                  {feature.benefits.map((benefit, i) => (
+                                    <Badge key={i} variant="outline" className="text-xs">
+                                      {benefit}
+                                    </Badge>
+                                  ))}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                    
+                    {/* Excluded Features Section */}
+                    {excludedFeatures.length > 0 && (
+                      <div className="mt-6 pt-6 border-t">
+                        <h4 className="text-sm font-medium text-muted-foreground mb-3 flex items-center gap-2">
+                          <EyeOff className="h-4 w-4" />
+                          Excluded Features ({excludedFeatures.length})
+                        </h4>
+                        <div className="space-y-2">
+                          {excludedFeatures.map((feature) => {
+                            const Icon = feature.icon;
+                            return (
+                              <div 
+                                key={feature.id}
+                                className="flex items-center justify-between p-3 border rounded-lg bg-gray-50 dark:bg-gray-800/50 opacity-60"
+                                data-testid={`feature-excluded-${feature.id}`}
+                              >
+                                <div className="flex items-center gap-3">
+                                  <Icon className="h-4 w-4 text-gray-400" />
+                                  <span className="text-sm">{feature.name}</span>
+                                </div>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => toggleFeatureIncluded(feature.id)}
+                                  className="text-blue-600 hover:text-blue-700"
+                                  data-testid={`button-include-${feature.id}`}
+                                >
+                                  <Eye className="h-4 w-4 mr-1" />
+                                  Include
+                                </Button>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+                  </ScrollArea>
+                </CardContent>
+              </Card>
+            </div>
+            
+            {/* Sidebar - Data Readiness & Summary */}
+            <div className="space-y-4">
+              {/* AI Recommendation Card */}
+              <Card className="bg-gradient-to-br from-purple-50 to-blue-50 dark:from-purple-950/20 dark:to-blue-950/20 border-purple-200">
+                <CardHeader className="pb-3">
+                  <CardTitle className="flex items-center gap-2 text-lg">
+                    <Sparkles className="h-5 w-5 text-purple-600" />
+                    AI Recommendation
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-muted-foreground mb-3">
+                    Based on your goals and data availability, we recommend starting with:
+                  </p>
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 p-2 bg-white dark:bg-gray-900 rounded-lg">
+                      <div className="w-6 h-6 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs font-bold">1</div>
+                      <span className="text-sm font-medium">Production Scheduling</span>
+                    </div>
+                    <div className="flex items-center gap-2 p-2 bg-white dark:bg-gray-900 rounded-lg">
+                      <div className="w-6 h-6 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs font-bold">2</div>
+                      <span className="text-sm font-medium">On-Time Delivery Tracking</span>
+                    </div>
+                    <div className="flex items-center gap-2 p-2 bg-white dark:bg-gray-900 rounded-lg">
+                      <div className="w-6 h-6 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs font-bold">3</div>
+                      <span className="text-sm font-medium">Capacity Planning</span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+              
+              {/* Data Readiness Overview */}
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="flex items-center gap-2 text-lg">
+                    <Database className="h-5 w-5" />
+                    Data Readiness
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {includedFeatures.slice(0, 5).map((feature) => {
+                      const score = getDataReadinessScore(feature);
+                      return (
+                        <div key={feature.id} className="space-y-1">
+                          <div className="flex items-center justify-between text-sm">
+                            <span className="truncate">{feature.name}</span>
+                            <span className={cn("font-medium", getDataReadinessColor(score))}>
+                              {score}%
+                            </span>
+                          </div>
+                          <Progress value={score} className="h-2" />
+                        </div>
+                      );
+                    })}
+                  </div>
+                  
+                  <div className="mt-4 pt-4 border-t">
+                    <h5 className="text-sm font-medium mb-2">Legend</h5>
+                    <div className="space-y-1 text-xs">
+                      <div className="flex items-center gap-2">
+                        <div className="w-3 h-3 rounded-full bg-green-500" />
+                        <span>Available - Data is ready</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="w-3 h-3 rounded-full bg-yellow-500" />
+                        <span>Partial - Some data available</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="w-3 h-3 rounded-full bg-red-500" />
+                        <span>Missing - Data needed</span>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+              
+              {/* Implementation Summary */}
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="flex items-center gap-2 text-lg">
+                    <Clock className="h-5 w-5" />
+                    Implementation Summary
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-muted-foreground">Total Features</span>
+                      <span className="font-medium">{includedFeatures.length}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-muted-foreground">Est. Timeline</span>
+                      <span className="font-medium">12-16 weeks</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-muted-foreground">Avg. Data Ready</span>
+                      <span className={cn(
+                        "font-medium",
+                        getDataReadinessColor(
+                          Math.round(includedFeatures.reduce((sum, f) => sum + getDataReadinessScore(f), 0) / includedFeatures.length) || 0
+                        )
+                      )}>
+                        {Math.round(includedFeatures.reduce((sum, f) => sum + getDataReadinessScore(f), 0) / includedFeatures.length) || 0}%
+                      </span>
+                    </div>
+                  </div>
+                  
+                  <Button className="w-full mt-4" data-testid="button-save-roadmap">
+                    <Check className="h-4 w-4 mr-2" />
+                    Save Roadmap
+                  </Button>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        </TabsContent>
 
         <TabsContent value="requirements" className="space-y-4">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
