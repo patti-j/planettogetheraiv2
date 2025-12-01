@@ -18,15 +18,9 @@ import { apiRequest } from "@/lib/queryClient";
 import { 
   ChevronDown, ChevronUp, CheckCircle, Package, Settings, Factory, 
   Sparkles, FileText, AlertCircle, Upload, Download, FileSpreadsheet,
-  Play, Pause, Check, Clock, Loader2, MoreVertical, Trash2, X, RotateCcw, ArrowRight, Globe
+  Play, Pause, Check, Clock, Loader2, Trash2, X, RotateCcw, ArrowRight, Globe
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 
 import mfgUseCasesData from "@/data/manufacturing-requirements.json";
 
@@ -958,22 +952,16 @@ export default function ManufacturingRequirements() {
                               Complete
                             </Badge>
                           )}
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="icon">
-                                <MoreVertical className="h-4 w-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuItem 
-                                className="text-red-600"
-                                onClick={() => deleteRequirementMutation.mutate(req.id)}
-                              >
-                                <Trash2 className="h-4 w-4 mr-2" />
-                                Delete
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
+                          <Button 
+                            variant="ghost" 
+                            size="icon"
+                            className="h-8 w-8 text-muted-foreground hover:text-red-600 hover:bg-red-50"
+                            onClick={() => deleteRequirementMutation.mutate(req.id)}
+                            title="Delete requirement"
+                            data-testid={`btn-delete-requirement-${req.id}`}
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
                         </div>
                       </div>
                     </Card>
