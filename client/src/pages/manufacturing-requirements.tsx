@@ -17,7 +17,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { 
   ChevronDown, ChevronUp, CheckCircle, Package, Settings, Factory, 
   Sparkles, FileText, AlertCircle, Upload, Download, FileSpreadsheet,
-  Play, Pause, Check, Clock, Loader2, MoreVertical, Eye, Trash2, X, RotateCcw, ArrowRight
+  Play, Pause, Check, Clock, Loader2, MoreVertical, Trash2, X, RotateCcw, ArrowRight
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -942,10 +942,6 @@ export default function ManufacturingRequirements() {
                               </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
-                              <DropdownMenuItem>
-                                <Eye className="h-4 w-4 mr-2" />
-                                View Details
-                              </DropdownMenuItem>
                               <DropdownMenuItem 
                                 className="text-red-600"
                                 onClick={() => deleteRequirementMutation.mutate(req.id)}
