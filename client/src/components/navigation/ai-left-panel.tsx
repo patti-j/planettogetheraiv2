@@ -1923,7 +1923,7 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
                             )}
                           </div>
                           <span className="text-xs text-muted-foreground px-1">
-                            {new Date(message.createdAt).toLocaleTimeString()}
+                            {new Date(message.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                           </span>
                         </div>
                       </div>
@@ -2662,7 +2662,7 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
               </p>
               <div className="flex items-center justify-between mt-3">
                 <span className="text-xs text-muted-foreground">
-                  {new Date(floatingNotification.createdAt).toLocaleTimeString()}
+                  {new Date(floatingNotification.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                 </span>
                 <Button
                   size="sm"
