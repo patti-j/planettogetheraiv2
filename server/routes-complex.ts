@@ -22864,6 +22864,101 @@ Response must be valid JSON:
     res.status(201).json(onboarding);
   }));
 
+  // AI-powered company lookup from website
+  app.post("/api/company-lookup", requireAuth, createSafeHandler('company-lookup')(async (req, res) => {
+    const { website } = req.body;
+    
+    if (!website) {
+      return res.status(400).json({ 
+        success: false, 
+        message: "Website URL is required" 
+      });
+    }
+
+    try {
+      // Extract domain from URL
+      let domain = website;
+      try {
+        const url = new URL(website.startsWith('http') ? website : `https://${website}`);
+        domain = url.hostname.replace('www.', '');
+      } catch {
+        domain = website.replace(/^(https?:\/\/)?(www\.)?/, '').split('/')[0];
+      }
+
+      console.log(`Looking up company info for domain: ${domain}`);
+
+      // Use OpenAI to analyze the company based on their domain
+      const openai = new OpenAI();
+      const response = await openai.chat.completions.create({
+        model: "gpt-4o",
+        messages: [
+          {
+            role: "system",
+            content: `You are an expert business analyst. Given a company's website domain, provide accurate information about the company based on your knowledge. Return a JSON object with the following fields:
+            - name: Company's official name
+            - industry: One of: manufacturing, automotive, aerospace, electronics, pharmaceutical, food_beverage, chemicals, metals, textiles
+            - size: One of: small (1-50 employees), medium (51-200 employees), large (201-1000 employees), enterprise (1000+ employees)
+            - description: Brief company description (2-3 sentences)
+            - products: Main products or services (comma-separated list)
+            - numberOfPlants: Estimated number of manufacturing facilities (as string number, e.g., "3")
+            
+            If you're not confident about a field, use null.
+            Always respond with valid JSON only.`
+          },
+          {
+            role: "user",
+            content: `Analyze this company domain and provide information: ${domain}`
+          }
+        ],
+        response_format: { type: "json_object" },
+        temperature: 0.3
+      });
+
+      const content = response.choices[0]?.message?.content;
+      if (!content) {
+        return res.json({
+          success: false,
+          message: "Could not analyze the company website"
+        });
+      }
+
+      const companyInfo = JSON.parse(content);
+      
+      // Filter out null values and validate industry/size values
+      const validIndustries = ['manufacturing', 'automotive', 'aerospace', 'electronics', 'pharmaceutical', 'food_beverage', 'chemicals', 'metals', 'textiles'];
+      const validSizes = ['small', 'medium', 'large', 'enterprise'];
+      
+      const cleanedInfo: any = {};
+      if (companyInfo.name) cleanedInfo.name = companyInfo.name;
+      if (companyInfo.industry && validIndustries.includes(companyInfo.industry)) {
+        cleanedInfo.industry = companyInfo.industry;
+      }
+      if (companyInfo.size && validSizes.includes(companyInfo.size)) {
+        cleanedInfo.size = companyInfo.size;
+      }
+      if (companyInfo.description) cleanedInfo.description = companyInfo.description;
+      if (companyInfo.products) cleanedInfo.products = companyInfo.products;
+      if (companyInfo.numberOfPlants) cleanedInfo.numberOfPlants = String(companyInfo.numberOfPlants);
+
+      console.log(`Company lookup result for ${domain}:`, cleanedInfo);
+
+      res.json({
+        success: Object.keys(cleanedInfo).length > 0,
+        companyInfo: cleanedInfo,
+        message: Object.keys(cleanedInfo).length > 0 
+          ? "Company information found" 
+          : "Limited information available for this domain"
+      });
+    } catch (error) {
+      console.error("Company lookup error:", error);
+      res.json({
+        success: false,
+        message: "Could not retrieve company information. Please fill in manually."
+      });
+    }
+  }));
+
+
   app.post("/api/onboarding/company", requireAuth, createSafeHandler(async (req, res) => {
     // Basic validation for required fields
     const { companyName, industry, size, primaryGoal, features } = req.body;
