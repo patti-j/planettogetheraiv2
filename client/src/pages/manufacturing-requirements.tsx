@@ -145,16 +145,27 @@ export default function ManufacturingRequirements() {
   });
 
   const updateStatusMutation = useMutation({
-    mutationFn: async ({ id, status }: { id: number; status: string }) => {
+    mutationFn: async ({ id, status, reqName }: { id: number; status: string; reqName?: string }) => {
       return apiRequest(`/api/customer-requirements/${id}/status`, {
         method: 'PATCH',
         body: JSON.stringify({ status })
       });
     },
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['/api/customer-requirements'] });
       queryClient.invalidateQueries({ queryKey: ['/api/customer-requirements/stats'] });
-      toast({ title: "Status Updated" });
+      const statusInfo = LIFECYCLE_STATUSES.find(s => s.value === variables.status);
+      toast({ 
+        title: "Status Advanced",
+        description: `${variables.reqName ? `"${variables.reqName}" ` : ''}moved to ${statusInfo?.label || variables.status}`
+      });
+    },
+    onError: () => {
+      toast({ 
+        title: "Update Failed",
+        description: "Could not advance status. Please try again.",
+        variant: "destructive"
+      });
     }
   });
 
@@ -734,7 +745,11 @@ export default function ManufacturingRequirements() {
                           {nextStatus && req.lifecycleStatus !== 'deployed' && (
                             <Button 
                               size="sm" 
-                              onClick={() => updateStatusMutation.mutate({ id: req.id, status: nextStatus })}
+                              onClick={() => updateStatusMutation.mutate({ 
+                                id: req.id, 
+                                status: nextStatus,
+                                reqName: req.requirementName 
+                              })}
                               disabled={updateStatusMutation.isPending}
                               data-testid={`button-advance-${req.id}`}
                             >
