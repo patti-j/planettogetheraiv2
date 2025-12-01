@@ -2817,6 +2817,15 @@ router.post("/api/plants-lookup", async (req, res) => {
       const plantCount = parseInt(numberOfPlants) || 2;
       const mockPlants = [];
       
+      // Challenges that PlanetTogether can solve
+      const solvableChallenges = [
+        'Production scheduling bottlenecks, Poor on-time delivery performance',
+        'Low equipment utilization (OEE), Excessive setup/changeover times',
+        'High work-in-progress inventory, Capacity planning difficulties',
+        'Resource allocation inefficiencies, Manual scheduling consuming too much time',
+        'Long lead times, Difficulty managing rush orders'
+      ];
+      
       for (let i = 0; i < plantCount; i++) {
         mockPlants.push({
           name: `${companyName || 'Main'} Plant ${i + 1}`,
@@ -2824,7 +2833,7 @@ router.post("/api/plants-lookup", async (req, res) => {
           plantType: 'discrete',
           employeeCount: '100-200',
           mainProducts: 'Primary manufacturing products',
-          currentChallenges: 'Please update with actual challenges',
+          currentChallenges: solvableChallenges[i % solvableChallenges.length],
           priority: i === 0 ? 'high' : 'medium'
         });
       }
@@ -2855,7 +2864,20 @@ Each plant object should have:
 - plantType: One of: discrete, process, batch, continuous, mixed, assembly, job_shop
 - employeeCount: Estimated employee count as string (e.g., "1500", "200-300")
 - mainProducts: Products manufactured at this location
-- currentChallenges: Common manufacturing challenges for this type of facility
+- currentChallenges: Manufacturing challenges that can be solved by production scheduling and planning software. ONLY include challenges from this list:
+  * Production scheduling bottlenecks
+  * Poor on-time delivery performance
+  * Excessive setup/changeover times
+  * Low equipment utilization (OEE)
+  * High work-in-progress inventory
+  * Capacity planning difficulties
+  * Resource allocation inefficiencies
+  * Long lead times
+  * Poor visibility into production status
+  * Difficulty managing rush orders
+  * Suboptimal job sequencing
+  * Manual scheduling consuming too much time
+  Choose 2-3 relevant challenges based on the plant type and industry.
 - priority: "high" for main/headquarters plant, "medium" for major facilities, "low" for smaller sites
 
 If you know specific plant locations for this company, use them. Otherwise, make educated estimates based on the industry and company size. For well-known companies, use actual facility data.
