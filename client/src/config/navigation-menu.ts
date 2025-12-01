@@ -160,6 +160,7 @@ export const navigationGroups: NavigationGroup[] = [
     borderColor: "border-gray-200 dark:border-gray-600",
     features: [
       { icon: FolderKanban, label: "Implementation Projects", href: "/implementation-projects", feature: "implementation-projects", action: "view", color: "bg-blue-600" },
+      { icon: Package, label: "Manufacturing Requirements", href: "/manufacturing-requirements", feature: "systems-management", action: "view", color: "bg-indigo-600" },
       { icon: Server, label: "Systems Management", href: "/systems-management-dashboard", feature: "systems-management", action: "view", color: "bg-gray-600" },
       { icon: Shield, label: "User & Access Management", href: "/user-access-management", feature: "user-management", action: "view", color: "bg-amber-600" },
       { icon: Code, label: "Extension Studio", href: "/extension-studio", feature: "systems-management", action: "view", color: "bg-violet-500" },
@@ -180,7 +181,6 @@ export const navigationGroups: NavigationGroup[] = [
       { icon: BookOpen, label: "Getting Started", href: "/onboarding", feature: "systems-management", action: "view", color: "bg-emerald-500" },
       { icon: GraduationCap, label: "Training", href: "/training", feature: "training", action: "view", color: "bg-cyan-500", requiresOnboarding: false },
       { icon: Building, label: "Industry Templates", href: "/industry-templates", feature: "systems-management", action: "view", color: "bg-cyan-600" },
-      { icon: Package, label: "Manufacturing Requirements", href: "/manufacturing-requirements", feature: "systems-management", action: "view", color: "bg-indigo-600" },
       { icon: Presentation, label: "Presentation System", href: "/presentation-system", feature: "training", action: "view", color: "bg-blue-700" },
       { icon: PlayCircle, label: "Take a Guided Tour", href: "/guided-tour", feature: "training", action: "view", color: "bg-blue-500", requiresOnboarding: false, isSpecial: true },
       { icon: BookOpen, label: "Help", href: "/help", feature: "training", action: "view", color: "bg-blue-600" }
