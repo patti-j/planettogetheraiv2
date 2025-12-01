@@ -145,23 +145,27 @@ export default function ManufacturingRequirements() {
     }
   });
 
-  const updateStatusMutation = useMutation({
-    mutationFn: async ({ id, status, reqName }: { id: number; status: string; reqName?: string }) => {
-      return apiRequest('PATCH', `/api/customer-requirements/${id}/status`, { status });
+  const advanceAllMutation = useMutation({
+    mutationFn: async (requirements: Array<{ id: number; nextStatus: string }>) => {
+      const results = await Promise.all(
+        requirements.map(({ id, nextStatus }) => 
+          apiRequest('PATCH', `/api/customer-requirements/${id}/status`, { status: nextStatus })
+        )
+      );
+      return results;
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['/api/customer-requirements'] });
       queryClient.invalidateQueries({ queryKey: ['/api/customer-requirements/stats'] });
-      const statusInfo = LIFECYCLE_STATUSES.find(s => s.value === variables.status);
       toast({ 
-        title: "Status Advanced",
-        description: `${variables.reqName ? `"${variables.reqName}" ` : ''}moved to ${statusInfo?.label || variables.status}`
+        title: "All Requirements Advanced",
+        description: `${variables.length} requirement${variables.length !== 1 ? 's' : ''} moved to next stage`
       });
     },
     onError: () => {
       toast({ 
         title: "Update Failed",
-        description: "Could not advance status. Please try again.",
+        description: "Could not advance requirements. Please try again.",
         variant: "destructive"
       });
     }
@@ -815,10 +819,32 @@ export default function ManufacturingRequirements() {
               </Card>
             ) : (
               <div className="space-y-4">
+                {(() => {
+                  const advanceableRequirements = customerRequirements
+                    .filter(req => req.lifecycleStatus !== 'deployed')
+                    .map(req => ({ id: req.id, nextStatus: getNextStatus(req.lifecycleStatus) }))
+                    .filter(item => item.nextStatus !== null) as Array<{ id: number; nextStatus: string }>;
+                  
+                  return advanceableRequirements.length > 0 && (
+                    <div className="flex justify-end mb-4">
+                      <Button 
+                        onClick={() => advanceAllMutation.mutate(advanceableRequirements)}
+                        disabled={advanceAllMutation.isPending}
+                        data-testid="button-advance-all"
+                      >
+                        {advanceAllMutation.isPending ? (
+                          <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                        ) : (
+                          <ArrowRight className="h-4 w-4 mr-2" />
+                        )}
+                        Advance All ({advanceableRequirements.length} requirements)
+                      </Button>
+                    </div>
+                  );
+                })()}
                 {customerRequirements.map((req) => {
                   const statusInfo = getStatusInfo(req.lifecycleStatus);
                   const phaseInfo = getPhaseProgress(req);
-                  const nextStatus = getNextStatus(req.lifecycleStatus);
                   
                   return (
                     <Card key={req.id} className="p-4" data-testid={`card-requirement-${req.id}`}>
@@ -862,25 +888,6 @@ export default function ManufacturingRequirements() {
                           </div>
                         </div>
                         <div className="flex items-center gap-2">
-                          {nextStatus && req.lifecycleStatus !== 'deployed' && (
-                            <Button 
-                              size="sm" 
-                              onClick={() => updateStatusMutation.mutate({ 
-                                id: req.id, 
-                                status: nextStatus,
-                                reqName: req.requirementName 
-                              })}
-                              disabled={updateStatusMutation.isPending}
-                              data-testid={`button-advance-${req.id}`}
-                            >
-                              {updateStatusMutation.isPending ? (
-                                <Loader2 className="h-4 w-4 animate-spin" />
-                              ) : (
-                                <Play className="h-4 w-4 mr-1" />
-                              )}
-                              Advance
-                            </Button>
-                          )}
                           {req.lifecycleStatus === 'deployed' && (
                             <Badge className="bg-green-600 text-white">
                               <Check className="h-3 w-3 mr-1" />
