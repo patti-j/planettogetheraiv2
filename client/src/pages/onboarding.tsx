@@ -301,11 +301,6 @@ const onboardingSteps = [
     description: 'Tell us about your company'
   },
   {
-    id: 'plants-setup',
-    title: 'Plants',
-    description: 'Define your manufacturing plants'
-  },
-  {
     id: 'roi-benefits',
     title: 'Benefits',
     description: 'See your potential ROI'
@@ -322,12 +317,24 @@ const onboardingSteps = [
   }
 ];
 
+const INDUSTRY_OPTIONS = [
+  { value: 'manufacturing', label: 'General Manufacturing' },
+  { value: 'automotive', label: 'Automotive' },
+  { value: 'aerospace', label: 'Aerospace' },
+  { value: 'electronics', label: 'Electronics' },
+  { value: 'pharmaceutical', label: 'Pharmaceutical' },
+  { value: 'food_beverage', label: 'Food & Beverage' },
+  { value: 'chemicals', label: 'Chemicals' },
+  { value: 'metals', label: 'Metals' },
+  { value: 'textiles', label: 'Textiles' }
+];
+
 export default function OnboardingPage() {
   const [, setLocation] = useLocation();
   const [currentStep, setCurrentStep] = useState(0);
   const [companyInfo, setCompanyInfo] = useState({
     name: '',
-    industry: '',
+    industries: [] as string[],
     size: '',
     description: '',
     website: '',
@@ -445,10 +452,22 @@ export default function OnboardingPage() {
       const data = await response.json();
       
       if (data.success && data.companyInfo) {
+        // Handle industry from API - could be string or already parsed
+        let newIndustries = companyInfo.industries || [];
+        if (data.companyInfo.industry) {
+          const apiIndustry = data.companyInfo.industry.toLowerCase().replace(/[^a-z_]/g, '_');
+          const matchedIndustry = INDUSTRY_OPTIONS.find(o => 
+            o.value === apiIndustry || o.label.toLowerCase() === data.companyInfo.industry.toLowerCase()
+          );
+          if (matchedIndustry && !newIndustries.includes(matchedIndustry.value)) {
+            newIndustries = [...newIndustries, matchedIndustry.value];
+          }
+        }
+        
         const newInfo = {
           ...companyInfo,
           name: data.companyInfo.name || companyInfo.name,
-          industry: data.companyInfo.industry || companyInfo.industry,
+          industries: newIndustries.length > 0 ? newIndustries : companyInfo.industries,
           size: data.companyInfo.size || companyInfo.size,
           description: data.companyInfo.description || companyInfo.description,
           products: data.companyInfo.products || companyInfo.products,
@@ -495,7 +514,7 @@ export default function OnboardingPage() {
       const response = await apiRequest('POST', '/api/plants-lookup', { 
         website: companyInfo.website,
         companyName: companyInfo.name,
-        industry: companyInfo.industry,
+        industry: companyInfo.industries?.join(', ') || 'manufacturing',
         numberOfPlants: companyInfo.numberOfPlants || '3'
       });
       const data = await response.json();
@@ -555,18 +574,37 @@ export default function OnboardingPage() {
     return !!(industryToTemplateMap[industry]?.length > 0);
   };
 
-  // Get benefits based on company info
+  // Get benefits based on company info (combining benefits from all selected industries)
   const benefits = useMemo(() => {
-    const industry = companyInfo.industry || 'manufacturing';
-    const baseBenefits = INDUSTRY_BENEFITS[industry] || INDUSTRY_BENEFITS['manufacturing'];
+    const industries = companyInfo.industries?.length > 0 ? companyInfo.industries : ['manufacturing'];
     const sizeMultiplier = SIZE_MULTIPLIERS[companyInfo.size] || 1.0;
     const plantMultiplier = Math.max(1, parseInt(companyInfo.numberOfPlants) || 1);
     
-    return baseBenefits.map(benefit => ({
+    // Collect unique benefits from all selected industries
+    const benefitMap = new Map<string, Benefit>();
+    industries.forEach(industry => {
+      const industryBenefits = INDUSTRY_BENEFITS[industry] || [];
+      industryBenefits.forEach(benefit => {
+        if (!benefitMap.has(benefit.id)) {
+          benefitMap.set(benefit.id, benefit);
+        }
+      });
+    });
+    
+    // Also add general manufacturing benefits if not already included
+    if (!industries.includes('manufacturing')) {
+      INDUSTRY_BENEFITS['manufacturing']?.forEach(benefit => {
+        if (!benefitMap.has(benefit.id)) {
+          benefitMap.set(benefit.id, benefit);
+        }
+      });
+    }
+    
+    return Array.from(benefitMap.values()).map(benefit => ({
       ...benefit,
       estimatedValue: scaleEstimatedValue(benefit.estimatedValue, sizeMultiplier * plantMultiplier)
     }));
-  }, [companyInfo.industry, companyInfo.size, companyInfo.numberOfPlants]);
+  }, [companyInfo.industries, companyInfo.size, companyInfo.numberOfPlants]);
 
   const saveCompanyInfo = (newInfo: any) => {
     setCompanyInfo(newInfo);
@@ -580,14 +618,22 @@ export default function OnboardingPage() {
     }
   };
 
-  const handleIndustryChange = (value: string) => {
-    const newInfo = {...companyInfo, industry: value};
+  const handleIndustryToggle = (value: string) => {
+    const currentIndustries = companyInfo.industries || [];
+    const newIndustries = currentIndustries.includes(value)
+      ? currentIndustries.filter(i => i !== value)
+      : [...currentIndustries, value];
+    
+    const newInfo = {...companyInfo, industries: newIndustries};
     saveCompanyInfo(newInfo);
     
-    const templatesForIndustry = industryToTemplateMap[value];
-    if (templatesForIndustry?.length > 0) {
-      setSelectedIndustryTemplates(templatesForIndustry);
-      setTemplateDialogOpen(true);
+    // Show templates dialog if newly selected industry has templates
+    if (!currentIndustries.includes(value)) {
+      const templatesForIndustry = industryToTemplateMap[value];
+      if (templatesForIndustry?.length > 0) {
+        setSelectedIndustryTemplates(templatesForIndustry);
+        setTemplateDialogOpen(true);
+      }
     }
   };
 
@@ -647,16 +693,16 @@ export default function OnboardingPage() {
     setIsLoading(true);
     
     try {
-      if (currentStep === 0 && companyInfo.name && companyInfo.industry) {
+      if (currentStep === 0 && companyInfo.name && companyInfo.industries?.length > 0) {
         await createOnboardingMutation.mutateAsync({
           companyName: companyInfo.name,
-          industry: companyInfo.industry,
+          industry: companyInfo.industries.join(', '),
           size: companyInfo.size,
           description: companyInfo.description
         });
       }
 
-      if (currentStep === 3 && businessGoals.length > 0) {
+      if (currentStep === 2 && businessGoals.length > 0) {
         // Save business goals to database
         for (const goal of businessGoals) {
           if (goal.title) {
@@ -707,14 +753,12 @@ export default function OnboardingPage() {
   const canProceed = () => {
     switch (currentStep) {
       case 0:
-        return companyInfo.name && companyInfo.industry;
+        return companyInfo.name && companyInfo.industries && companyInfo.industries.length > 0;
       case 1:
-        return true; // Can proceed even without adding plants
-      case 2:
         return true; // Can proceed even without selecting benefits
-      case 3:
+      case 2:
         return true; // Can proceed even without goals
-      case 4:
+      case 3:
         return true;
       default:
         return false;
@@ -840,7 +884,7 @@ export default function OnboardingPage() {
                 onClick={() => {
                   const testData = {
                     name: 'Acme Manufacturing Corp',
-                    industry: 'manufacturing',
+                    industries: ['manufacturing', 'automotive'],
                     size: 'medium',
                     description: 'Leading manufacturer specializing in precision components',
                     website: 'https://acme-mfg.com',
@@ -911,28 +955,35 @@ export default function OnboardingPage() {
                     data-testid="input-company-name"
                   />
                 </div>
-                <div>
-                  <label className="block text-sm font-medium mb-2">Industry *</label>
-                  <Select value={companyInfo.industry} onValueChange={handleIndustryChange}>
-                    <SelectTrigger data-testid="select-industry">
-                      <SelectValue placeholder="Select your industry" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="manufacturing">General Manufacturing</SelectItem>
-                      <SelectItem value="automotive">Automotive</SelectItem>
-                      <SelectItem value="aerospace">Aerospace</SelectItem>
-                      <SelectItem value="electronics">Electronics</SelectItem>
-                      <SelectItem value="pharmaceutical">Pharmaceutical</SelectItem>
-                      <SelectItem value="food_beverage">Food & Beverage</SelectItem>
-                      <SelectItem value="chemicals">Chemicals</SelectItem>
-                      <SelectItem value="metals">Metals</SelectItem>
-                      <SelectItem value="textiles">Textiles</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  {companyInfo.industry && hasTemplatesForIndustry(companyInfo.industry) && (
-                    <div className="mt-2 flex items-center gap-2 text-sm text-blue-600">
-                      <Star className="w-4 h-4" />
-                      Industry templates available
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium mb-2">Industries * (select one or more)</label>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                    {INDUSTRY_OPTIONS.map(option => (
+                      <div
+                        key={option.value}
+                        className={cn(
+                          "flex items-center gap-2 p-2 rounded-lg border cursor-pointer transition-colors",
+                          companyInfo.industries?.includes(option.value)
+                            ? "border-blue-500 bg-blue-50 dark:bg-blue-950"
+                            : "border-gray-200 hover:border-gray-300 dark:border-gray-700"
+                        )}
+                        onClick={() => handleIndustryToggle(option.value)}
+                        data-testid={`checkbox-industry-${option.value}`}
+                      >
+                        <Checkbox
+                          checked={companyInfo.industries?.includes(option.value) || false}
+                          onCheckedChange={() => handleIndustryToggle(option.value)}
+                        />
+                        <span className="text-sm">{option.label}</span>
+                        {hasTemplatesForIndustry(option.value) && companyInfo.industries?.includes(option.value) && (
+                          <Star className="w-3 h-3 text-blue-600 ml-auto" />
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                  {companyInfo.industries?.length > 0 && (
+                    <div className="mt-2 text-sm text-gray-600">
+                      Selected: {companyInfo.industries.map(i => INDUSTRY_OPTIONS.find(o => o.value === i)?.label).join(', ')}
                     </div>
                   )}
                 </div>
@@ -979,233 +1030,8 @@ export default function OnboardingPage() {
           </Card>
         )}
 
-        {/* Step 2: Plants Setup */}
+        {/* Step 2: ROI/Benefits */}
         {currentStep === 1 && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Factory className="w-6 h-6" />
-                Plants to Optimize
-              </CardTitle>
-              <CardDescription>
-                Add the manufacturing plants you plan to optimize. Include relevant details about each plant to help us tailor your implementation.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              {/* AI Auto-fill section */}
-              {companyInfo.website && (
-                <div className="bg-gradient-to-r from-purple-50 to-blue-50 border border-purple-200 rounded-lg p-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-gradient-to-r from-purple-500 to-blue-500 flex items-center justify-center">
-                        <Sparkles className="w-5 h-5 text-white" />
-                      </div>
-                      <div>
-                        <h4 className="font-medium text-gray-900">AI Plant Discovery</h4>
-                        <p className="text-sm text-gray-600">
-                          Auto-fill plant information based on {companyInfo.name || 'your company website'}
-                        </p>
-                      </div>
-                    </div>
-                    <Button 
-                      onClick={handlePlantLookup}
-                      disabled={isLookingUpPlants}
-                      className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
-                      data-testid="button-ai-plant-lookup"
-                    >
-                      {isLookingUpPlants ? (
-                        <>
-                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                          Analyzing...
-                        </>
-                      ) : (
-                        <>
-                          <Sparkles className="w-4 h-4 mr-2" />
-                          Auto-fill Plants
-                        </>
-                      )}
-                    </Button>
-                  </div>
-                </div>
-              )}
-
-              {/* Quick add section */}
-              <div className="flex items-center justify-between">
-                <div className="text-sm text-gray-600">
-                  {plants.length === 0 ? (
-                    <span>No plants added yet. Use AI to auto-fill or add manually.</span>
-                  ) : (
-                    <span>{plants.length} plant{plants.length !== 1 ? 's' : ''} configured</span>
-                  )}
-                </div>
-                <Button onClick={handleAddPlant} variant="outline" data-testid="button-add-plant">
-                  <Plus className="w-4 h-4 mr-2" />
-                  Add Plant Manually
-                </Button>
-              </div>
-
-              {/* Plants list */}
-              <div className="space-y-4">
-                {plants.map((plant, index) => (
-                  <div 
-                    key={plant.id} 
-                    className="border rounded-lg p-4 bg-white shadow-sm"
-                    data-testid={`plant-card-${plant.id}`}
-                  >
-                    <div className="flex items-center justify-between mb-4">
-                      <div className="flex items-center gap-3">
-                        <div className={cn(
-                          "w-10 h-10 rounded-full flex items-center justify-center text-white font-bold",
-                          plant.priority === 'high' ? 'bg-red-500' : 
-                          plant.priority === 'medium' ? 'bg-yellow-500' : 'bg-gray-400'
-                        )}>
-                          {index + 1}
-                        </div>
-                        <div>
-                          <Input
-                            value={plant.name}
-                            onChange={(e) => handlePlantChange(plant.id, 'name', e.target.value)}
-                            placeholder="Plant name"
-                            className="font-semibold text-lg border-0 p-0 h-auto focus-visible:ring-0"
-                            data-testid={`input-plant-name-${plant.id}`}
-                          />
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Select 
-                          value={plant.priority}
-                          onValueChange={(value) => handlePlantChange(plant.id, 'priority', value)}
-                        >
-                          <SelectTrigger className="w-32" data-testid={`select-plant-priority-${plant.id}`}>
-                            <SelectValue placeholder="Priority" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="high">High Priority</SelectItem>
-                            <SelectItem value="medium">Medium</SelectItem>
-                            <SelectItem value="low">Low</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <Button 
-                          variant="ghost" 
-                          size="icon"
-                          onClick={() => handleRemovePlant(plant.id)}
-                          className="text-red-500 hover:text-red-700 hover:bg-red-50"
-                          data-testid={`button-remove-plant-${plant.id}`}
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-sm font-medium mb-1">
-                          <MapPin className="w-3 h-3 inline mr-1" />
-                          Location
-                        </label>
-                        <Input
-                          value={plant.location}
-                          onChange={(e) => handlePlantChange(plant.id, 'location', e.target.value)}
-                          placeholder="City, State/Country"
-                          data-testid={`input-plant-location-${plant.id}`}
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium mb-1">Plant Type</label>
-                        <Select 
-                          value={plant.plantType}
-                          onValueChange={(value) => handlePlantChange(plant.id, 'plantType', value)}
-                        >
-                          <SelectTrigger data-testid={`select-plant-type-${plant.id}`}>
-                            <SelectValue placeholder="Select type" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="discrete">Discrete Manufacturing</SelectItem>
-                            <SelectItem value="process">Process Manufacturing</SelectItem>
-                            <SelectItem value="batch">Batch Manufacturing</SelectItem>
-                            <SelectItem value="continuous">Continuous Flow</SelectItem>
-                            <SelectItem value="mixed">Mixed Mode</SelectItem>
-                            <SelectItem value="assembly">Assembly</SelectItem>
-                            <SelectItem value="job_shop">Job Shop</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium mb-1">
-                          <Users className="w-3 h-3 inline mr-1" />
-                          Employee Count
-                        </label>
-                        <Input
-                          value={plant.employeeCount}
-                          onChange={(e) => handlePlantChange(plant.id, 'employeeCount', e.target.value)}
-                          placeholder="e.g., 150"
-                          data-testid={`input-plant-employees-${plant.id}`}
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium mb-1">Main Products</label>
-                        <Input
-                          value={plant.mainProducts}
-                          onChange={(e) => handlePlantChange(plant.id, 'mainProducts', e.target.value)}
-                          placeholder="What does this plant produce?"
-                          data-testid={`input-plant-products-${plant.id}`}
-                        />
-                      </div>
-                    </div>
-
-                    <div className="mt-4">
-                      <label className="block text-sm font-medium mb-1">
-                        <AlertTriangle className="w-3 h-3 inline mr-1" />
-                        Current Challenges (Optional)
-                      </label>
-                      <Textarea
-                        value={plant.currentChallenges}
-                        onChange={(e) => handlePlantChange(plant.id, 'currentChallenges', e.target.value)}
-                        placeholder="Describe key challenges at this plant: scheduling issues, bottlenecks, delivery problems..."
-                        className="min-h-[60px]"
-                        data-testid={`textarea-plant-challenges-${plant.id}`}
-                      />
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              {/* Empty state */}
-              {plants.length === 0 && (
-                <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
-                  <Factory className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">No Plants Added</h3>
-                  <p className="text-gray-500 mb-4">
-                    Add your manufacturing plants to get started. You can always add more later.
-                  </p>
-                  <Button onClick={handleAddPlant} variant="outline" data-testid="button-add-first-plant">
-                    <Plus className="w-4 h-4 mr-2" />
-                    Add Your First Plant
-                  </Button>
-                </div>
-              )}
-
-              {/* Tip section */}
-              {plants.length > 0 && (
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                  <div className="flex items-start gap-3">
-                    <Sparkles className="w-5 h-5 text-blue-600 mt-0.5" />
-                    <div>
-                      <h4 className="font-medium text-blue-900">Tip: Prioritize Your Plants</h4>
-                      <p className="text-sm text-blue-700">
-                        Set high priority for plants where you expect the most immediate impact. 
-                        We'll focus implementation efforts there first.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Step 3: ROI/Benefits */}
-        {currentStep === 2 && (
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -1213,7 +1039,7 @@ export default function OnboardingPage() {
                 Expected Benefits & ROI
               </CardTitle>
               <CardDescription>
-                Based on your {companyInfo.industry || 'industry'} profile and {plants.length || 'your'} plant{plants.length !== 1 ? 's' : ''}, here are the typical benefits you can expect
+                Based on your {companyInfo.industries?.length > 0 ? companyInfo.industries.map(i => INDUSTRY_OPTIONS.find(o => o.value === i)?.label).join(', ') : 'industry'} profile, here are the typical benefits you can expect
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
@@ -1304,8 +1130,8 @@ export default function OnboardingPage() {
           </Card>
         )}
 
-        {/* Step 4: Goals */}
-        {currentStep === 3 && (
+        {/* Step 3: Goals */}
+        {currentStep === 2 && (
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -1436,8 +1262,8 @@ export default function OnboardingPage() {
           </Card>
         )}
 
-        {/* Step 5: Continue to Implementation */}
-        {currentStep === 4 && (
+        {/* Step 4: Continue to Implementation */}
+        {currentStep === 3 && (
           <Card>
             <CardHeader className="text-center">
               <CheckCircle2 className="w-16 h-16 text-green-500 mx-auto mb-4" />
@@ -1452,11 +1278,7 @@ export default function OnboardingPage() {
                 <div className="space-y-3">
                   <div className="flex items-center gap-3">
                     <CheckCircle2 className="w-5 h-5 text-green-500" />
-                    <span>Company profile: <strong>{companyInfo.name}</strong> ({companyInfo.industry})</span>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <CheckCircle2 className="w-5 h-5 text-green-500" />
-                    <span>Configured {plants.length} plant{plants.length !== 1 ? 's' : ''} for optimization</span>
+                    <span>Company profile: <strong>{companyInfo.name}</strong> ({companyInfo.industries?.map(i => INDUSTRY_OPTIONS.find(o => o.value === i)?.label).join(', ') || 'Manufacturing'})</span>
                   </div>
                   <div className="flex items-center gap-3">
                     <CheckCircle2 className="w-5 h-5 text-green-500" />
