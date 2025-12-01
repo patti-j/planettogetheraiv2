@@ -818,9 +818,25 @@ export default function ManufacturingRequirements() {
                             setSelectedRequirements(new Set());
                             setExcludedFeatures(new Set());
                             
+                            // Build informative toast message
+                            const featuresAdded = featureResult.inserted || 0;
+                            const featuresSkipped = featureResult.skipped || 0;
+                            const reqsAdded = reqResult.inserted || 0;
+                            const reqsSkipped = reqResult.skipped || 0;
+                            
+                            let description = '';
+                            if (featuresAdded > 0 || reqsAdded > 0) {
+                              description = `${featuresAdded} feature${featuresAdded !== 1 ? 's' : ''} and ${reqsAdded} requirement${reqsAdded !== 1 ? 's' : ''} added.`;
+                            } else if (featuresSkipped > 0 || reqsSkipped > 0) {
+                              description = `All items already in roadmap (${featuresSkipped} feature${featuresSkipped !== 1 ? 's' : ''}, ${reqsSkipped} requirement${reqsSkipped !== 1 ? 's' : ''} skipped).`;
+                            } else {
+                              description = 'No items to add.';
+                            }
+                            description += ' Go to Onboarding Overview to track progress.';
+                            
                             toast({
-                              title: "Added to Roadmap",
-                              description: `${featureResult.inserted} feature${featureResult.inserted !== 1 ? 's' : ''} and ${reqResult.inserted} requirement${reqResult.inserted !== 1 ? 's' : ''} added. Go to Onboarding Overview to track progress.`
+                              title: featuresAdded > 0 || reqsAdded > 0 ? "Added to Roadmap" : "Already in Roadmap",
+                              description
                             });
                           } catch (error) {
                             console.error('Error adding to roadmap:', error);
