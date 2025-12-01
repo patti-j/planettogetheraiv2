@@ -1190,4 +1190,62 @@ router.post('/api/customer-requirements/bulk-update-status', async (req, res) =>
   }
 });
 
+// Bulk add library requirements to customer_requirements
+router.post('/api/customer-requirements/bulk-library', async (req, res) => {
+  try {
+    const { requirements } = req.body;
+    
+    if (!requirements || !Array.isArray(requirements) || requirements.length === 0) {
+      return res.status(400).json({ error: 'No requirements provided' });
+    }
+    
+    const insertedRequirements = [];
+    let skipped = 0;
+    
+    for (const req of requirements) {
+      // Check if requirement already exists (by name and segment)
+      const [existing] = await db.select()
+        .from(customerRequirements)
+        .where(
+          and(
+            eq(customerRequirements.requirementName, req.requirementName),
+            eq(customerRequirements.segment, req.segment)
+          )
+        );
+      
+      if (existing) {
+        skipped++;
+        continue;
+      }
+      
+      const [inserted] = await db.insert(customerRequirements).values({
+        customerName: 'Library Selection',
+        segment: req.segment,
+        requirementName: req.requirementName,
+        description: req.description || null,
+        features: req.features || [],
+        priority: req.priority || 'Medium',
+        lifecycleStatus: 'modeling',
+        modelingProgress: 0,
+        testingProgress: 0,
+        deploymentProgress: 0,
+        sourceFile: 'Requirements Library',
+        uploadedAt: new Date()
+      }).returning();
+      
+      insertedRequirements.push(inserted);
+    }
+    
+    res.json({
+      success: true,
+      inserted: insertedRequirements.length,
+      skipped,
+      requirements: insertedRequirements
+    });
+  } catch (error) {
+    console.error('Error adding library requirements:', error);
+    res.status(500).json({ error: 'Failed to add library requirements' });
+  }
+});
+
 export default router;

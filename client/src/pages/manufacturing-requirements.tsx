@@ -743,42 +743,83 @@ export default function ManufacturingRequirements() {
                         onClick={async () => {
                           const includedFeatures = sortedFeatures
                             .filter(([feature]) => !excludedFeatures.has(feature))
-                            .map(([feature, data], index) => ({ 
+                            .map(([feature, featureData], index) => ({ 
                               id: `lib-${feature.toLowerCase().replace(/\s+/g, '-')}`,
                               name: feature, 
-                              priority: getPriorityLabel(data.count), 
-                              requirementCount: data.count,
-                              requirements: data.requirements,
+                              priority: getPriorityLabel(featureData.count), 
+                              requirementCount: featureData.count,
+                              requirements: featureData.requirements,
                               source: 'library' as const,
                               order: index + 1
                             }));
                           
+                          // Build array of selected requirements to add to customer_requirements
+                          const selectedReqsArray: Array<{
+                            segment: string;
+                            requirementName: string;
+                            description: string;
+                            features: string[];
+                            priority: string;
+                          }> = [];
+                          
+                          data.forEach(segment => {
+                            segment.useCases.forEach(req => {
+                              const key = `${segment.segment}:${req.name}`;
+                              if (selectedRequirements.has(key)) {
+                                selectedReqsArray.push({
+                                  segment: segment.segment,
+                                  requirementName: req.name,
+                                  description: req.description || '',
+                                  features: req.features,
+                                  priority: req.features.length > 4 ? 'Critical' : req.features.length > 2 ? 'High' : 'Medium'
+                                });
+                              }
+                            });
+                          });
+                          
                           try {
-                            const response = await fetch('/api/roadmap-features/bulk', {
+                            // Add features to roadmap
+                            const featureResponse = await fetch('/api/roadmap-features/bulk', {
                               method: 'POST',
                               headers: { 'Content-Type': 'application/json' },
                               body: JSON.stringify({ features: includedFeatures })
                             });
                             
-                            if (!response.ok) {
+                            if (!featureResponse.ok) {
                               throw new Error('Failed to add features');
                             }
                             
-                            const result = await response.json();
+                            const featureResult = await featureResponse.json();
+                            
+                            // Also add the selected requirements to customer_requirements
+                            const reqResponse = await fetch('/api/customer-requirements/bulk-library', {
+                              method: 'POST',
+                              headers: { 'Content-Type': 'application/json' },
+                              body: JSON.stringify({ requirements: selectedReqsArray })
+                            });
+                            
+                            let reqResult = { inserted: 0, skipped: 0 };
+                            if (reqResponse.ok) {
+                              reqResult = await reqResponse.json();
+                            }
+                            
+                            // Invalidate queries to refresh data
+                            queryClient.invalidateQueries({ queryKey: ['/api/customer-requirements'] });
+                            queryClient.invalidateQueries({ queryKey: ['/api/customer-requirements/stats'] });
                             
                             // Clear selections after successful add
                             setSelectedRequirements(new Set());
                             setExcludedFeatures(new Set());
                             
                             toast({
-                              title: "Features Added to Roadmap",
-                              description: `${result.inserted} feature${result.inserted !== 1 ? 's' : ''} added${result.skipped > 0 ? `, ${result.skipped} already existed` : ''}. Go to Onboarding Overview → Feature Roadmap to prioritize.`
+                              title: "Added to Roadmap",
+                              description: `${featureResult.inserted} feature${featureResult.inserted !== 1 ? 's' : ''} and ${reqResult.inserted} requirement${reqResult.inserted !== 1 ? 's' : ''} added. Go to Onboarding Overview to track progress.`
                             });
                           } catch (error) {
-                            console.error('Error adding features to roadmap:', error);
+                            console.error('Error adding to roadmap:', error);
                             toast({
                               title: "Error",
-                              description: "Failed to add features to roadmap. Please try again.",
+                              description: "Failed to add to roadmap. Please try again.",
                               variant: "destructive"
                             });
                           }
