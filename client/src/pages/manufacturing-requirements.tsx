@@ -390,7 +390,7 @@ export default function ManufacturingRequirements() {
             </Card>
             <Card className="p-4">
               <div className="text-2xl font-bold">{requirementsStats.summary.completionRate}%</div>
-              <div className="text-sm text-muted-foreground">Completion Rate</div>
+              <div className="text-sm text-muted-foreground">Complete</div>
             </Card>
           </div>
         )}

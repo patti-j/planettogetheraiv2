@@ -1160,7 +1160,7 @@ export default function CompanyOnboardingOverview() {
 
               <Card>
                 <CardHeader>
-                  <CardTitle>Completion Rate</CardTitle>
+                  <CardTitle>Complete</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="text-center">
