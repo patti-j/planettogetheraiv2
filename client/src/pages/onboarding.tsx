@@ -1541,7 +1541,7 @@ export default function OnboardingPage() {
               onClick={handleContinueToImplementation}
               data-testid="button-finish-onboarding"
             >
-              Continue to Implementation
+              Continue to Onboarding
               <ArrowRight className="w-4 h-4 ml-2" />
             </Button>
           )}
