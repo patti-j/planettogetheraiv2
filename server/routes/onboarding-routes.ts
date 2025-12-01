@@ -1225,7 +1225,7 @@ router.post('/api/customer-requirements/bulk-library', async (req, res) => {
         description: req.description || null,
         features: req.features || [],
         priority: req.priority || 'Medium',
-        lifecycleStatus: 'modeling',
+        lifecycleStatus: 'modeling_pending',
         modelingProgress: 0,
         testingProgress: 0,
         deploymentProgress: 0,
