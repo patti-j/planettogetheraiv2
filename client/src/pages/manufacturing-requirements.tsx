@@ -373,8 +373,8 @@ export default function ManufacturingRequirements() {
         {requirementsStats?.summary && (
           <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
             <Card className="p-4">
-              <div className="text-2xl font-bold">{requirementsStats.summary.uploaded}</div>
-              <div className="text-sm text-muted-foreground">Uploaded</div>
+              <div className="text-2xl font-bold">{requirementsStats.total}</div>
+              <div className="text-sm text-muted-foreground">Total</div>
             </Card>
             <Card className="p-4">
               <div className="text-2xl font-bold text-blue-600">{requirementsStats.summary.inModeling}</div>
