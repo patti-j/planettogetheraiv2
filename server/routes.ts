@@ -2693,6 +2693,101 @@ router.get("/api/hints", async (req, res) => {
   res.json([]);
 });
 
+// AI-powered company lookup from website
+router.post("/api/company-lookup", async (req, res) => {
+  const { website } = req.body;
+  
+  if (!website) {
+    return res.status(400).json({ 
+      success: false, 
+      message: "Website URL is required" 
+    });
+  }
+
+  try {
+    // Extract domain from URL
+    let domain = website;
+    try {
+      const url = new URL(website.startsWith('http') ? website : `https://${website}`);
+      domain = url.hostname.replace('www.', '');
+    } catch {
+      domain = website.replace(/^(https?:\/\/)?(www\.)?/, '').split('/')[0];
+    }
+
+    console.log(`Looking up company info for domain: ${domain}`);
+
+    // Check if OpenAI API key is available
+    if (!process.env.OPENAI_API_KEY) {
+      console.log('OpenAI API key not configured - returning mock data for demo');
+      // Return helpful mock data based on common company domain patterns
+      const mockData = {
+        name: domain.split('.')[0].charAt(0).toUpperCase() + domain.split('.')[0].slice(1) + ' Company',
+        industry: 'manufacturing',
+        size: 'medium',
+        description: `A manufacturing company operating at ${domain}. Please fill in actual details.`,
+        products: 'Various manufactured products',
+        numberOfPlants: '1'
+      };
+      
+      return res.json({
+        success: true,
+        companyInfo: mockData,
+        source: 'demo_mode'
+      });
+    }
+
+    // Use OpenAI to analyze the company based on their domain
+    const OpenAI = (await import('openai')).default;
+    const openai = new OpenAI();
+    const response = await openai.chat.completions.create({
+      model: "gpt-4o",
+      messages: [
+        {
+          role: "system",
+          content: `You are an expert business analyst. Given a company's website domain, provide accurate information about the company based on your knowledge. Return a JSON object with the following fields:
+          - name: Company's official name
+          - industry: One of: manufacturing, automotive, aerospace, electronics, pharmaceutical, food_beverage, chemicals, metals, textiles
+          - size: One of: small (1-50 employees), medium (51-200 employees), large (201-1000 employees), enterprise (1000+ employees)
+          - description: Brief company description (2-3 sentences)
+          - products: Main products or services (comma-separated list)
+          - numberOfPlants: Estimated number of manufacturing facilities (as string number, e.g., "3")
+          
+          If you're not confident about a field, use null.
+          Always respond with valid JSON only.`
+        },
+        {
+          role: "user",
+          content: `Analyze this company domain and provide information: ${domain}`
+        }
+      ],
+      response_format: { type: "json_object" },
+      temperature: 0.3
+    });
+
+    const content = response.choices[0]?.message?.content;
+    if (!content) {
+      throw new Error('No response from AI');
+    }
+
+    const companyInfo = JSON.parse(content);
+    console.log(`Company lookup result for ${domain}:`, companyInfo);
+
+    res.json({
+      success: true,
+      companyInfo,
+      source: 'ai_analysis'
+    });
+
+  } catch (error) {
+    console.error('Company lookup error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Could not retrieve company information. Please fill in manually.',
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
 // ============================================
 // PT BREWERY DATA GENERATION
 // ============================================
