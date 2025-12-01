@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { Link } from "wouter";
 import { Card } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
@@ -17,7 +18,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { 
   ChevronDown, ChevronUp, CheckCircle, Package, Settings, Factory, 
   Sparkles, FileText, AlertCircle, Upload, Download, FileSpreadsheet,
-  Play, Pause, Check, Clock, Loader2, MoreVertical, Trash2, X, RotateCcw, ArrowRight
+  Play, Pause, Check, Clock, Loader2, MoreVertical, Trash2, X, RotateCcw, ArrowRight, Globe
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -359,6 +360,12 @@ export default function ManufacturingRequirements() {
             </p>
           </div>
           <div className="flex items-center gap-3">
+            <Link href="/company-onboarding-overview">
+              <Button variant="outline" data-testid="button-onboarding-overview">
+                <Globe className="h-4 w-4 mr-2" />
+                Onboarding Overview
+              </Button>
+            </Link>
             <Button variant="outline" onClick={downloadTemplate} data-testid="button-download-template">
               <Download className="h-4 w-4 mr-2" />
               Download Template
