@@ -14397,8 +14397,12 @@ router.get("/api/business-goals", requireAuth, async (req, res) => {
 // Create a new business goal
 router.post("/api/business-goals", requireAuth, async (req, res) => {
   try {
+    const { startDate, targetDate, ...rest } = req.body;
+    
     const goalData = {
-      ...req.body,
+      ...rest,
+      startDate: startDate ? new Date(startDate) : null,
+      targetDate: targetDate ? new Date(targetDate) : null,
       createdBy: req.user?.id,
       updatedBy: req.user?.id
     };
@@ -14415,8 +14419,12 @@ router.post("/api/business-goals", requireAuth, async (req, res) => {
 router.put("/api/business-goals/:id", requireAuth, async (req, res) => {
   try {
     const goalId = parseInt(req.params.id);
+    const { startDate, targetDate, ...rest } = req.body;
+    
     const goalData = {
-      ...req.body,
+      ...rest,
+      startDate: startDate ? new Date(startDate) : undefined,
+      targetDate: targetDate ? new Date(targetDate) : undefined,
       updatedBy: req.user?.id,
       updatedAt: new Date()
     };

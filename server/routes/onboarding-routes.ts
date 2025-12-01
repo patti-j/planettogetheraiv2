@@ -1248,4 +1248,159 @@ router.post('/api/customer-requirements/bulk-library', async (req, res) => {
   }
 });
 
+// Seed sample customer requirements for testing/demo
+router.post('/api/customer-requirements/seed', async (req, res) => {
+  try {
+    const sampleRequirements = [
+      {
+        customerName: 'Acme Manufacturing',
+        segment: 'Discrete Manufacturing',
+        requirementName: 'Real-time Production Visibility',
+        description: 'Need complete visibility into production floor operations with real-time updates on machine status, WIP levels, and production progress.',
+        features: ['Production Monitoring', 'Real-time Dashboards', 'Alerts & Notifications'],
+        priority: 'high',
+        lifecycleStatus: 'uploaded' as const
+      },
+      {
+        customerName: 'Acme Manufacturing',
+        segment: 'Discrete Manufacturing',
+        requirementName: 'Automated Scheduling Optimization',
+        description: 'Require intelligent scheduling that considers machine capacity, labor availability, material constraints, and customer priorities.',
+        features: ['APS Scheduling', 'Constraint Management', 'What-if Analysis'],
+        priority: 'critical',
+        lifecycleStatus: 'modeling_pending' as const
+      },
+      {
+        customerName: 'Precision Parts Inc',
+        segment: 'Precision Manufacturing',
+        requirementName: 'Quality Traceability System',
+        description: 'Full traceability from raw materials through finished goods with lot/serial tracking and quality inspection integration.',
+        features: ['Lot Tracking', 'Quality Integration', 'Genealogy Reporting'],
+        priority: 'high',
+        lifecycleStatus: 'modeling_in_progress' as const,
+        modelingProgress: 45
+      },
+      {
+        customerName: 'Precision Parts Inc',
+        segment: 'Precision Manufacturing',
+        requirementName: 'Predictive Maintenance Integration',
+        description: 'Connect equipment sensors to predict failures before they occur and schedule preventive maintenance during planned downtime.',
+        features: ['IoT Integration', 'Predictive Analytics', 'Maintenance Scheduling'],
+        priority: 'medium',
+        lifecycleStatus: 'uploaded' as const
+      },
+      {
+        customerName: 'Global Foods Corp',
+        segment: 'Food & Beverage',
+        requirementName: 'Recipe/Formula Management',
+        description: 'Manage complex recipes with ingredient substitutions, allergen tracking, and nutritional calculations.',
+        features: ['Recipe Management', 'Allergen Tracking', 'Batch Scaling'],
+        priority: 'critical',
+        lifecycleStatus: 'testing_pending' as const,
+        modelingProgress: 100
+      },
+      {
+        customerName: 'Global Foods Corp',
+        segment: 'Food & Beverage',
+        requirementName: 'Shelf-life & Expiry Management',
+        description: 'Track expiration dates, manage FIFO/FEFO inventory rotation, and prevent shipment of expired products.',
+        features: ['Expiry Tracking', 'FIFO/FEFO', 'Hold Management'],
+        priority: 'high',
+        lifecycleStatus: 'modeling_complete' as const,
+        modelingProgress: 100
+      },
+      {
+        customerName: 'PharmaCo Industries',
+        segment: 'Pharmaceutical',
+        requirementName: 'FDA 21 CFR Part 11 Compliance',
+        description: 'Electronic records and signatures compliance with full audit trail, user authentication, and data integrity controls.',
+        features: ['Electronic Signatures', 'Audit Trail', 'Access Controls'],
+        priority: 'critical',
+        lifecycleStatus: 'testing_in_progress' as const,
+        modelingProgress: 100,
+        testingProgress: 60
+      },
+      {
+        customerName: 'PharmaCo Industries',
+        segment: 'Pharmaceutical',
+        requirementName: 'Batch Record Automation',
+        description: 'Automated electronic batch records with guided execution, deviation management, and review-by-exception.',
+        features: ['eBatch Records', 'Deviation Management', 'Workflow Automation'],
+        priority: 'high',
+        lifecycleStatus: 'uploaded' as const
+      },
+      {
+        customerName: 'AutoTech Components',
+        segment: 'Automotive',
+        requirementName: 'JIT/Kanban Support',
+        description: 'Support for just-in-time manufacturing with electronic kanban, pull signals, and supplier integration.',
+        features: ['Kanban Management', 'Supplier Portal', 'Pull Scheduling'],
+        priority: 'high',
+        lifecycleStatus: 'deployment_pending' as const,
+        modelingProgress: 100,
+        testingProgress: 100
+      },
+      {
+        customerName: 'AutoTech Components',
+        segment: 'Automotive',
+        requirementName: 'EDI Integration for Customer Orders',
+        description: 'Automated EDI processing for customer orders, ASNs, and invoices with major automotive OEMs.',
+        features: ['EDI Processing', 'Order Automation', 'ASN Generation'],
+        priority: 'medium',
+        lifecycleStatus: 'deployed' as const,
+        modelingProgress: 100,
+        testingProgress: 100,
+        deploymentProgress: 100
+      }
+    ];
+    
+    const insertedRequirements = [];
+    let skipped = 0;
+    
+    for (const req of sampleRequirements) {
+      // Check if requirement already exists
+      const existing = await db.select()
+        .from(customerRequirements)
+        .where(and(
+          eq(customerRequirements.customerName, req.customerName),
+          eq(customerRequirements.requirementName, req.requirementName)
+        ))
+        .limit(1);
+      
+      if (existing.length > 0) {
+        skipped++;
+        continue;
+      }
+      
+      const [inserted] = await db.insert(customerRequirements).values({
+        customerName: req.customerName,
+        segment: req.segment,
+        requirementName: req.requirementName,
+        description: req.description,
+        features: req.features,
+        priority: req.priority,
+        lifecycleStatus: req.lifecycleStatus,
+        modelingProgress: req.modelingProgress || 0,
+        testingProgress: req.testingProgress || 0,
+        deploymentProgress: req.deploymentProgress || 0,
+        sourceFile: 'Sample Data',
+        uploadedAt: new Date()
+      }).returning();
+      
+      insertedRequirements.push(inserted);
+    }
+    
+    res.json({
+      success: true,
+      message: `Seeded ${insertedRequirements.length} sample requirements (${skipped} already existed)`,
+      inserted: insertedRequirements.length,
+      skipped,
+      requirements: insertedRequirements
+    });
+  } catch (error) {
+    console.error('Error seeding customer requirements:', error);
+    res.status(500).json({ error: 'Failed to seed customer requirements' });
+  }
+});
+
 export default router;

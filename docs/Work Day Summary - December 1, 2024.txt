@@ -28,13 +28,10 @@ Bug Fixes
 Fixed TypeScript errors related to companyInfo.industry → companyInfo.industries migration
 Updated plant lookup API calls to use industries array joined with commas
 Fixed completion summary to display all selected industries properly
+FIXED: Date conversion error in business goals creation - backend now properly converts ISO string dates to Date objects before database insertion
 
-Data Investigation
-Investigated requirements count discrepancy in uploaded requirements
-Original uploaded requirements appear to be missing from database
-User will need to re-upload requirements via spreadsheet
-
-Known Issues
-CRITICAL BUG (UNRESOLVED): Date conversion error in business goals creation
-"TypeError: value.toISOString is not a function" when saving goals with target dates
-Needs investigation - appears to be date object serialization issue
+Sample Data Population
+Created seed endpoint for customer requirements (/api/customer-requirements/seed)
+Seeded 10 sample requirements across 5 customers (Acme Manufacturing, Precision Parts Inc, Global Foods Corp, PharmaCo Industries, AutoTech Components)
+Requirements span various lifecycle statuses: uploaded, modeling_pending, modeling_in_progress, modeling_complete, testing_pending, testing_in_progress, deployment_pending, deployed
+Covers multiple industry segments: Discrete Manufacturing, Precision Manufacturing, Food & Beverage, Pharmaceutical, Automotive
