@@ -339,6 +339,7 @@ export default function OnboardingPage() {
   const [plants, setPlants] = useState<PlantInfo[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isLookingUpWebsite, setIsLookingUpWebsite] = useState(false);
+  const [isLookingUpPlants, setIsLookingUpPlants] = useState(false);
   const [templateDialogOpen, setTemplateDialogOpen] = useState(false);
   const [selectedIndustryTemplates, setSelectedIndustryTemplates] = useState<any[]>([]);
   const { toast } = useToast();
@@ -475,6 +476,65 @@ export default function OnboardingPage() {
       });
     } finally {
       setIsLookingUpWebsite(false);
+    }
+  };
+
+  // Plant lookup function using AI
+  const handlePlantLookup = async () => {
+    if (!companyInfo.website) {
+      toast({
+        title: "Website Required",
+        description: "Please enter a company website in the Company Info step first.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsLookingUpPlants(true);
+    try {
+      const response = await apiRequest('POST', '/api/plants-lookup', { 
+        website: companyInfo.website,
+        companyName: companyInfo.name,
+        industry: companyInfo.industry,
+        numberOfPlants: companyInfo.numberOfPlants || '3'
+      });
+      const data = await response.json();
+      
+      if (data.success && data.plants && data.plants.length > 0) {
+        // Transform AI plants to match our PlantInfo format
+        const newPlants: PlantInfo[] = data.plants.map((plant: any, index: number) => ({
+          id: `plant-${Date.now()}-${index}`,
+          name: plant.name || `Plant ${index + 1}`,
+          location: plant.location || '',
+          plantType: plant.plantType || 'discrete',
+          employeeCount: plant.employeeCount || '',
+          mainProducts: plant.mainProducts || '',
+          currentChallenges: plant.currentChallenges || '',
+          priority: plant.priority || (index === 0 ? 'high' : 'medium')
+        }));
+        
+        setPlants(newPlants);
+        
+        toast({
+          title: "Plants Auto-Filled",
+          description: `Found ${newPlants.length} plant${newPlants.length !== 1 ? 's' : ''} for ${companyInfo.name || 'your company'}. Please review and adjust as needed.`
+        });
+      } else {
+        toast({
+          title: "Limited Info Found",
+          description: data.message || "Could not find detailed plant information. Please add plants manually.",
+          variant: "default"
+        });
+      }
+    } catch (error) {
+      console.error('Plant lookup error:', error);
+      toast({
+        title: "Lookup Failed",
+        description: "Could not retrieve plant information. Please add plants manually.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLookingUpPlants(false);
     }
   };
 
@@ -932,18 +992,55 @@ export default function OnboardingPage() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
+              {/* AI Auto-fill section */}
+              {companyInfo.website && (
+                <div className="bg-gradient-to-r from-purple-50 to-blue-50 border border-purple-200 rounded-lg p-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-gradient-to-r from-purple-500 to-blue-500 flex items-center justify-center">
+                        <Sparkles className="w-5 h-5 text-white" />
+                      </div>
+                      <div>
+                        <h4 className="font-medium text-gray-900">AI Plant Discovery</h4>
+                        <p className="text-sm text-gray-600">
+                          Auto-fill plant information based on {companyInfo.name || 'your company website'}
+                        </p>
+                      </div>
+                    </div>
+                    <Button 
+                      onClick={handlePlantLookup}
+                      disabled={isLookingUpPlants}
+                      className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
+                      data-testid="button-ai-plant-lookup"
+                    >
+                      {isLookingUpPlants ? (
+                        <>
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          Analyzing...
+                        </>
+                      ) : (
+                        <>
+                          <Sparkles className="w-4 h-4 mr-2" />
+                          Auto-fill Plants
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </div>
+              )}
+
               {/* Quick add section */}
               <div className="flex items-center justify-between">
                 <div className="text-sm text-gray-600">
                   {plants.length === 0 ? (
-                    <span>No plants added yet. Click the button to add your first plant.</span>
+                    <span>No plants added yet. Use AI to auto-fill or add manually.</span>
                   ) : (
                     <span>{plants.length} plant{plants.length !== 1 ? 's' : ''} configured</span>
                   )}
                 </div>
-                <Button onClick={handleAddPlant} data-testid="button-add-plant">
+                <Button onClick={handleAddPlant} variant="outline" data-testid="button-add-plant">
                   <Plus className="w-4 h-4 mr-2" />
-                  Add Plant
+                  Add Plant Manually
                 </Button>
               </div>
 

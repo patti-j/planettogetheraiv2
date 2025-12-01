@@ -2788,6 +2788,119 @@ router.post("/api/company-lookup", async (req, res) => {
   }
 });
 
+// AI-powered plant lookup from company website
+router.post("/api/plants-lookup", async (req, res) => {
+  const { website, companyName, industry, numberOfPlants } = req.body;
+  
+  if (!website) {
+    return res.status(400).json({ 
+      success: false, 
+      message: "Website URL is required" 
+    });
+  }
+
+  try {
+    // Extract domain from URL
+    let domain = website;
+    try {
+      const url = new URL(website.startsWith('http') ? website : `https://${website}`);
+      domain = url.hostname.replace('www.', '');
+    } catch {
+      domain = website.replace(/^(https?:\/\/)?(www\.)?/, '').split('/')[0];
+    }
+
+    console.log(`Looking up plant info for domain: ${domain}, company: ${companyName}`);
+
+    // Check if OpenAI API key is available
+    if (!process.env.OPENAI_API_KEY) {
+      console.log('OpenAI API key not configured - returning mock plant data');
+      const plantCount = parseInt(numberOfPlants) || 2;
+      const mockPlants = [];
+      
+      for (let i = 0; i < plantCount; i++) {
+        mockPlants.push({
+          name: `${companyName || 'Main'} Plant ${i + 1}`,
+          location: i === 0 ? 'Headquarters Location' : `Regional Location ${i}`,
+          plantType: 'discrete',
+          employeeCount: '100-200',
+          mainProducts: 'Primary manufacturing products',
+          currentChallenges: 'Please update with actual challenges',
+          priority: i === 0 ? 'high' : 'medium'
+        });
+      }
+      
+      return res.json({
+        success: true,
+        plants: mockPlants,
+        source: 'demo_mode'
+      });
+    }
+
+    // Use OpenAI to analyze the company and find plant information
+    const OpenAI = (await import('openai')).default;
+    const openai = new OpenAI();
+    
+    const targetPlantCount = parseInt(numberOfPlants) || 3;
+    
+    const response = await openai.chat.completions.create({
+      model: "gpt-4o",
+      messages: [
+        {
+          role: "system",
+          content: `You are an expert manufacturing analyst. Given a company's website domain and details, research and provide information about their manufacturing plants/facilities. Return a JSON object with a "plants" array containing ${targetPlantCount} plant objects.
+
+Each plant object should have:
+- name: Facility name (e.g., "Toyota Georgetown Plant", "Main Manufacturing Facility")
+- location: City, State/Country (be specific if known, e.g., "Georgetown, Kentucky, USA")
+- plantType: One of: discrete, process, batch, continuous, mixed, assembly, job_shop
+- employeeCount: Estimated employee count as string (e.g., "1500", "200-300")
+- mainProducts: Products manufactured at this location
+- currentChallenges: Common manufacturing challenges for this type of facility
+- priority: "high" for main/headquarters plant, "medium" for major facilities, "low" for smaller sites
+
+If you know specific plant locations for this company, use them. Otherwise, make educated estimates based on the industry and company size. For well-known companies, use actual facility data.
+
+Always respond with valid JSON only.`
+        },
+        {
+          role: "user",
+          content: `Analyze manufacturing plants for:
+Domain: ${domain}
+Company Name: ${companyName || 'Unknown'}
+Industry: ${industry || 'manufacturing'}
+Expected number of plants: ${targetPlantCount}
+
+Provide detailed plant information for this company.`
+        }
+      ],
+      response_format: { type: "json_object" },
+      temperature: 0.4
+    });
+
+    const content = response.choices[0]?.message?.content;
+    if (!content) {
+      throw new Error('No response from AI');
+    }
+
+    const result = JSON.parse(content);
+    console.log(`Plant lookup result for ${domain}:`, result);
+
+    res.json({
+      success: true,
+      plants: result.plants || [],
+      source: 'ai_analysis'
+    });
+
+  } catch (error) {
+    console.error('Plant lookup error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Could not retrieve plant information. Please add plants manually.',
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
 // ============================================
 // PT BREWERY DATA GENERATION
 // ============================================
