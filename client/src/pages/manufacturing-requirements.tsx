@@ -445,14 +445,14 @@ export default function ManufacturingRequirements() {
                   <div className="mb-6">
                     <h3 className="font-semibold text-red-600 flex items-center gap-2 mb-3">
                       <AlertCircle className="h-4 w-4" />
-                      Critical Priority Features (Required by 5+ requirements)
+                      Critical Priority Features (Needed for 5+ requirements)
                     </h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                       {criticalFeatures.map(([feature, featureData]) => (
                         <Card key={feature} className="p-3 border-red-200 bg-red-50 dark:bg-red-950/20">
                           <div className="font-medium">{feature}</div>
                           <div className="text-sm text-muted-foreground mt-1">
-                            Required by {featureData.count} requirements
+                            Needed for {featureData.count} requirements
                           </div>
                           <Collapsible>
                             <CollapsibleTrigger className="text-xs text-primary hover:underline mt-2">
@@ -476,7 +476,7 @@ export default function ManufacturingRequirements() {
                   <div className="mb-6">
                     <h3 className="font-semibold text-orange-600 flex items-center gap-2 mb-3">
                       <AlertCircle className="h-4 w-4" />
-                      High Priority Features (Required by 3-4 requirements)
+                      High Priority Features (Needed for 3-4 requirements)
                     </h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                       {highFeatures.map(([feature, featureData]) => (
@@ -494,7 +494,7 @@ export default function ManufacturingRequirements() {
                 {mediumFeatures.length > 0 && (
                   <div>
                     <h3 className="font-semibold text-blue-600 flex items-center gap-2 mb-3">
-                      Medium Priority Features (Required by 1-2 requirements)
+                      Medium Priority Features (Needed for 1-2 requirements)
                     </h3>
                     <div className="flex flex-wrap gap-2">
                       {mediumFeatures.map(([feature, featureData]) => (
@@ -643,7 +643,7 @@ export default function ManufacturingRequirements() {
                             </div>
                             <CollapsibleContent className="px-3 pb-2">
                               <div className="text-xs text-muted-foreground mt-2 space-y-1">
-                                <div className="font-medium">Required by {featureData.count} requirement{featureData.count !== 1 ? 's' : ''}:</div>
+                                <div className="font-medium">Needed for {featureData.count} requirement{featureData.count !== 1 ? 's' : ''}:</div>
                                 {featureData.requirements.map((req, i) => (
                                   <div key={i}>• {req}</div>
                                 ))}
