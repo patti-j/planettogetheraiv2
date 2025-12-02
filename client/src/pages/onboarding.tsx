@@ -714,10 +714,10 @@ export default function OnboardingPage() {
         const newGoals: BusinessGoal[] = selectedBenefitObjects.map(benefit => ({
           id: `goal-${benefit.id}`,
           title: benefit.title,
-          description: `${benefit.description}\n\nEstimated Value: ${benefit.estimatedValue}\nTime to Value: ${benefit.timeToValue}\nRelated KPIs: ${benefit.kpis.join(', ')}`,
+          description: `${benefit.description}\n\nEstimated Value: ${benefit.estimatedValue || 'TBD'}\nTime to Value: ${benefit.timeToValue || 'TBD'}\nRelated KPIs: ${(benefit.kpis || []).join(', ')}`,
           category: benefit.category,
           priority: benefit.priority,
-          targetValue: benefit.estimatedPercent,
+          targetValue: benefit.estimatedPercent || 10,
           fromBenefit: true
         }));
         
