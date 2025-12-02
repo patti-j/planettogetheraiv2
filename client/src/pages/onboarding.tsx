@@ -222,7 +222,7 @@ const INDUSTRY_BENEFITS: Record<string, Benefit[]> = {
       kpis: ['GMP Compliance Score', 'Quality Deviations', 'Audit Readiness']
     }
   ],
-  'food_beverage': [
+  'food_production': [
     {
       id: 'freshness-optimization',
       title: 'Optimize Production for Freshness',
@@ -246,6 +246,32 @@ const INDUSTRY_BENEFITS: Record<string, Benefit[]> = {
       icon: Factory,
       priority: 'medium',
       kpis: ['Sanitation Time', 'Uptime %', 'Cross-Contamination Events']
+    }
+  ],
+  'beverage_production': [
+    {
+      id: 'batch-fermentation',
+      title: 'Optimize Batch Fermentation',
+      description: 'Improve fermentation scheduling for consistent quality and throughput',
+      category: 'quality',
+      estimatedValue: '$200K-$600K annually',
+      estimatedPercent: 22,
+      timeToValue: '3-6 months',
+      icon: Clock,
+      priority: 'high',
+      kpis: ['Fermentation Yield', 'Batch Consistency', 'Tank Utilization']
+    },
+    {
+      id: 'packaging-efficiency',
+      title: 'Improve Packaging Line Efficiency',
+      description: 'Reduce changeover times and increase packaging line throughput',
+      category: 'efficiency',
+      estimatedValue: '$150K-$400K annually',
+      estimatedPercent: 20,
+      timeToValue: '3-6 months',
+      icon: Factory,
+      priority: 'medium',
+      kpis: ['Packaging OEE', 'Changeover Time', 'Line Availability']
     }
   ],
   'electronics': [
@@ -323,7 +349,8 @@ const INDUSTRY_OPTIONS = [
   { value: 'aerospace', label: 'Aerospace' },
   { value: 'electronics', label: 'Electronics' },
   { value: 'pharmaceutical', label: 'Pharmaceutical' },
-  { value: 'food_beverage', label: 'Food & Beverage' },
+  { value: 'food_production', label: 'Food Production' },
+  { value: 'beverage_production', label: 'Beverage Production' },
   { value: 'chemicals', label: 'Chemicals' },
   { value: 'metals', label: 'Metals' },
   { value: 'textiles', label: 'Textiles' }

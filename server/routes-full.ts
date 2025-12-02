@@ -27564,7 +27564,7 @@ Be careful to preserve data integrity and relationships.`;
       res.json({
         company: {
           name: 'Heineken',
-          industry: 'Food & Beverage',
+          industry: 'Food Production',
           size: 'Enterprise',
           implementationStage: 'Phase 2',
           goLiveDate: '2025-09-15'

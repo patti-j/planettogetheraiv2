@@ -293,7 +293,7 @@ const IntegrationApiPage: React.FC = () => {
       customer: "Supply Chain Director, Major Automotive OEM"
     },
     {
-      industry: "Food & Beverage Processing",
+      industry: "Food Production",
       challenge: "Managing complex formulations and regulatory requirements across multiple production sites",
       solution: "Integrated platform connecting ERP, formulation systems, quality management, and regulatory reporting",
       results: [

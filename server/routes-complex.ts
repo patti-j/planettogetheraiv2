@@ -22896,7 +22896,7 @@ Response must be valid JSON:
             role: "system",
             content: `You are an expert business analyst. Given a company's website domain, provide accurate information about the company based on your knowledge. Return a JSON object with the following fields:
             - name: Company's official name
-            - industry: One of: manufacturing, automotive, aerospace, electronics, pharmaceutical, food_beverage, chemicals, metals, textiles
+            - industry: One of: manufacturing, automotive, aerospace, electronics, pharmaceutical, food_production, beverage_production, chemicals, metals, textiles
             - size: One of: small (1-50 employees), medium (51-200 employees), large (201-1000 employees), enterprise (1000+ employees)
             - description: Brief company description (2-3 sentences)
             - products: Main products or services (comma-separated list)
@@ -22925,7 +22925,7 @@ Response must be valid JSON:
       const companyInfo = JSON.parse(content);
       
       // Filter out null values and validate industry/size values
-      const validIndustries = ['manufacturing', 'automotive', 'aerospace', 'electronics', 'pharmaceutical', 'food_beverage', 'chemicals', 'metals', 'textiles'];
+      const validIndustries = ['manufacturing', 'automotive', 'aerospace', 'electronics', 'pharmaceutical', 'food_production', 'beverage_production', 'chemicals', 'metals', 'textiles'];
       const validSizes = ['small', 'medium', 'large', 'enterprise'];
       
       const cleanedInfo: any = {};
@@ -27689,7 +27689,7 @@ Be careful to preserve data integrity and relationships.`;
       res.json({
         company: {
           name: 'Heineken',
-          industry: 'Food & Beverage',
+          industry: 'Food Production',
           size: 'Enterprise',
           implementationStage: 'Phase 2',
           goLiveDate: '2025-09-15'

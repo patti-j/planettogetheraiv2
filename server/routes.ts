@@ -2746,7 +2746,7 @@ router.post("/api/company-lookup", async (req, res) => {
           role: "system",
           content: `You are an expert business analyst. Given a company's website domain, provide accurate information about the company based on your knowledge. Return a JSON object with the following fields:
           - name: Company's official name
-          - industry: One of: manufacturing, automotive, aerospace, electronics, pharmaceutical, food_beverage, chemicals, metals, textiles
+          - industry: One of: manufacturing, automotive, aerospace, electronics, pharmaceutical, food_production, beverage_production, chemicals, metals, textiles
           - size: One of: small (1-50 employees), medium (51-200 employees), large (201-1000 employees), enterprise (1000+ employees)
           - description: Brief company description (2-3 sentences)
           - products: Main products or services (comma-separated list)

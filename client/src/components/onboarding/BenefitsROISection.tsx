@@ -198,7 +198,7 @@ const INDUSTRY_BENEFITS: Record<string, Benefit[]> = {
       kpis: ['Schedule Adherence', 'Lead Time Reduction', 'Planning Accuracy']
     }
   ],
-  'food-beverage': [
+  'food-production': [
     {
       id: 'shelf-life-optimization',
       title: 'Optimize Shelf Life Management',
@@ -224,6 +224,34 @@ const INDUSTRY_BENEFITS: Record<string, Benefit[]> = {
       priority: 'high',
       relatedFeatures: ['quality-control', 'production-scheduling'],
       kpis: ['Traceability Time', 'Recall Readiness', 'Compliance Score']
+    }
+  ],
+  'beverage-production': [
+    {
+      id: 'fermentation-optimization',
+      title: 'Optimize Fermentation Scheduling',
+      description: 'Improve tank utilization and batch consistency through better fermentation planning',
+      category: 'efficiency',
+      estimatedValue: '$200K-$600K annually',
+      estimatedPercent: 22,
+      timeToValue: '3-6 months',
+      icon: Clock,
+      priority: 'high',
+      relatedFeatures: ['production-scheduling', 'capacity-planning'],
+      kpis: ['Tank Utilization', 'Fermentation Yield', 'Batch Consistency']
+    },
+    {
+      id: 'packaging-line-efficiency',
+      title: 'Improve Packaging Line Efficiency',
+      description: 'Reduce changeover times and maximize bottling/canning throughput',
+      category: 'efficiency',
+      estimatedValue: '$150K-$400K annually',
+      estimatedPercent: 20,
+      timeToValue: '3-6 months',
+      icon: Factory,
+      priority: 'medium',
+      relatedFeatures: ['production-scheduling', 'production-planning'],
+      kpis: ['Packaging OEE', 'Changeover Time', 'Line Availability']
     }
   ],
   'pharmaceuticals': [

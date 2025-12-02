@@ -150,14 +150,24 @@ const searchIndex: SearchResult[] = [
     tags: ['chemical', 'processing', 'safety']
   },
   {
-    id: 'food-beverage',
-    title: 'Food & Beverage',
-    description: 'Brewery, dairy, and food production optimization',
-    content: 'brewery production food safety HACCP allergen tracking shelf life fermentation packaging',
+    id: 'food-production',
+    title: 'Food Production',
+    description: 'Food safety, HACCP compliance, and freshness optimization',
+    content: 'food production food safety HACCP allergen tracking shelf life batch traceability sanitation',
     category: 'solutions',
-    url: '/industry-templates#food-beverage',
+    url: '/industry-templates#food-production',
     icon: Package,
-    tags: ['food', 'beverage', 'brewery', 'HACCP']
+    tags: ['food', 'HACCP', 'freshness', 'safety']
+  },
+  {
+    id: 'beverage-production',
+    title: 'Beverage Production',
+    description: 'Brewery, dairy, and beverage production optimization',
+    content: 'brewery production beverage fermentation packaging bottling canning tank scheduling dairy',
+    category: 'solutions',
+    url: '/industry-templates#beverage-production',
+    icon: Package,
+    tags: ['beverage', 'brewery', 'fermentation', 'packaging']
   },
   
   // Resources

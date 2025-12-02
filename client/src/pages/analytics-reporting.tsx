@@ -397,7 +397,7 @@ const AnalyticsReportingPage: React.FC = () => {
       customer: "VP Manufacturing, Major Automotive OEM"
     },
     {
-      industry: "Food & Beverage Processing",
+      industry: "Food Production",
       challenge: "Managing food safety compliance with traceability and recall capabilities",
       solution: "Comprehensive food safety dashboard with lot tracking and automated recall management",
       results: [

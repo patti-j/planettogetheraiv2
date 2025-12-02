@@ -1501,7 +1501,7 @@ router.post('/api/customer-requirements/seed', async (req, res) => {
       },
       {
         customerName: 'Global Foods Corp',
-        segment: 'Food & Beverage',
+        segment: 'Food Production',
         requirementName: 'Recipe/Formula Management',
         description: 'Manage complex recipes with ingredient substitutions, allergen tracking, and nutritional calculations.',
         features: ['Recipe Management', 'Allergen Tracking', 'Batch Scaling'],
@@ -1511,7 +1511,7 @@ router.post('/api/customer-requirements/seed', async (req, res) => {
       },
       {
         customerName: 'Global Foods Corp',
-        segment: 'Food & Beverage',
+        segment: 'Food Production',
         requirementName: 'Shelf-life & Expiry Management',
         description: 'Track expiration dates, manage FIFO/FEFO inventory rotation, and prevent shipment of expired products.',
         features: ['Expiry Tracking', 'FIFO/FEFO', 'Hold Management'],

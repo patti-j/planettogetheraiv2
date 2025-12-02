@@ -13243,7 +13243,7 @@ export class DatabaseStorage {
         return {
           id: 1,
           companyName: userId === 'demo_director' ? 'Demo Manufacturing Corp' : 'Demo Company',
-          industry: 'food_beverage',
+          industry: 'food_production',
           size: 'medium',
           description: 'A demo manufacturing company for testing purposes',
           primaryGoal: 'improve-efficiency',
@@ -13286,7 +13286,7 @@ export class DatabaseStorage {
         return {
           id: 1,
           companyName: data.companyName || 'Demo Manufacturing Corp',
-          industry: data.industry || 'food_beverage',
+          industry: data.industry || 'food_production',
           size: data.size || 'medium',
           description: data.description || 'A demo manufacturing company for testing purposes',
           primaryGoal: data.primaryGoal || 'improve-efficiency',
@@ -13332,7 +13332,7 @@ export class DatabaseStorage {
         return {
           id: id,
           companyName: data.companyName || 'Demo Manufacturing Corp',
-          industry: data.industry || 'food_beverage',
+          industry: data.industry || 'food_production',
           size: data.size || 'medium',
           description: data.description || 'A demo manufacturing company for testing purposes',
           primaryGoal: data.primaryGoal || 'improve-efficiency',

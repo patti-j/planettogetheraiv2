@@ -85,7 +85,7 @@ export const AIImplementationConsultant: React.FC = () => {
       return {
         company: {
           name: 'Heineken',
-          industry: 'Food & Beverage',
+          industry: 'Beverage Production',
           size: 'Enterprise',
           implementationStage: 'Phase 2',
           goLiveDate: '2025-09-15'

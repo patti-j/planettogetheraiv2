@@ -261,7 +261,7 @@ const SupplyChainMarketingPage: React.FC = () => {
       customer: "Operations Director, Global Pharmaceutical Company"
     },
     {
-      industry: "Food & Beverage",
+      industry: "Food Production",
       challenge: "Managing perishable ingredients with seasonal demand variations and quality requirements",
       solution: "Shelf-life optimization, seasonal forecasting, and quality-based inventory strategies",
       results: [

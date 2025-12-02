@@ -266,7 +266,7 @@ const TheoryOfConstraintsPage: React.FC = () => {
       customer: "Operations Director, Leading Pharmaceutical Company"
     },
     {
-      industry: "Food & Beverage Processing",
+      industry: "Food Production",
       challenge: "Multi-product facility with varying processing times and seasonal demand patterns",
       constraint: "Packaging line capacity limiting overall facility throughput during peak seasons",
       solution: "Constraint-based production planning, packaging optimization, and demand smoothing strategies",

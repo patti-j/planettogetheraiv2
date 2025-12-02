@@ -156,7 +156,8 @@ const MarketingHome: React.FC = () => {
     { name: "Pharmaceutical", description: "FDA-compliant manufacturing processes", customers: "50+" },
     { name: "Chemical", description: "Process manufacturing optimization", customers: "120+" },
     { name: "Industrial", description: "Discrete manufacturing excellence", customers: "200+" },
-    { name: "Food & Beverage", description: "Quality and safety management", customers: "80+" }
+    { name: "Food Production", description: "Quality, safety, and freshness management", customers: "60+" },
+    { name: "Beverage Production", description: "Fermentation and packaging optimization", customers: "40+" }
   ];
 
   const testimonials = [

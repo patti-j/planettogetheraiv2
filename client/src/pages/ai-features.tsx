@@ -272,7 +272,7 @@ const AiFeaturesPage: React.FC = () => {
       customer: "Manufacturing Director, Tier 1 Automotive Supplier"
     },
     {
-      industry: "Food & Beverage",
+      industry: "Food Production",
       challenge: "Managing perishable inventory with fluctuating demand and shelf-life constraints",
       solution: "AI forecasts demand patterns, optimizes production schedules around expiration dates, and minimizes waste through intelligent inventory management",
       results: [

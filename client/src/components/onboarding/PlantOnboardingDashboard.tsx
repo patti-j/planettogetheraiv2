@@ -207,7 +207,7 @@ export const PlantOnboardingDashboard: React.FC = () => {
     const templateData = {
       name: `${onboarding.name} Template`,
       description: `Template created from ${onboarding.plant_name} onboarding`,
-      industry: 'Food & Beverage',
+      industry: 'Food Production',
       plantType: 'Manufacturing',
       phases: onboarding.custom_phases || [],
       goals: onboarding.custom_goals || [],
@@ -915,7 +915,7 @@ export const PlantOnboardingDashboard: React.FC = () => {
                       <FormItem>
                         <FormLabel>Industry</FormLabel>
                         <FormControl>
-                          <Input placeholder="e.g., Food & Beverage" {...field} />
+                          <Input placeholder="e.g., Food Production" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>

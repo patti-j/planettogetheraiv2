@@ -16,7 +16,7 @@ export const SAMPLE_TEMPLATES = [
   {
     name: "Brewery Operations",
     description: "Complete brewery onboarding from grain to glass",
-    industry: "Food & Beverage",
+    industry: "Food Production",
     plantType: "Brewery",
     estimatedDuration: 90,
     phases: [
@@ -129,7 +129,7 @@ export const SAMPLE_TEMPLATES = [
   {
     name: "Food Processing Plant",
     description: "Food safety and efficiency focused onboarding",
-    industry: "Food & Beverage",
+    industry: "Food Production",
     plantType: "Processing",
     estimatedDuration: 75,
     phases: [

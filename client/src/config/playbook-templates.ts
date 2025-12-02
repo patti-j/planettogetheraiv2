@@ -414,8 +414,8 @@ Maximize equipment reliability and safety through systematic preventive maintena
     ]
   },
   {
-    id: "food-beverage",
-    label: "Food & Beverage",
+    id: "food-production",
+    label: "Food Production",
     description: "Templates for food safety, HACCP compliance, and production scheduling",
     templates: [
       {
@@ -569,6 +569,115 @@ Prevent allergen cross-contact to protect allergic consumers and ensure complian
 - Notify QA when changeover cleaning verification fails (ATP or allergen test)
 - Escalate when allergen-containing ingredient is received without proper documentation
 - Generate monthly allergen management report (near misses, test failures, corrective actions)`
+      }
+    ]
+  },
+  {
+    id: "beverage-production",
+    label: "Beverage Production",
+    description: "Templates for brewery, dairy, and beverage production optimization",
+    templates: [
+      {
+        id: "beverage-fermentation-scheduling",
+        title: "Fermentation Tank Scheduling",
+        scenario: "Optimize fermentation tank utilization and batch scheduling for consistent product quality",
+        agentId: "production_scheduling",
+        category: "Fermentation",
+        description: "Manages fermentation tank scheduling to maximize throughput while maintaining quality standards",
+        useCases: [
+          "Brewery fermentation scheduling",
+          "Wine fermentation timing",
+          "Dairy culture propagation",
+          "Kombucha batch planning"
+        ],
+        content: `# Fermentation Tank Scheduling
+
+## Objective
+Optimize fermentation tank utilization to maximize production throughput while ensuring consistent product quality.
+
+## Tank Management
+
+### Tank Categories
+- **Primary Fermentation Tanks**: Initial fermentation vessels (5-14 days typical)
+- **Conditioning Tanks**: Secondary fermentation/maturation (1-4 weeks)
+- **Bright Tanks**: Finished product holding before packaging
+
+### Scheduling Parameters
+- **Fermentation Time**: Product-specific duration based on yeast strain and target gravity
+- **Cleaning Time**: CIP (Clean-In-Place) cycle between batches (2-4 hours)
+- **Turnaround Buffer**: Safety margin for late fermentation completion (12-24 hours)
+
+## Scheduling Rules
+
+### Priority Factors
+1. **Seasonal Products**: Holiday releases, limited editions get priority
+2. **Core Products**: Flagship products maintain steady production rhythm
+3. **Tank Compatibility**: Match product requirements with tank capabilities
+
+### Optimization Goals
+- Minimize tank idle time between batches
+- Balance fermentation completion with packaging capacity
+- Coordinate yeast propagation with fermentation starts
+- Account for temperature conditioning requirements
+
+## Agent Triggers
+- Alert when fermentation exceeds expected duration by >24 hours
+- Notify when tank utilization falls below 85%
+- Schedule CIP cycles to avoid packaging line starvation
+- Generate weekly production vs. capacity forecast`
+      },
+      {
+        id: "beverage-packaging-optimization",
+        title: "Packaging Line Optimization",
+        scenario: "Maximize bottling and canning line efficiency through smart scheduling",
+        agentId: "production_scheduling",
+        category: "Packaging",
+        description: "Optimizes packaging line scheduling to reduce changeover time and increase throughput",
+        useCases: [
+          "Bottling line sequencing",
+          "Can line scheduling",
+          "Keg filling optimization",
+          "Multi-format packaging coordination"
+        ],
+        content: `# Packaging Line Optimization
+
+## Objective
+Maximize packaging line efficiency through intelligent scheduling and changeover optimization.
+
+## Line Configuration
+
+### Packaging Formats
+- **Bottles**: 12oz, 22oz, 750ml configurations
+- **Cans**: 12oz, 16oz, 19.2oz sizes
+- **Kegs**: 1/6 bbl, 1/4 bbl, 1/2 bbl
+- **Other**: Growlers, crowlers, specialty containers
+
+### Changeover Matrix
+| From Format | To Format | Changeover Time |
+|-------------|-----------|-----------------|
+| 12oz can | 16oz can | 30 min |
+| Can | Bottle | 2 hours |
+| Bottle size change | Same family | 45 min |
+| Complete product change | Any format | 3-4 hours |
+
+## Scheduling Optimization
+
+### Sequencing Rules
+1. **Group Similar Formats**: Minimize changeovers by running similar packages consecutively
+2. **Color Sequencing**: Light to dark for liquid color (reduces cleaning)
+3. **Allergen Consideration**: Non-allergen products before allergen-containing
+4. **Tank Availability**: Align with bright tank inventory levels
+
+### Efficiency Metrics
+- **OEE (Overall Equipment Effectiveness)**: Target >75%
+- **Changeover Time**: Track actual vs. standard
+- **First Pass Yield**: Product meeting quality specs on first run
+
+## Agent Triggers
+- Alert when line efficiency drops below 70%
+- Optimize daily schedule to minimize total changeover time
+- Notify when bright tank inventory runs low for scheduled product
+- Generate shift-by-shift production targets`
       }
     ]
   },
