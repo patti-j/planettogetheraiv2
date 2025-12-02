@@ -37,6 +37,7 @@ export const LANE_DEFINITIONS: Record<LaneKey, LaneDefinition> = {
     features: [
       'Cross-plant dashboards',
       'Companywide OTD performance',
+      'Companywide capacity planning',
       'Load balancing visibility',
       'AI alerts across network',
       'Risk identification'
