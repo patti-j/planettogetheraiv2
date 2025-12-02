@@ -74,7 +74,6 @@ const DataSchema = lazy(() => import("@/pages/data-schema"));
 const DataValidation = lazy(() => import("@/pages/data-validation"));
 const RoutingIntelligence = lazy(() => import("@/pages/routing-intelligence").then(m => ({ default: m.RoutingIntelligence })));
 const DemandForecasting = lazy(() => import("@/pages/demand-forecasting"));
-const DemandForecastingSimple = lazy(() => import("@/pages/demand-forecasting-simple"));
 const DesignStudio = lazy(() => import("@/pages/design-studio"));
 const DisruptionManagement = lazy(() => import("@/pages/disruption-management"));
 const ErrorLogs = lazy(() => import("@/pages/error-logs"));
