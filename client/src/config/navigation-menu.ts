@@ -160,7 +160,8 @@ export const navigationGroups: NavigationGroup[] = [
     borderColor: "border-gray-200 dark:border-gray-600",
     features: [
       { icon: FolderKanban, label: "Implementation Projects", href: "/implementation-projects", feature: "implementation-projects", action: "view", color: "bg-blue-600" },
-      { icon: Package, label: "Manufacturing Requirements", href: "/manufacturing-requirements", feature: "systems-management", action: "view", color: "bg-indigo-600" },
+      { icon: Globe, label: "Cross-Plant Overview", href: "/cross-plant-overview", feature: "implementation-projects", action: "view", color: "bg-indigo-600" },
+      { icon: Package, label: "Manufacturing Requirements", href: "/manufacturing-requirements", feature: "systems-management", action: "view", color: "bg-violet-600" },
       { icon: Server, label: "Systems Management", href: "/systems-management-dashboard", feature: "systems-management", action: "view", color: "bg-gray-600" },
       { icon: Shield, label: "User & Access Management", href: "/user-access-management", feature: "user-management", action: "view", color: "bg-amber-600" },
       { icon: Code, label: "Extension Studio", href: "/extension-studio", feature: "systems-management", action: "view", color: "bg-violet-500" },

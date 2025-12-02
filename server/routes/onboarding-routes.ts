@@ -14,7 +14,8 @@ import {
   companyOnboardingOverview,
   customerRequirements,
   customerRequirementHistory,
-  ptPlants
+  ptPlants,
+  implementationLanes
 } from '@shared/schema';
 import { eq, sql, and, or, desc, count } from 'drizzle-orm';
 import { onboardingAIService, SAMPLE_TEMPLATES } from '../services/onboarding-ai-service';
@@ -1134,6 +1135,210 @@ router.delete('/api/customer-requirements/:id', async (req, res) => {
   } catch (error) {
     console.error('Error deleting requirement:', error);
     res.status(500).json({ error: 'Failed to delete requirement' });
+  }
+});
+
+// ============================================
+// Implementation Lanes Routes
+// ============================================
+
+// Get all implementation lanes
+router.get('/api/implementation-lanes', async (req, res) => {
+  try {
+    const lanes = await db.select()
+      .from(implementationLanes)
+      .orderBy(implementationLanes.laneNumber);
+    res.json(lanes);
+  } catch (error) {
+    console.error('Error fetching implementation lanes:', error);
+    res.status(500).json({ error: 'Failed to fetch implementation lanes' });
+  }
+});
+
+// Get lane statistics across all plants
+router.get('/api/implementation-lanes/stats', async (req, res) => {
+  try {
+    const plantsByLane = await db.select({
+      currentLane: plantOnboarding.currentLane,
+      count: count()
+    })
+    .from(plantOnboarding)
+    .groupBy(plantOnboarding.currentLane);
+    
+    const requirementsByLane = await db.select({
+      targetLane: customerRequirements.targetLane,
+      count: count()
+    })
+    .from(customerRequirements)
+    .groupBy(customerRequirements.targetLane);
+    
+    res.json({
+      plantsByLane,
+      requirementsByLane
+    });
+  } catch (error) {
+    console.error('Error fetching lane statistics:', error);
+    res.status(500).json({ error: 'Failed to fetch lane statistics' });
+  }
+});
+
+// Update requirement target lane
+router.patch('/api/customer-requirements/:id/lane', async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    const { targetLane } = req.body;
+    
+    if (!targetLane) {
+      return res.status(400).json({ error: 'Target lane is required' });
+    }
+    
+    const validLanes = ['lane_0', 'lane_1', 'lane_2', 'lane_3'];
+    if (!validLanes.includes(targetLane)) {
+      return res.status(400).json({ error: 'Invalid lane value' });
+    }
+    
+    const [updated] = await db.update(customerRequirements)
+      .set({ 
+        targetLane: targetLane as 'lane_0' | 'lane_1' | 'lane_2' | 'lane_3',
+        updatedAt: new Date() 
+      })
+      .where(eq(customerRequirements.id, id))
+      .returning();
+    
+    if (!updated) {
+      return res.status(404).json({ error: 'Requirement not found' });
+    }
+    
+    res.json(updated);
+  } catch (error) {
+    console.error('Error updating requirement lane:', error);
+    res.status(500).json({ error: 'Failed to update lane' });
+  }
+});
+
+// Update plant onboarding lane
+router.patch('/api/plant-onboarding/:id/lane', async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    const { currentLane, targetLane, laneProgress, laneStartDate, laneTargetDate } = req.body;
+    
+    const updateData: any = { updatedAt: new Date() };
+    
+    if (currentLane !== undefined) {
+      const validLanes = ['lane_0', 'lane_1', 'lane_2', 'lane_3'];
+      if (!validLanes.includes(currentLane)) {
+        return res.status(400).json({ error: 'Invalid current lane value' });
+      }
+      updateData.currentLane = currentLane;
+    }
+    
+    if (targetLane !== undefined) {
+      const validLanes = ['lane_0', 'lane_1', 'lane_2', 'lane_3'];
+      if (!validLanes.includes(targetLane)) {
+        return res.status(400).json({ error: 'Invalid target lane value' });
+      }
+      updateData.targetLane = targetLane;
+    }
+    
+    if (laneProgress !== undefined) updateData.laneProgress = laneProgress;
+    
+    // Convert date strings to Date objects for Drizzle
+    if (laneStartDate !== undefined) {
+      const parsedStartDate = new Date(laneStartDate);
+      if (isNaN(parsedStartDate.getTime())) {
+        return res.status(400).json({ error: 'Invalid lane start date format' });
+      }
+      updateData.laneStartDate = parsedStartDate;
+    }
+    
+    if (laneTargetDate !== undefined) {
+      const parsedTargetDate = new Date(laneTargetDate);
+      if (isNaN(parsedTargetDate.getTime())) {
+        return res.status(400).json({ error: 'Invalid lane target date format' });
+      }
+      updateData.laneTargetDate = parsedTargetDate;
+    }
+    
+    const [updated] = await db.update(plantOnboarding)
+      .set(updateData)
+      .where(eq(plantOnboarding.id, id))
+      .returning();
+    
+    if (!updated) {
+      return res.status(404).json({ error: 'Plant onboarding not found' });
+    }
+    
+    res.json(updated);
+  } catch (error) {
+    console.error('Error updating plant onboarding lane:', error);
+    res.status(500).json({ error: 'Failed to update lane' });
+  }
+});
+
+// Get plants with lane status for cross-plant overview
+router.get('/api/plants/lane-status', async (req, res) => {
+  try {
+    const plantsWithLanes = await db.select({
+      plantId: ptPlants.id,
+      plantName: ptPlants.name,
+      onboardingId: plantOnboarding.id,
+      currentLane: plantOnboarding.currentLane,
+      targetLane: plantOnboarding.targetLane,
+      laneProgress: plantOnboarding.laneProgress,
+      laneStartDate: plantOnboarding.laneStartDate,
+      laneTargetDate: plantOnboarding.laneTargetDate,
+      status: plantOnboarding.status,
+      overallProgress: plantOnboarding.overallProgress
+    })
+    .from(ptPlants)
+    .leftJoin(plantOnboarding, eq(ptPlants.id, plantOnboarding.plantId))
+    .where(eq(ptPlants.isActive, true));
+    
+    res.json(plantsWithLanes);
+  } catch (error) {
+    console.error('Error fetching plant lane status:', error);
+    res.status(500).json({ error: 'Failed to fetch plant lane status' });
+  }
+});
+
+// Bulk update requirements target lane
+router.post('/api/customer-requirements/bulk-update-lane', async (req, res) => {
+  try {
+    const { ids, targetLane } = req.body;
+    
+    if (!ids || !Array.isArray(ids) || ids.length === 0) {
+      return res.status(400).json({ error: 'No requirement IDs provided' });
+    }
+    
+    const validLanes = ['lane_0', 'lane_1', 'lane_2', 'lane_3'];
+    if (!targetLane || !validLanes.includes(targetLane)) {
+      return res.status(400).json({ error: 'Valid target lane is required' });
+    }
+    
+    const updatedRequirements = [];
+    
+    for (const id of ids) {
+      const [updated] = await db.update(customerRequirements)
+        .set({ 
+          targetLane: targetLane as 'lane_0' | 'lane_1' | 'lane_2' | 'lane_3',
+          updatedAt: new Date() 
+        })
+        .where(eq(customerRequirements.id, id))
+        .returning();
+      
+      if (updated) {
+        updatedRequirements.push(updated);
+      }
+    }
+    
+    res.json({
+      success: true,
+      updated: updatedRequirements.length,
+      requirements: updatedRequirements
+    });
+  } catch (error) {
+    console.error('Error bulk updating requirement lanes:', error);
+    res.status(500).json({ error: 'Failed to bulk update lanes' });
   }
 });
 

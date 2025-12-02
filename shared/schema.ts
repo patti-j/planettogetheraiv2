@@ -3583,6 +3583,36 @@ export type InsertAutomationExecution = z.infer<typeof insertAutomationExecution
 export type AutomationExecution = typeof automationExecutions.$inferSelect;
 
 // ============================================
+// Implementation Lanes (Strategy for APS Rollout)
+// ============================================
+
+export const implementationLaneEnum = pgEnum('implementation_lane', [
+  'lane_0', // Companywide Visibility - Cross-plant dashboards, minimal data
+  'lane_1', // Plant-Level Visibility - Dispatch lists, collaboration, basic workflow
+  'lane_2', // Assistive Scheduling - Sequencing, what-if, AI recommendations
+  'lane_3'  // Full APS - Automated constraint-accurate scheduling
+]);
+
+// Lane definitions with data requirements and value propositions
+export const implementationLanes = pgTable("implementation_lanes", {
+  id: serial("id").primaryKey(),
+  laneNumber: integer("lane_number").notNull().unique(), // 0, 1, 2, 3
+  name: varchar("name", { length: 100 }).notNull(),
+  shortName: varchar("short_name", { length: 50 }).notNull(),
+  description: text("description"),
+  valueProposition: text("value_proposition"),
+  dataRequirements: jsonb("data_requirements").default(sql`'[]'::jsonb`), // Array of required data elements
+  features: jsonb("features").default(sql`'[]'::jsonb`), // Array of features available at this lane
+  prerequisites: jsonb("prerequisites").default(sql`'[]'::jsonb`), // Array of prerequisite items
+  typicalDurationWeeks: integer("typical_duration_weeks"),
+  color: varchar("color", { length: 20 }).default("#3B82F6"), // For UI display
+  icon: varchar("icon", { length: 50 }).default("BarChart"), // Lucide icon name
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow()
+});
+
+// ============================================
 // Plant-Specific Onboarding System
 // ============================================
 
@@ -3608,6 +3638,14 @@ export const plantOnboarding = pgTable("plant_onboarding", {
   templateId: integer("template_id").references(() => onboardingTemplates.id),
   name: varchar("name", { length: 255 }).notNull(),
   status: varchar("status", { length: 50 }).default("not-started"), // not-started, in-progress, completed, paused
+  
+  // Implementation Lane tracking (Lane 0-3 strategy)
+  currentLane: implementationLaneEnum("current_lane").default('lane_0'),
+  targetLane: implementationLaneEnum("target_lane").default('lane_1'),
+  laneProgress: integer("lane_progress").default(0), // 0-100 progress within current lane
+  laneStartDate: date("lane_start_date"),
+  laneTargetDate: date("lane_target_date"),
+  
   startDate: date("start_date"),
   targetCompletionDate: date("target_completion_date"),
   actualCompletionDate: date("actual_completion_date"),
@@ -3938,6 +3976,9 @@ export const customerRequirements = pgTable("customer_requirements", {
   description: text("description"),
   features: jsonb("features").default(sql`'[]'::jsonb`),
   priority: varchar("priority", { length: 20 }).default("medium"),
+  
+  // Implementation Lane - which lane does this requirement support
+  targetLane: implementationLaneEnum("target_lane").default('lane_1'),
   lifecycleStatus: requirementLifecycleStatusEnum("lifecycle_status").default('uploaded'),
   modelingProgress: integer("modeling_progress").default(0),
   testingProgress: integer("testing_progress").default(0),
@@ -4493,6 +4534,15 @@ export const fpaKPIs = pgTable("fpa_kpis", {
   lastUpdated: timestamp("last_updated").defaultNow(),
   createdAt: timestamp("created_at").defaultNow()
 });
+
+// Create insert schemas and types for Implementation Lanes
+export const insertImplementationLaneSchema = createInsertSchema(implementationLanes).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true
+});
+export type InsertImplementationLane = z.infer<typeof insertImplementationLaneSchema>;
+export type ImplementationLane = typeof implementationLanes.$inferSelect;
 
 // Create insert schemas and types for Plant Onboarding tables
 export const insertOnboardingTemplateSchema = createInsertSchema(onboardingTemplates).omit({

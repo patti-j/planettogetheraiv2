@@ -18,9 +18,17 @@ import { apiRequest } from "@/lib/queryClient";
 import { 
   ChevronDown, ChevronUp, CheckCircle, Package, Settings, Factory, 
   Sparkles, FileText, AlertCircle, Upload, Download, FileSpreadsheet,
-  Play, Pause, Check, Clock, Loader2, Trash2, X, RotateCcw, ArrowRight, Globe
+  Play, Pause, Check, Clock, Loader2, Trash2, X, RotateCcw, ArrowRight, Globe,
+  LayoutDashboard, Zap, Cpu
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { 
+  LANE_DEFINITIONS, 
+  LANE_ORDER,
+  getLaneDefinition,
+  type LaneKey as LaneKeyType
+} from "@/lib/implementation-lanes";
+import { LaneBadge } from "@/components/onboarding/lane-progression-tracker";
 
 import mfgUseCasesData from "@/data/manufacturing-requirements.json";
 
@@ -34,6 +42,8 @@ interface Segment {
   useCases: Requirement[];
 }
 
+type LaneKey = 'lane_0' | 'lane_1' | 'lane_2' | 'lane_3';
+
 interface CustomerRequirement {
   id: number;
   customerId: number | null;
@@ -43,6 +53,7 @@ interface CustomerRequirement {
   description: string | null;
   features: string[];
   priority: string;
+  targetLane: LaneKey | null;
   lifecycleStatus: string;
   modelingProgress: number;
   testingProgress: number;
@@ -174,6 +185,24 @@ export default function ManufacturingRequirements() {
       queryClient.invalidateQueries({ queryKey: ['/api/customer-requirements'] });
       queryClient.invalidateQueries({ queryKey: ['/api/customer-requirements/stats'] });
       toast({ title: "Requirement Deleted" });
+    }
+  });
+
+  const updateLaneMutation = useMutation({
+    mutationFn: async ({ id, targetLane }: { id: number; targetLane: LaneKey | null }) => {
+      return apiRequest('PATCH', `/api/customer-requirements/${id}/lane`, { targetLane });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/customer-requirements'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/customer-requirements/stats'] });
+      toast({ title: "Lane Updated", description: "Requirement lane assignment updated" });
+    },
+    onError: () => {
+      toast({ 
+        title: "Update Failed", 
+        description: "Could not update lane assignment",
+        variant: "destructive" 
+      });
     }
   });
 
@@ -914,6 +943,46 @@ export default function ManufacturingRequirements() {
                             <Badge className={cn("text-white", statusInfo.color)}>
                               {statusInfo.label}
                             </Badge>
+                            <Select
+                              value={req.targetLane || "none"}
+                              onValueChange={(value) => {
+                                const targetLane = value === "none" ? null : value as LaneKey;
+                                updateLaneMutation.mutate({ id: req.id, targetLane });
+                              }}
+                            >
+                              <SelectTrigger 
+                                className="h-7 w-[140px] text-xs"
+                                data-testid={`select-lane-${req.id}`}
+                              >
+                                <SelectValue placeholder="Assign Lane">
+                                  {req.targetLane ? (
+                                    <LaneBadge lane={req.targetLane} />
+                                  ) : (
+                                    <span className="text-muted-foreground">No Lane</span>
+                                  )}
+                                </SelectValue>
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="none">No Lane</SelectItem>
+                                {LANE_ORDER.map((laneKey) => {
+                                  const lane = getLaneDefinition(laneKey);
+                                  return (
+                                    <SelectItem key={laneKey} value={laneKey}>
+                                      <div className="flex items-center gap-2">
+                                        <span className={cn(
+                                          "w-2 h-2 rounded-full",
+                                          lane.color === "blue" && "bg-blue-500",
+                                          lane.color === "green" && "bg-green-500",
+                                          lane.color === "purple" && "bg-purple-500",
+                                          lane.color === "orange" && "bg-orange-500"
+                                        )} />
+                                        <span>Lane {lane.number}: {lane.shortName}</span>
+                                      </div>
+                                    </SelectItem>
+                                  );
+                                })}
+                              </SelectContent>
+                            </Select>
                           </div>
                           <p className="text-sm text-muted-foreground mb-3">
                             Customer: {req.customerName}

@@ -84,6 +84,7 @@ const CompanyOnboardingOverview = lazy(() => import("@/pages/company-onboarding-
 const ImplementationProjects = lazy(() => import("@/pages/implementation-projects"));
 const IndustryTemplates = lazy(() => import("@/pages/industry-templates"));
 const ManufacturingRequirements = lazy(() => import("@/pages/manufacturing-requirements"));
+const CrossPlantOverview = lazy(() => import("@/pages/cross-plant-overview"));
 const MasterDataManagement = lazy(() => import("@/pages/master-data-management"));
 const PlanningAreaManagement = lazy(() => import("@/pages/planning-area-management"));
 const ResourcePlanningAssignment = lazy(() => import("@/pages/resource-planning-assignment"));
@@ -466,6 +467,7 @@ export default function ApplicationApp() {
               <Route path="/help" component={Help} />
               <Route path="/industry-templates" component={IndustryTemplates} />
               <Route path="/manufacturing-requirements" component={ManufacturingRequirements} />
+              <Route path="/cross-plant-overview" component={CrossPlantOverview} />
               <Route path="/presentation-system" component={PresentationSystem} />
               
               {/* Communication & Collaboration Routes */}
