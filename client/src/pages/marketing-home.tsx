@@ -1,7 +1,8 @@
 import React from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import { 
   ArrowRight, 
   Check, 
@@ -25,10 +26,13 @@ import {
   Building2,
   Clock,
   DollarSign,
-  Calendar
+  Calendar,
+  CheckCircle
 } from "lucide-react";
 import { useLocation } from "wouter";
 import { useAuth } from "@/hooks/useAuth";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useToast } from "@/hooks/use-toast";
 
 interface FeatureCardProps {
   icon: React.ReactNode;
@@ -84,6 +88,59 @@ const MarketingHome: React.FC = () => {
   const [, setLocation] = useLocation();
   const { logout, isAuthenticated } = useAuth();
   const [activeTestimonial, setActiveTestimonial] = React.useState(0);
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  
+  const [leadFormData, setLeadFormData] = React.useState({
+    email: '',
+    firstName: '',
+    lastName: '',
+    company: '',
+    jobTitle: ''
+  });
+
+  const leadCaptureMutation = useMutation({
+    mutationFn: async (leadData: any) => {
+      const response = await fetch('/api/marketing/leads', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...leadData,
+          pageId: 1,
+          stage: 'awareness',
+          source: 'website_home'
+        })
+      });
+      if (!response.ok) throw new Error('Failed to capture lead');
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Thank you for your interest!",
+        description: "We'll be in touch within 24 hours to schedule your personalized demo."
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/marketing/leads'] });
+      setLeadFormData({
+        email: '',
+        firstName: '',
+        lastName: '',
+        company: '',
+        jobTitle: ''
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Submission Error",
+        description: "Please try again or contact us directly.",
+        variant: "destructive"
+      });
+    }
+  });
+
+  const handleLeadSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    leadCaptureMutation.mutate(leadFormData);
+  };
 
   const handleGetStarted = () => {
     setLocation("/pricing");
@@ -295,6 +352,105 @@ const MarketingHome: React.FC = () => {
                 <span className="text-sm sm:text-base font-semibold text-white">4.9/5 Rating</span>
                 <span className="text-xs text-blue-200">Top Rated</span>
               </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Lead Capture Section */}
+      <section className="py-16 sm:py-20 bg-gradient-to-r from-blue-600 to-purple-700 relative overflow-hidden">
+        <div className="absolute inset-0 bg-black/10" />
+        <div className="absolute top-0 left-0 w-64 h-64 bg-white/10 rounded-full blur-3xl" />
+        <div className="absolute bottom-0 right-0 w-96 h-96 bg-purple-500/20 rounded-full blur-3xl" />
+        
+        <div className="relative container mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid lg:grid-cols-2 gap-12 items-center">
+            <div className="text-white">
+              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-6">
+                Get Started Today
+              </h2>
+              <p className="text-lg sm:text-xl text-blue-100 mb-8">
+                Join leading manufacturers achieving 25% efficiency gains through transparent AI decision-making 
+                and intelligent playbook-guided optimization.
+              </p>
+              <div className="space-y-4">
+                <div className="flex items-center gap-3">
+                  <CheckCircle className="w-6 h-6 text-green-400 flex-shrink-0" />
+                  <span className="text-blue-100">Personalized demo tailored to your industry</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <CheckCircle className="w-6 h-6 text-green-400 flex-shrink-0" />
+                  <span className="text-blue-100">See ROI projections for your operations</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <CheckCircle className="w-6 h-6 text-green-400 flex-shrink-0" />
+                  <span className="text-blue-100">Get started in under 1 hour</span>
+                </div>
+              </div>
+            </div>
+            
+            <div className="lg:justify-self-end w-full max-w-md">
+              <Card className="bg-white/95 backdrop-blur-sm shadow-2xl">
+                <CardHeader className="text-center pb-4">
+                  <CardTitle className="text-2xl text-gray-900">Request a Demo</CardTitle>
+                  <CardDescription className="text-gray-600">
+                    Fill out the form and we'll be in touch within 24 hours
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <form onSubmit={handleLeadSubmit} className="space-y-4" data-testid="lead-capture-form">
+                    <div className="grid grid-cols-2 gap-4">
+                      <Input
+                        placeholder="First Name"
+                        value={leadFormData.firstName}
+                        onChange={(e) => setLeadFormData(prev => ({ ...prev, firstName: e.target.value }))}
+                        required
+                        data-testid="input-first-name"
+                      />
+                      <Input
+                        placeholder="Last Name"
+                        value={leadFormData.lastName}
+                        onChange={(e) => setLeadFormData(prev => ({ ...prev, lastName: e.target.value }))}
+                        required
+                        data-testid="input-last-name"
+                      />
+                    </div>
+                    <Input
+                      type="email"
+                      placeholder="Work Email"
+                      value={leadFormData.email}
+                      onChange={(e) => setLeadFormData(prev => ({ ...prev, email: e.target.value }))}
+                      required
+                      data-testid="input-email"
+                    />
+                    <Input
+                      placeholder="Company Name"
+                      value={leadFormData.company}
+                      onChange={(e) => setLeadFormData(prev => ({ ...prev, company: e.target.value }))}
+                      required
+                      data-testid="input-company"
+                    />
+                    <Input
+                      placeholder="Job Title"
+                      value={leadFormData.jobTitle}
+                      onChange={(e) => setLeadFormData(prev => ({ ...prev, jobTitle: e.target.value }))}
+                      data-testid="input-job-title"
+                    />
+                    <Button 
+                      type="submit" 
+                      className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white py-6 text-lg font-semibold"
+                      disabled={leadCaptureMutation.isPending}
+                      data-testid="button-submit-lead"
+                    >
+                      {leadCaptureMutation.isPending ? 'Submitting...' : 'Request Demo'}
+                      <ArrowRight className="w-5 h-5 ml-2" />
+                    </Button>
+                  </form>
+                  <p className="text-xs text-gray-500 mt-4 text-center">
+                    By submitting, you agree to our Terms of Service and Privacy Policy
+                  </p>
+                </CardContent>
+              </Card>
             </div>
           </div>
         </div>

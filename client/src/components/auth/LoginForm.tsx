@@ -77,7 +77,7 @@ export function LoginForm() {
         </CardContent>
         <CardFooter className="flex flex-col space-y-3 pt-0">
           <div className="w-full flex flex-col space-y-2">
-            <Link href="/marketing-landing">
+            <Link href="/home">
               <Button variant="outline" className="w-full">
                 <ArrowRight className="w-4 h-4 mr-2" />
                 Learn About PlanetTogether

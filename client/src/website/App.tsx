@@ -10,7 +10,6 @@ import WebsiteFooter from "@/components/website/WebsiteFooter";
 
 // Lazy-loaded Website Pages
 const MarketingHome = lazy(() => import("@/pages/marketing-home"));
-const MarketingLandingPage = lazy(() => import("@/pages/marketing-landing"));
 const Pricing = lazy(() => import("@/pages/pricing"));
 const Login = lazy(() => import("@/pages/Login"));
 const WhatsComing = lazy(() => import("@/pages/whats-coming-v14"));
@@ -171,12 +170,12 @@ export default function WebsiteApp() {
           
           {/* Demo tour route removed - component doesn't exist yet */}
           
+          {/* /marketing redirects to /home */}
           <Route path="/marketing">
             <WebsiteLayout>
-              <MarketingLandingPage />
+              <MarketingHome />
             </WebsiteLayout>
           </Route>
-          
           
           <Route path="/home">
             <WebsiteLayout>
