@@ -29,6 +29,11 @@ async function seedPermissions() {
     { name: 'Delete Production Schedule', feature: 'production_schedule', action: 'delete' },
     { name: 'Export Production Schedule', feature: 'production_schedule', action: 'export' },
     
+    // Schedule (Shift Management, Sequences, etc.)
+    { name: 'View Schedule', feature: 'schedule', action: 'view' },
+    { name: 'Edit Schedule', feature: 'schedule', action: 'edit' },
+    { name: 'Delete Schedule', feature: 'schedule', action: 'delete' },
+    
     // Inventory
     { name: 'View Inventory', feature: 'inventory', action: 'view' },
     { name: 'Edit Inventory', feature: 'inventory', action: 'edit' },
