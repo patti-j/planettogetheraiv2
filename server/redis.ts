@@ -1,23 +1,35 @@
 import Redis, { RedisOptions } from 'ioredis';
 
+// Check if Redis URL is configured (for production environments with Redis)
+const REDIS_URL = process.env.REDIS_URL;
+const REDIS_ENABLED = !!REDIS_URL;
+
 // Redis configuration for Phase 1 scaling implementation
-const redisConfig: RedisOptions = {
-  host: 'localhost',
-  port: 6379,
-  maxRetriesPerRequest: 3,
-  retryDelayOnFailover: 100,
-  enableReadyCheck: true,
-  maxLoadingTimeout: 5000,
+const redisConfig: RedisOptions = REDIS_URL ? {
+  // Use Redis URL if provided
   lazyConnect: true,
-  // Connection pool settings for scaling
-  family: 4,
-  keepAlive: true,
+  maxRetriesPerRequest: 3,
+  enableReadyCheck: true,
   connectTimeout: 5000,
   commandTimeout: 5000,
+} : {
+  // Local development config (will fallback to in-memory if not available)
+  host: 'localhost',
+  port: 6379,
+  maxRetriesPerRequest: null, // Don't retry - just fallback to in-memory
+  enableReadyCheck: false,
+  lazyConnect: true,
+  family: 4,
+  keepAlive: 0, // Disable keep-alive (0 = disabled)
+  connectTimeout: 1000,
+  commandTimeout: 1000,
+  enableOfflineQueue: false,
 };
 
-// Create Redis instance with fallback handling
-const redis = new Redis(redisConfig);
+// Create Redis instance only if enabled, otherwise create a dummy that will never connect
+const redis = REDIS_ENABLED 
+  ? new Redis(REDIS_URL!, redisConfig)
+  : new Redis({ ...redisConfig, lazyConnect: true });
 
 // In-memory fallback cache for when Redis is unavailable
 class InMemoryCache {
@@ -66,26 +78,40 @@ class InMemoryCache {
 
 const memoryCache = new InMemoryCache();
 
-// Redis connection monitoring
-redis.on('connect', () => {
-  console.log('🔗 Redis: Connected to Redis server');
-});
+// Track if we've already logged the fallback message
+let hasLoggedFallback = false;
 
-redis.on('ready', () => {
-  console.log('✅ Redis: Client ready for operations');
-});
+// Redis connection monitoring - only log if Redis is enabled
+if (REDIS_ENABLED) {
+  redis.on('connect', () => {
+    console.log('🔗 Redis: Connected to Redis server');
+  });
 
-redis.on('error', (err) => {
-  console.error('❌ Redis: Connection error:', err.message);
-});
+  redis.on('ready', () => {
+    console.log('✅ Redis: Client ready for operations');
+  });
 
-redis.on('close', () => {
-  console.log('🔌 Redis: Connection closed');
-});
+  redis.on('error', (err) => {
+    console.error('❌ Redis: Connection error:', err.message);
+  });
 
-redis.on('reconnecting', () => {
-  console.log('🔄 Redis: Attempting to reconnect...');
-});
+  redis.on('close', () => {
+    console.log('🔌 Redis: Connection closed');
+  });
+
+  redis.on('reconnecting', () => {
+    console.log('🔄 Redis: Attempting to reconnect...');
+  });
+} else {
+  // Suppress all Redis events when not configured - use in-memory cache silently
+  redis.on('error', () => {
+    // Silently ignore - we'll use in-memory fallback
+    if (!hasLoggedFallback) {
+      hasLoggedFallback = true;
+      console.log('📦 Cache: Using in-memory cache (Redis not configured)');
+    }
+  });
+}
 
 // Cache utility functions for Phase 1 implementation
 export class CacheManager {
@@ -96,10 +122,19 @@ export class CacheManager {
   constructor() {
     this.redis = redis;
     this.fallback = memoryCache;
-    this.checkRedisConnection();
+    // Only check Redis connection if it's configured
+    if (REDIS_ENABLED) {
+      this.checkRedisConnection();
+    } else {
+      this.redisAvailable = false;
+    }
   }
 
   private async checkRedisConnection(): Promise<void> {
+    if (!REDIS_ENABLED) {
+      this.redisAvailable = false;
+      return;
+    }
     try {
       await this.redis.ping();
       this.redisAvailable = true;
