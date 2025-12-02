@@ -165,7 +165,7 @@ const MarketingHome: React.FC = () => {
   };
 
   const handleWatchDemo = () => {
-    setLocation("/demo-tour");
+    setLocation("/presentation");
   };
 
   const handleLogin = () => {

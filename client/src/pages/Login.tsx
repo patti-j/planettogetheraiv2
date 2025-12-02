@@ -112,9 +112,9 @@ export default function Login() {
           console.log('Mobile login successful, redirecting to /mobile-home');
           window.location.href = "/mobile-home";
         } else {
-          // Redirect desktop users to home page
-          console.log('Desktop login successful, redirecting to /home');
-          window.location.href = "/home";
+          // Redirect desktop users to dashboard
+          console.log('Desktop login successful, redirecting to /dashboard');
+          window.location.href = "/dashboard";
         }
       }
     } catch (error: any) {
