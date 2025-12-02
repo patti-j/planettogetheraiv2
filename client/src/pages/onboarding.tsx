@@ -672,27 +672,6 @@ export default function OnboardingPage() {
     );
   };
 
-  const handleTransferBenefitsToGoals = () => {
-    const selectedBenefitObjects = benefits.filter(b => selectedBenefits.includes(b.id));
-    const newGoals: BusinessGoal[] = selectedBenefitObjects.map(benefit => ({
-      id: `goal-${benefit.id}`,
-      title: benefit.title,
-      description: `${benefit.description}\n\nEstimated Value: ${benefit.estimatedValue}\nTime to Value: ${benefit.timeToValue}\nRelated KPIs: ${benefit.kpis.join(', ')}`,
-      category: benefit.category,
-      priority: benefit.priority,
-      targetValue: benefit.estimatedPercent,
-      fromBenefit: true
-    }));
-    
-    setBusinessGoals(prev => [...prev, ...newGoals]);
-    setSelectedBenefits([]);
-    
-    toast({
-      title: 'Benefits added as goals',
-      description: `${newGoals.length} benefit${newGoals.length !== 1 ? 's' : ''} added to your business goals.`
-    });
-  };
-
   const handleAddCustomGoal = () => {
     const newGoal: BusinessGoal = {
       id: `custom-goal-${Date.now()}`,
@@ -727,6 +706,30 @@ export default function OnboardingPage() {
           size: companyInfo.size,
           description: companyInfo.description
         });
+      }
+
+      // Auto-transfer selected benefits to goals when moving from Benefits to Goals step
+      if (currentStep === 1 && selectedBenefits.length > 0) {
+        const selectedBenefitObjects = benefits.filter(b => selectedBenefits.includes(b.id));
+        const newGoals: BusinessGoal[] = selectedBenefitObjects.map(benefit => ({
+          id: `goal-${benefit.id}`,
+          title: benefit.title,
+          description: `${benefit.description}\n\nEstimated Value: ${benefit.estimatedValue}\nTime to Value: ${benefit.timeToValue}\nRelated KPIs: ${benefit.kpis.join(', ')}`,
+          category: benefit.category,
+          priority: benefit.priority,
+          targetValue: benefit.estimatedPercent,
+          fromBenefit: true
+        }));
+        
+        setBusinessGoals(prev => [...prev, ...newGoals]);
+        setSelectedBenefits([]);
+        
+        if (newGoals.length > 0) {
+          toast({
+            title: 'Benefits added as goals',
+            description: `${newGoals.length} benefit${newGoals.length !== 1 ? 's' : ''} added to your business goals.`
+          });
+        }
       }
 
       if (currentStep === 2 && businessGoals.length > 0) {
@@ -1074,10 +1077,9 @@ export default function OnboardingPage() {
                 <div className="flex justify-between items-center mb-4">
                   <h3 className="text-lg font-semibold">Select benefits to add as business goals</h3>
                   {selectedBenefits.length > 0 && (
-                    <Button onClick={handleTransferBenefitsToGoals} size="sm" data-testid="button-add-selected-goals">
-                      <Plus className="w-4 h-4 mr-2" />
-                      Add {selectedBenefits.length} to Goals
-                    </Button>
+                    <span className="text-sm text-blue-600 font-medium">
+                      {selectedBenefits.length} selected
+                    </span>
                   )}
                 </div>
                 
