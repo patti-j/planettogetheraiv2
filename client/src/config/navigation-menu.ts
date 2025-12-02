@@ -35,7 +35,7 @@ export const navigationGroups: NavigationGroup[] = [
       { icon: DollarSign, label: "Sales", href: "/sales", feature: "analytics", action: "view", color: "bg-green-500" },
       { icon: DollarSign, label: "FP&A Dashboard", href: "/fpa-dashboard", feature: "fpa", action: "view", color: "bg-purple-600" },
       { icon: Headphones, label: "Customer Service", href: "/customer-service", feature: "feedback", action: "view", color: "bg-blue-500" },
-
+      { icon: TrendingUp, label: "Continuous Improvement", href: "/continuous-improvement", feature: "", action: "", color: "bg-gradient-to-r from-green-500 to-blue-600" }
     ]
   },
   {
@@ -64,7 +64,8 @@ export const navigationGroups: NavigationGroup[] = [
       { icon: Sparkles, label: "Demand-Driven MRP (DDMRP)", href: "/ddmrp", feature: "schedule", action: "view", color: "bg-gradient-to-r from-blue-500 to-green-600" },
       { icon: BarChart3, label: "Master Production Schedule", href: "/master-production-schedule", feature: "schedule", action: "view", color: "bg-blue-600" },
       { icon: Target, label: "Production Planning", href: "/production-planning", feature: "schedule", action: "view", color: "bg-green-500" },
-      { icon: Package, label: "ATP/CTP", href: "/atp-ctp", feature: "schedule", action: "view", color: "bg-teal-500" }
+      { icon: Package, label: "ATP/CTP", href: "/atp-ctp", feature: "schedule", action: "view", color: "bg-teal-500" },
+      { icon: GitBranch, label: "Resource Planning Assignment", href: "/resource-planning-assignment", feature: "systems-management", action: "view", color: "bg-cyan-600" }
     ]
   },
   {
@@ -111,16 +112,12 @@ export const navigationGroups: NavigationGroup[] = [
     features: [
       { icon: Sparkles, label: "Max AI Assistant", href: "#max", feature: "ai-assistant", action: "view", color: "bg-gradient-to-r from-purple-500 to-pink-600", isAI: true, requiresOnboarding: false },
       { icon: Sparkles, label: "AI Workflow Automation", href: "/workflows", feature: "workflows", action: "view", color: "bg-gradient-to-r from-purple-500 to-indigo-600" },
-      { icon: GraduationCap, label: "Onboarding Assistant", href: "/onboarding-assistant", feature: "systems-management", action: "view", color: "bg-gradient-to-r from-purple-600 to-pink-500" },
-      { icon: Globe, label: "Company Onboarding Overview", href: "/company-onboarding-overview", feature: "systems-management", action: "view", color: "bg-gradient-to-r from-blue-600 to-purple-600" },
       { icon: Sparkles, label: "Autonomous Optimization", href: "/autonomous-optimization", feature: "analytics", action: "view", color: "bg-gradient-to-r from-blue-500 to-purple-600" },
       { icon: BarChart3, label: "Analytics", href: "/analytics", feature: "analytics", action: "view", color: "bg-teal-500" },
-      { icon: TrendingUp, label: "Continuous Improvement", href: "/continuous-improvement", feature: "", action: "", color: "bg-gradient-to-r from-green-500 to-blue-600" },
       { icon: TrendingUp, label: "AI Insights", href: "/ai-insights", feature: "analytics", action: "view", color: "bg-gradient-to-r from-purple-500 to-pink-600" },
       { icon: FileText, label: "Reports", href: "/reports", feature: "reports", action: "view", color: "bg-blue-600" },
       { icon: Database, label: "Paginated Reports", href: "/paginated-reports", feature: "reports", action: "view", color: "bg-indigo-600" },
       { icon: Sparkles, label: "Optimization Studio", href: "/optimization-studio", feature: "analytics", action: "view", color: "bg-gradient-to-r from-blue-500 to-indigo-600" },
-      { icon: Sparkles, label: "UI Design Studio", href: "/design-studio", feature: "systems-management", action: "view", color: "bg-gradient-to-r from-purple-500 to-pink-600" },
       { icon: GitBranch, label: "AI Scenario Creator", href: "/ai-scenario-creator", feature: "systems-management", action: "view", color: "bg-gradient-to-r from-blue-500 to-purple-600" },
       { icon: BookOpen, label: "Playbooks", href: "/playbooks", feature: "systems-management", action: "view", color: "bg-gradient-to-r from-green-500 to-blue-600" },
       { icon: History, label: "Agent History", href: "/agent-history", feature: "systems-management", action: "view", color: "bg-gradient-to-r from-gray-500 to-blue-600" },
@@ -139,15 +136,12 @@ export const navigationGroups: NavigationGroup[] = [
       { icon: Upload, label: "Master Data Setup", href: "/data-import", feature: "systems-management", action: "view", color: "bg-green-600" },
       { icon: FileText, label: "Master Data Editor", href: "/master-data", feature: "systems-management", action: "view", color: "bg-emerald-600" },
       { icon: MapPin, label: "Planning Area Management", href: "/planning-area-management", feature: "systems-management", action: "view", color: "bg-teal-600" },
-      { icon: GitBranch, label: "Resource Planning Assignment", href: "/resource-planning-assignment", feature: "systems-management", action: "view", color: "bg-cyan-600" },
       { icon: Search, label: "Database Explorer", href: "/database-explorer", feature: "systems-management", action: "view", color: "bg-blue-600" },
       { icon: Database, label: "Data Schema View", href: "/data-schema", feature: "systems-management", action: "view", color: "bg-indigo-600" },
       { icon: FileText, label: "Table Field Documentation", href: "/table-field-viewer", feature: "systems-management", action: "view", color: "bg-slate-600" },
-      { icon: Database, label: "System Integration", href: "/systems-integration", feature: "systems-management", action: "view", color: "bg-stone-500" },
       { icon: ArrowRightLeft, label: "Data Relationships", href: "/data-relationships", feature: "systems-management", action: "view", color: "bg-blue-600" },
       { icon: Network, label: "Data Map View", href: "/data-map", feature: "systems-management", action: "view", color: "bg-purple-600" },
       { icon: Shield, label: "Data Validation", href: "/data-validation", feature: "systems-management", action: "view", color: "bg-blue-600" },
-      { icon: Code, label: "API Integrations", href: "/api-integrations", feature: "systems-management", action: "view", color: "bg-violet-600" },
       { icon: Network, label: "Integrations", href: "/integrations", feature: "systems-management", action: "view", color: "bg-blue-700" },
       { icon: Upload, label: "ERP Import", href: "/erp-import", feature: "data-import", action: "view", color: "bg-green-700" }
     ]
@@ -169,6 +163,7 @@ export const navigationGroups: NavigationGroup[] = [
       { icon: Settings, label: "Tenant Administration", href: "/tenant-admin", feature: "systems-management", action: "view", color: "bg-purple-600" },
       { icon: Shield, label: "Role Management", href: "/role-management", feature: "user-management", action: "view", color: "bg-indigo-600" },
       { icon: UserCheck, label: "User Role Assignments", href: "/user-role-assignments", feature: "user-management", action: "view", color: "bg-teal-600" },
+      { icon: Sparkles, label: "UI Design Studio", href: "/design-studio", feature: "systems-management", action: "view", color: "bg-gradient-to-r from-purple-500 to-pink-600" },
       { icon: Settings, label: "Settings", href: "/settings", feature: "systems-management", action: "view", color: "bg-slate-600" }
     ]
   },
@@ -180,6 +175,8 @@ export const navigationGroups: NavigationGroup[] = [
     borderColor: "border-indigo-200 dark:border-indigo-800",
     features: [
       { icon: BookOpen, label: "Getting Started", href: "/onboarding", feature: "systems-management", action: "view", color: "bg-emerald-500" },
+      { icon: GraduationCap, label: "Onboarding Assistant", href: "/onboarding-assistant", feature: "systems-management", action: "view", color: "bg-gradient-to-r from-purple-600 to-pink-500" },
+      { icon: Globe, label: "Company Onboarding Overview", href: "/company-onboarding-overview", feature: "systems-management", action: "view", color: "bg-gradient-to-r from-blue-600 to-purple-600" },
       { icon: GraduationCap, label: "Training", href: "/training", feature: "training", action: "view", color: "bg-cyan-500", requiresOnboarding: false },
       { icon: Building, label: "Industry Templates", href: "/industry-templates", feature: "systems-management", action: "view", color: "bg-cyan-600" },
       { icon: Presentation, label: "Presentation System", href: "/presentation-system", feature: "training", action: "view", color: "bg-blue-700" },
