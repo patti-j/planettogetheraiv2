@@ -42,20 +42,9 @@ const PresentationPage = () => {
     }
   };
 
-  // Demo navigation function - redirects to login for protected routes
-  const navigateToDemo = (path: string) => {
-    // Map to public pages or redirect to login
-    const publicPageMap: Record<string, string> = {
-      '/dashboard': '/login?returnUrl=/dashboard',
-      '/production-schedule': '/login?returnUrl=/production-schedule',
-      '/analytics': '/analytics-reporting',
-      '/training': '/login?returnUrl=/training',
-      '/systems-integration': '/integration-api',
-      '/visual-factory': '/login?returnUrl=/visual-factory',
-    };
-    
-    const targetPath = publicPageMap[path] || path;
-    setLocation(targetPath);
+  // Navigate to public marketing pages only
+  const navigateToPage = (path: string) => {
+    setLocation(path);
   };
 
   useEffect(() => {
@@ -309,9 +298,9 @@ const PresentationPage = () => {
                   </div>
                   <Button 
                     className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
-                    onClick={() => navigateToDemo('/dashboard')}
+                    onClick={() => navigateToPage('/ai-features')}
                   >
-                    Try Max Assistant
+                    Learn More About Max
                   </Button>
                 </div>
               </CardContent>
@@ -336,41 +325,41 @@ const PresentationPage = () => {
                 title: "Production Scheduling",
                 description: "Visual Gantt charts with drag-and-drop scheduling and real-time optimization",
                 icon: Calendar,
-                demo: "/production-schedule"
+                link: "/supply-chain"
               },
               {
                 title: "Analytics & Reporting",
                 description: "Comprehensive dashboards with AI-generated insights and custom reporting",
                 icon: BarChart3,
-                demo: "/analytics"
+                link: "/analytics-reporting"
               },
               {
-                title: "Resource Management",
-                description: "Capability-based resource allocation with multi-plant support",
-                icon: Users,
-                demo: "/dashboard"
+                title: "AI-Powered Intelligence",
+                description: "Smart recommendations and automated optimization with Max AI",
+                icon: Sparkles,
+                link: "/ai-features"
               },
               {
                 title: "Systems Integration",
                 description: "Connect with ERP, MES, and other manufacturing systems",
                 icon: Database,
-                demo: "/systems-integration"
+                link: "/integration-api"
               },
               {
-                title: "Visual Factory",
-                description: "Shop floor visualization with real-time status monitoring",
+                title: "Enterprise Security",
+                description: "Role-based access control with enterprise-grade security",
                 icon: Factory,
-                demo: "/visual-factory"
+                link: "/security-features"
               },
               {
-                title: "Training & Tours",
-                description: "Guided learning experiences with voice narration and role-specific content",
-                icon: Timer,
-                demo: "/training"
+                title: "Scalable Architecture",
+                description: "Multi-plant support with cloud-native infrastructure",
+                icon: Globe,
+                link: "/enterprise-scalability"
               }
             ].map((capability, index) => (
               <Card key={index} className="h-full border-0 shadow-lg hover:shadow-xl transition-all group cursor-pointer"
-                   onClick={() => navigateToDemo(capability.demo)}>
+                   onClick={() => navigateToPage(capability.link)}>
                 <CardHeader>
                   <capability.icon className="h-12 w-12 text-blue-600 mb-4 group-hover:scale-110 transition-transform" />
                   <CardTitle className="text-lg group-hover:text-blue-600 transition-colors">{capability.title}</CardTitle>
@@ -378,7 +367,7 @@ const PresentationPage = () => {
                 </CardHeader>
                 <CardContent>
                   <Button variant="outline" size="sm" className="w-full group-hover:bg-blue-50">
-                    Explore Feature
+                    Learn More
                     <ArrowRight className="h-4 w-4 ml-2" />
                   </Button>
                 </CardContent>
@@ -409,12 +398,11 @@ const PresentationPage = () => {
               { name: "Sales Representative", color: "bg-teal-100 text-teal-800", icon: Users },
               { name: "Customer Service", color: "bg-pink-100 text-pink-800", icon: MessageSquare }
             ].map((role, index) => (
-              <Card key={index} className="text-center border-0 shadow-md hover:shadow-lg transition-shadow cursor-pointer group"
-                   onClick={() => navigateToDemo('/training')}>
+              <Card key={index} className="text-center border-0 shadow-md hover:shadow-lg transition-shadow group">
                 <CardContent className="pt-6">
                   <role.icon className="h-8 w-8 mx-auto mb-3 text-gray-600 group-hover:scale-110 transition-transform" />
                   <Badge className={`${role.color} mb-2`}>{role.name}</Badge>
-                  <p className="text-xs text-gray-500 mt-2">Guided tour available</p>
+                  <p className="text-xs text-gray-500 mt-2">Personalized experience</p>
                 </CardContent>
               </Card>
             ))}
@@ -530,18 +518,18 @@ const PresentationPage = () => {
 
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <div className="space-y-6">
-              <h3 className="text-2xl font-bold text-gray-900">Demo Journey</h3>
+              <h3 className="text-2xl font-bold text-gray-900">Platform Highlights</h3>
               <div className="space-y-4">
                 {[
-                  { step: "1", title: "Executive Dashboard", description: "Start with strategic overview and key metrics", path: "/dashboard" },
-                  { step: "2", title: "Production Scheduling", description: "Explore visual Gantt charts and drag-and-drop scheduling", path: "/production-schedule" },
-                  { step: "3", title: "Max AI Assistant", description: "Interact with AI assistant and voice controls", path: "/dashboard" },
-                  { step: "4", title: "Analytics & Insights", description: "Dive into performance metrics and AI-generated insights", path: "/analytics" },
-                  { step: "5", title: "Role-Specific Training", description: "Experience guided tours for different manufacturing roles", path: "/training" }
+                  { step: "1", title: "AI-Powered Intelligence", description: "Smart recommendations and automated optimization with Max AI", path: "/ai-features" },
+                  { step: "2", title: "Supply Chain Visibility", description: "End-to-end visibility across your manufacturing operations", path: "/supply-chain" },
+                  { step: "3", title: "Analytics & Reporting", description: "Comprehensive dashboards with AI-generated insights", path: "/analytics-reporting" },
+                  { step: "4", title: "Enterprise Integration", description: "Connect with ERP, MES, and other business systems", path: "/integration-api" },
+                  { step: "5", title: "Security & Compliance", description: "Enterprise-grade security with role-based access control", path: "/security-features" }
                 ].map((item, index) => (
                   <div key={index} 
                        className="flex items-start space-x-4 p-4 rounded-lg border hover:bg-gray-50 cursor-pointer transition-colors"
-                       onClick={() => navigateToDemo(item.path)}>
+                       onClick={() => navigateToPage(item.path)}>
                     <div className="flex-shrink-0 w-8 h-8 bg-blue-600 text-white rounded-full flex items-center justify-center text-sm font-bold">
                       {item.step}
                     </div>
@@ -558,27 +546,27 @@ const PresentationPage = () => {
             <Card className="border-0 shadow-2xl">
               <CardContent className="p-8 text-center">
                 <Rocket className="h-16 w-16 mx-auto mb-6 text-blue-600" />
-                <h3 className="text-2xl font-bold text-gray-900 mb-4">Ready to Begin?</h3>
+                <h3 className="text-2xl font-bold text-gray-900 mb-4">Ready to Learn More?</h3>
                 <p className="text-gray-600 mb-6">
-                  Start your journey with PlanetTogether Next and discover how AI-powered manufacturing management can transform your operations.
+                  Discover how PlanetTogether's AI-powered manufacturing management can transform your operations.
                 </p>
                 <div className="space-y-3">
                   <Button 
                     size="lg" 
                     className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700"
-                    onClick={() => navigateToDemo('/training')}
+                    onClick={() => navigateToPage('/home')}
                   >
                     <Play className="h-5 w-5 mr-2" />
-                    Start Guided Tour
+                    Request a Demo
                   </Button>
                   <Button 
                     variant="outline" 
                     size="lg" 
                     className="w-full"
-                    onClick={() => navigateToDemo('/dashboard')}
+                    onClick={() => navigateToPage('/ai-features')}
                   >
-                    <Eye className="h-5 w-5 mr-2" />
-                    Explore Dashboard
+                    <Sparkles className="h-5 w-5 mr-2" />
+                    Explore AI Features
                   </Button>
                 </div>
               </CardContent>
@@ -600,10 +588,10 @@ const PresentationPage = () => {
               size="lg" 
               variant="secondary"
               className="bg-white text-blue-600 hover:bg-gray-100 px-8 py-3"
-              onClick={() => navigateToDemo('/training')}
+              onClick={() => navigateToPage('/home')}
             >
               <Rocket className="h-5 w-5 mr-2" />
-              Begin Your Journey
+              Get Started
             </Button>
             <Button 
               size="lg" 
