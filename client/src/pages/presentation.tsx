@@ -23,7 +23,8 @@ import {
   Eye,
   Timer,
   Maximize2,
-  Menu
+  Menu,
+  Sparkles
 } from "lucide-react";
 import { useLocation } from "wouter";
 
