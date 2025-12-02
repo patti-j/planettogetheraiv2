@@ -43,32 +43,50 @@ interface FeatureCardProps {
 
 interface ExtendedFeatureCardProps extends FeatureCardProps {
   roi?: string;
+  link?: string;
+  onNavigate?: (path: string) => void;
 }
 
-const FeatureCard: React.FC<ExtendedFeatureCardProps> = ({ icon, title, description, roi, highlight = false }) => (
-  <Card className={`group transition-all duration-300 hover:shadow-2xl hover:-translate-y-2 border-0 rounded-2xl overflow-hidden ${highlight ? 'bg-gradient-to-br from-blue-50 to-purple-50 border-2 border-blue-200 relative' : 'bg-white border border-gray-100'}`}>
-    {highlight && (
-      <div className="absolute top-0 right-0 bg-gradient-to-l from-yellow-400 to-orange-500 text-white text-xs sm:text-sm px-4 py-2 rounded-bl-xl font-bold shadow-lg">
-        ✨ MOST POPULAR
-      </div>
-    )}
-    <CardHeader className="pb-4 sm:pb-6 p-6 sm:p-8">
-      <div className={`w-14 h-14 sm:w-16 sm:h-16 rounded-2xl flex items-center justify-center mb-4 sm:mb-6 group-hover:scale-110 transition-transform duration-300 ${highlight ? 'bg-gradient-to-br from-blue-500 to-purple-600 text-white shadow-xl' : 'bg-gradient-to-br from-gray-100 to-gray-200 text-gray-700'}`}>
-        {icon}
-      </div>
-      <CardTitle className="text-lg sm:text-xl lg:text-2xl leading-tight font-bold text-gray-900">{title}</CardTitle>
-    </CardHeader>
-    <CardContent className="space-y-4 p-6 sm:p-8 pt-0">
-      <p className="text-base sm:text-lg text-gray-600 leading-relaxed">{description}</p>
-      {roi && (
-        <div className="flex items-center gap-3 text-sm sm:text-base font-bold text-green-600 bg-green-50 px-4 py-2 rounded-xl">
-          <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5" />
-          {roi}
+const FeatureCard: React.FC<ExtendedFeatureCardProps> = ({ icon, title, description, roi, highlight = false, link, onNavigate }) => {
+  const handleClick = () => {
+    if (link && onNavigate) {
+      onNavigate(link);
+    }
+  };
+
+  return (
+    <Card 
+      className={`group transition-all duration-300 hover:shadow-2xl hover:-translate-y-2 border-0 rounded-2xl overflow-hidden ${highlight ? 'bg-gradient-to-br from-blue-50 to-purple-50 border-2 border-blue-200 relative' : 'bg-white border border-gray-100'} ${link ? 'cursor-pointer' : ''}`}
+      onClick={handleClick}
+    >
+      {highlight && (
+        <div className="absolute top-0 right-0 bg-gradient-to-l from-yellow-400 to-orange-500 text-white text-xs sm:text-sm px-4 py-2 rounded-bl-xl font-bold shadow-lg">
+          ✨ MOST POPULAR
         </div>
       )}
-    </CardContent>
-  </Card>
-);
+      <CardHeader className="pb-4 sm:pb-6 p-6 sm:p-8">
+        <div className={`w-14 h-14 sm:w-16 sm:h-16 rounded-2xl flex items-center justify-center mb-4 sm:mb-6 group-hover:scale-110 transition-transform duration-300 ${highlight ? 'bg-gradient-to-br from-blue-500 to-purple-600 text-white shadow-xl' : 'bg-gradient-to-br from-gray-100 to-gray-200 text-gray-700'}`}>
+          {icon}
+        </div>
+        <CardTitle className="text-lg sm:text-xl lg:text-2xl leading-tight font-bold text-gray-900">{title}</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4 p-6 sm:p-8 pt-0">
+        <p className="text-base sm:text-lg text-gray-600 leading-relaxed">{description}</p>
+        {roi && (
+          <div className="flex items-center gap-3 text-sm sm:text-base font-bold text-green-600 bg-green-50 px-4 py-2 rounded-xl">
+            <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5" />
+            {roi}
+          </div>
+        )}
+        {link && (
+          <div className="flex items-center gap-2 text-sm text-blue-600 font-medium group-hover:text-blue-700">
+            Learn more <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+};
 
 interface StatCardProps {
   value: string;
@@ -161,42 +179,48 @@ const MarketingHome: React.FC = () => {
       description: "Transparent AI decision-making with full reasoning visibility.",
       fullDescription: "Next-generation AI with transparent decision-making, playbook integration, and real-time production intelligence. See exactly how AI makes recommendations with full reasoning transparency.",
       roi: "60% faster decision-making",
-      highlight: true
+      highlight: true,
+      link: "/ai-features"
     },
     {
       icon: <Factory className="w-5 h-5 sm:w-6 sm:h-6" />,
       title: "Smart Manufacturing",
       description: "Real-time production scheduling and resource optimization.",
       fullDescription: "Comprehensive production scheduling, resource optimization, and real-time shop floor monitoring for pharmaceutical and industrial manufacturing.",
-      roi: "30% efficiency improvement"
+      roi: "30% efficiency improvement",
+      link: "/supply-chain"
     },
     {
       icon: <BarChart3 className="w-5 h-5 sm:w-6 sm:h-6" />,
       title: "Advanced Analytics",
       description: "AI-powered insights and predictive maintenance.",
       fullDescription: "Deep insights into production efficiency, resource utilization, quality metrics, and predictive maintenance with customizable dashboards.",
-      roi: "45% faster issue detection"
+      roi: "45% faster issue detection",
+      link: "/analytics-reporting"
     },
     {
       icon: <Cog className="w-5 h-5 sm:w-6 sm:h-6" />,
       title: "AI Knowledge System",
       description: "Collaborative playbook system that learns from your expertise.",
       fullDescription: "Collaborative playbook system where AI learns from your manufacturing expertise and provides transparent, knowledge-driven recommendations for better decisions.",
-      roi: "50% knowledge retention"
+      roi: "50% knowledge retention",
+      link: "/theory-of-constraints"
     },
     {
       icon: <Shield className="w-5 h-5 sm:w-6 sm:h-6" />,
       title: "Enterprise Security",
       description: "FDA-compliant security and audit trails.",
       fullDescription: "Role-based access control, audit trails, and compliance management for pharmaceutical and regulated industries.",
-      roi: "100% compliance rate"
+      roi: "100% compliance rate",
+      link: "/security-features"
     },
     {
       icon: <Globe className="w-5 h-5 sm:w-6 sm:h-6" />,
       title: "Global Manufacturing",
       description: "Multi-plant operations with global visibility.",
       fullDescription: "Multi-plant operations, international compliance, and supply chain visibility across global manufacturing networks.",
-      roi: "Unlimited scalability"
+      roi: "Unlimited scalability",
+      link: "/enterprise-scalability"
     }
   ];
 
@@ -543,6 +567,8 @@ const MarketingHome: React.FC = () => {
                 description={feature.description}
                 roi={feature.roi}
                 highlight={feature.highlight}
+                link={feature.link}
+                onNavigate={setLocation}
               />
             ))}
           </div>
