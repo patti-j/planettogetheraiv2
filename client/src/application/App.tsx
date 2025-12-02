@@ -108,8 +108,6 @@ const FederationPerformanceDashboard = lazy(() => import("@/components/federatio
 const FederationDashboard = lazy(() => import("@/pages/federation-dashboard"));
 // Heavy scheduler components - definitely need lazy loading
 const ProductionScheduler = lazy(() => import("@/pages/production-scheduler"));
-const ProductionSchedulerReact = lazy(() => import("@/pages/ProductionSchedulerReact"));
-const Scheduler = lazy(() => import("@/pages/Scheduler"));
 const ProductWheels = lazy(() => import("@/pages/product-wheels"));
 const CalendarManagementPage = lazy(() => import("@/pages/CalendarManagementPage"));
 
@@ -339,19 +337,9 @@ export default function ApplicationApp() {
                   <ProductionScheduler />
                 </ProtectedRoute>
               </Route>
-              <Route path="/production-scheduler-react">
-                <ProtectedRoute feature="schedule" action="view">
-                  <ProductionSchedulerReact />
-                </ProtectedRoute>
-              </Route>
               <Route path="/calendar-management">
                 <ProtectedRoute feature="production-scheduling" action="view">
                   <CalendarManagementPage />
-                </ProtectedRoute>
-              </Route>
-              <Route path="/scheduler">
-                <ProtectedRoute feature="production-scheduling" action="view">
-                  <Scheduler />
                 </ProtectedRoute>
               </Route>
               <Route path="/product-wheels">
