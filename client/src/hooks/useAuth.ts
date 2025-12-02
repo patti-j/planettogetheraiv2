@@ -457,6 +457,18 @@ export function usePermissions() {
       return false;
     }
 
+    // Administrator role has full access to everything
+    const isAdmin = user.roles.some(role => role.name === 'Administrator');
+    if (isAdmin) {
+      return true;
+    }
+
+    // Check for wildcard permission (legacy support)
+    const userAny = user as any;
+    if (userAny.permissions && Array.isArray(userAny.permissions) && userAny.permissions.includes('*')) {
+      return true;
+    }
+
     // Check permissions without logging
     const hasAccess = user.roles.some(role => {
       return role.permissions?.some(permission => {

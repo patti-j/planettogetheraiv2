@@ -260,7 +260,7 @@ export function NavigationMenuContent({ isPinned, onTogglePin, onClose, isOpen }
     navigationGroups.forEach(group => {
       group.features.forEach(item => {
         // Check permissions
-        const alwaysVisibleItems = ['SMART KPI Tracking', 'Max AI Assistant', 'Getting Started', 'Take a Guided Tour', 'Master Production Schedule', 'Production Scheduler', 'Shift Management'];
+        const alwaysVisibleItems = ['SMART KPI Tracking', 'Max AI Assistant', 'Getting Started', 'Take a Guided Tour', 'Master Production Schedule'];
         if (!alwaysVisibleItems.includes(item.label)) {
           if (item.feature && item.action && !hasPermission(item.feature, item.action)) {
             return;
@@ -310,7 +310,7 @@ export function NavigationMenuContent({ isPinned, onTogglePin, onClose, isOpen }
     ...group,
     items: group.features.filter(item => {
       // Skip permission check for common menu items that should always be visible
-      const alwaysVisibleItems = ['SMART KPI Tracking', 'Max AI Assistant', 'Getting Started', 'Take a Guided Tour', 'Master Production Schedule', 'Production Scheduler', 'Shift Management'];
+      const alwaysVisibleItems = ['SMART KPI Tracking', 'Max AI Assistant', 'Getting Started', 'Take a Guided Tour', 'Master Production Schedule'];
       
       // Check permissions only if not in always visible list
       if (!alwaysVisibleItems.includes(item.label)) {
