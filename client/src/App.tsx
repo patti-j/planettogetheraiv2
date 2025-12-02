@@ -129,11 +129,9 @@ function useAuthStatus() {
 export default function App() {
   const { isAuthenticated, isLoading } = useAuthStatus();
   const [currentPath] = useLocation();
-  // In development mode, exclude root path from public paths so it goes to ApplicationApp
+  // Public paths that show the marketing website (same for dev and production)
   const isDev = import.meta.env.MODE === 'development';
-  const publicPaths = isDev 
-    ? ['/home', '/login', '/portal/login', '/marketing', '/pricing', '/solutions-comparison', '/whats-coming', '/clear-storage', '/technology-stack', '/demo-tour', '/presentation', '/theory-of-constraints', '/roadmap', '/analytics-reporting', '/ai-features', '/supply-chain', '/security-features', '/integration-api', '/investors', '/enterprise-scalability']
-    : ['/', '/home', '/login', '/portal/login', '/marketing', '/pricing', '/solutions-comparison', '/whats-coming', '/clear-storage', '/technology-stack', '/demo-tour', '/presentation', '/theory-of-constraints', '/roadmap', '/analytics-reporting', '/ai-features', '/supply-chain', '/security-features', '/integration-api', '/investors', '/enterprise-scalability'];
+  const publicPaths = ['/', '/home', '/login', '/portal/login', '/marketing', '/pricing', '/solutions-comparison', '/whats-coming', '/clear-storage', '/technology-stack', '/demo-tour', '/presentation', '/theory-of-constraints', '/roadmap', '/analytics-reporting', '/ai-features', '/supply-chain', '/security-features', '/integration-api', '/investors', '/enterprise-scalability'];
   const isPublicPath = publicPaths.includes(currentPath);
   
   // Check if this is a portal route - handle separately from main app
