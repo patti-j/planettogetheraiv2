@@ -1143,7 +1143,7 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
             <div className="flex items-center gap-1 sm:gap-2">
               <Move className="h-3 w-3 sm:h-4 sm:w-4 text-gray-400" />
               <Badge variant="secondary" className="text-xs sm:text-sm px-1 sm:px-2">
-                {roleData?.name || 'Demo'} Demo
+                {roleData?.name ? `${roleData.name} Tour` : 'Demo Tour'}
               </Badge>
             </div>
             <div className="flex items-center gap-0.5 sm:gap-1">
