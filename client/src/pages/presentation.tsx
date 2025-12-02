@@ -42,9 +42,20 @@ const PresentationPage = () => {
     }
   };
 
-  // Demo navigation function
+  // Demo navigation function - redirects to login for protected routes
   const navigateToDemo = (path: string) => {
-    setLocation(path);
+    // Map to public pages or redirect to login
+    const publicPageMap: Record<string, string> = {
+      '/dashboard': '/login?returnUrl=/dashboard',
+      '/production-schedule': '/login?returnUrl=/production-schedule',
+      '/analytics': '/analytics-reporting',
+      '/training': '/login?returnUrl=/training',
+      '/systems-integration': '/integration-api',
+      '/visual-factory': '/login?returnUrl=/visual-factory',
+    };
+    
+    const targetPath = publicPageMap[path] || path;
+    setLocation(targetPath);
   };
 
   useEffect(() => {
