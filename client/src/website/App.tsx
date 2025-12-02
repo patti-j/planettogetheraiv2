@@ -178,6 +178,12 @@ export default function WebsiteApp() {
           </Route>
           
           
+          <Route path="/home">
+            <WebsiteLayout>
+              <MarketingHome />
+            </WebsiteLayout>
+          </Route>
+          
           <Route path="/">
             <WebsiteLayout>
               <MarketingHome />

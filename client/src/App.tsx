@@ -31,7 +31,7 @@ import AIScenarioCreator from "@/pages/ai-scenario-creator";
 // Check authentication status
 function useAuthStatus() {
   const [currentPath] = useLocation();
-  const publicPaths = ['/', '/login', '/portal/login', '/marketing', '/pricing', '/solutions-comparison', '/whats-coming', '/technology-stack', '/demo-tour', '/presentation', '/theory-of-constraints', '/roadmap', '/analytics-reporting', '/ai-features', '/supply-chain', '/security-features', '/integration-api', '/investors', '/enterprise-scalability'];
+  const publicPaths = ['/', '/home', '/login', '/portal/login', '/marketing', '/pricing', '/solutions-comparison', '/whats-coming', '/technology-stack', '/demo-tour', '/presentation', '/theory-of-constraints', '/roadmap', '/analytics-reporting', '/ai-features', '/supply-chain', '/security-features', '/integration-api', '/investors', '/enterprise-scalability'];
   const isPublicPath = publicPaths.includes(currentPath);
   
   // For session-based authentication, we need to check the server
@@ -132,8 +132,8 @@ export default function App() {
   // In development mode, exclude root path from public paths so it goes to ApplicationApp
   const isDev = import.meta.env.MODE === 'development';
   const publicPaths = isDev 
-    ? ['/login', '/portal/login', '/marketing', '/pricing', '/solutions-comparison', '/whats-coming', '/clear-storage', '/technology-stack', '/demo-tour', '/presentation', '/theory-of-constraints', '/roadmap', '/analytics-reporting', '/ai-features', '/supply-chain', '/security-features', '/integration-api', '/investors', '/enterprise-scalability']
-    : ['/', '/login', '/portal/login', '/marketing', '/pricing', '/solutions-comparison', '/whats-coming', '/clear-storage', '/technology-stack', '/demo-tour', '/presentation', '/theory-of-constraints', '/roadmap', '/analytics-reporting', '/ai-features', '/supply-chain', '/security-features', '/integration-api', '/investors', '/enterprise-scalability'];
+    ? ['/home', '/login', '/portal/login', '/marketing', '/pricing', '/solutions-comparison', '/whats-coming', '/clear-storage', '/technology-stack', '/demo-tour', '/presentation', '/theory-of-constraints', '/roadmap', '/analytics-reporting', '/ai-features', '/supply-chain', '/security-features', '/integration-api', '/investors', '/enterprise-scalability']
+    : ['/', '/home', '/login', '/portal/login', '/marketing', '/pricing', '/solutions-comparison', '/whats-coming', '/clear-storage', '/technology-stack', '/demo-tour', '/presentation', '/theory-of-constraints', '/roadmap', '/analytics-reporting', '/ai-features', '/supply-chain', '/security-features', '/integration-api', '/investors', '/enterprise-scalability'];
   const isPublicPath = publicPaths.includes(currentPath);
   
   // Check if this is a portal route - handle separately from main app
