@@ -125,7 +125,6 @@ const ERPImport = lazy(() => import("@/pages/erp-import"));
 const ScheduleManagement = lazy(() => import("@/pages/schedule-management"));
 const FunctionalMap = lazy(() => import("@/pages/functional-map"));
 const APIIntegrations = lazy(() => import("@/pages/api-integrations"));
-const AnalyticsNew = lazy(() => import("@/pages/analytics-new"));
 const SchedulingHistory = lazy(() => import("@/pages/scheduling-history"));
 const Tasks = lazy(() => import("@/pages/tasks"));
 const AlgorithmGovernance = lazy(() => import("@/pages/algorithm-governance"));
@@ -134,9 +133,7 @@ const AlgorithmManagement = lazy(() => import("@/pages/algorithm-management"));
 const MobileDashboardView = lazy(() => import("@/pages/mobile-dashboard-view"));
 const MemoryBooks = lazy(() => import("@/pages/memory-books"));
 const Workflows = lazy(() => import("@/pages/Workflows"));
-const DataImportClean = lazy(() => import("@/pages/data-import-clean"));
 const ContinuousImprovement = lazy(() => import("@/pages/continuous-improvement"));
-const DataImportSimple = lazy(() => import("@/pages/data-import-simple"));
 const Help = lazy(() => import("@/pages/help"));
 const PaginatedReports = lazy(() => import("@/pages/paginated-reports"));
 const FPADashboard = lazy(() => import("@/pages/fpa-dashboard"));
@@ -411,12 +408,9 @@ export default function ApplicationApp() {
               <Route path="/agent-history" component={AgentHistory} />
               <Route path="/agent-monitoring" component={AgentMonitoring} />
               <Route path="/functional-map" component={FunctionalMap} />
-              <Route path="/analytics-new" component={AnalyticsNew} />
               
               {/* Data Management Routes */}
               <Route path="/data-import" component={DataImport} />
-              <Route path="/data-import-clean" component={DataImportClean} />
-              <Route path="/data-import-simple" component={DataImportSimple} />
               <Route path="/erp-import" component={ERPImport} />
               <Route path="/master-data" component={MasterDataManagement} />
               <Route path="/planning-area-management" component={PlanningAreaManagement} />

@@ -26,7 +26,6 @@ const TheoryOfConstraintsPage = lazy(() => import("@/pages/theory-of-constraints
 const EnterpriseScalabilityPage = lazy(() => import("@/pages/enterprise-scalability"));
 const SecurityFeaturesPage = lazy(() => import("@/pages/security-features"));
 const IntegrationApiPage = lazy(() => import("@/pages/integration-api"));
-const AnalyticsReportingPage = lazy(() => import("@/pages/analytics-reporting"));
 const InvestorRelationsPage = lazy(() => import("@/pages/investor-relations"));
 const DevelopmentRoadmap = lazy(() => import("@/pages/development-roadmap"));
 
@@ -148,12 +147,6 @@ export default function WebsiteApp() {
           <Route path="/integration-api">
             <WebsiteLayout>
               <IntegrationApiPage />
-            </WebsiteLayout>
-          </Route>
-          
-          <Route path="/analytics-reporting">
-            <WebsiteLayout>
-              <AnalyticsReportingPage />
             </WebsiteLayout>
           </Route>
           
