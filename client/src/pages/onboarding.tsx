@@ -16,7 +16,7 @@ import { useLocation } from "wouter";
 import {
   Factory, Users, BarChart3, Package, CheckCircle2, ArrowRight,
   Building, Target, Clock, Truck, Sparkles, Upload,
-  Star, FileImage, Zap, TrendingUp, DollarSign, ShieldCheck,
+  Star, FileImage, TrendingUp, DollarSign, ShieldCheck,
   Plus, X, ChevronRight, Globe, Loader2, Search, MapPin, Trash2, AlertTriangle
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -877,31 +877,6 @@ export default function OnboardingPage() {
               <CardDescription>
                 Tell us about your company so we can customize your experience and show relevant ROI projections
               </CardDescription>
-              <Button
-                variant="outline"
-                size="sm"
-                className="mt-4 border-blue-300 text-blue-700 hover:bg-blue-50"
-                onClick={() => {
-                  const testData = {
-                    name: 'Acme Manufacturing Corp',
-                    industries: ['manufacturing', 'automotive'],
-                    size: 'medium',
-                    description: 'Leading manufacturer specializing in precision components',
-                    website: 'https://acme-mfg.com',
-                    numberOfPlants: '3',
-                    products: 'Precision components, assemblies, custom parts'
-                  };
-                  saveCompanyInfo(testData);
-                  toast({
-                    title: "Test Data Filled",
-                    description: "Test company information has been populated.",
-                  });
-                }}
-                data-testid="button-fill-test-data"
-              >
-                <Zap className="w-4 h-4 mr-2" />
-                Fill Test Data
-              </Button>
             </CardHeader>
             <CardContent className="space-y-6">
               {/* Website Lookup Section */}
