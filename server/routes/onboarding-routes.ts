@@ -1188,18 +1188,17 @@ router.patch('/api/customer-requirements/:id/lane', async (req, res) => {
     const id = parseInt(req.params.id);
     const { targetLane } = req.body;
     
-    if (!targetLane) {
-      return res.status(400).json({ error: 'Target lane is required' });
-    }
-    
-    const validLanes = ['lane_0', 'lane_1', 'lane_2', 'lane_3'];
-    if (!validLanes.includes(targetLane)) {
-      return res.status(400).json({ error: 'Invalid lane value' });
+    // Allow null to clear the lane assignment
+    if (targetLane !== null && targetLane !== undefined) {
+      const validLanes = ['lane_0', 'lane_1', 'lane_2', 'lane_3'];
+      if (!validLanes.includes(targetLane)) {
+        return res.status(400).json({ error: 'Invalid lane value' });
+      }
     }
     
     const [updated] = await db.update(customerRequirements)
       .set({ 
-        targetLane: targetLane as 'lane_0' | 'lane_1' | 'lane_2' | 'lane_3',
+        targetLane: targetLane as 'lane_0' | 'lane_1' | 'lane_2' | 'lane_3' | null,
         updatedAt: new Date() 
       })
       .where(eq(customerRequirements.id, id))
@@ -1225,17 +1224,23 @@ router.patch('/api/plant-onboarding/:id/lane', async (req, res) => {
     const updateData: any = { updatedAt: new Date() };
     
     if (currentLane !== undefined) {
-      const validLanes = ['lane_0', 'lane_1', 'lane_2', 'lane_3'];
-      if (!validLanes.includes(currentLane)) {
-        return res.status(400).json({ error: 'Invalid current lane value' });
+      // Allow null to clear the lane assignment
+      if (currentLane !== null) {
+        const validLanes = ['lane_0', 'lane_1', 'lane_2', 'lane_3'];
+        if (!validLanes.includes(currentLane)) {
+          return res.status(400).json({ error: 'Invalid current lane value' });
+        }
       }
       updateData.currentLane = currentLane;
     }
     
     if (targetLane !== undefined) {
-      const validLanes = ['lane_0', 'lane_1', 'lane_2', 'lane_3'];
-      if (!validLanes.includes(targetLane)) {
-        return res.status(400).json({ error: 'Invalid target lane value' });
+      // Allow null to clear the lane assignment
+      if (targetLane !== null) {
+        const validLanes = ['lane_0', 'lane_1', 'lane_2', 'lane_3'];
+        if (!validLanes.includes(targetLane)) {
+          return res.status(400).json({ error: 'Invalid target lane value' });
+        }
       }
       updateData.targetLane = targetLane;
     }
