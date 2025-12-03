@@ -216,6 +216,7 @@ export default function ApplicationApp() {
                   <Dashboard />
                 </ProtectedRoute>
               </Route>
+              <Route path="/command-center" component={HomePage} />
               <Route path="/mobile-home" component={HomePage} />
               <Route path="/home">
                 <HomePage />

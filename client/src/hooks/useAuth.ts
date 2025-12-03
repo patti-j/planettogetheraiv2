@@ -294,11 +294,10 @@ export function useAuth() {
           console.log('🔧 Cleared explicit logout flag after successful login');
         }
         
-        // Detect if user is on mobile device
-        const isMobile = window.innerWidth <= 480 || /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-        const redirectPath = isMobile ? '/mobile-home' : '/dashboard';
+        // All users redirect to command center after login
+        const redirectPath = '/command-center';
         
-        console.log(`Login successful, redirecting to ${redirectPath} (mobile: ${isMobile})`);
+        console.log(`Login successful, redirecting to ${redirectPath}`);
         
         // First invalidate and refetch auth data to ensure proper authentication
         await queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
@@ -322,11 +321,9 @@ export function useAuth() {
         }, 150);
       } catch (error) {
         console.error("Post-login processing error:", error);
-        // Even if invalidation fails, still redirect based on device type
-        const isMobile = window.innerWidth <= 480 || /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-        const redirectPath = isMobile ? '/mobile-home' : '/dashboard';
+        // Even if invalidation fails, still redirect to command center
         setTimeout(() => {
-          window.location.href = redirectPath;
+          window.location.href = '/command-center';
         }, 150);
       }
     },
