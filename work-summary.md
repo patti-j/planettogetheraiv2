@@ -1,25 +1,41 @@
-20251126
+20251202
 
 WHAT I WORKED ON TODAY
 
-Replit Deployment Troubleshooting
-- Identified .replit file had 18 port entries when autoscale deployment only supports 1 external port
-- Provided shell command to clean up extra port entries (sed -i '41,108d' .replit)
-- Researched production database settings for republishing
+Production Deployment Troubleshooting
+- Fixed Redis to be fully optional with graceful fallback to in-memory cache
+- Resolved "Service Unavailable" deployment errors by configuring PRODUCTION_DATABASE_URL secret
+- Fixed health check endpoints to respond instantly (<10ms) to pass autoscale probes
+- Updated production detection to use explicit isProduction variable based on REPLIT_DEPLOYMENT flag
 
-Database Maintenance
-- Added automatic database cleanup job for agent_recommendations table
-- Job runs once on server startup and then daily
-- Trims table to 1000 rows when exceeded by deleting oldest entries
-- Successfully trimmed from 1077 to 1000 rows on first run
+Database Configuration
+- Verified production database connection (ep-curly-fire-aeefjg82.c-2.us-east-2.aws.neon.tech)
+- Confirmed PRODUCTION_DATABASE_URL secret configuration in deployment settings
+- Tested database connectivity showing successful connection at startup
 
-Production Scheduler
-- Fixed version loading resource ID mapping
-- Made global resource maps (originalIdMap, resourceMap, resourceByName) available for version loading
-- Operations now correctly appear on their proper resource rows when loading saved versions
+20251203
 
-Deployment Fix
-- Fixed ensureAdminAccess crash on fresh production database deployment
-- Added database table existence check before running admin setup
-- Made error handling non-fatal - server now continues starting even if admin setup fails
-- This allows deployment to succeed when database is being initialized for the first time
+WHAT I WORKED ON TODAY
+
+Production Static File Serving Fix
+- Fixed inconsistent production detection across server/index.ts
+- Created unified isProductionMode variable at module level
+- Updated root handler, static file serving, and catch-all routes to use consistent check
+- Production detection now uses: NODE_ENV === 'production' OR REPLIT_DEPLOYMENT === '1'
+
+Deployment Failure Analysis
+- Identified dual port configuration in .replit causing autoscale deployment failure
+- Found [[ports]] entries for both port 5000/80 and 24678/3000
+- Replit autoscale only supports single external port - second port must be removed
+- Provided manual fix instructions (cannot edit .replit programmatically)
+
+Code Quality Issues Identified (Pending Fix)
+- Found 50+ locations in routes.ts where db object used without null checks
+- TypeScript warnings: 'db' is possibly 'null' at lines 253, 455, 529, 2952, etc.
+- These cause 500 errors when database queries fail during request handling
+- Fix deferred to avoid impacting Jim's demos
+
+Session Storage Issue Identified (Pending Fix)
+- Current session uses in-memory storage (no database-backed store)
+- Problematic for autoscale since each instance has separate memory
+- Recommend using connect-pg-simple with production database for persistence
