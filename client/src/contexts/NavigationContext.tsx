@@ -48,6 +48,7 @@ const DEFAULT_MAX_RECENT_PAGES = 5;
 // Page mapping for labels and icons
 const pageMapping: Record<string, { label: string; icon: string }> = {
   '/': { label: 'Dashboard', icon: 'BarChart3' },
+  '/command-center': { label: 'Command Center', icon: 'Activity' },
   '/production-schedule': { label: 'Production Schedule', icon: 'Calendar' },
   '/production-scheduler': { label: 'Production Scheduler (Gantt)', icon: 'Calendar' },
   '/schedule-sequences': { label: 'Schedule Sequences', icon: 'ArrowUpDown' },

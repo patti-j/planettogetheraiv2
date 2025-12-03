@@ -105,17 +105,9 @@ export default function Login() {
         sessionStorage.removeItem('returnUrl'); // Clean up
         window.location.href = returnUrl;
       } else {
-        // Default behavior: Check if user is on mobile device and redirect appropriately
-        const isMobile = window.innerWidth < 768;
-        if (isMobile) {
-          // Redirect mobile users to mobile-home
-          console.log('Mobile login successful, redirecting to /mobile-home');
-          window.location.href = "/mobile-home";
-        } else {
-          // Redirect desktop users to dashboard
-          console.log('Desktop login successful, redirecting to /dashboard');
-          window.location.href = "/dashboard";
-        }
+        // All users go to command center after login
+        console.log('Login successful, redirecting to /command-center');
+        window.location.href = "/command-center";
       }
     } catch (error: any) {
       // Extract error message from the API response
