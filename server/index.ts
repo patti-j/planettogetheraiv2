@@ -41,20 +41,33 @@ app.get('/ping', (req, res) => {
   res.status(200).send('pong');
 });
 
-// Root endpoint - Minimal logic, pass through to static/Vite
-// Don't do user agent checks or cached file serving here - it slows health checks
+// Root endpoint - respond with HTML for browsers, OK for health probes
+// CRITICAL: Must respond immediately to pass Replit's health checks
 app.get('/', (req, res, next) => {
-  // For health check probes, respond instantly
+  // Check if this is a health probe or automated request
   const userAgent = req.headers['user-agent'] || '';
-  if (userAgent.includes('GoogleHC') || 
+  const isHealthProbe = !userAgent || 
+      userAgent.includes('GoogleHC') || 
       userAgent.includes('kube-probe') ||
       userAgent.includes('Google-Cloud-Scheduler') ||
-      userAgent.includes('Prometheus')) {
+      userAgent.includes('Prometheus') ||
+      userAgent.includes('curl') ||
+      userAgent.includes('wget') ||
+      userAgent.length < 20;
+  
+  if (isHealthProbe) {
     return res.status(200).send('OK');
   }
   
-  // For all other requests (browser, etc), pass to static/Vite
-  // Don't cache index.html here - let Vite/static middleware handle it
+  // For browser requests in production, serve the index.html directly
+  if (process.env.NODE_ENV === 'production') {
+    const indexPath = path.resolve(import.meta.dirname, "..", "dist", "public", "index.html");
+    if (fs.existsSync(indexPath)) {
+      return res.sendFile(indexPath);
+    }
+  }
+  
+  // For development or fallback, pass to Vite/static middleware
   next();
 });
 
