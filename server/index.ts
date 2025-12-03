@@ -375,7 +375,9 @@ app.get("/", (req, res, next) => {
 
 // CRITICAL: Serve production static assets BEFORE other middleware (for deployment)
 // Must be before routes and other handlers to serve JS/CSS files correctly
-if (app.get("env") !== "development") {
+// Use REPLIT_DEPLOYMENT check as it's more reliable than NODE_ENV in Replit
+const isProduction = process.env.NODE_ENV === 'production' || process.env.REPLIT_DEPLOYMENT === '1';
+if (isProduction) {
   const distPublicPath = path.resolve(import.meta.dirname, "..", "dist", "public");
   if (fs.existsSync(distPublicPath)) {
     app.use(express.static(distPublicPath, {
@@ -955,7 +957,9 @@ log(`Error: ${message}`);
 // ═══════════════════════════════════════════════════════════════════════════
 // Production: Set up catch-all for client-side routing (AFTER static assets are configured above)
 // NOTE: Static assets are already configured earlier, this just adds the catch-all
-if (app.get("env") !== "development") {
+// Use same production check as static serving
+const isProductionCatchAll = process.env.NODE_ENV === 'production' || process.env.REPLIT_DEPLOYMENT === '1';
+if (isProductionCatchAll) {
   // Add catch-all route for client-side routing (must be after all other routes)
   app.get("*", (req, res) => {
     // Don't handle API routes
