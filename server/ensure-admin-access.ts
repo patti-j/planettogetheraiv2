@@ -7,6 +7,12 @@ export async function ensureAdminAccess() {
   try {
     console.log('🔧 Ensuring admin user has full access...');
     
+    // Check if database is available
+    if (!db) {
+      console.log('⏳ Database not ready for admin setup, skipping (will retry on next startup)');
+      return;
+    }
+    
     // First, verify the database tables exist
     try {
       const tableCheck = await db.execute(sql`
