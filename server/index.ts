@@ -21,7 +21,7 @@ import { eq, sql } from "drizzle-orm";
 import { backgroundJobManager } from "./background-jobs";
 
 // Build version marker for deployment tracking (forces new deployment when changed)
-const BUILD_VERSION = "20251204_195500";
+const BUILD_VERSION = "20251204_200100";
 
 // Extend session interface
 declare module "express-session" {

@@ -29,6 +29,16 @@ class InitializationOrchestrator {
     console.log(`📌 [Orchestrator] REPLIT_DEPLOYMENT: ${process.env.REPLIT_DEPLOYMENT || 'not set'}`);
     console.log(`📌 [Orchestrator] NODE_ENV: ${process.env.NODE_ENV || 'not set'}`);
     
+    // PRODUCTION MODE: Skip all initialization tasks entirely
+    // These are setup/maintenance tasks, not runtime requirements
+    // Admin credentials and users are already configured in the database
+    // This prevents database cold start timeouts from blocking app startup
+    if (isProduction) {
+      console.log('✅ [Orchestrator] Production mode - skipping initialization tasks (already configured)');
+      this.readyFlag = true;
+      return;
+    }
+    
     // Check if database is available before running tasks
     if (!isDbConnected()) {
       console.warn('⚠️ [Orchestrator] Database not connected, skipping initialization tasks');
@@ -36,6 +46,7 @@ class InitializationOrchestrator {
       return;
     }
 
+    // DEVELOPMENT MODE ONLY: Run initialization tasks
     const criticalTasks: InitializationTask[] = [
       {
         name: 'admin-credentials',
@@ -49,10 +60,7 @@ class InitializationOrchestrator {
         name: 'production-users',
         priority: 'critical',
         fn: async () => {
-          if (isProduction) {
-            const { ensureProductionUsersAccess } = await import('./production-init');
-            await ensureProductionUsersAccess();
-          }
+          // Skip in production (handled above)
         }
       }
     ];
@@ -84,10 +92,7 @@ class InitializationOrchestrator {
         name: 'production-permissions-fix',
         priority: 'best-effort',
         fn: async () => {
-          if (isProduction) {
-            const { fixProductionPermissions } = await import('./production-permissions-fix');
-            await fixProductionPermissions();
-          }
+          // Skip in production (handled above)
         }
       }
     ];
@@ -97,11 +102,9 @@ class InitializationOrchestrator {
       this.taskResults.set(task.name, { status: 'pending' });
     });
 
-    // Run critical tasks with timeout and retry
-    // ALWAYS use long timeout (120 seconds) to handle Neon cold starts safely
-    // The short timeout was causing false failures in production
-    const timeoutMs = 120000; // 2 minutes - safe for any environment
-    const retries = isProduction ? 3 : 1;
+    // Development mode: use shorter timeout since dev DB is usually warm
+    const timeoutMs = 30000; // 30 seconds for development
+    const retries = 1;
     console.log(`⏱️ [Orchestrator] Using ${timeoutMs}ms timeout with ${retries} retries`);
     
     const criticalPromises = criticalTasks.map(task => 
@@ -121,18 +124,13 @@ class InitializationOrchestrator {
       const elapsed = Date.now() - this.startTime;
       console.log(`✅ [Orchestrator] Critical initialization complete in ${elapsed}ms`);
     } else {
-      // In production, allow the app to start even if initialization fails
-      // Users can still log in with existing credentials
-      if (isProduction) {
-        this.readyFlag = true;
-        console.warn('⚠️ [Orchestrator] Some critical tasks failed in production, proceeding anyway');
-      } else {
-        console.warn('⚠️ [Orchestrator] Some critical tasks failed, system in degraded state');
-      }
+      // Allow the app to start even if initialization fails
+      this.readyFlag = true;
+      console.warn('⚠️ [Orchestrator] Some critical tasks failed, system in degraded state');
     }
 
-    // Fire best-effort tasks without awaiting - use same long timeout
-    const bestEffortTimeout = 120000; // 2 minutes - same as critical
+    // Fire best-effort tasks without awaiting
+    const bestEffortTimeout = 30000; // 30 seconds
     bestEffortTasks.forEach(task => {
       this.executeTaskWithRetry(task, bestEffortTimeout, 1).catch(err => {
         console.warn(`⚠️ [Orchestrator] Best-effort task ${task.name} failed:`, err);
