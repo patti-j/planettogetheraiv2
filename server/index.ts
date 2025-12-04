@@ -21,7 +21,7 @@ import { eq, sql } from "drizzle-orm";
 import { backgroundJobManager } from "./background-jobs";
 
 // Build version marker for deployment tracking (forces new deployment when changed)
-const BUILD_VERSION = "20251204_183551";
+const BUILD_VERSION = "20251204_184500";
 
 // Extend session interface
 declare module "express-session" {
@@ -34,10 +34,9 @@ declare module "express-session" {
 const app = express();
 
 // CRITICAL: Ultra-fast health check endpoints MUST be first, before ANY middleware
-// These endpoints respond instantly without any expensive operations
+// These respond instantly without any conditional logic or async operations
+// Replit autoscale health checks require immediate 200 responses
 
-// Primary health check endpoints - respond immediately
-// These are used by Cloud Run, Kubernetes, and Prometheus probes
 app.get('/health', (req, res) => {
   res.status(200).send('OK');
 });
@@ -46,52 +45,16 @@ app.get('/ping', (req, res) => {
   res.status(200).send('pong');
 });
 
-// Root endpoint - respond with HTML for browsers, OK for health probes
-// CRITICAL: Must respond immediately to pass Replit's health checks
+// Root health check - MUST respond immediately with no conditional logic
+// This is the primary endpoint Replit uses for autoscale health checks
 app.get('/', (req, res, next) => {
-  // Check if this is a health probe or automated request
-  const userAgent = req.headers['user-agent'] || '';
-  const isHealthProbe = !userAgent || 
-      userAgent.includes('GoogleHC') || 
-      userAgent.includes('kube-probe') ||
-      userAgent.includes('Google-Cloud-Scheduler') ||
-      userAgent.includes('Prometheus') ||
-      userAgent.includes('curl') ||
-      userAgent.includes('wget') ||
-      userAgent.length < 20;
-  
-  if (isHealthProbe) {
+  // Check Accept header - if not requesting HTML, it's a health check
+  const acceptHeader = req.headers.accept || '';
+  if (!acceptHeader.includes('text/html')) {
     return res.status(200).send('OK');
   }
-  
-  // For browser requests in production, serve the index.html directly
-  if (process.env.NODE_ENV === 'production') {
-    const indexPath = path.resolve(import.meta.dirname, "..", "dist", "public", "index.html");
-    if (fs.existsSync(indexPath)) {
-      return res.sendFile(indexPath);
-    }
-  }
-  
-  // For development or fallback, pass to Vite/static middleware
+  // Browser requests fall through to static file serving (registered later)
   next();
-});
-
-// Readiness probe - returns 503 until critical initialization completes
-app.get('/readiness', async (req, res) => {
-  const { orchestrator } = await import('./initialization-orchestrator');
-  const status = orchestrator.getStatus();
-  
-  if (orchestrator.isReady()) {
-    res.status(200).json({
-      status: 'ready',
-      ...status
-    });
-  } else {
-    res.status(503).json({
-      status: 'initializing',
-      ...status
-    });
-  }
 });
 
 // Middleware (after health checks)
@@ -191,29 +154,6 @@ app.use(session({
     path: '/' // Available for all paths
   }
 }));
-
-// Health check endpoint - must be early in middleware chain for deployment
-app.get('/health', (req, res) => {
-  res.status(200).json({ 
-    status: 'healthy',
-    timestamp: new Date().toISOString(),
-    service: 'planettogether-api'
-  });
-});
-
-// Root health check for deployment (Replit checks the / endpoint)
-app.get('/', (req, res, next) => {
-  // If this is an API health check (no Accept header for HTML), return JSON
-  if (!req.headers.accept || !req.headers.accept.includes('text/html')) {
-    return res.status(200).json({ 
-      status: 'healthy',
-      timestamp: new Date().toISOString(),
-      service: 'planettogether'
-    });
-  }
-  // Otherwise, let it fall through to serve the app
-  next();
-});
 
 // Logging middleware
 app.use((req, res, next) => {
@@ -369,46 +309,6 @@ app.get('/*.html', (req, res) => {
 
 // Determine if running in production (use at module level for consistency)
 const isProductionMode = process.env.NODE_ENV === 'production' || process.env.REPLIT_DEPLOYMENT === '1';
-
-// CRITICAL: Root health check endpoint for deployment (MUST be first)
-// Autoscale deployments require a fast-responding root endpoint
-app.get("/", (req, res, next) => {
-  try {
-    // Quick response for health checks
-    const userAgent = req.headers['user-agent'] || '';
-    const isHealthCheck = userAgent.includes('GoogleHC') || 
-                          userAgent.includes('kube-probe') || 
-                          userAgent.includes('UptimeRobot') ||
-                          userAgent.includes('Pingdom');
-    
-    if (isHealthCheck || req.headers['x-health-check']) {
-      // Instant response for health checks
-      return res.status(200).send('OK');
-    }
-    
-    // In development, let Vite middleware handle the request
-    if (!isProductionMode) {
-      return next();
-    }
-    
-    // For browsers in production, serve the index.html
-    const indexPath = path.resolve(import.meta.dirname, "..", "dist", "public", "index.html");
-    if (fs.existsSync(indexPath)) {
-      return res.sendFile(indexPath);
-    }
-    // If index.html not found, try client/index.html
-    const clientIndexPath = path.resolve(import.meta.dirname, "..", "client", "index.html");
-    if (fs.existsSync(clientIndexPath)) {
-      return res.sendFile(clientIndexPath);
-    }
-    
-    // Fallback response (production only if no index.html found)
-    res.status(200).send('PlanetTogether SCM + APS');
-  } catch (error) {
-    console.error('Error in root handler:', error);
-    res.status(500).send('Internal Server Error');
-  }
-});
 
 // CRITICAL: Serve production static assets BEFORE other middleware (for deployment)
 // Must be before routes and other handlers to serve JS/CSS files correctly
