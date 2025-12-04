@@ -11,6 +11,8 @@ import { llmProviderRoutes } from "./routes-llm-providers";
 import { automationRoutes } from "./routes-automation";
 import { setupVite, serveStatic, log } from "./vite";
 import session from "express-session";
+import connectPgSimple from "connect-pg-simple";
+import { Pool } from "@neondatabase/serverless";
 import { storage as dbStorage, DatabaseStorage } from "./storage-new";
 import { seedDatabase } from "./seed";
 import { RealtimeVoiceService } from "./realtime-voice-service";
@@ -143,14 +145,43 @@ app.use((req, res, next) => {
 
 // Session middleware configuration - must be after CORS and before routes
 // Configure for Replit environment (HTTPS external, HTTP internal)
+
+// Determine database URL for session store
+const sessionDbUrl = process.env.REPLIT_DEPLOYMENT === '1' || process.env.NODE_ENV === 'production'
+  ? process.env.PRODUCTION_DATABASE_URL || process.env.DATABASE_URL
+  : process.env.DATABASE_URL;
+
+// Create PostgreSQL session store for production (autoscale-safe)
+// Falls back to in-memory store in development if no database
+let sessionStore: session.Store | undefined;
+
+if (sessionDbUrl) {
+  try {
+    const PgSession = connectPgSimple(session);
+    const pool = new Pool({ connectionString: sessionDbUrl });
+    sessionStore = new PgSession({
+      pool,
+      tableName: 'user_sessions',
+      createTableIfMissing: true,
+      pruneSessionInterval: 60 * 15, // Prune expired sessions every 15 minutes
+    });
+    console.log('✅ Using PostgreSQL session store (autoscale-safe)');
+  } catch (error) {
+    console.warn('⚠️ Failed to create PostgreSQL session store, using memory store:', error);
+  }
+} else {
+  console.warn('⚠️ No database URL for sessions, using memory store (not suitable for autoscale)');
+}
+
 app.use(session({
+  store: sessionStore,
   secret: process.env.SESSION_SECRET || 'dev-secret-key-change-in-production',
   resave: false,
-  saveUninitialized: true, // Create session immediately
+  saveUninitialized: false, // Don't create sessions until needed (better for autoscale)
   name: 'planettogether_session', // Unique session name
   proxy: true, // Trust proxy for HTTPS headers
   cookie: {
-    secure: false, // Replit handles HTTPS externally
+    secure: process.env.NODE_ENV === 'production', // HTTPS only in production
     httpOnly: true, // Security - prevent JS access
     maxAge: 1000 * 60 * 60 * 24, // 24 hours
     sameSite: 'lax', // More permissive for cross-origin

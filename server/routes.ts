@@ -116,6 +116,41 @@ declare global {
 
 const router = express.Router();
 
+// Database availability check helper for production safety
+// Returns true if db is available, sends error response and returns false if not
+function requireDatabase(res: express.Response): boolean {
+  if (!db) {
+    res.status(503).json({
+      error: 'Database unavailable',
+      message: 'Database connection not available. Please ensure the database is properly configured.',
+      code: 'DB_UNAVAILABLE'
+    });
+    return false;
+  }
+  return true;
+}
+
+// Type-safe database accessor - throws if db is null
+// Use this for operations that absolutely require a database connection
+function getDb() {
+  if (!db) {
+    throw new Error('Database connection not available');
+  }
+  return db;
+}
+
+// Middleware to check database availability for routes that need it
+const requireDbMiddleware: express.RequestHandler = (req, res, next) => {
+  if (!db) {
+    return res.status(503).json({
+      error: 'Database unavailable',
+      message: 'Database connection not available. Please try again later.',
+      code: 'DB_UNAVAILABLE'
+    });
+  }
+  next();
+};
+
 // Early development bypass for canvas widgets (must be before any authentication middleware)
 if (process.env.NODE_ENV === 'development') {
   router.use((req, res, next) => {
@@ -216,6 +251,10 @@ router.get('/fonts/*', (req, res) => {
     res.status(404).send('Font not found');
   }
 });
+
+// Apply database availability middleware to all API routes
+// This ensures requests fail gracefully with 503 if database is unavailable
+router.use('/api', requireDbMiddleware);
 
 // Authentication routes
 router.post("/api/auth/login", async (req, res) => {
