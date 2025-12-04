@@ -1,4 +1,4 @@
-import { db } from './db';
+import { db, getDb, isDbConnected } from './db';
 import { users, roles, userRoles, dashboards } from '../shared/schema';
 import { eq } from 'drizzle-orm';
 
@@ -7,6 +7,9 @@ interface InitializationTask {
   priority: 'critical' | 'best-effort';
   fn: () => Promise<void>;
 }
+
+// Check if we're in production/deployment environment
+const isProduction = process.env.REPLIT_DEPLOYMENT === '1' || process.env.NODE_ENV === 'production';
 
 class InitializationOrchestrator {
   private readyFlag = false;
@@ -18,6 +21,13 @@ class InitializationOrchestrator {
   }
   
   async start() {
+    // Check if database is available before running tasks
+    if (!isDbConnected()) {
+      console.warn('⚠️ [Orchestrator] Database not connected, skipping initialization tasks');
+      this.readyFlag = true; // Allow app to start, API routes will handle db availability
+      return;
+    }
+
     const criticalTasks: InitializationTask[] = [
       {
         name: 'admin-credentials',
@@ -31,7 +41,7 @@ class InitializationOrchestrator {
         name: 'production-users',
         priority: 'critical',
         fn: async () => {
-          if (process.env.NODE_ENV === 'production') {
+          if (isProduction) {
             const { ensureProductionUsersAccess } = await import('./production-init');
             await ensureProductionUsersAccess();
           }
@@ -44,9 +54,10 @@ class InitializationOrchestrator {
         name: 'dashboard-check',
         priority: 'best-effort',
         fn: async () => {
-          const existingDashboard = await db.select().from(dashboards).where(eq(dashboards.id, 1)).limit(1);
+          const database = getDb();
+          const existingDashboard = await database.select().from(dashboards).where(eq(dashboards.id, 1)).limit(1);
           if (existingDashboard.length === 0) {
-            await db.insert(dashboards).values({
+            await database.insert(dashboards).values({
               name: "Max AI Canvas",
               description: "Default dashboard for Max AI generated widgets",
               configuration: {
@@ -65,7 +76,7 @@ class InitializationOrchestrator {
         name: 'production-permissions-fix',
         priority: 'best-effort',
         fn: async () => {
-          if (process.env.NODE_ENV === 'production') {
+          if (isProduction) {
             const { fixProductionPermissions } = await import('./production-permissions-fix');
             await fixProductionPermissions();
           }
@@ -79,10 +90,10 @@ class InitializationOrchestrator {
     });
 
     // Run critical tasks with timeout and retry
-    // Production needs longer timeout for remote database operations
-    const timeoutMs = process.env.NODE_ENV === 'production' ? 30000 : 8000;
+    // Production needs much longer timeout for serverless database cold starts (Neon can take 60+ seconds)
+    const timeoutMs = isProduction ? 90000 : 15000;
     const criticalPromises = criticalTasks.map(task => 
-      this.executeTaskWithTimeout(task, timeoutMs)
+      this.executeTaskWithRetry(task, timeoutMs, isProduction ? 2 : 1)
     );
 
     // Wait for all critical tasks (use allSettled to not fail on single task failure)
@@ -100,7 +111,7 @@ class InitializationOrchestrator {
     } else {
       // In production, allow the app to start even if initialization fails
       // Users can still log in with existing credentials
-      if (process.env.NODE_ENV === 'production') {
+      if (isProduction) {
         this.readyFlag = true;
         console.warn('⚠️ [Orchestrator] Some critical tasks failed in production, proceeding anyway');
       } else {
@@ -108,12 +119,27 @@ class InitializationOrchestrator {
       }
     }
 
-    // Fire best-effort tasks without awaiting
+    // Fire best-effort tasks without awaiting - use longer timeout in production
+    const bestEffortTimeout = isProduction ? 60000 : 15000;
     bestEffortTasks.forEach(task => {
-      this.executeTaskWithTimeout(task, 10000).catch(err => {
+      this.executeTaskWithRetry(task, bestEffortTimeout, 1).catch(err => {
         console.warn(`⚠️ [Orchestrator] Best-effort task ${task.name} failed:`, err);
       });
     });
+  }
+
+  private async executeTaskWithRetry(task: InitializationTask, timeoutMs: number, maxRetries: number): Promise<boolean> {
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      const success = await this.executeTaskWithTimeout(task, timeoutMs);
+      if (success) return true;
+      
+      if (attempt < maxRetries) {
+        console.log(`🔄 [Orchestrator] Retrying ${task.name} (attempt ${attempt + 1}/${maxRetries})...`);
+        // Wait a bit before retrying (exponential backoff)
+        await new Promise(resolve => setTimeout(resolve, 2000 * attempt));
+      }
+    }
+    return false;
   }
 
   private async executeTaskWithTimeout(task: InitializationTask, timeoutMs: number): Promise<boolean> {
