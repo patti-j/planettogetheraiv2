@@ -8,8 +8,10 @@ interface InitializationTask {
   fn: () => Promise<void>;
 }
 
-// Check if we're in production/deployment environment
-const isProduction = process.env.REPLIT_DEPLOYMENT === '1' || process.env.NODE_ENV === 'production';
+// Dynamic production detection - check at runtime, not module load time
+function checkIsProduction(): boolean {
+  return process.env.REPLIT_DEPLOYMENT === '1' || process.env.NODE_ENV === 'production';
+}
 
 class InitializationOrchestrator {
   private readyFlag = false;
@@ -21,6 +23,12 @@ class InitializationOrchestrator {
   }
   
   async start() {
+    // Check production status dynamically at start time
+    const isProduction = checkIsProduction();
+    console.log(`📌 [Orchestrator] Environment: ${isProduction ? 'PRODUCTION' : 'development'}`);
+    console.log(`📌 [Orchestrator] REPLIT_DEPLOYMENT: ${process.env.REPLIT_DEPLOYMENT || 'not set'}`);
+    console.log(`📌 [Orchestrator] NODE_ENV: ${process.env.NODE_ENV || 'not set'}`);
+    
     // Check if database is available before running tasks
     if (!isDbConnected()) {
       console.warn('⚠️ [Orchestrator] Database not connected, skipping initialization tasks');
@@ -90,10 +98,14 @@ class InitializationOrchestrator {
     });
 
     // Run critical tasks with timeout and retry
-    // Production needs much longer timeout for serverless database cold starts (Neon can take 60+ seconds)
-    const timeoutMs = isProduction ? 90000 : 15000;
+    // ALWAYS use long timeout (120 seconds) to handle Neon cold starts safely
+    // The short timeout was causing false failures in production
+    const timeoutMs = 120000; // 2 minutes - safe for any environment
+    const retries = isProduction ? 3 : 1;
+    console.log(`⏱️ [Orchestrator] Using ${timeoutMs}ms timeout with ${retries} retries`);
+    
     const criticalPromises = criticalTasks.map(task => 
-      this.executeTaskWithRetry(task, timeoutMs, isProduction ? 2 : 1)
+      this.executeTaskWithRetry(task, timeoutMs, retries)
     );
 
     // Wait for all critical tasks (use allSettled to not fail on single task failure)
@@ -119,8 +131,8 @@ class InitializationOrchestrator {
       }
     }
 
-    // Fire best-effort tasks without awaiting - use longer timeout in production
-    const bestEffortTimeout = isProduction ? 60000 : 15000;
+    // Fire best-effort tasks without awaiting - use same long timeout
+    const bestEffortTimeout = 120000; // 2 minutes - same as critical
     bestEffortTasks.forEach(task => {
       this.executeTaskWithRetry(task, bestEffortTimeout, 1).catch(err => {
         console.warn(`⚠️ [Orchestrator] Best-effort task ${task.name} failed:`, err);
