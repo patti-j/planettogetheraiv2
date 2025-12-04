@@ -8,7 +8,7 @@ import { maxAI } from "./services/max-ai-service";
 import { realtimeVoiceService } from './services/realtime-voice-service';
 import { aiSchedulingService } from "./services/ai-scheduling-recommendations";
 import { enhancedAuth } from "./enhanced-auth-middleware";
-import { db, directSql } from "./db";
+import { db, directSql, getDb } from "./db";
 import { powerBIService } from "./services/powerbi";
 import { 
   insertDashboardSchema, 
@@ -128,15 +128,6 @@ function requireDatabase(res: express.Response): boolean {
     return false;
   }
   return true;
-}
-
-// Type-safe database accessor - throws if db is null
-// Use this for operations that absolutely require a database connection
-function getDb() {
-  if (!db) {
-    throw new Error('Database connection not available');
-  }
-  return db;
 }
 
 // Middleware to check database availability for routes that need it
@@ -289,7 +280,7 @@ router.post("/api/auth/login", async (req, res) => {
       const role = await storage.getRole(userRole.roleId);
       if (role) {
         // Get role permissions with single join query to avoid N+1
-        const rolePerms = await db.select({
+        const rolePerms = await getDb().select({
           permissionId: rolePermissions.permissionId,
           permissionName: permissions.name,
           feature: permissions.feature,
@@ -491,7 +482,7 @@ router.get("/api/auth/me", async (req, res) => {
               const role = await storage.getRole(userRole.roleId);
               if (role) {
                 // Get role permissions with a single join query to avoid N+1
-                const rolePerms = await db.select({
+                const rolePerms = await getDb().select({
                   permissionId: rolePermissions.permissionId,
                   permissionName: permissions.name,
                   feature: permissions.feature,
@@ -565,7 +556,7 @@ router.get("/api/auth/me", async (req, res) => {
           const role = await storage.getRole(userRole.roleId);
           if (role) {
             // Get role permissions with single join query to avoid N+1
-            const rolePerms = await db.select({
+            const rolePerms = await getDb().select({
               permissionId: rolePermissions.permissionId,
               permissionName: permissions.name,
               feature: permissions.feature,
@@ -2988,7 +2979,7 @@ router.post("/api/generate-brewery-data", async (req, res) => {
       WHERE active = true
       ORDER BY name
     `;
-    const resources = await db.execute(sql.raw(resourcesQuery));
+    const resources = await getDb().execute(sql.raw(resourcesQuery));
     const resourceRows = Array.isArray(resources) ? resources : resources.rows || [];
     
     // Map resources to steps
@@ -3013,7 +3004,7 @@ router.post("/api/generate-brewery-data", async (req, res) => {
       ORDER BY j.id
       LIMIT 10
     `;
-    const jobs = await db.execute(sql.raw(jobsQuery));
+    const jobs = await getDb().execute(sql.raw(jobsQuery));
     const jobRows = Array.isArray(jobs) ? jobs : jobs.rows || [];
     
     let operationsAdded = 0;
@@ -3030,7 +3021,7 @@ router.post("/api/generate-brewery-data", async (req, res) => {
         FROM ptjoboperations 
         WHERE job_id = $1
       `;
-      const existingOps = await db.execute(sql.raw(existingOpsQuery.replace('$1', job.id.toString())));
+      const existingOps = await getDb().execute(sql.raw(existingOpsQuery.replace('$1', job.id.toString())));
       const existingOpsRows = Array.isArray(existingOps) ? existingOps : existingOps.rows || [];
       const existingOpNames = new Set(existingOpsRows.map((op: any) => op.name.toLowerCase()));
       
@@ -3045,7 +3036,7 @@ router.post("/api/generate-brewery-data", async (req, res) => {
           FROM ptjoboperations 
           WHERE job_id = $1 AND scheduled_end IS NOT NULL
         `;
-        const lastOpResult = await db.execute(sql.raw(lastOpQuery.replace('$1', job.id.toString())));
+        const lastOpResult = await getDb().execute(sql.raw(lastOpQuery.replace('$1', job.id.toString())));
         const lastOpRows = Array.isArray(lastOpResult) ? lastOpResult : lastOpResult.rows || [];
         if (lastOpRows[0]?.last_end) {
           lastEndTime = new Date(lastOpRows[0].last_end);
@@ -3106,14 +3097,14 @@ router.post("/api/generate-brewery-data", async (req, res) => {
           RETURNING id
         `;
         
-        const opResult = await db.execute(sql.raw(insertOpQuery));
+        const opResult = await getDb().execute(sql.raw(insertOpQuery));
         
         const opResultRows = Array.isArray(opResult) ? opResult : opResult.rows || [];
         if (opResultRows[0]) {
           const opId = opResultRows[0].id;
           
           // Insert resource assignment
-          await db.execute(sql.raw(`
+          await getDb().execute(sql.raw(`
             INSERT INTO ptjobresources (
               operation_id, default_resource_id, is_primary,
               setup_hrs, cycle_hrs, qty_per_cycle
@@ -3128,7 +3119,7 @@ router.post("/api/generate-brewery-data", async (req, res) => {
           `));
           
           // Insert activity
-          await db.execute(sql.raw(`
+          await getDb().execute(sql.raw(`
             INSERT INTO ptjobactivities (
               external_id, operation_id, production_status, comments
             ) VALUES (
@@ -3181,7 +3172,7 @@ router.post("/api/generate-brewery-data", async (req, res) => {
         RETURNING id
       `;
       
-      const jobResult = await db.execute(sql.raw(insertJobQuery));
+      const jobResult = await getDb().execute(sql.raw(insertJobQuery));
       
       const jobResultRows = Array.isArray(jobResult) ? jobResult : jobResult.rows || [];
       if (jobResultRows[0]) {
@@ -3229,14 +3220,14 @@ router.post("/api/generate-brewery-data", async (req, res) => {
             RETURNING id
           `;
           
-          const opResult = await db.execute(sql.raw(insertOpQuery));
+          const opResult = await getDb().execute(sql.raw(insertOpQuery));
           
           const opRows = Array.isArray(opResult) ? opResult : opResult.rows || [];
           if (opRows[0]) {
             const opId = opRows[0].id;
             
             // Insert resource assignment
-            await db.execute(sql.raw(`
+            await getDb().execute(sql.raw(`
               INSERT INTO ptjobresources (
                 operation_id, default_resource_id, is_primary,
                 setup_hrs, cycle_hrs, qty_per_cycle
@@ -3244,7 +3235,7 @@ router.post("/api/generate-brewery-data", async (req, res) => {
             `));
             
             // Insert activity
-            await db.execute(sql.raw(`
+            await getDb().execute(sql.raw(`
               INSERT INTO ptjobactivities (
                 external_id, operation_id, production_status, comments
               ) VALUES ('ACT-${opExternalId}', ${opId}, 'planned', 'Complete brewery process')
@@ -3343,7 +3334,7 @@ router.get("/api/pt-operations", async (req, res) => {
       LIMIT 500
     `;
 
-    const rawOperations = await db.execute(sql.raw(ptOperationsQuery));
+    const rawOperations = await getDb().execute(sql.raw(ptOperationsQuery));
     
     // Transform the data for the frontend (handle Neon/Drizzle result format)
     const operationsData = Array.isArray(rawOperations) ? rawOperations : rawOperations.rows || [];
@@ -3437,7 +3428,7 @@ router.get("/api/pt-dependencies", async (req, res) => {
       ORDER BY curr.job_id, curr.sequence_number
     `;
 
-    const rawDependencies = await db.execute(sql.raw(ptDependenciesQuery));
+    const rawDependencies = await getDb().execute(sql.raw(ptDependenciesQuery));
     
     // Transform the data for the frontend - use correct Bryntum field names
     const dependenciesData = Array.isArray(rawDependencies) ? rawDependencies : rawDependencies.rows || [];
@@ -3494,7 +3485,7 @@ router.get("/api/operations", requireAuth, async (req, res) => {
       LIMIT 100
     `;
     
-    const result = await db.execute(sql.raw(operationsQuery));
+    const result = await getDb().execute(sql.raw(operationsQuery));
     const operationsData = Array.isArray(result) ? result : result.rows || [];
     
     // Format the response to match the expected interface
@@ -3626,7 +3617,7 @@ router.post("/api/master-data/populate-from-pt", requireAuth, async (req, res) =
       WHERE active = true
     `;
     
-    const ptResources = await db.execute(sql.raw(ptResourcesQuery));
+    const ptResources = await getDb().execute(sql.raw(ptResourcesQuery));
     const resourcesData = Array.isArray(ptResources) ? ptResources : ptResources.rows || [];
     results.resources = resourcesData.length;
     
@@ -3652,7 +3643,7 @@ router.post("/api/master-data/populate-from-pt", requireAuth, async (req, res) =
       LEFT JOIN ptjobs j ON jo.job_id = j.id
     `;
     
-    const ptOperations = await db.execute(sql.raw(ptOperationsQuery));
+    const ptOperations = await getDb().execute(sql.raw(ptOperationsQuery));
     const operationsData = Array.isArray(ptOperations) ? ptOperations : ptOperations.rows || [];
     results.operations = operationsData.length;
     
@@ -3669,7 +3660,7 @@ router.post("/api/master-data/populate-from-pt", requireAuth, async (req, res) =
       FROM ptjobs
     `;
     
-    const ptJobs = await db.execute(sql.raw(ptJobsQuery));
+    const ptJobs = await getDb().execute(sql.raw(ptJobsQuery));
     const jobsData = Array.isArray(ptJobs) ? ptJobs : ptJobs.rows || [];
     results.jobs = jobsData.length;
     
@@ -3685,7 +3676,7 @@ router.post("/api/master-data/populate-from-pt", requireAuth, async (req, res) =
       FROM ptplants
     `;
     
-    const ptPlants = await db.execute(sql.raw(ptPlantsQuery));
+    const ptPlants = await getDb().execute(sql.raw(ptPlantsQuery));
     const plantsData = Array.isArray(ptPlants) ? ptPlants : ptPlants.rows || [];
     results.plants = plantsData.length;
     
@@ -3739,7 +3730,7 @@ router.get("/api/pt-resources", async (req, res) => {
       ORDER BY r.name
     `;
 
-    const rawResources = await db.execute(sql.raw(ptResourcesQuery));
+    const rawResources = await getDb().execute(sql.raw(ptResourcesQuery));
     
     // Transform the data for the frontend (handle Neon/Drizzle result format)
     const resourcesData = Array.isArray(rawResources) ? rawResources : rawResources.rows || [];
@@ -3771,7 +3762,7 @@ router.get("/api/pt-resources", async (req, res) => {
 router.get("/api/resources-with-capabilities", async (req, res) => {
   try {
     // Fetch all resources with their capabilities
-    const rawData = await db.execute(sql`
+    const rawData = await getDb().execute(sql`
       SELECT 
         r.id as resource_id,
         r.name as resource_name,
@@ -4245,7 +4236,7 @@ router.get("/api/ai/recommendations", requireAuth, async (req, res) => {
 // Get all agent activity status
 router.get("/api/ai/agents/activity", requireAuth, async (req, res) => {
   try {
-    const result = await db.execute(sql`
+    const result = await getDb().execute(sql`
       SELECT agent_name, last_activity_time, status, activity_count, last_action, updated_at
       FROM agent_activity_tracking
       ORDER BY agent_name
@@ -4264,7 +4255,7 @@ router.post("/api/ai/agents/activity/:agentName", requireAuth, async (req, res) 
     const { agentName } = req.params;
     const { action, status = 'active' } = req.body;
     
-    await db.execute(sql`
+    await getDb().execute(sql`
       INSERT INTO agent_activity_tracking (agent_name, last_activity_time, status, activity_count, last_action, updated_at)
       VALUES (${agentName}, NOW(), ${status}, 1, ${action || 'Activity'}, NOW())
       ON CONFLICT (agent_name) 
@@ -4553,7 +4544,7 @@ router.get("/api/dashboard-configs", requireAuth, async (req, res) => {
     }
 
     // Get user's assigned roles using proper Drizzle syntax
-    const userRolesResult = await db.execute(sql`
+    const userRolesResult = await getDb().execute(sql`
       SELECT r.id, r.name
       FROM roles r
       INNER JOIN user_roles ur ON r.id = ur.role_id
@@ -5008,7 +4999,7 @@ router.get("/api/canvas/widgets", async (req, res) => {
     }
     
     // Get saved widgets from database - only visible ones
-    const savedWidgets = await db.execute(sql.raw(`SELECT * FROM widgets WHERE is_active = true`));
+    const savedWidgets = await getDb().execute(sql.raw(`SELECT * FROM widgets WHERE is_active = true`));
     console.log("🔧 [Canvas Widgets] Retrieved visible widgets:", savedWidgets.rows.length);
     
     // Generate actual chart data for widgets (using AI-powered dynamic generation)
@@ -5039,7 +5030,7 @@ router.get("/api/canvas/widgets", async (req, res) => {
                 GROUP BY plant_name 
                 ORDER BY COUNT(*) DESC
               `;
-              const result = await db.execute(sql.raw(resourceQuery));
+              const result = await getDb().execute(sql.raw(resourceQuery));
               return result.rows.map((row: any) => ({
                 name: row.plant_name || 'Unknown Plant',
                 value: parseInt(row.count),
@@ -5055,7 +5046,7 @@ router.get("/api/canvas/widgets", async (req, res) => {
                 GROUP BY department_name 
                 ORDER BY COUNT(*) DESC
               `;
-              const result = await db.execute(sql.raw(resourceQuery));
+              const result = await getDb().execute(sql.raw(resourceQuery));
               return result.rows.map((row: any) => ({
                 name: row.department_name || 'Unknown Department',
                 value: parseInt(row.count),
@@ -5074,7 +5065,7 @@ router.get("/api/canvas/widgets", async (req, res) => {
             GROUP BY priority 
             ORDER BY COUNT(*) DESC
           `;
-          const jobsResult = await db.execute(sql.raw(jobsQuery));
+          const jobsResult = await getDb().execute(sql.raw(jobsQuery));
           return jobsResult.rows.map((row: any) => ({
             name: `Priority ${row.priority}`,
             value: parseInt(row.count),
@@ -5091,7 +5082,7 @@ router.get("/api/canvas/widgets", async (req, res) => {
             GROUP BY plant_name 
             ORDER BY COUNT(*) DESC
           `;
-          const resourcesResult = await db.execute(sql.raw(resourcesQuery));
+          const resourcesResult = await getDb().execute(sql.raw(resourcesQuery));
           return resourcesResult.rows.map((row: any) => ({
             name: row.plant_name || 'Unknown Plant',
             value: parseInt(row.count),
@@ -5493,7 +5484,7 @@ router.get("/api/widgets/:id", async (req, res) => {
     }
     
     // Query widget from database
-    const result = await db.execute(sql`SELECT * FROM widgets WHERE id = ${widgetId} AND is_active = true`);
+    const result = await getDb().execute(sql`SELECT * FROM widgets WHERE id = ${widgetId} AND is_active = true`);
     
     if (result.rows.length === 0) {
       console.log('❌ [Widget API] Widget not found:', widgetId);
@@ -5569,7 +5560,7 @@ router.put("/api/canvas/widgets/:id/visibility", async (req, res) => {
     const { visible } = req.body;
     
     // Update the widget's is_active field in the database
-    await db.update(widgets)
+    await getDb().update(widgets)
       .set({ isActive: visible === true })
       .where(eq(widgets.id, id));
 
@@ -5597,7 +5588,7 @@ router.post("/api/canvas/widgets/batch-clear", async (req, res) => {
 
   try {
     // Clear all widgets in a single database query - MUCH faster than individual updates
-    const result = await db.update(widgets)
+    const result = await getDb().update(widgets)
       .set({ isActive: false })
       .where(eq(widgets.isActive, true));
 
@@ -5704,7 +5695,7 @@ router.get("/dashboard-metrics", requireAuth, async (req, res) => {
       WHERE scheduled_status IN ('In Progress', 'Ready', 'Scheduled', 'Started')
         AND (scheduled_end_date IS NULL OR scheduled_end_date > NOW())
     `;
-    const activeJobsResult = await db.execute(sql.raw(activeJobsQuery));
+    const activeJobsResult = await getDb().execute(sql.raw(activeJobsQuery));
     const activeJobs = parseInt(activeJobsResult.rows[0]?.count || '0');
 
     // 2. Calculate resource utilization (operations scheduled hours vs available hours)
@@ -5737,7 +5728,7 @@ router.get("/dashboard-metrics", requireAuth, async (req, res) => {
         END as utilization
       FROM resource_stats
     `;
-    const utilizationResult = await db.execute(sql.raw(utilizationQuery));
+    const utilizationResult = await getDb().execute(sql.raw(utilizationQuery));
     const utilization = parseFloat(utilizationResult.rows[0]?.utilization || '0');
 
     // 3. Get alerts count from alerts table
@@ -5747,7 +5738,7 @@ router.get("/dashboard-metrics", requireAuth, async (req, res) => {
       WHERE status = 'active' 
         AND (dismissed_at IS NULL OR dismissed_at > NOW())
     `;
-    const alertsResult = await db.execute(sql.raw(alertsQuery));
+    const alertsResult = await getDb().execute(sql.raw(alertsQuery));
     const alertsCount = parseInt(alertsResult.rows[0]?.count || '0');
 
     // 4. Calculate on-time percentage (jobs completed on time vs total completed)
@@ -5776,7 +5767,7 @@ router.get("/dashboard-metrics", requireAuth, async (req, res) => {
         END as on_time_percentage
       FROM completed_jobs
     `;
-    const onTimeResult = await db.execute(sql.raw(onTimeQuery));
+    const onTimeResult = await getDb().execute(sql.raw(onTimeQuery));
     const onTimePercentage = parseFloat(onTimeResult.rows[0]?.on_time_percentage || '100');
 
     // Return the metrics
@@ -7547,7 +7538,7 @@ router.post("/api/v1/commands/schedule-job", requireAuth, async (req: Authentica
     const command = scheduleJobCommandSchema.parse(req.body);
     
     // Create job using correct minimal schema
-    const newJob = await db.insert(ptJobs).values({
+    const newJob = await getDb().insert(ptJobs).values({
       externalId: crypto.randomUUID(),
       name: `Job-${Date.now()}`,
       description: `Production job for ${command.operations.map(op => op.operationName).join(', ')}`,
@@ -7562,7 +7553,7 @@ router.post("/api/v1/commands/schedule-job", requireAuth, async (req: Authentica
     const operations = [];
     for (let i = 0; i < command.operations.length; i++) {
       const operation = command.operations[i];
-      const opResult = await db.insert(ptJobOperations).values({
+      const opResult = await getDb().insert(ptJobOperations).values({
         jobId: job.id, // Link to job's primary key
         externalId: crypto.randomUUID(),
         name: operation.operationName,
@@ -7629,7 +7620,7 @@ router.put("/api/v1/commands/reschedule-job/:id", requireAuth, async (req: Authe
     const command = rescheduleJobCommandSchema.parse(req.body);
     
     // Update job scheduling information
-    const updatedJob = await db.update(ptJobs)
+    const updatedJob = await getDb().update(ptJobs)
       .set({
         needDateTime: new Date(command.newStartDateTime),
         scheduledStatus: 'rescheduled',
@@ -7696,7 +7687,7 @@ router.post("/api/v1/commands/prioritize-job", requireAuth, async (req: Authenti
     
     const command = prioritizeJobCommandSchema.parse(req.body);
     
-    const updatedJob = await db.update(ptJobs)
+    const updatedJob = await getDb().update(ptJobs)
       .set({ priority: command.newPriority })
       .where(eq(ptJobs.id, command.jobId))
       .returning();
@@ -7761,7 +7752,7 @@ router.post("/api/v1/commands/cancel-job/:id", requireAuth, async (req: Authenti
     
     const command = cancelJobCommandSchema.parse(req.body);
     
-    const updatedJob = await db.update(ptJobs)
+    const updatedJob = await getDb().update(ptJobs)
       .set({ cancelled: true })
       .where(eq(ptJobs.id, jobId))
       .returning();
@@ -7909,7 +7900,7 @@ router.post("/api/v1/commands/quality-hold", requireAuth, async (req: Authentica
     let entityType: string;
     
     if (command.jobId) {
-      updatedEntity = await db.update(ptJobs)
+      updatedEntity = await getDb().update(ptJobs)
         .set({ 
           scheduledStatus: 'on_hold'
         })
@@ -7917,7 +7908,7 @@ router.post("/api/v1/commands/quality-hold", requireAuth, async (req: Authentica
         .returning();
       entityType = 'job';
     } else if (command.operationId) {
-      updatedEntity = await db.update(ptJobOperations)
+      updatedEntity = await getDb().update(ptJobOperations)
         .set({ percentFinished: "0" })
         .where(eq(ptJobOperations.id, command.operationId))
         .returning();
@@ -7992,7 +7983,7 @@ router.post("/api/v1/commands/start-operation", requireAuth, async (req: Authent
     
     const command = startOperationCommandSchema.parse(req.body);
     
-    const updatedOperation = await db.update(ptJobOperations)
+    const updatedOperation = await getDb().update(ptJobOperations)
       .set({ 
         percentFinished: "50",
         scheduledStart: command.actualStartDateTime ? new Date(command.actualStartDateTime) : new Date()
@@ -8065,7 +8056,7 @@ router.post("/api/v1/commands/stop-operation", requireAuth, async (req: Authenti
       percentFinished = "75";
     }
 
-    const updatedOperation = await db.update(ptJobOperations)
+    const updatedOperation = await getDb().update(ptJobOperations)
       .set({ 
         percentFinished: percentFinished,
         scheduledEnd: command.actualEndDateTime ? new Date(command.actualEndDateTime) : new Date()
@@ -8151,7 +8142,7 @@ router.post("/api/v1/auth/api-keys", enhancedAuth, requirePermission('auth', 'ma
     const keyHash = await bcrypt.hash(secret, 12);
     
     // Insert API key
-    const [apiKey] = await db.insert(apiKeys).values({
+    const [apiKey] = await getDb().insert(apiKeys).values({
       keyId,
       keyHash,
       name: validatedData.name,
@@ -8246,7 +8237,7 @@ router.delete("/api/v1/auth/api-keys/:id", enhancedAuth, async (req: Authenticat
     }
 
     // Deactivate the key
-    await db.update(apiKeys)
+    await getDb().update(apiKeys)
       .set({ isActive: false, updatedAt: new Date() })
       .where(eq(apiKeys.id, keyId));
 
@@ -8614,7 +8605,7 @@ Examples:
       
       try {
         console.log(`🧠 [Semantic Query] ${queryId}: Executing validated SQL:`, analysis.sql_query);
-        const queryResult = await db.execute(sql.raw(analysis.sql_query));
+        const queryResult = await getDb().execute(sql.raw(analysis.sql_query));
         queryResults = queryResult.rows;
         actualResultCount = queryResults.length;
         
@@ -8811,7 +8802,7 @@ router.post("/api/max-ai/chat", async (req, res) => {
     
     // Track agent activity
     try {
-      await db.execute(sql`
+      await getDb().execute(sql`
         INSERT INTO agent_activity_tracking (agent_name, last_activity_time, status, activity_count, last_action, updated_at)
         VALUES ('Max AI', NOW(), 'idle', 1, 'Chat Response', NOW())
         ON CONFLICT (agent_name) 
@@ -8889,7 +8880,7 @@ router.post("/api/ai-agent/chat", async (req, res) => {
       
       const agentName = agentNameMap[agentId] || 'Max AI';
       
-      await db.execute(sql`
+      await getDb().execute(sql`
         INSERT INTO agent_activity_tracking (agent_name, last_activity_time, status, activity_count, last_action, updated_at)
         VALUES (${agentName}, NOW(), 'idle', 1, 'Chat Response', NOW())
         ON CONFLICT (agent_name) 
@@ -9127,7 +9118,7 @@ router.delete("/api/agent-control/connections/:id", async (req, res) => {
 // Max Chat Messages endpoints
 router.get("/api/max-chat-messages/:userId", async (req, res) => {
   try {
-    const result = await db.select().from(maxChatMessages)
+    const result = await getDb().select().from(maxChatMessages)
       .where(eq(maxChatMessages.userId, Number(req.params.userId)))
       .orderBy(maxChatMessages.createdAt);
     res.json(result);
@@ -9147,7 +9138,7 @@ router.get("/api/max-chat-messages/:userId", async (req, res) => {
 router.post("/api/max-chat-messages", async (req, res) => {
   try {
     const { userId, role, content, agentId, agentName, source } = req.body;
-    const [message] = await db.insert(maxChatMessages)
+    const [message] = await getDb().insert(maxChatMessages)
       .values({
         userId,
         role,
@@ -9182,7 +9173,7 @@ router.post("/api/max-chat-messages", async (req, res) => {
 
 router.delete("/api/max-chat-messages/:userId", async (req, res) => {
   try {
-    await db.delete(maxChatMessages)
+    await getDb().delete(maxChatMessages)
       .where(eq(maxChatMessages.userId, Number(req.params.userId)));
     res.json({ success: true });
   } catch (error: any) {
@@ -9928,7 +9919,7 @@ CRITICAL: Always include all required fields with valid non-null values. Use rea
                     validatedData.bottleneck = validatedData.bottleneck || false;
                   }
                   
-                  await db.insert(tableSchema).values(validatedData);
+                  await getDb().insert(tableSchema).values(validatedData);
                   savedCount++;
                   console.log(`[AI Bulk Generate] Saved ${entityType}: ${validatedData.name || validatedData.bomNumber || validatedData.routingNumber || 'record'}`);
                 } catch (error) {
@@ -11110,7 +11101,7 @@ router.get('/api/realtime/sessions/:sessionId/events', async (req, res) => {
 // Get all plants
 router.get("/api/ptplants", enhancedAuth, async (req, res) => {
   try {
-    const result = await db.execute(sql`
+    const result = await getDb().execute(sql`
       SELECT id, name, description, is_active 
       FROM ptplants 
       WHERE is_active = true 
@@ -11126,7 +11117,7 @@ router.get("/api/ptplants", enhancedAuth, async (req, res) => {
 // Get all resources
 router.get("/api/ptresources", enhancedAuth, async (req, res) => {
   try {
-    const result = await db.execute(sql`
+    const result = await getDb().execute(sql`
       SELECT id, name, description, resource_id, plant_id, active, deployment_order 
       FROM ptresources 
       WHERE active = true 
@@ -11150,7 +11141,7 @@ router.post("/api/ptresources/update-deployment-order", enhancedAuth, async (req
     
     // Update each resource's deployment order
     for (const update of updates) {
-      await db.execute(sql`
+      await getDb().execute(sql`
         UPDATE ptresources 
         SET deployment_order = ${update.deployment_order}
         WHERE id = ${update.id}
@@ -14425,7 +14416,7 @@ router.post("/api/schedule-scenarios", requireAuth, async (req, res) => {
 // Get all business goals
 router.get("/api/business-goals", requireAuth, async (req, res) => {
   try {
-    const goals = await db.select().from(businessGoals).orderBy(businessGoals.priority);
+    const goals = await getDb().select().from(businessGoals).orderBy(businessGoals.priority);
     res.json(goals);
   } catch (error: any) {
     console.error("Error fetching business goals:", error);
@@ -14446,7 +14437,7 @@ router.post("/api/business-goals", requireAuth, async (req, res) => {
       updatedBy: req.user?.id
     };
     
-    const [newGoal] = await db.insert(businessGoals).values(goalData).returning();
+    const [newGoal] = await getDb().insert(businessGoals).values(goalData).returning();
     res.json(newGoal);
   } catch (error: any) {
     console.error("Error creating business goal:", error);
@@ -14468,7 +14459,7 @@ router.put("/api/business-goals/:id", requireAuth, async (req, res) => {
       updatedAt: new Date()
     };
     
-    const [updatedGoal] = await db.update(businessGoals)
+    const [updatedGoal] = await getDb().update(businessGoals)
       .set(goalData)
       .where(eq(businessGoals.id, goalId))
       .returning();
@@ -14484,7 +14475,7 @@ router.put("/api/business-goals/:id", requireAuth, async (req, res) => {
 router.delete("/api/business-goals/:id", requireAuth, async (req, res) => {
   try {
     const goalId = parseInt(req.params.id);
-    await db.delete(businessGoals).where(eq(businessGoals.id, goalId));
+    await getDb().delete(businessGoals).where(eq(businessGoals.id, goalId));
     res.status(204).send();
   } catch (error: any) {
     console.error("Error deleting business goal:", error);
@@ -14495,7 +14486,7 @@ router.delete("/api/business-goals/:id", requireAuth, async (req, res) => {
 // Get goal progress
 router.get("/api/goal-progress", requireAuth, async (req, res) => {
   try {
-    const progress = await db.select().from(goalProgress).orderBy(goalProgress.progressDate);
+    const progress = await getDb().select().from(goalProgress).orderBy(goalProgress.progressDate);
     res.json(progress);
   } catch (error: any) {
     console.error("Error fetching goal progress:", error);
@@ -14511,7 +14502,7 @@ router.post("/api/goal-progress", requireAuth, async (req, res) => {
       reportedBy: req.user?.id
     };
     
-    const [newProgress] = await db.insert(goalProgress).values(progressData).returning();
+    const [newProgress] = await getDb().insert(goalProgress).values(progressData).returning();
     res.json(newProgress);
   } catch (error: any) {
     console.error("Error creating goal progress:", error);
@@ -14522,7 +14513,7 @@ router.post("/api/goal-progress", requireAuth, async (req, res) => {
 // Get goal risks
 router.get("/api/goal-risks", requireAuth, async (req, res) => {
   try {
-    const risks = await db.select().from(goalRisks).orderBy(goalRisks.riskScore);
+    const risks = await getDb().select().from(goalRisks).orderBy(goalRisks.riskScore);
     res.json(risks);
   } catch (error: any) {
     console.error("Error fetching goal risks:", error);
@@ -14538,7 +14529,7 @@ router.post("/api/goal-risks", requireAuth, async (req, res) => {
       createdBy: req.user?.id
     };
     
-    const [newRisk] = await db.insert(goalRisks).values(riskData).returning();
+    const [newRisk] = await getDb().insert(goalRisks).values(riskData).returning();
     res.json(newRisk);
   } catch (error: any) {
     console.error("Error creating goal risk:", error);
@@ -14549,7 +14540,7 @@ router.post("/api/goal-risks", requireAuth, async (req, res) => {
 // Get goal issues
 router.get("/api/goal-issues", requireAuth, async (req, res) => {
   try {
-    const issues = await db.select().from(goalIssues).orderBy(goalIssues.severity);
+    const issues = await getDb().select().from(goalIssues).orderBy(goalIssues.severity);
     res.json(issues);
   } catch (error: any) {
     console.error("Error fetching goal issues:", error);
@@ -14565,7 +14556,7 @@ router.post("/api/goal-issues", requireAuth, async (req, res) => {
       createdBy: req.user?.id
     };
     
-    const [newIssue] = await db.insert(goalIssues).values(issueData).returning();
+    const [newIssue] = await getDb().insert(goalIssues).values(issueData).returning();
     res.json(newIssue);
   } catch (error: any) {
     console.error("Error creating goal issue:", error);
@@ -14576,7 +14567,7 @@ router.post("/api/goal-issues", requireAuth, async (req, res) => {
 // Get goal actions
 router.get("/api/goal-actions", requireAuth, async (req, res) => {
   try {
-    const actions = await db.select().from(goalActions).orderBy(goalActions.priority);
+    const actions = await getDb().select().from(goalActions).orderBy(goalActions.priority);
     res.json(actions);
   } catch (error: any) {
     console.error("Error fetching goal actions:", error);
@@ -14592,7 +14583,7 @@ router.post("/api/goal-actions", requireAuth, async (req, res) => {
       createdBy: req.user?.id
     };
     
-    const [newAction] = await db.insert(goalActions).values(actionData).returning();
+    const [newAction] = await getDb().insert(goalActions).values(actionData).returning();
     res.json(newAction);
   } catch (error: any) {
     console.error("Error creating goal action:", error);
@@ -14603,7 +14594,7 @@ router.post("/api/goal-actions", requireAuth, async (req, res) => {
 // Get goal KPIs
 router.get("/api/goal-kpis", requireAuth, async (req, res) => {
   try {
-    const kpis = await db.select().from(goalKpis).orderBy(goalKpis.kpiName);
+    const kpis = await getDb().select().from(goalKpis).orderBy(goalKpis.kpiName);
     res.json(kpis);
   } catch (error: any) {
     console.error("Error fetching goal KPIs:", error);
@@ -14619,7 +14610,7 @@ router.post("/api/goal-kpis", requireAuth, async (req, res) => {
       createdBy: req.user?.id
     };
     
-    const [newKpi] = await db.insert(goalKpis).values(kpiData).returning();
+    const [newKpi] = await getDb().insert(goalKpis).values(kpiData).returning();
     res.json(newKpi);
   } catch (error: any) {
     console.error("Error creating goal KPI:", error);
@@ -15432,7 +15423,7 @@ router.post("/api/onboarding/documents", requireAuth, onboardingUpload.single('d
     const { category, description, tags } = req.body;
 
     // Insert document record
-    const result = await db.execute(sql`
+    const result = await getDb().execute(sql`
       INSERT INTO onboarding_documents (
         user_id, document_name, document_type, file_path, file_size, 
         mime_type, category, description, tags
@@ -15454,7 +15445,7 @@ router.post("/api/onboarding/documents", requireAuth, onboardingUpload.single('d
 
     // Track agent activity for document analysis
     try {
-      await db.execute(sql`
+      await getDb().execute(sql`
         INSERT INTO agent_activity_tracking (agent_name, last_activity_time, status, activity_count, last_action, updated_at)
         VALUES ('Max AI', NOW(), 'idle', 1, 'Document Uploaded for Analysis', NOW())
         ON CONFLICT (agent_name) 
@@ -15515,7 +15506,7 @@ router.get("/api/onboarding/documents", requireAuth, async (req, res) => {
 
     query = sql`${query} ORDER BY upload_date DESC`;
 
-    const result = await db.execute(query);
+    const result = await getDb().execute(query);
 
     const documents = result.rows.map((doc: any) => ({
       id: doc.id,
@@ -15547,7 +15538,7 @@ router.delete("/api/onboarding/documents/:id", requireAuth, async (req, res) => 
     const userId = req.session?.user?.id || 1;
 
     // Get document to delete file
-    const docResult = await db.execute(sql`
+    const docResult = await getDb().execute(sql`
       SELECT file_path FROM onboarding_documents
       WHERE id = ${parseInt(id)} AND user_id = ${userId}
     `);
@@ -15559,7 +15550,7 @@ router.delete("/api/onboarding/documents/:id", requireAuth, async (req, res) => 
     const filePath = docResult.rows[0].file_path;
 
     // Delete from database
-    await db.execute(sql`
+    await getDb().execute(sql`
       DELETE FROM onboarding_documents
       WHERE id = ${parseInt(id)} AND user_id = ${userId}
     `);
@@ -15588,7 +15579,7 @@ router.post("/api/onboarding/documents/:id/analyze", requireAuth, async (req, re
     const userId = req.session?.user?.id || 1;
 
     // Get document
-    const docResult = await db.execute(sql`
+    const docResult = await getDb().execute(sql`
       SELECT * FROM onboarding_documents
       WHERE id = ${parseInt(id)} AND user_id = ${userId}
     `);
@@ -15600,7 +15591,7 @@ router.post("/api/onboarding/documents/:id/analyze", requireAuth, async (req, re
     const document = docResult.rows[0];
 
     // Update status to analyzing
-    await db.execute(sql`
+    await getDb().execute(sql`
       UPDATE onboarding_documents
       SET ai_analysis_status = 'analyzing'
       WHERE id = ${parseInt(id)}
@@ -15608,7 +15599,7 @@ router.post("/api/onboarding/documents/:id/analyze", requireAuth, async (req, re
 
     // Track agent activity
     try {
-      await db.execute(sql`
+      await getDb().execute(sql`
         INSERT INTO agent_activity_tracking (agent_name, last_activity_time, status, activity_count, last_action, updated_at)
         VALUES ('Max AI', NOW(), 'active', 1, 'Analyzing Onboarding Document', NOW())
         ON CONFLICT (agent_name) 
@@ -15665,7 +15656,7 @@ router.post("/api/onboarding/documents/:id/analyze", requireAuth, async (req, re
       };
 
       // Update document with analysis results
-      await db.execute(sql`
+      await getDb().execute(sql`
         UPDATE onboarding_documents
         SET 
           ai_analysis_status = 'completed',
@@ -15677,7 +15668,7 @@ router.post("/api/onboarding/documents/:id/analyze", requireAuth, async (req, re
 
       // Track agent completion
       try {
-        await db.execute(sql`
+        await getDb().execute(sql`
           INSERT INTO agent_activity_tracking (agent_name, last_activity_time, status, activity_count, last_action, updated_at)
           VALUES ('Max AI', NOW(), 'idle', 1, 'Document Analysis Complete', NOW())
           ON CONFLICT (agent_name) 
@@ -15700,7 +15691,7 @@ router.post("/api/onboarding/documents/:id/analyze", requireAuth, async (req, re
       console.error('AI analysis error:', aiError);
       
       // Mark as failed
-      await db.execute(sql`
+      await getDb().execute(sql`
         UPDATE onboarding_documents
         SET ai_analysis_status = 'failed'
         WHERE id = ${parseInt(id)}
@@ -15719,7 +15710,7 @@ router.get("/api/onboarding/documents/stats", requireAuth, async (req, res) => {
   try {
     const userId = req.session?.user?.id || 1;
 
-    const result = await db.execute(sql`
+    const result = await getDb().execute(sql`
       SELECT 
         category,
         COUNT(*) as count,
@@ -15741,7 +15732,7 @@ router.get("/api/onboarding/documents/stats", requireAuth, async (req, res) => {
 // Playbooks API
 router.get("/api/playbooks", requireAuth, async (req, res) => {
   try {
-    const result = await db.execute(sql`
+    const result = await getDb().execute(sql`
       SELECT 
         id,
         title,
@@ -15771,7 +15762,7 @@ router.post("/api/playbooks", requireAuth, async (req, res) => {
     const { title, description, content, agentId, category, tags } = req.body;
     const userId = req.session?.user?.id || 1;
 
-    const result = await db.execute(sql`
+    const result = await getDb().execute(sql`
       INSERT INTO playbooks (title, description, content, agent_id, category, tags, created_by, is_active, created_at, updated_at)
       VALUES (${title}, ${description}, ${content}, ${agentId}, ${category}, ${JSON.stringify(tags || [])}, ${userId}, true, NOW(), NOW())
       RETURNING id, title, description, content, agent_id, category, tags, is_active, created_by, created_at, updated_at
@@ -15789,7 +15780,7 @@ router.patch("/api/playbooks/:id", requireAuth, async (req, res) => {
     const { id } = req.params;
     const { title, description, content, agentId, category } = req.body;
 
-    const result = await db.execute(sql`
+    const result = await getDb().execute(sql`
       UPDATE playbooks
       SET 
         title = ${title},
@@ -15923,7 +15914,7 @@ router.get("/api/onboarding/templates", requireAuth, async (req, res) => {
     
     query = sql`${query} ORDER BY ot.created_at DESC`;
     
-    const result = await db.execute(query);
+    const result = await getDb().execute(query);
     res.json(result.rows || []);
   } catch (error: any) {
     console.error('Error fetching onboarding templates:', error);
@@ -15937,7 +15928,7 @@ router.post("/api/onboarding/templates", requireAuth, async (req, res) => {
     const { name, description, industry, plantType, phases, goals, estimatedDurationDays, isPublic } = req.body;
     const userId = req.session?.user?.id || 1;
     
-    const result = await db.execute(sql`
+    const result = await getDb().execute(sql`
       INSERT INTO onboarding_templates (
         name, description, industry, plant_type, phases, goals, 
         estimated_duration_days, is_public, created_by, created_at, updated_at
@@ -15995,7 +15986,7 @@ router.get("/api/onboarding/plants", requireAuth, async (req, res) => {
     
     query = sql`${query} ORDER BY po.created_at DESC`;
     
-    const result = await db.execute(query);
+    const result = await getDb().execute(query);
     res.json(result.rows || []);
   } catch (error: any) {
     console.error('Error fetching plant onboarding:', error);
@@ -16020,13 +16011,13 @@ router.post("/api/onboarding/plants", requireAuth, async (req, res) => {
     // If template is provided, fetch its phases and goals
     let templateData = null;
     if (templateId) {
-      const templateResult = await db.execute(sql`
+      const templateResult = await getDb().execute(sql`
         SELECT phases, goals FROM onboarding_templates WHERE id = ${templateId}
       `);
       templateData = templateResult.rows[0];
     }
     
-    const result = await db.execute(sql`
+    const result = await getDb().execute(sql`
       INSERT INTO plant_onboarding (
         plant_id, template_id, name, status, start_date, 
         target_completion_date, custom_phases, custom_goals,
@@ -16045,7 +16036,7 @@ router.post("/api/onboarding/plants", requireAuth, async (req, res) => {
     // Create phase entries if template data exists
     if (templateData && templateData.phases) {
       for (const phase of templateData.phases as any[]) {
-        await db.execute(sql`
+        await getDb().execute(sql`
           INSERT INTO plant_onboarding_phases (
             onboarding_id, phase_id, phase_name, status, progress,
             tasks, milestones, total_tasks, updated_at
@@ -16121,7 +16112,7 @@ router.get("/api/onboarding/plants/:id/phases", requireAuth, async (req, res) =>
   try {
     const { id } = req.params;
     
-    const result = await db.execute(sql`
+    const result = await getDb().execute(sql`
       SELECT * FROM plant_onboarding_phases
       WHERE onboarding_id = ${parseInt(id)}
       ORDER BY phase_id
@@ -16141,7 +16132,7 @@ router.patch("/api/onboarding/phases/:id", requireAuth, async (req, res) => {
     const { status, progress, completedTasks, notes } = req.body;
     const userId = req.session?.user?.id || 1;
     
-    const result = await db.execute(sql`
+    const result = await getDb().execute(sql`
       UPDATE plant_onboarding_phases
       SET 
         status = COALESCE(${status}, status),
@@ -16160,7 +16151,7 @@ router.patch("/api/onboarding/phases/:id", requireAuth, async (req, res) => {
     
     // Update overall progress in parent onboarding
     const phaseData = result.rows[0];
-    await db.execute(sql`
+    await getDb().execute(sql`
       UPDATE plant_onboarding po
       SET overall_progress = (
         SELECT AVG(progress)::integer
@@ -16183,7 +16174,7 @@ router.get("/api/onboarding/plants/:id/metrics", requireAuth, async (req, res) =
   try {
     const { id } = req.params;
     
-    const result = await db.execute(sql`
+    const result = await getDb().execute(sql`
       SELECT * FROM plant_onboarding_metrics
       WHERE onboarding_id = ${parseInt(id)}
       ORDER BY measured_at DESC
@@ -16202,7 +16193,7 @@ router.post("/api/onboarding/plants/:id/metrics", requireAuth, async (req, res) 
     const { id } = req.params;
     const { metricName, metricValue, metricUnit, targetValue, status, notes } = req.body;
     
-    const result = await db.execute(sql`
+    const result = await getDb().execute(sql`
       INSERT INTO plant_onboarding_metrics (
         onboarding_id, metric_name, metric_value, metric_unit,
         target_value, status, notes, measured_at
@@ -16512,7 +16503,7 @@ router.post("/api/routing-intelligence/generate", requireAuth, async (req, res) 
 // Get all roadmap features
 router.get("/api/roadmap-features", async (req, res) => {
   try {
-    const result = await db.execute(sql`
+    const result = await getDb().execute(sql`
       SELECT * FROM roadmap_features 
       ORDER BY display_order ASC, created_at DESC
     `);
@@ -16538,7 +16529,7 @@ router.post("/api/roadmap-features/bulk", async (req, res) => {
     for (const feature of features) {
       try {
         // Check if feature already exists
-        const existing = await db.execute(sql`
+        const existing = await getDb().execute(sql`
           SELECT id FROM roadmap_features WHERE feature_id = ${feature.id}
         `);
         
@@ -16548,7 +16539,7 @@ router.post("/api/roadmap-features/bulk", async (req, res) => {
         }
         
         // Insert new feature
-        const result = await db.execute(sql`
+        const result = await getDb().execute(sql`
           INSERT INTO roadmap_features (
             feature_id, name, description, category, source, 
             priority, complexity, display_order, included, 
@@ -16603,7 +16594,7 @@ router.patch("/api/roadmap-features/:id", async (req, res) => {
       return res.status(400).json({ error: "No updates provided" });
     }
     
-    const result = await db.execute(sql.raw(`
+    const result = await getDb().execute(sql.raw(`
       UPDATE roadmap_features 
       SET ${updates.join(', ')} 
       WHERE id = ${id}
@@ -16631,14 +16622,14 @@ router.put("/api/roadmap-features/reorder", async (req, res) => {
     }
     
     for (let i = 0; i < featureIds.length; i++) {
-      await db.execute(sql`
+      await getDb().execute(sql`
         UPDATE roadmap_features 
         SET display_order = ${i + 1}, updated_at = NOW()
         WHERE id = ${featureIds[i]}
       `);
     }
     
-    const result = await db.execute(sql`
+    const result = await getDb().execute(sql`
       SELECT * FROM roadmap_features ORDER BY display_order ASC
     `);
     
@@ -16654,7 +16645,7 @@ router.delete("/api/roadmap-features/:id", async (req, res) => {
   try {
     const id = parseInt(req.params.id);
     
-    await db.execute(sql`
+    await getDb().execute(sql`
       DELETE FROM roadmap_features WHERE id = ${id}
     `);
     
@@ -16668,7 +16659,7 @@ router.delete("/api/roadmap-features/:id", async (req, res) => {
 // Clear all roadmap features
 router.delete("/api/roadmap-features", async (req, res) => {
   try {
-    await db.execute(sql`DELETE FROM roadmap_features`);
+    await getDb().execute(sql`DELETE FROM roadmap_features`);
     res.json({ success: true });
   } catch (error: any) {
     console.error("Error clearing roadmap features:", error);
@@ -16697,7 +16688,7 @@ router.post("/api/roadmap-features/finalize", async (req, res) => {
           : (feature.requirements || []);
         
         // Create customer requirement for this feature (entering modeling phase)
-        const result = await db.execute(sql`
+        const result = await getDb().execute(sql`
           INSERT INTO customer_requirements (
             customer_name,
             segment,
@@ -16733,7 +16724,7 @@ router.post("/api/roadmap-features/finalize", async (req, res) => {
         
         // Mark this feature as promoted in roadmap_features
         if (feature.dbId) {
-          await db.execute(sql`
+          await getDb().execute(sql`
             UPDATE roadmap_features 
             SET status = 'promoted', updated_at = NOW()
             WHERE id = ${feature.dbId}
@@ -16745,7 +16736,7 @@ router.post("/api/roadmap-features/finalize", async (req, res) => {
     }
     
     // Clear promoted features from roadmap
-    await db.execute(sql`
+    await getDb().execute(sql`
       DELETE FROM roadmap_features WHERE status = 'promoted'
     `);
     

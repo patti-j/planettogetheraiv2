@@ -104,6 +104,18 @@ export const db = dbConnectionFailed ? null : drizzle(activeConnection, {
   logger: process.env.NODE_ENV === 'development'
 });
 
+// Type for the database when it's known to be non-null
+export type DbType = NonNullable<typeof db>;
+
+// Type-safe database accessor - throws if db is null
+// Use this in route handlers after requireDbMiddleware has verified db availability
+export function getDb(): DbType {
+  if (!db) {
+    throw new Error('Database connection not available. Please configure PRODUCTION_DATABASE_URL in deployment settings.');
+  }
+  return db;
+}
+
 // Export direct SQL connection for fallback queries
 export const directSql = activeConnection;
 
