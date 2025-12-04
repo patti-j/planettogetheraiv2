@@ -134,9 +134,9 @@ export default function App() {
   const publicPaths = ['/', '/home', '/login', '/portal/login', '/marketing', '/pricing', '/solutions-comparison', '/whats-coming', '/clear-storage', '/technology-stack', '/demo-tour', '/presentation', '/theory-of-constraints', '/roadmap', '/analytics-reporting', '/ai-features', '/supply-chain', '/security-features', '/integration-api', '/investors', '/enterprise-scalability'];
   const isPublicPath = publicPaths.includes(currentPath);
   
-  // In development mode, redirect from root path to login page
+  // In development mode, redirect from root/home paths to login page
   useEffect(() => {
-    if (isDev && currentPath === '/') {
+    if (isDev && (currentPath === '/' || currentPath === '/home')) {
       setLocation('/login');
     }
   }, [isDev, currentPath, setLocation]);

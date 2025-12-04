@@ -21,7 +21,7 @@ import { eq, sql } from "drizzle-orm";
 import { backgroundJobManager } from "./background-jobs";
 
 // Build version marker for deployment tracking (forces new deployment when changed)
-const BUILD_VERSION = "20251204_190200";
+const BUILD_VERSION = "20251204_195500";
 
 // Extend session interface
 declare module "express-session" {
@@ -45,16 +45,13 @@ app.get('/ping', (req, res) => {
   res.status(200).send('pong');
 });
 
-// Root health check - MUST respond immediately with no conditional logic
-// This is the primary endpoint Replit uses for autoscale health checks
-app.get('/', (req, res, next) => {
-  // Check Accept header - if not requesting HTML, it's a health check
-  const acceptHeader = req.headers.accept || '';
-  if (!acceptHeader.includes('text/html')) {
-    return res.status(200).send('OK');
-  }
-  // Browser requests fall through to static file serving (registered later)
-  next();
+// Root health check - MUST respond immediately with 200 OK
+// This is the primary endpoint Replit/Cloud Run uses for autoscale health checks
+// Returns instant HTML that redirects browsers to /home while satisfying health checks
+app.get('/', (req, res) => {
+  // Always return 200 OK immediately - critical for health checks
+  // Include minimal HTML redirect for browsers (health checks ignore HTML content)
+  res.status(200).send(`<!DOCTYPE html><html><head><meta http-equiv="refresh" content="0;url=/home"></head><body></body></html>`);
 });
 
 // Middleware (after health checks)
