@@ -128,11 +128,18 @@ function useAuthStatus() {
 
 export default function App() {
   const { isAuthenticated, isLoading } = useAuthStatus();
-  const [currentPath] = useLocation();
+  const [currentPath, setLocation] = useLocation();
   // Public paths that show the marketing website (same for dev and production)
   const isDev = import.meta.env.MODE === 'development';
   const publicPaths = ['/', '/home', '/login', '/portal/login', '/marketing', '/pricing', '/solutions-comparison', '/whats-coming', '/clear-storage', '/technology-stack', '/demo-tour', '/presentation', '/theory-of-constraints', '/roadmap', '/analytics-reporting', '/ai-features', '/supply-chain', '/security-features', '/integration-api', '/investors', '/enterprise-scalability'];
   const isPublicPath = publicPaths.includes(currentPath);
+  
+  // In development mode, redirect from root path to login page
+  useEffect(() => {
+    if (isDev && currentPath === '/') {
+      setLocation('/login');
+    }
+  }, [isDev, currentPath, setLocation]);
   
   // Check if this is a portal route - handle separately from main app
   const isPortalRoute = currentPath.startsWith('/portal');
