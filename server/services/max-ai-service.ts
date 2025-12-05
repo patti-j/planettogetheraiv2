@@ -570,23 +570,63 @@ Format as: "Based on what I remember about you: [relevant info]" or return empty
         ? Math.round((job.completed_operations / job.total_operations) * 100)
         : 0;
       
-      // Determine on-time status
+      // Determine on-time status - MUST consider TODAY's date
       const scheduledEnd = job.last_op_end || job.manufacturing_release_date;
       const needDate = job.need_date_time;
       let onTimeStatus = 'unknown';
       let daysEarlyOrLate = 0;
       
-      if (scheduledEnd && needDate) {
-        const schedEndDate = new Date(scheduledEnd);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0); // Normalize to start of day
+      
+      if (needDate) {
         const needByDate = new Date(needDate);
-        const daysDiff = Math.floor((needByDate.getTime() - schedEndDate.getTime()) / (1000 * 60 * 60 * 24));
+        needByDate.setHours(0, 0, 0, 0);
         
-        if (daysDiff >= 0) {
-          onTimeStatus = 'on-time';
-          daysEarlyOrLate = daysDiff; // positive means early
+        // Check if job is complete
+        const isComplete = progressPercentage >= 100;
+        
+        if (isComplete) {
+          // Job is finished - compare when it finished vs when it was due
+          if (scheduledEnd) {
+            const schedEndDate = new Date(scheduledEnd);
+            const daysDiff = Math.floor((needByDate.getTime() - schedEndDate.getTime()) / (1000 * 60 * 60 * 24));
+            if (daysDiff >= 0) {
+              onTimeStatus = 'on-time';
+              daysEarlyOrLate = daysDiff;
+            } else {
+              onTimeStatus = 'late';
+              daysEarlyOrLate = Math.abs(daysDiff);
+            }
+          } else {
+            onTimeStatus = 'on-time';
+            daysEarlyOrLate = 0;
+          }
         } else {
-          onTimeStatus = 'late';
-          daysEarlyOrLate = Math.abs(daysDiff); // negative means late
+          // Job is NOT complete - check if we're past the need date
+          const daysPastDue = Math.floor((today.getTime() - needByDate.getTime()) / (1000 * 60 * 60 * 24));
+          
+          if (daysPastDue > 0) {
+            // Need date has passed and job isn't complete = LATE
+            onTimeStatus = 'late';
+            daysEarlyOrLate = daysPastDue;
+          } else if (scheduledEnd) {
+            // Need date hasn't passed yet - check scheduled completion
+            const schedEndDate = new Date(scheduledEnd);
+            const daysDiff = Math.floor((needByDate.getTime() - schedEndDate.getTime()) / (1000 * 60 * 60 * 24));
+            if (daysDiff >= 0) {
+              onTimeStatus = 'on-time';
+              daysEarlyOrLate = daysDiff;
+            } else {
+              onTimeStatus = 'late';
+              daysEarlyOrLate = Math.abs(daysDiff);
+            }
+          } else {
+            // No scheduled end, but still have time
+            const daysRemaining = Math.abs(daysPastDue);
+            onTimeStatus = 'on-time';
+            daysEarlyOrLate = daysRemaining;
+          }
         }
       }
       
@@ -615,9 +655,13 @@ Format as: "Based on what I remember about you: [relevant info]" or return empty
           onTimeStatus,
           daysEarlyOrLate,
           statusMessage: onTimeStatus === 'on-time' 
-            ? `Scheduled to complete ${daysEarlyOrLate} days before need date`
+            ? (progressPercentage >= 100 
+                ? `Completed ${daysEarlyOrLate} days before need date`
+                : `Scheduled to complete ${daysEarlyOrLate} days before need date`)
             : onTimeStatus === 'late'
-            ? `Scheduled to complete ${daysEarlyOrLate} days after need date - ATTENTION REQUIRED`
+            ? (progressPercentage >= 100
+                ? `Completed ${daysEarlyOrLate} days after need date`
+                : `OVERDUE by ${daysEarlyOrLate} days - ATTENTION REQUIRED`)
             : 'Unable to determine on-time status'
         }
       };
