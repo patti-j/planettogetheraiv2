@@ -1698,18 +1698,48 @@ export class ProductionSchedulingAgent extends BaseAgent {
       }
       
       const progressPct = totalOps > 0 ? Math.round((completedOps / totalOps) * 100) : 0;
+      const isComplete = progressPct >= 100;
       
-      // Check on-time status
+      // Check on-time status - MUST consider TODAY's date
       let onTimeStatus = '❓ Unknown';
       let daysEarlyOrLate = 0;
-      if (jobData.need_date_time && maxEnd) {
+      
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      
+      if (jobData.need_date_time) {
         const needDate = new Date(jobData.need_date_time);
-        const daysDiff = Math.ceil((needDate.getTime() - maxEnd.getTime()) / (1000 * 60 * 60 * 24));
-        daysEarlyOrLate = Math.abs(daysDiff);
-        if (daysDiff >= 0) {
-          onTimeStatus = `✅ **ON-TIME** - ${daysEarlyOrLate} days early`;
+        needDate.setHours(0, 0, 0, 0);
+        
+        if (isComplete) {
+          // Job is done - compare scheduled end vs need date
+          if (maxEnd) {
+            const daysDiff = Math.ceil((needDate.getTime() - maxEnd.getTime()) / (1000 * 60 * 60 * 24));
+            daysEarlyOrLate = Math.abs(daysDiff);
+            if (daysDiff >= 0) {
+              onTimeStatus = `✅ **ON-TIME** - Completed ${daysEarlyOrLate} days early`;
+            } else {
+              onTimeStatus = `⚠️ **LATE** - Completed ${daysEarlyOrLate} days late`;
+            }
+          }
         } else {
-          onTimeStatus = `⚠️ **LATE** - ${daysEarlyOrLate} days late (ATTENTION REQUIRED)`;
+          // Job NOT complete - check if need date has passed
+          const daysPastDue = Math.floor((today.getTime() - needDate.getTime()) / (1000 * 60 * 60 * 24));
+          
+          if (daysPastDue > 0) {
+            // Need date has passed and job isn't done = LATE
+            daysEarlyOrLate = daysPastDue;
+            onTimeStatus = `🚨 **LATE** - ${daysEarlyOrLate} days OVERDUE (ATTENTION REQUIRED)`;
+          } else if (maxEnd) {
+            // Need date still in future - check scheduled completion
+            const daysDiff = Math.ceil((needDate.getTime() - maxEnd.getTime()) / (1000 * 60 * 60 * 24));
+            daysEarlyOrLate = Math.abs(daysDiff);
+            if (daysDiff >= 0) {
+              onTimeStatus = `✅ **ON-TIME** - Scheduled ${daysEarlyOrLate} days early`;
+            } else {
+              onTimeStatus = `⚠️ **AT RISK** - Scheduled ${daysEarlyOrLate} days late`;
+            }
+          }
         }
       }
       
