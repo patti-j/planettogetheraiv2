@@ -1189,13 +1189,30 @@ export class ProductionSchedulingAgent extends BaseAgent {
       
       // PRIORITY: Check for SPECIFIC job query FIRST (e.g., "status of job 64", "job 001", "what about job 64")
       // This must come before the general status query check
-      const specificJobIdMatch = message.match(/(?:job|order|jo|mo)[-\s#]*(\d+|[A-Z0-9-]+)/i) ||
-                                  message.match(/(?:status\s+of|what\s+about|tell\s+me\s+about|show\s+me|details?\s+(?:of|for|about)?)\s+(?:job\s+)?([A-Za-z0-9-]+)/i);
+      // Look specifically for numeric job IDs or alphanumeric codes like "BREW-001"
+      const jobIdPatterns = [
+        /job[-\s#]*(\d+)/i,                           // "job 64", "job #64", "job-64"
+        /job[-\s#]*([A-Z]+-\d+)/i,                    // "job BREW-001"
+        /(?:status|details?|info)\s+(?:of|for|about)\s+job[-\s#]*(\d+)/i,  // "status of job 64"
+        /(?:status|details?|info)\s+(?:of|for|about)\s+job[-\s#]*([A-Z]+-\d+)/i,  // "status of job BREW-001"
+      ];
+      
+      let specificJobIdMatch = null;
+      for (const pattern of jobIdPatterns) {
+        const match = message.match(pattern);
+        if (match && match[1]) {
+          specificJobIdMatch = match;
+          break;
+        }
+      }
       
       if (specificJobIdMatch && specificJobIdMatch[1]) {
         const jobId = specificJobIdMatch[1].trim();
-        console.log(`[Production Scheduling Agent] Looking up specific job: ${jobId}`);
-        return await this.getSpecificJobStatus(jobId, context);
+        // Make sure it's actually a job ID (number or alphanumeric code), not a word like "list" or "status"
+        if (/^\d+$/.test(jobId) || /^[A-Z]+-\d+$/i.test(jobId)) {
+          console.log(`[Production Scheduling Agent] Looking up specific job: ${jobId}`);
+          return await this.getSpecificJobStatus(jobId, context);
+        }
       }
       
       // Check for GENERAL status queries (only if no specific job was found)
@@ -1538,10 +1555,10 @@ export class ProductionSchedulingAgent extends BaseAgent {
       
       // Get operations for this job
       const operations = await db.execute(sql`
-        SELECT id, name, sequence_num, scheduled_start, scheduled_end, percent_finished
+        SELECT id, name, sequence_number, scheduled_start, scheduled_end, percent_finished
         FROM ptjoboperations
         WHERE job_id = ${jobData.id}
-        ORDER BY sequence_num ASC
+        ORDER BY sequence_number ASC
       `);
       
       if (!operations.rows || operations.rows.length === 0) {
@@ -1651,10 +1668,10 @@ export class ProductionSchedulingAgent extends BaseAgent {
       
       // Get operations for this job
       const operations = await db.execute(sql`
-        SELECT id, name, sequence_num, scheduled_start, scheduled_end, percent_finished
+        SELECT id, name, sequence_number, scheduled_start, scheduled_end, percent_finished
         FROM ptjoboperations
         WHERE job_id = ${jobData.id}
-        ORDER BY sequence_num ASC
+        ORDER BY sequence_number ASC
       `);
       
       // Calculate progress
