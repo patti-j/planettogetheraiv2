@@ -3383,13 +3383,51 @@ export async function processCommand(command: string, attachments: AttachmentFil
   try {
     console.log("Processing AI command:", { command, attachmentsCount: attachments.length });
 
-    // PRIORITY: Check for specific job lookup queries FIRST
+    // PRIORITY 1: Check with AgentRegistry for specialized agents first
+    // This routes job queries to Production Scheduling Agent, FP&A to FP&A Agent, etc.
+    try {
+      const { agentRegistry } = await import("./services/agents/agent-registry");
+      
+      // Create context for the agent
+      const context = {
+        userId: 1, // Default user ID
+        permissions: ['*'], // Full permissions for now
+        sessionId: `session-${Date.now()}`,
+        metadata: {}
+      };
+      
+      // Check if a specialized agent can handle this
+      const bestAgent = agentRegistry.findBestAgent(command, context.permissions);
+      
+      if (bestAgent) {
+        console.log(`[AI Agent] Delegating to specialized agent: ${bestAgent.name}`);
+        const agentResponse = await bestAgent.process(command, context);
+        
+        if (agentResponse && !agentResponse.error) {
+          console.log(`[AI Agent] ✅ ${bestAgent.name} handled the request`);
+          return {
+            success: true,
+            message: agentResponse.content,
+            data: agentResponse.data || null,
+            actions: agentResponse.actions || []
+          };
+        } else if (agentResponse && agentResponse.error) {
+          console.log(`[AI Agent] ⚠️ ${bestAgent.name} returned an error, falling back`);
+          // Fall through to OpenAI
+        }
+      }
+    } catch (registryError) {
+      console.error(`[AI Agent] AgentRegistry error, falling through:`, registryError);
+      // Fall through to direct lookup and OpenAI
+    }
+
+    // PRIORITY 2: Direct job lookup as fallback
     // Match patterns like: "job 64", "status of job 64", "what about job 64", "show me job 6"
     const jobNumberMatch = command.match(/(?:job|order|jo|mo)[-\s#]*(\d+|[A-Z0-9-]+)/i);
     
     if (jobNumberMatch && jobNumberMatch[1]) {
       const jobNumber = jobNumberMatch[1];
-      console.log(`[AI Agent] Looking up job: ${jobNumber}`);
+      console.log(`[AI Agent] Direct job lookup: ${jobNumber}`);
       
       try {
         // Import MaxAIService to get job status
@@ -3463,7 +3501,7 @@ export async function processCommand(command: string, attachments: AttachmentFil
       }
     }
 
-    // Process with OpenAI for simplicity and reliability
+    // FALLBACK: Process with OpenAI for simplicity and reliability
     if (attachments && attachments.length > 0) {
       // Handle image attachments with OpenAI Vision
       const imageAttachments = attachments.filter(a => a.type.startsWith('image/'));
