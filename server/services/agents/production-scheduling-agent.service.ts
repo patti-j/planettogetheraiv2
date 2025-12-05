@@ -1187,13 +1187,23 @@ export class ProductionSchedulingAgent extends BaseAgent {
         }
       }
       
-      // Check for status queries
-      if (lowerMessage.includes('status')) {
+      // PRIORITY: Check for SPECIFIC job query FIRST (e.g., "status of job 64", "job 001", "what about job 64")
+      // This must come before the general status query check
+      const specificJobIdMatch = message.match(/(?:job|order|jo|mo)[-\s#]*(\d+|[A-Z0-9-]+)/i) ||
+                                  message.match(/(?:status\s+of|what\s+about|tell\s+me\s+about|show\s+me|details?\s+(?:of|for|about)?)\s+(?:job\s+)?([A-Za-z0-9-]+)/i);
+      
+      if (specificJobIdMatch && specificJobIdMatch[1]) {
+        const jobId = specificJobIdMatch[1].trim();
+        console.log(`[Production Scheduling Agent] Looking up specific job: ${jobId}`);
+        return await this.getSpecificJobStatus(jobId, context);
+      }
+      
+      // Check for GENERAL status queries (only if no specific job was found)
+      if (lowerMessage.includes('status') && !specificJobIdMatch) {
         return await this.getJobsByStatus(context);
       }
       
-      // Check for specific job query by name/ID
-      // Improved to capture multi-word job names
+      // Check for specific job query by name/ID (fallback for multi-word names)
       const specificJobMatch = message.match(/(?:what is|tell me about|show me|show details of|details? (?:of|for|about)?)\s+(?:job\s+)?(.+?)(?:\s*$|\?)/i);
       if (specificJobMatch) {
         // Clean up the captured job name
@@ -1598,6 +1608,150 @@ export class ProductionSchedulingAgent extends BaseAgent {
       return { content: response, error: false };
     } catch (error: any) {
       throw error;
+    }
+  }
+  
+  private async getSpecificJobStatus(jobId: string, context: AgentContext): Promise<AgentResponse> {
+    try {
+      console.log(`[Production Scheduling Agent] Getting status for job: ${jobId}`);
+      
+      // Try to match by ID, name, or external_id - search for number patterns
+      let job = await db.execute(sql`
+        SELECT id, name, external_id, priority, need_date_time, scheduled_status, 
+               product_code, product_description, quantity
+        FROM ptjobs
+        WHERE id::text = ${jobId} 
+           OR name ILIKE ${'%' + jobId + '%'}
+           OR external_id ILIKE ${'%' + jobId + '%'}
+        LIMIT 1
+      `);
+      
+      if (!job.rows || job.rows.length === 0) {
+        // Try with just the number
+        const numericId = jobId.replace(/\D/g, '');
+        if (numericId) {
+          job = await db.execute(sql`
+            SELECT id, name, external_id, priority, need_date_time, scheduled_status,
+                   product_code, product_description, quantity
+            FROM ptjobs
+            WHERE id::text = ${numericId}
+               OR name ILIKE ${'%' + numericId + '%'}
+               OR external_id ILIKE ${'%' + numericId + '%'}
+            LIMIT 1
+          `);
+        }
+      }
+      
+      if (!job.rows || job.rows.length === 0) {
+        return { 
+          content: `I couldn't find Job ${jobId} in the system. Please check the job number and try again.\n\nYou can say "show all jobs" to see available jobs.`, 
+          error: false 
+        };
+      }
+      
+      const jobData = job.rows[0] as any;
+      
+      // Get operations for this job
+      const operations = await db.execute(sql`
+        SELECT id, name, sequence_num, scheduled_start, scheduled_end, percent_finished
+        FROM ptjoboperations
+        WHERE job_id = ${jobData.id}
+        ORDER BY sequence_num ASC
+      `);
+      
+      // Calculate progress
+      const totalOps = operations.rows?.length || 0;
+      let completedOps = 0;
+      let inProgressOps = 0;
+      let minStart: Date | null = null;
+      let maxEnd: Date | null = null;
+      
+      if (operations.rows) {
+        for (const op of operations.rows as any[]) {
+          if (op.percent_finished >= 100) completedOps++;
+          else if (op.percent_finished > 0) inProgressOps++;
+          
+          if (op.scheduled_start) {
+            const start = new Date(op.scheduled_start);
+            if (!minStart || start < minStart) minStart = start;
+          }
+          if (op.scheduled_end) {
+            const end = new Date(op.scheduled_end);
+            if (!maxEnd || end > maxEnd) maxEnd = end;
+          }
+        }
+      }
+      
+      const progressPct = totalOps > 0 ? Math.round((completedOps / totalOps) * 100) : 0;
+      
+      // Check on-time status
+      let onTimeStatus = '❓ Unknown';
+      let daysEarlyOrLate = 0;
+      if (jobData.need_date_time && maxEnd) {
+        const needDate = new Date(jobData.need_date_time);
+        const daysDiff = Math.ceil((needDate.getTime() - maxEnd.getTime()) / (1000 * 60 * 60 * 24));
+        daysEarlyOrLate = Math.abs(daysDiff);
+        if (daysDiff >= 0) {
+          onTimeStatus = `✅ **ON-TIME** - ${daysEarlyOrLate} days early`;
+        } else {
+          onTimeStatus = `⚠️ **LATE** - ${daysEarlyOrLate} days late (ATTENTION REQUIRED)`;
+        }
+      }
+      
+      // Build response
+      const priorityLabel = jobData.priority === 1 ? 'Highest' :
+                           jobData.priority === 2 ? 'High' :
+                           jobData.priority === 3 ? 'Medium' :
+                           jobData.priority === 4 ? 'Low' : 'Lowest';
+      
+      let response = `📊 **Job ${jobData.name || jobData.external_id || jobId} Status**\n\n`;
+      
+      if (jobData.product_code || jobData.product_description) {
+        response += `**Product:** ${jobData.product_description || jobData.product_code}\n`;
+      }
+      response += `**Priority:** ${jobData.priority} (${priorityLabel})\n`;
+      response += `**Current Status:** ${jobData.scheduled_status || 'Scheduled'}\n\n`;
+      
+      response += `📅 **SCHEDULE PERFORMANCE:**\n`;
+      response += `${onTimeStatus}\n`;
+      if (jobData.need_date_time) {
+        response += `• Need Date: ${new Date(jobData.need_date_time).toLocaleDateString()}\n`;
+      }
+      if (maxEnd) {
+        response += `• Scheduled End: ${maxEnd.toLocaleDateString()}\n`;
+      }
+      response += '\n';
+      
+      response += `**Progress Status:** `;
+      if (totalOps > 0) {
+        if (inProgressOps > 0 || (completedOps > 0 && completedOps < totalOps)) {
+          response += `IN PROGRESS (${progressPct}% complete)\n`;
+          response += `• ${completedOps} of ${totalOps} operations completed\n`;
+          if (inProgressOps > 0) {
+            response += `• ${inProgressOps} operations currently running\n`;
+          }
+          response += `• ${totalOps - completedOps - inProgressOps} operations remaining\n`;
+        } else if (completedOps === totalOps) {
+          response += `✅ COMPLETED - All operations finished\n`;
+        } else {
+          response += `NOT STARTED - 0 of ${totalOps} operations completed\n`;
+        }
+      } else {
+        response += `No operations tracked for this job\n`;
+      }
+      
+      return { 
+        content: response, 
+        error: false,
+        confidence: 0.95,
+        data: { job: jobData, operations: operations.rows }
+      };
+    } catch (error: any) {
+      console.error(`[Production Scheduling Agent] Error getting job status:`, error);
+      return {
+        content: `I encountered an error looking up job ${jobId}: ${error.message}`,
+        error: true
+      };
     }
   }
   
