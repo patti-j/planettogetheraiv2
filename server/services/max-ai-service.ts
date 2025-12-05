@@ -632,18 +632,19 @@ Format as: "Based on what I remember about you: [relevant info]" or return empty
     try {
       const lowerQuery = query.toLowerCase();
       
-      // Handle specific job status queries
-      if (lowerQuery.includes('status') && (lowerQuery.includes('job') || lowerQuery.includes('order'))) {
-        // Extract job number if mentioned
-        const jobNumberMatch = query.match(/(?:job|order|jo|mo)[-\s#]*([A-Z0-9-]+)/i);
+      // Handle specific job queries (status, info, details, or just mentioning a job number)
+      // Match patterns like: "job 64", "status of job 64", "what about job 64", "show me job 64"
+      const jobNumberMatch = query.match(/(?:job|order|jo|mo)[-\s#]*(\d+|[A-Z0-9-]+)/i);
+      
+      if (jobNumberMatch && jobNumberMatch[1]) {
+        // User is asking about a specific job - always look it up
+        const jobNumber = jobNumberMatch[1];
+        console.log(`[Max AI] Looking up job: ${jobNumber}`);
+        const jobStatus = await this.getJobStatus(jobNumber);
         
-        if (jobNumberMatch && jobNumberMatch[1]) {
-          const jobNumber = jobNumberMatch[1];
-          const jobStatus = await this.getJobStatus(jobNumber);
-          
-          if (!jobStatus) {
-            return `I couldn't find Job ${jobNumber} in the system. Please check the job number and try again.`;
-          }
+        if (!jobStatus) {
+          return `I couldn't find Job ${jobNumber} in the system. Please check the job number and try again. You can say "list jobs" to see available jobs.`;
+        }
           
           // Build comprehensive status message
           let statusMessage = `📊 **Job ${jobStatus.jobNumber} Status**\n\n`;
@@ -691,11 +692,7 @@ Format as: "Based on what I remember about you: [relevant info]" or return empty
             statusMessage += `No operations tracked for this job\n`;
           }
           
-          return statusMessage;
-        }
-        
-        // No specific job number - provide general guidance
-        return `Please specify a job number to check its status. For example: "What's the status of Job 2001?" or "Check status of MO-30287"`;
+        return statusMessage;
       }
       
       // Handle job-related queries
