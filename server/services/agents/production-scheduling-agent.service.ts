@@ -1566,8 +1566,8 @@ export class ProductionSchedulingAgent extends BaseAgent {
       }
       
       let response = `**${operations.rows.length} operations:**\n\n`;
-      const opNames = operations.rows.map(op => op.name).join(' → ');
-      response += opNames;
+      const opList = (operations.rows as any[]).map((op, idx) => `${idx + 1}. ${op.name}`).join('\n');
+      response += opList;
       response += '\n\nWould you like to see the scheduled timelines for these operations?';
       
       return { content: response, error: false };
