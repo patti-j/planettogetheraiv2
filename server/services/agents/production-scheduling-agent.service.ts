@@ -1617,8 +1617,7 @@ export class ProductionSchedulingAgent extends BaseAgent {
       
       // Try to match by ID, name, or external_id - search for number patterns
       let job = await db.execute(sql`
-        SELECT id, name, external_id, priority, need_date_time, scheduled_status, 
-               product_code, product_description, quantity
+        SELECT id, name, external_id, description, priority, need_date_time, scheduled_status
         FROM ptjobs
         WHERE id::text = ${jobId} 
            OR name ILIKE ${'%' + jobId + '%'}
@@ -1631,8 +1630,7 @@ export class ProductionSchedulingAgent extends BaseAgent {
         const numericId = jobId.replace(/\D/g, '');
         if (numericId) {
           job = await db.execute(sql`
-            SELECT id, name, external_id, priority, need_date_time, scheduled_status,
-                   product_code, product_description, quantity
+            SELECT id, name, external_id, description, priority, need_date_time, scheduled_status
             FROM ptjobs
             WHERE id::text = ${numericId}
                OR name ILIKE ${'%' + numericId + '%'}
