@@ -3393,8 +3393,8 @@ export async function processCommand(command: string, attachments: AttachmentFil
       
       try {
         // Import MaxAIService to get job status
-        const { maxAIService } = await import("./services/max-ai-service");
-        const jobStatus = await maxAIService.getJobStatus(jobNumber);
+        const { maxAI } = await import("./services/max-ai-service");
+        const jobStatus = await maxAI.getJobStatus(jobNumber);
         
         if (jobStatus) {
           // Build comprehensive status message
