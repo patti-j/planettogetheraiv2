@@ -3383,6 +3383,86 @@ export async function processCommand(command: string, attachments: AttachmentFil
   try {
     console.log("Processing AI command:", { command, attachmentsCount: attachments.length });
 
+    // PRIORITY: Check for specific job lookup queries FIRST
+    // Match patterns like: "job 64", "status of job 64", "what about job 64", "show me job 6"
+    const jobNumberMatch = command.match(/(?:job|order|jo|mo)[-\s#]*(\d+|[A-Z0-9-]+)/i);
+    
+    if (jobNumberMatch && jobNumberMatch[1]) {
+      const jobNumber = jobNumberMatch[1];
+      console.log(`[AI Agent] Looking up job: ${jobNumber}`);
+      
+      try {
+        // Import MaxAIService to get job status
+        const { maxAIService } = await import("./services/max-ai-service");
+        const jobStatus = await maxAIService.getJobStatus(jobNumber);
+        
+        if (jobStatus) {
+          // Build comprehensive status message
+          let statusMessage = `📊 **Job ${jobStatus.jobNumber} Status**\n\n`;
+          statusMessage += `**Product:** ${jobStatus.productName || jobStatus.productCode}\n`;
+          if (jobStatus.productDescription) {
+            statusMessage += `**Description:** ${jobStatus.productDescription}\n`;
+          }
+          statusMessage += `**Priority:** ${jobStatus.priority || 'Standard'}\n`;
+          statusMessage += `**Current Status:** ${jobStatus.status?.scheduledStatus || 'Scheduled'}\n\n`;
+          
+          // On-Time Status
+          statusMessage += `📅 **SCHEDULE PERFORMANCE:**\n`;
+          if (jobStatus.scheduling?.onTimeStatus === 'on-time') {
+            statusMessage += `✅ **ON-TIME** - ${jobStatus.scheduling.daysEarlyOrLate} DAYS EARLY\n`;
+          } else if (jobStatus.scheduling?.onTimeStatus === 'late') {
+            statusMessage += `⚠️ **LATE** - ${jobStatus.scheduling.daysEarlyOrLate} DAYS LATE (ATTENTION REQUIRED)\n`;
+          } else {
+            statusMessage += `❓ **SCHEDULE STATUS UNKNOWN**\n`;
+          }
+          
+          if (jobStatus.scheduling?.needDate) {
+            statusMessage += `• Need Date: ${new Date(jobStatus.scheduling.needDate).toLocaleDateString()}\n`;
+          }
+          if (jobStatus.scheduling?.scheduledEnd) {
+            statusMessage += `• Scheduled End: ${new Date(jobStatus.scheduling.scheduledEnd).toLocaleDateString()}\n`;
+          }
+          statusMessage += '\n';
+          
+          // Progress status
+          statusMessage += `**Progress Status:** `;
+          if (jobStatus.status?.totalOperations > 0) {
+            if (jobStatus.status.isInProgress) {
+              statusMessage += `IN PROGRESS (${jobStatus.status.progressPercentage}% complete)\n`;
+              statusMessage += `• ${jobStatus.status.completedOperations} of ${jobStatus.status.totalOperations} operations completed\n`;
+              if (jobStatus.status.inProgressOperations > 0) {
+                statusMessage += `• ${jobStatus.status.inProgressOperations} operations currently running\n`;
+              }
+              statusMessage += `• ${jobStatus.status.remainingOperations} operations remaining\n`;
+            } else if (jobStatus.status.completedOperations === jobStatus.status.totalOperations) {
+              statusMessage += `✅ COMPLETED - All operations finished\n`;
+            } else {
+              statusMessage += `NOT STARTED - 0 of ${jobStatus.status.totalOperations} operations completed\n`;
+            }
+          } else {
+            statusMessage += `No operations tracked for this job\n`;
+          }
+          
+          console.log(`[AI Agent] ✅ Job ${jobNumber} found, returning status`);
+          return {
+            success: true,
+            message: statusMessage,
+            data: jobStatus
+          };
+        } else {
+          console.log(`[AI Agent] Job ${jobNumber} not found in database`);
+          return {
+            success: true,
+            message: `I couldn't find Job ${jobNumber} in the system. Please check the job number and try again. You can say "list jobs" to see available jobs.`,
+            data: null
+          };
+        }
+      } catch (jobError) {
+        console.error(`[AI Agent] Error looking up job:`, jobError);
+        // Fall through to OpenAI if job lookup fails
+      }
+    }
+
     // Process with OpenAI for simplicity and reliability
     if (attachments && attachments.length > 0) {
       // Handle image attachments with OpenAI Vision
