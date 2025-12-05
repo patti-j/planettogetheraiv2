@@ -1,3 +1,32 @@
+2025.12.05
+
+WHAT I WORKED ON TODAY
+
+Production Deployment Fix - Orchestrator Timeout Resolution
+- Diagnosed production 503 errors caused by database initialization timeouts
+- Neon serverless database taking 120+ seconds to wake from cold start
+- Orchestrator tasks (admin-credentials, production-users) were blocking app startup
+- Fixed by making orchestrator skip ALL initialization tasks in production mode
+- Tasks are setup/maintenance operations, not runtime requirements - already configured in DB
+- Production mode now sets readyFlag=true immediately without any database operations
+- Health check endpoints (/, /health, /ping) respond instantly in production
+
+Health Check Strategy Improvements
+- Root `/` endpoint returns instant 200 OK with HTML meta-refresh redirect
+- No conditional logic or expensive operations in health check path
+- Meets Cloud Run requirements for fast health check responses
+
+Development Mode Enhancements
+- Development still runs initialization tasks with 30-second timeout
+- Automatic redirect from / and /home to /login for better dev experience
+- Build version updated to force fresh production deployment
+
+Deployment Process
+- Forced clean rebuild of production bundle
+- Guided user through shutting down stuck deployment (bdafe4f9)
+- Publishing new deployment with existing production database preserved
+
+---
 
 2025.12.03
 
