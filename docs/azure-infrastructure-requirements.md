@@ -23,7 +23,7 @@ PlanetTogether is an AI-first Factory Optimization Platform currently hosted on 
 | **Frontend** | React 18 + TypeScript | Vite build, Shadcn/UI, TailwindCSS |
 | **Backend** | Express.js + TypeScript | RESTful API, WebSocket support |
 | **Database** | PostgreSQL (Neon Serverless) | Drizzle ORM |
-| **AI/ML** | OpenAI API | GPT-4o, Whisper, TTS, Realtime API |
+| **AI/ML** | OpenAI API | GPT-5.1, Whisper, TTS, Realtime API |
 | **Session Storage** | PostgreSQL | connect-pg-simple |
 | **Gantt Charts** | Bryntum Scheduler Pro | Licensed component |
 | **Real-time** | WebSocket + SSE | Voice chat, live updates |

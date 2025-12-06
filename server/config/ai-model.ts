@@ -1,21 +1,40 @@
 // Centralized AI Model Configuration
 // This file defines the single AI model used throughout the system
+// Updated to GPT-5.1 (released November 13, 2025)
 
 export const AI_MODEL_CONFIG = {
   // The primary model used for all AI operations
-  model: 'gpt-4o',
+  model: 'gpt-5.1',
   
   // Model display name for UI
-  displayName: 'GPT-4o',
+  displayName: 'GPT-5.1',
   
   // Model description
-  description: 'OpenAI\'s most capable model with enhanced speed and capabilities',
+  description: 'OpenAI GPT-5.1 with adaptive reasoning - smarter, faster, better at coding',
+  
+  // Model variants for specific use cases
+  variants: {
+    main: 'gpt-5.1',                    // Primary model with adaptive reasoning
+    chat: 'gpt-5.1-chat-latest',        // Fast conversational model
+    codex: 'gpt-5.1-codex',             // Optimized for coding tasks
+    codexMini: 'gpt-5.1-codex-mini',    // Lightweight coding variant
+  },
+  
+  // Reasoning effort levels (new in GPT-5.1)
+  // Controls how much "thinking time" the model uses
+  reasoningEffort: {
+    none: 'none',           // Fastest - no reasoning, 20% faster tool calling
+    minimal: 'minimal',     // Very light reasoning
+    low: 'low',             // Quick responses
+    medium: 'medium',       // Balanced speed/intelligence (recommended default)
+    high: 'high',           // More deliberate reasoning
+  },
   
   // Temperature settings for different use cases
   temperatures: {
     creative: 0.7,      // For creative tasks
     balanced: 0.5,      // For general use
-    accurate: 0.3,      // For accuracy-focused tasks (reduced from 0.7 to prevent hallucinations)
+    accurate: 0.3,      // For accuracy-focused tasks
     deterministic: 0.1  // For highly consistent responses
   },
   
@@ -32,7 +51,15 @@ export const AI_MODEL_CONFIG = {
     streaming: true,
     functionCalling: true,
     jsonMode: true,
-    vision: false
+    vision: true,
+    adaptiveReasoning: true,    // New in GPT-5.1
+    promptCaching: true,        // 24-hour cache retention available
+  },
+  
+  // Prompt caching (new in GPT-5.1 - 90% cheaper cached tokens)
+  promptCache: {
+    enabled: true,
+    retention: '24h',  // 24-hour cache retention
   }
 };
 
