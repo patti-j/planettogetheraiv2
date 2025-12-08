@@ -119,7 +119,7 @@ export class SchedulingAI {
       const completion = await openai.chat.completions.create({
         model: finalOptions.model!,
         messages,
-        max_tokens: finalOptions.maxTokens,
+        max_completion_tokens: finalOptions.maxTokens,
         temperature: finalOptions.temperature,
       });
 
@@ -184,7 +184,7 @@ export class SchedulingAI {
           },
           { role: 'user', content: firstMessage }
         ],
-        max_tokens: 20,
+        max_completion_tokens: 20,
         temperature: 0.5,
       });
 

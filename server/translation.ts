@@ -141,7 +141,7 @@ export async function translateText(request: TranslationRequest): Promise<Transl
           content: prompt
         }
       ],
-      max_tokens: 1000,
+      max_completion_tokens: 1000,
       temperature: 0.3,
     });
 
@@ -182,7 +182,7 @@ export async function detectLanguage(text: string): Promise<string> {
           content: `Detect the language of this text: ${text}`
         }
       ],
-      max_tokens: 10,
+      max_completion_tokens: 10,
       temperature: 0,
     });
 

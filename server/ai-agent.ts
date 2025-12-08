@@ -3325,7 +3325,7 @@ Return JSON format:
       ],
       response_format: { type: "json_object" },
       temperature: 0.7,
-      max_tokens: 2000
+      max_completion_tokens: 2000
     });
 
     const tourContent = JSON.parse(response.choices[0].message.content || '{}');
@@ -3539,7 +3539,7 @@ export async function processCommand(command: string, attachments: AttachmentFil
           const response = await openai.chat.completions.create({
             model: DEFAULT_MODEL,
             messages: messages,
-            max_tokens: 500
+            max_completion_tokens: 500
           });
           
           const aiMessage = response.choices[0]?.message?.content || "I couldn't analyze the image properly.";
@@ -3574,7 +3574,7 @@ export async function processCommand(command: string, attachments: AttachmentFil
             content: command
           }
         ],
-        max_tokens: 500
+        max_completion_tokens: 500
       });
       
       const aiMessage = response.choices[0]?.message?.content || "I couldn't process your request.";
@@ -3646,7 +3646,7 @@ For each command, return JSON with action type and relevant data. Handle manufac
         }
       ],
       temperature: 0.7,
-      max_tokens: 1000
+      max_completion_tokens: 1000
     });
 
     const aiContent = response.choices[0].message.content || "";

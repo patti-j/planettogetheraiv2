@@ -2,6 +2,7 @@ import { sql, eq, desc } from "drizzle-orm";
 import { db } from "../db";
 import OpenAI from "openai";
 import { agentRecommendations, aiAgentTeam } from "../../shared/schema";
+import { DEFAULT_MODEL } from "../config/ai-model";
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -364,7 +365,7 @@ export class AISchedulingRecommendationsService {
       `;
 
       const response = await openai.chat.completions.create({
-        model: "gpt-4o-mini",
+        model: DEFAULT_MODEL,
         messages: [{
           role: "system",
           content: "You are a manufacturing scheduling expert. Provide concise, actionable recommendations for scheduling conflicts."
@@ -372,7 +373,7 @@ export class AISchedulingRecommendationsService {
           role: "user",
           content: prompt
         }],
-        max_tokens: 200,
+        max_completion_tokens: 200,
         temperature: 0.7,
       });
 

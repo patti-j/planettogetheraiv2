@@ -10211,7 +10211,7 @@ ${currentData && currentData.length > 0 && currentData.length <= 10 ? `\nCurrent
         { role: "user", content: userPrompt }
       ],
       temperature: DEFAULT_TEMPERATURE,
-      max_tokens: 2000,
+      max_completion_tokens: 2000,
       response_format: { type: "json_object" }
     });
     
@@ -12604,7 +12604,7 @@ Be specific and actionable.`
         }
       ],
       temperature: 0.7,
-      max_tokens: 1500
+      max_completion_tokens: 1500
     });
 
     const aiResponse = completion.choices[0]?.message?.content || "No response generated";
@@ -15640,7 +15640,7 @@ router.post("/api/onboarding/documents/:id/analyze", requireAuth, async (req, re
           role: "user",
           content: analysisPrompt
         }],
-        max_tokens: 1000,
+        max_completion_tokens: 1000,
         temperature: 0.7,
       });
 

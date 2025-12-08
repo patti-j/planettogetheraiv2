@@ -96,7 +96,7 @@ class OpenAIProvider implements LLMProvider {
       model,
       messages,
       temperature,
-      max_tokens: maxTokens,
+      max_completion_tokens: maxTokens,
     });
 
     const choice = completion.choices[0];
@@ -127,7 +127,7 @@ class OpenAIProvider implements LLMProvider {
       model,
       messages,
       temperature,
-      max_tokens: maxTokens,
+      max_completion_tokens: maxTokens,
       stream: true,
     });
 

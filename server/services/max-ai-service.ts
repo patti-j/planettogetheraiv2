@@ -460,7 +460,7 @@ Format as: "Based on what I remember about you: [relevant info]" or return empty
           }
         ],
         temperature: DEFAULT_TEMPERATURE,
-        max_tokens: 300
+        max_completion_tokens: 300
       });
 
       return relevanceCheck.choices[0].message.content || '';
@@ -1259,7 +1259,7 @@ Return only the JSON object, no other text.`;
         model: DEFAULT_MODEL,
         messages: [{ role: 'user', content: prompt }],
         temperature: 0.1,
-        max_tokens: 1000
+        max_completion_tokens: 1000
       });
 
       const content = response.choices[0]?.message?.content?.trim();
@@ -2262,7 +2262,7 @@ Rules:
             }
           ],
           temperature: 0.1,
-          max_tokens: 50
+          max_completion_tokens: 50
         });
         
         const aiResponse = response.choices[0].message.content?.trim();
@@ -2575,7 +2575,7 @@ Rules:
           model: DEFAULT_MODEL,
           messages,
           temperature: 0.2, // Lower temperature for more focused, concise responses
-          max_tokens: 300 // Smaller token limit to enforce brevity
+          max_completion_tokens: 300 // Smaller token limit to enforce brevity
         };
         
         // Only add functions for action queries
@@ -2669,7 +2669,7 @@ Rules:
           { role: 'user', content: query }
         ],
         temperature: DEFAULT_TEMPERATURE,
-        max_tokens: 1000,
+        max_completion_tokens: 1000,
         stream: true
       });
       
@@ -2948,7 +2948,7 @@ Respond with JSON:
           }
         ],
         temperature: 0.2,
-        max_tokens: 200,
+        max_completion_tokens: 200,
         response_format: { type: "json_object" }
       });
       
@@ -3511,7 +3511,7 @@ Format this as a clear, concise response.`
             }
           ],
           temperature: DEFAULT_TEMPERATURE,
-          max_tokens: 500
+          max_completion_tokens: 500
         });
         
         return {
@@ -3566,7 +3566,7 @@ Focus on the most relevant data type that would answer the user's question.`
           }
         ],
         temperature: 0.1,
-        max_tokens: 50
+        max_completion_tokens: 50
       });
 
       const endpoint = dataResponse.choices[0].message.content?.trim();
@@ -3635,7 +3635,7 @@ Please answer their question using this data.`
             }
           ],
           temperature: DEFAULT_TEMPERATURE,
-          max_tokens: 400
+          max_completion_tokens: 400
         });
         
         return {
@@ -3795,7 +3795,7 @@ IMPORTANT RULES:
           }
         ],
         temperature: 0.1,
-        max_tokens: 50
+        max_completion_tokens: 50
       });
 
       const route = navResponse.choices[0].message.content?.trim();
@@ -3863,7 +3863,7 @@ Provide analysis and recommendations.`
           }
         ],
         temperature: 0.4,
-        max_tokens: 500
+        max_completion_tokens: 500
       });
       
       return {
@@ -3989,7 +3989,7 @@ Respond with JSON format:
           }
         ],
         temperature: 0.2,
-        max_tokens: 500,
+        max_completion_tokens: 500,
         response_format: { type: "json_object" }
       });
 
@@ -5860,7 +5860,7 @@ class ProactiveRecommendationEngine {
           { role: "user", content: message }
         ],
         temperature: DEFAULT_TEMPERATURE,
-        max_tokens: 800
+        max_completion_tokens: 800
       });
 
       const responseContent = completion.choices[0].message.content || "I'm sorry, I couldn't process your request.";
