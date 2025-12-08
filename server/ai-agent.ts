@@ -2,8 +2,8 @@ import OpenAI from "openai";
 import Anthropic from "@anthropic-ai/sdk";
 import { storage } from "./storage";
 import { InsertProductionOrder, InsertDiscreteOperation, InsertProcessOperation, InsertResource } from "@shared/schema";
+import { DEFAULT_MODEL, AI_MODEL_CONFIG } from "./config/ai-model";
 
-// the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 // Initialize Anthropic for better document analysis and vision capabilities
@@ -213,7 +213,7 @@ Analyze the user request and determine the appropriate action.`;
 
     // Use GPT-4o for natural language processing
     const response = await openai.chat.completions.create({
-      model: "gpt-4o",
+      model: DEFAULT_MODEL,
       messages: [
         { role: "system", content: systemPrompt },
         { role: "user", content: prompt }
@@ -686,7 +686,7 @@ Please analyze and optimize the shift schedule to improve efficiency, reduce cos
     }
 
     const response = await openai.chat.completions.create({
-      model: "gpt-4o",
+      model: DEFAULT_MODEL,
       messages: [
         { role: "system", content: systemPrompt },
         { role: "user", content: userPrompt }
@@ -793,7 +793,7 @@ Please create optimized shift assignments that:
 Focus on practical, implementable assignments that can be created immediately.`;
 
     const response = await openai.chat.completions.create({
-      model: "gpt-4o",
+      model: DEFAULT_MODEL,
       messages: [
         { role: "system", content: systemPrompt },
         { role: "user", content: userPrompt }
@@ -881,7 +881,7 @@ export async function processAICommand(command: string, attachments?: Attachment
     } else {
       // Use GPT-4o for text-only commands
       const response = await openai.chat.completions.create({
-        model: "gpt-4o",
+        model: DEFAULT_MODEL,
         messages: [
           {
             role: "system",
@@ -3318,7 +3318,7 @@ Return JSON format:
 }`;
 
     const response = await openai.chat.completions.create({
-      model: "gpt-4o",
+      model: DEFAULT_MODEL,
       messages: [
         { role: "system", content: systemPrompt },
         { role: "user", content: `Create a custom tour based on this request: "${description}" for roles: ${targetRoles.join(', ')}. ${focusAreas.length > 0 ? `Focus specifically on: ${focusAreas.join(', ')}.` : ''}` }
@@ -3537,7 +3537,7 @@ export async function processCommand(command: string, attachments: AttachmentFil
         
         try {
           const response = await openai.chat.completions.create({
-            model: "gpt-4o",
+            model: DEFAULT_MODEL,
             messages: messages,
             max_tokens: 500
           });
@@ -3563,7 +3563,7 @@ export async function processCommand(command: string, attachments: AttachmentFil
     // For text-only commands, use regular OpenAI completion
     try {
       const response = await openai.chat.completions.create({
-        model: "gpt-4o",
+        model: DEFAULT_MODEL,
         messages: [
           {
             role: "system",
@@ -3630,7 +3630,7 @@ export async function processCommand(command: string, attachments: AttachmentFil
     console.log("Processing text-only command");
 
     const response = await openai.chat.completions.create({
-      model: "gpt-4o",
+      model: DEFAULT_MODEL,
       messages: [
         {
           role: "system",

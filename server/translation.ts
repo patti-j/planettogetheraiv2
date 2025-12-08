@@ -1,4 +1,5 @@
 import OpenAI from 'openai';
+import { DEFAULT_MODEL } from './config/ai-model';
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -129,7 +130,7 @@ export async function translateText(request: TranslationRequest): Promise<Transl
       : `Translate the following text to ${targetLanguageName}. Preserve the original meaning, tone, and context. Only return the translated text, nothing else:\n\n${request.text}`;
 
     const response = await openai.chat.completions.create({
-      model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
+      model: DEFAULT_MODEL,
       messages: [
         {
           role: "system",
@@ -170,7 +171,7 @@ export async function detectLanguage(text: string): Promise<string> {
     }
 
     const response = await openai.chat.completions.create({
-      model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
+      model: DEFAULT_MODEL,
       messages: [
         {
           role: "system",

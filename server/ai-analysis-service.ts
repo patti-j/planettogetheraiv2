@@ -1,6 +1,7 @@
 import { db } from "./db";
 import { sql, eq, and, gte, lte, desc, isNull } from "drizzle-orm";
 import OpenAI from "openai";
+import { DEFAULT_MODEL } from "./config/ai-model";
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
@@ -260,7 +261,7 @@ export class AIAnalysisService {
       });
 
       const analysisPromise = openai.chat.completions.create({
-        model: "gpt-4o",
+        model: DEFAULT_MODEL,
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: userPrompt }

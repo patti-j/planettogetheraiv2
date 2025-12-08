@@ -31,6 +31,7 @@ import {
 } from "@shared/schema";
 import { eq, desc, and, or, sql } from "drizzle-orm";
 import OpenAI from "openai";
+import { DEFAULT_MODEL } from "./config/ai-model";
 
 // Initialize OpenAI client
 const openai = new OpenAI({ 
@@ -612,7 +613,7 @@ export class ImplementationService {
     
     try {
       const response = await openai.chat.completions.create({
-        model: "gpt-4o",
+        model: DEFAULT_MODEL,
         messages: [
           {
             role: "system",

@@ -15,6 +15,7 @@ import {
 } from "@shared/alerts-schema";
 import { eq, and, or, gte, lte, desc, asc, inArray, sql, isNull } from "drizzle-orm";
 import OpenAI from "openai";
+import { DEFAULT_MODEL } from "./config/ai-model";
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
@@ -253,7 +254,7 @@ export class AlertsService {
       `;
 
       const response = await openai.chat.completions.create({
-        model: "gpt-4o",
+        model: DEFAULT_MODEL,
         messages: [
           {
             role: "system",
@@ -381,7 +382,7 @@ export class AlertsService {
     `;
 
     const response = await openai.chat.completions.create({
-      model: "gpt-4o",
+      model: DEFAULT_MODEL,
       messages: [
         {
           role: "system",

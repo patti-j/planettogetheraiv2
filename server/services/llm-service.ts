@@ -10,6 +10,7 @@ import type { ChatCompletionMessageParam } from 'openai/resources/chat/completio
 import { db } from '../db';
 import { llmProviderConfig, llmUsageLogs, type LlmProviderConfig } from '@shared/schema';
 import { eq, and, desc } from 'drizzle-orm';
+import { DEFAULT_MODEL } from '../config/ai-model';
 
 // ============================================
 // Types & Interfaces
@@ -82,7 +83,7 @@ class OpenAIProvider implements LLMProvider {
   }
 
   async chat(request: LLMRequest): Promise<LLMResponse> {
-    const model = request.model || this.config.defaultModel || 'gpt-4o';
+    const model = request.model || this.config.defaultModel || DEFAULT_MODEL;
     const temperature = request.temperature ?? parseFloat(this.config.temperature?.toString() || '0.7');
     const maxTokens = request.maxTokens || this.config.maxTokens || 4000;
 
@@ -113,7 +114,7 @@ class OpenAIProvider implements LLMProvider {
   }
 
   async *streamChat(request: LLMRequest): AsyncGenerator<LLMStreamChunk, void, unknown> {
-    const model = request.model || this.config.defaultModel || 'gpt-4o';
+    const model = request.model || this.config.defaultModel || DEFAULT_MODEL;
     const temperature = request.temperature ?? parseFloat(this.config.temperature?.toString() || '0.7');
     const maxTokens = request.maxTokens || this.config.maxTokens || 4000;
 

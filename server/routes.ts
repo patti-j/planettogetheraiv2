@@ -5,6 +5,7 @@ import { z } from "zod";
 import { eq, sql, and, desc } from "drizzle-orm";
 import { storage } from "./storage";
 import { maxAI } from "./services/max-ai-service";
+import { DEFAULT_MODEL } from "./config/ai-model";
 import { realtimeVoiceService } from './services/realtime-voice-service';
 import { aiSchedulingService } from "./services/ai-scheduling-recommendations";
 import { enhancedAuth } from "./enhanced-auth-middleware";
@@ -1701,7 +1702,7 @@ router.post("/api/workflows/ai-generate", async (req, res) => {
 
     // Generate workflow using OpenAI
     const aiResponse = await openai.chat.completions.create({
-      model: "gpt-4o",
+      model: DEFAULT_MODEL,
       messages: [
         {
           role: "system",
@@ -2451,7 +2452,7 @@ router.post("/api/ai-access-management", async (req, res) => {
     }`;
     
     const completion = await openai.chat.completions.create({
-      model: "gpt-4o",
+      model: DEFAULT_MODEL,
       messages: [
         { role: "system", content: systemPrompt },
         { role: "user", content: prompt }
@@ -2770,7 +2771,7 @@ router.post("/api/company-lookup", async (req, res) => {
     const OpenAI = (await import('openai')).default;
     const openai = new OpenAI();
     const response = await openai.chat.completions.create({
-      model: "gpt-4o",
+      model: DEFAULT_MODEL,
       messages: [
         {
           role: "system",
@@ -2882,7 +2883,7 @@ router.post("/api/plants-lookup", async (req, res) => {
     const targetPlantCount = parseInt(numberOfPlants) || 3;
     
     const response = await openai.chat.completions.create({
-      model: "gpt-4o",
+      model: DEFAULT_MODEL,
       messages: [
         {
           role: "system",
@@ -12576,7 +12577,7 @@ router.post("/api/algorithm-modify", enhancedAuth, async (req, res) => {
     const openai = new OpenAI({ apiKey: openaiApiKey });
 
     const completion = await openai.chat.completions.create({
-      model: 'gpt-4o',
+      model: DEFAULT_MODEL,
       messages: [
         {
           role: 'system',
@@ -15631,7 +15632,7 @@ router.post("/api/onboarding/documents/:id/analyze", requireAuth, async (req, re
 
     try {
       const analysisResponse = await openai.chat.completions.create({
-        model: "gpt-4o",
+        model: DEFAULT_MODEL,
         messages: [{
           role: "system",
           content: "You are an expert implementation consultant helping onboard a new manufacturing system. Analyze documents to extract key insights and requirements."

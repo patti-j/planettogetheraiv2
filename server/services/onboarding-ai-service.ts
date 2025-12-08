@@ -1,4 +1,4 @@
-import { openai } from './openai-config';
+import { openai, DEFAULT_MODEL } from './openai-config';
 import { db } from '../db';
 import { 
   plantOnboarding, 
@@ -218,7 +218,7 @@ Format the response as JSON with the following structure:
 }`;
 
       const completion = await openai.chat.completions.create({
-        model: 'gpt-4o',
+        model: DEFAULT_MODEL,
         messages: [
           { role: 'system', content: 'You are an expert manufacturing consultant specializing in PlanetTogether APS implementation.' },
           { role: 'user', content: prompt }
@@ -294,7 +294,7 @@ Create a detailed implementation plan with:
 Format as JSON with phases, tasks, goals, and metrics.`;
 
       const completion = await openai.chat.completions.create({
-        model: 'gpt-4o',
+        model: DEFAULT_MODEL,
         messages: [
           { role: 'system', content: 'You are an expert in manufacturing system implementations.' },
           { role: 'user', content: prompt }
