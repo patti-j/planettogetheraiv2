@@ -1,4 +1,5 @@
 # Workday Summary
+# Workday Summary
 
 ## December 5, 2025
 
@@ -14,7 +15,11 @@
      3. Lautering
      ...
      ```
-
+### Demo Questions (Verified Working)
+1. "Which jobs are behind schedule" - Shows 5 overdue jobs
+2. "list scheduled jobs" - Shows all 5 jobs
+3. "show operations for job 64" - Shows 9 brewing operations in numbered list
+4. 
 #### Production Deployment
 - Reconfigured deployment settings for autoscale
 - Simplified run command: `node dist/index.js`
@@ -37,16 +42,11 @@
 | Quality Analysis Agent | Training Only | - |
 | Predictive Maintenance Agent | Training Only | - |
 
-### Demo Questions (Verified Working)
-1. "Which jobs are behind schedule" - Shows 5 overdue jobs
-2. "list scheduled jobs" - Shows all 5 jobs
-3. "show operations for job 64" - Shows 9 brewing operations in numbered list
 
-### Login Credentials
-- admin/admin123
-- Jim/planettogether
-- patti/planettogether
-
+## Connecting ChatGPT to GitHub repository
+- removed connection to AI App v1
+- indexed V2 repo
+- connecting v2 to ChatGPT
 ---
 
 ## December 8, 2025
