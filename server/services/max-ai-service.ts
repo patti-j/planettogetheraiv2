@@ -90,12 +90,15 @@ interface MaxResponse {
   action?: {
     type: 'navigate' | 'show_data' | 'execute_function' | 'create_chart' | 'multi_step' | 'clarify' | 'switch_agent';
     target?: string;
+    title?: string;
     agentId?: string;
     data?: any;
     chartConfig?: ChartConfig;
     steps?: TaskStep[];
     clarificationNeeded?: string;
   };
+  agentId?: string;
+  agentName?: string;
   insights?: ProductionInsight[];
   suggestions?: string[];
   data?: any;
@@ -2279,6 +2282,127 @@ Rules:
     return { type: 'chat', confidence: 0.5 };
   }
 
+  // Deterministic navigation intent detection (rule-based, fast, predictable)
+  private detectNavigationIntent(message: string): { target: string; title: string } | null {
+    const lower = message.toLowerCase().trim();
+
+    // Production Scheduler
+    if (
+      lower.includes('take me to the production scheduler') ||
+      lower.includes('go to the production scheduler') ||
+      lower.includes('open the production scheduler') ||
+      lower.includes('show me the production scheduler') ||
+      lower === 'production scheduler'
+    ) {
+      return { target: '/production-scheduler', title: 'Production Scheduler' };
+    }
+
+    // Jobs page
+    if (
+      lower.includes('go to jobs') ||
+      lower.includes('take me to jobs') ||
+      lower.includes('show me jobs page') ||
+      lower.includes('open jobs') ||
+      lower === 'jobs'
+    ) {
+      return { target: '/jobs', title: 'Jobs' };
+    }
+
+    // Dashboard / Home
+    if (
+      lower.includes('go to dashboard') ||
+      lower.includes('take me to the dashboard') ||
+      lower.includes('open dashboard') ||
+      lower.includes('go home') ||
+      lower === 'dashboard' ||
+      lower === 'home'
+    ) {
+      return { target: '/home', title: 'Dashboard' };
+    }
+
+    // Control Tower
+    if (
+      lower.includes('go to control tower') ||
+      lower.includes('take me to the control tower') ||
+      lower.includes('open control tower') ||
+      lower === 'control tower'
+    ) {
+      return { target: '/control-tower', title: 'Control Tower' };
+    }
+
+    // Master Data
+    if (
+      lower.includes('go to master data') ||
+      lower.includes('take me to master data') ||
+      lower.includes('open master data') ||
+      lower === 'master data'
+    ) {
+      return { target: '/master-data', title: 'Master Data' };
+    }
+
+    // Analytics
+    if (
+      lower.includes('go to analytics') ||
+      lower.includes('take me to analytics') ||
+      lower.includes('open analytics') ||
+      lower === 'analytics'
+    ) {
+      return { target: '/analytics', title: 'Analytics' };
+    }
+
+    // Reports
+    if (
+      lower.includes('go to reports') ||
+      lower.includes('take me to reports') ||
+      lower.includes('open reports') ||
+      lower === 'reports'
+    ) {
+      return { target: '/reports', title: 'Reports' };
+    }
+
+    // Inventory
+    if (
+      lower.includes('go to inventory') ||
+      lower.includes('take me to inventory') ||
+      lower.includes('open inventory') ||
+      lower === 'inventory'
+    ) {
+      return { target: '/inventory-optimization', title: 'Inventory Optimization' };
+    }
+
+    // Settings
+    if (
+      lower.includes('go to settings') ||
+      lower.includes('take me to settings') ||
+      lower.includes('open settings') ||
+      lower === 'settings'
+    ) {
+      return { target: '/settings', title: 'Settings' };
+    }
+
+    // Alerts
+    if (
+      lower.includes('go to alerts') ||
+      lower.includes('take me to alerts') ||
+      lower.includes('open alerts') ||
+      lower === 'alerts'
+    ) {
+      return { target: '/alerts', title: 'Alerts' };
+    }
+
+    // Canvas
+    if (
+      lower.includes('go to canvas') ||
+      lower.includes('take me to canvas') ||
+      lower.includes('open canvas') ||
+      lower === 'canvas'
+    ) {
+      return { target: '/canvas', title: 'Canvas' };
+    }
+
+    return null;
+  }
+
   // Generate contextual AI response based on user query and context
   async generateResponse(
     query: string, 
@@ -2290,6 +2414,24 @@ Rules:
     }
   ): Promise<MaxResponse> {
     try {
+        // PRIORITY 0: Deterministic navigation intent detection (fastest, rule-based)
+        const navIntent = this.detectNavigationIntent(query);
+        if (navIntent) {
+          console.log(`[Max AI] 🧭 Navigation intent detected: ${navIntent.title}`);
+          return {
+            content: `Taking you to ${navIntent.title}...`,
+            error: false,
+            confidence: 0.99,
+            agentId: 'max',
+            agentName: 'Max',
+            action: {
+              type: 'navigate',
+              target: navIntent.target,
+              title: navIntent.title,
+            },
+          };
+        }
+
         // PRIORITY 1: Check for chart/graph/plot keywords FIRST before delegating to agents
         const queryLower = query.toLowerCase();
         const chartKeywords = ['plot', 'graph', 'chart', 'visualize', 'visualization'];
@@ -2310,7 +2452,9 @@ Rules:
           // Only if no response at all, return a default error
           return {
             content: "I encountered an issue creating the chart. Please try rephrasing your request.",
-            error: "Chart creation failed"
+            error: true,
+            agentId: 'max',
+            agentName: 'Max'
           };
         }
         
@@ -2327,7 +2471,7 @@ Rules:
         
         const agentResponse = await agentRegistry.processMessage(query, agentContext);
         if (agentResponse) {
-          console.log(`[Max AI] ✅ Delegated to specialized agent`);
+          console.log(`[Max AI] ✅ Delegated to specialized agent: ${agentResponse.agentId || 'unknown'}`);
           
           // Handle client actions if needed
           if (agentResponse.requiresClientAction) {
@@ -2338,6 +2482,8 @@ Rules:
             content: agentResponse.content,
             error: agentResponse.error || false,
             confidence: 0.95,
+            agentId: agentResponse.agentId || 'production_scheduling',
+            agentName: agentResponse.agentName || 'Production Scheduling Agent',
             action: agentResponse.action
           };
         }
@@ -2351,7 +2497,12 @@ Rules:
           return {
             content: internalDataResponse,
             error: false,
-            confidence: 0.9
+            confidence: 0.9,
+            agentId: 'production_scheduling',
+            agentName: 'Production Scheduling Agent',
+            action: {
+              type: 'show_data'
+            }
           };
         }
         console.log(`[Max AI] No internal data match, using AI-based response`);
@@ -2633,6 +2784,8 @@ Rules:
 
         return {
           content: assistantContent,
+          agentId: 'max',
+          agentName: 'Max',
           insights: insights.length > 0 ? insights : undefined,
           suggestions: await this.getContextualSuggestions(context),
           data: productionData,
@@ -2643,7 +2796,9 @@ Rules:
       console.error('Max AI response generation error:', error);
       return {
         content: 'I encountered an error while processing your request. Please try again.',
-        error: true
+        error: true,
+        agentId: 'max',
+        agentName: 'Max'
       };
     }
   }
