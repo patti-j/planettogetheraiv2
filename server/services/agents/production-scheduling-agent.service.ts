@@ -1191,6 +1191,7 @@ export class ProductionSchedulingAgent extends BaseAgent {
       // This must come before the general status query check
       // Look specifically for numeric job IDs or alphanumeric codes like "BREW-001"
       const jobIdPatterns = [
+        /job\s*number\s*#?(\d+)/i,                    // "job number 104", "job number #104"
         /job[-\s#]*(\d+)/i,                           // "job 64", "job #64", "job-64"
         /job[-\s#]*([A-Z]+-\d+)/i,                    // "job BREW-001"
         /(?:status|details?|info)\s+(?:of|for|about)\s+job[-\s#]*(\d+)/i,  // "status of job 64"
@@ -1330,10 +1331,14 @@ export class ProductionSchedulingAgent extends BaseAgent {
   
   private async searchJobByName(searchTerm: string, context: AgentContext): Promise<AgentResponse> {
     try {
+      // Remove common filler words and special characters
+      // "the wheat beer job" -> "wheat beer" to match "Wheat Beer #104"
+      const fillerWords = /\b(the|a|an|job|jobs|order|orders|what|is|status|of|for|on)\b/gi;
+      let cleanedTerm = searchTerm.replace(fillerWords, ' ').trim();
       // Remove special characters and create flexible search pattern
-      // Convert "Porter Batch 105" to match "Porter Batch #105"
-      const cleanedTerm = searchTerm.replace(/[#\-_]/g, ' ').replace(/\s+/g, '%');
+      cleanedTerm = cleanedTerm.replace(/[#\-_]/g, ' ').replace(/\s+/g, '%');
       const searchPattern = `%${cleanedTerm}%`;
+      console.log(`[Production Scheduling Agent] Search pattern: ${searchPattern}`);
       const jobs = await db.execute(sql`
         SELECT 
           j.id,
