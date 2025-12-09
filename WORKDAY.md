@@ -12,7 +12,12 @@ Collaborated with ChatGPT 5.1 to implement systematic agent improvements.
 Files: `server/services/max-ai-service.ts`
 
 ### Browser Console Fixes
-- Fixed `QuotaExceededError` in localStorage - store minimal user object
-- Fixed `<button>` nesting warning - DOM validation issue
+- Fixed `QuotaExceededError` in localStorage - store minimal user object instead of full userData
+- Vite HMR connection errors (port 24678) - dev-only, not affecting production
 
 Files: `client/src/App.tsx`
+
+### URL Investigation
+- Verified scheduler uses relative paths (`/api/resources`, `/api/pt-operations`, etc.)
+- No hardcoded Replit URLs found in `public/production-scheduler.html`
+- Connection errors are Vite HMR (Hot Module Replacement), not API failures
