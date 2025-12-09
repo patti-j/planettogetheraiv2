@@ -36,3 +36,26 @@ Updated Max AI to recognize jobs by name and batch references, not just IDs.
 - "What is the status of batch 105?" → Finds matching batch
 
 Files: `server/services/agents/production-scheduling-agent.service.ts`, `server/services/max-ai-service.ts`
+
+### SQL Query Schema Fixes ✅
+Fixed critical SQL errors in Max AI resource, bottleneck, and location queries.
+
+**Root Cause:**
+- `ptresources` table uses `name` column (not `resource_name`)
+- `ptjobresources.default_resource_id` (varchar) references `ptresources.id` (not `resource_id`)
+- Plants are accessed via `ptplants` join on `plant_id`, not `plant_name` column
+
+**Fixes Applied:**
+- All resource queries use `r.name as resource_name` 
+- Changed joins from `r.resource_id::text` to `r.id::text` for proper matching
+- Added `ptplants` join for plant-based queries
+- Used `resource_type` as department proxy (no departments table exists)
+
+**Working Queries Now:**
+- "resource utilization" - Shows busy/idle resources
+- "bottleneck operations" - Shows longest operations with resource names
+- "jobs by plant" - Shows job counts per plant (Amsterdam Brewery: 5)
+- "jobs at plant Amsterdam" - Lists jobs at specific plant
+- "jobs by department" - Uses resource_type as fallback
+
+Files: `server/services/agents/production-scheduling-agent.service.ts`

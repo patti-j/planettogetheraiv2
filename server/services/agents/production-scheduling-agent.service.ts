@@ -73,6 +73,32 @@ export class ProductionSchedulingAgent extends BaseAgent {
     'create resource',
     'list resources',
     'show resources',
+    'resource availability',
+    'resource utilization',
+    'what\'s on',
+    'what is on',
+    'scheduled on',
+    'resource capabilities',
+    'what can',
+    'resources that can',
+    'busiest resource',
+    'idle resource',
+    // Date-based queries
+    'starting today',
+    'starting this week',
+    'ending today',
+    'ending this week',
+    'scheduled start',
+    'scheduled end',
+    // Operation queries
+    'next operation',
+    'current operation',
+    'bottleneck',
+    // Location queries
+    'jobs at plant',
+    'jobs in department',
+    'by plant',
+    'by department',
     // Schedule management
     'save schedule',
     'save current schedule',
@@ -111,9 +137,26 @@ export class ProductionSchedulingAgent extends BaseAgent {
     }
     
     try {
-      // Check for job queries first (most common request)
-      if (this.isJobQuery(lowerMessage)) {
-        return await this.handleJobQuery(lowerMessage, context);
+      // Check specialized queries FIRST (before generic job query catches them)
+      
+      // Check for operation detail queries (next operation, current operation, bottlenecks)
+      if (this.isOperationDetailQuery(lowerMessage)) {
+        return await this.handleOperationDetailQuery(message, context);
+      }
+      
+      // Check for location-based queries (jobs at plant, by department)
+      if (this.isLocationQuery(lowerMessage)) {
+        return await this.handleLocationQuery(message, context);
+      }
+      
+      // Check for scheduled date queries (starting/ending today/this week)
+      if (this.isScheduledDateQuery(lowerMessage)) {
+        return await this.handleScheduledDateQuery(message, context);
+      }
+      
+      // Check for resource management requests
+      if (this.isResourceRequest(lowerMessage)) {
+        return await this.handleResourceRequest(message, context);
       }
       
       // Check for algorithm execution requests
@@ -121,9 +164,9 @@ export class ProductionSchedulingAgent extends BaseAgent {
         return await this.executeAlgorithm(lowerMessage, context);
       }
       
-      // Check for resource management requests
-      if (this.isResourceRequest(lowerMessage)) {
-        return await this.handleResourceRequest(lowerMessage, context);
+      // Check for job queries (generic - checked after specialized queries)
+      if (this.isJobQuery(lowerMessage)) {
+        return await this.handleJobQuery(lowerMessage, context);
       }
       
       // Check for schedule save/load requests
@@ -181,12 +224,27 @@ export class ProductionSchedulingAgent extends BaseAgent {
   
   private isResourceRequest(message: string): boolean {
     const resourceKeywords = ['resource', 'capability', 'capabilities', 'equipment', 'machine'];
-    const actionKeywords = ['add', 'create', 'list', 'show', 'update', 'modify'];
+    const actionKeywords = ['add', 'create', 'list', 'show', 'update', 'modify', 'availability', 'utilization', 'busiest', 'idle'];
     
     const hasResourceKeyword = resourceKeywords.some(keyword => message.includes(keyword));
     const hasActionKeyword = actionKeywords.some(keyword => message.includes(keyword));
     
-    return hasResourceKeyword && hasActionKeyword;
+    // Also match "what's on [resource]", "scheduled on [resource]", "what can [resource] do"
+    const directResourceQuery = /what'?s?\s+on\s+\w+|scheduled\s+on\s+\w+|what\s+can\s+\w+\s+do|resources?\s+that\s+can/i.test(message);
+    
+    return (hasResourceKeyword && hasActionKeyword) || directResourceQuery;
+  }
+  
+  private isScheduledDateQuery(message: string): boolean {
+    return /starting\s+(today|this\s+week)|ending\s+(today|this\s+week)|scheduled\s+(start|end)\s+of/i.test(message);
+  }
+  
+  private isOperationDetailQuery(message: string): boolean {
+    return /next\s+operation|current\s+operation|bottleneck/i.test(message);
+  }
+  
+  private isLocationQuery(message: string): boolean {
+    return /jobs?\s+(at|in)\s+(plant|department)|by\s+(plant|department)/i.test(message);
   }
   
   private isScheduleManagementRequest(message: string): boolean {
@@ -961,19 +1019,276 @@ export class ProductionSchedulingAgent extends BaseAgent {
   }
   
   private async handleResourceRequest(message: string, context: AgentContext): Promise<AgentResponse> {
-    const isAddRequest = message.includes('add') || message.includes('create');
-    const isListRequest = message.includes('list') || message.includes('show');
+    const lowerMessage = message.toLowerCase();
+    const isAddRequest = lowerMessage.includes('add') || lowerMessage.includes('create');
+    const isListRequest = lowerMessage.includes('list') || lowerMessage.includes('show');
+    const isUtilizationRequest = lowerMessage.includes('utilization') || lowerMessage.includes('busiest') || lowerMessage.includes('idle');
+    const isAvailabilityRequest = lowerMessage.includes('availability') || lowerMessage.includes('available');
+    const isCapabilityRequest = lowerMessage.includes('capabilit') || lowerMessage.includes('what can');
+    const isScheduledOnRequest = /what'?s?\s+on|scheduled\s+on/i.test(lowerMessage);
     
     if (isAddRequest) {
       return await this.addResource(message, context);
+    } else if (isScheduledOnRequest) {
+      return await this.getResourceSchedule(message, context);
+    } else if (isCapabilityRequest) {
+      return await this.getResourceCapabilities(message, context);
+    } else if (isUtilizationRequest) {
+      return await this.getResourceUtilization(context);
+    } else if (isAvailabilityRequest) {
+      return await this.getResourceAvailability(context);
     } else if (isListRequest) {
       return await this.listResources(context);
     }
     
     return {
-      content: 'I can help you add new resources or list existing ones. Please specify what you\'d like to do.',
+      content: 'I can help you with resources. Try asking:\n' +
+               '• **List resources** - Show all resources\n' +
+               '• **What\'s on Fermenter 1?** - Show what\'s scheduled on a resource\n' +
+               '• **Resource utilization** - See busiest/idle resources\n' +
+               '• **Resource capabilities** - See what each resource can do',
       error: false
     };
+  }
+  
+  private async getResourceSchedule(message: string, context: AgentContext): Promise<AgentResponse> {
+    try {
+      // Extract resource name from message
+      const resourceMatch = message.match(/(?:what'?s?\s+on|scheduled\s+on)\s+(.+?)(?:\?|$)/i);
+      const resourceName = resourceMatch ? resourceMatch[1].trim() : '';
+      
+      if (!resourceName) {
+        return { content: 'Please specify a resource name. For example: "What\'s on Fermenter 1?"', error: false };
+      }
+      
+      const schedule = await db.execute(sql`
+        SELECT 
+          jo.name as operation_name,
+          jo.scheduled_start,
+          jo.scheduled_end,
+          j.name as job_name,
+          j.priority,
+          r.name as resource_name
+        FROM ptjoboperations jo
+        JOIN ptjobs j ON jo.job_id = j.id
+        JOIN ptjobresources jr ON jo.id = jr.operation_id
+        JOIN ptresources r ON jr.default_resource_id = r.id::text
+        WHERE LOWER(r.name) LIKE LOWER(${`%${resourceName}%`})
+          AND jo.scheduled_end >= NOW()
+        ORDER BY jo.scheduled_start ASC
+        LIMIT 10
+      `);
+      
+      if (!schedule.rows || schedule.rows.length === 0) {
+        return { 
+          content: `No scheduled operations found on resource matching "${resourceName}". The resource may be idle or not found.`, 
+          error: false 
+        };
+      }
+      
+      const actualResourceName = (schedule.rows[0] as any).resource_name;
+      let response = `📋 **Scheduled on ${actualResourceName}:**\n\n`;
+      
+      for (const op of schedule.rows as any[]) {
+        const start = op.scheduled_start ? new Date(op.scheduled_start).toLocaleString() : 'Not set';
+        const end = op.scheduled_end ? new Date(op.scheduled_end).toLocaleString() : 'Not set';
+        response += `• **${op.operation_name}** (Job: ${op.job_name})\n`;
+        response += `  Start: ${start} | End: ${end}\n\n`;
+      }
+      
+      return { content: response, error: false };
+    } catch (error: any) {
+      return { content: `Error fetching resource schedule: ${error.message}`, error: true };
+    }
+  }
+  
+  private async getResourceCapabilities(message: string, context: AgentContext): Promise<AgentResponse> {
+    try {
+      // Check if asking about specific resource or general capabilities
+      const specificMatch = message.match(/what\s+can\s+(.+?)\s+do/i);
+      const capabilityMatch = message.match(/resources?\s+that\s+can\s+(?:do\s+)?(.+?)(?:\?|$)/i);
+      
+      if (specificMatch) {
+        const resourceName = specificMatch[1].trim();
+        const capabilities = await db.execute(sql`
+          SELECT r.name as resource_name, r.resource_type, r.description
+          FROM ptresources r
+          WHERE LOWER(r.name) LIKE LOWER(${`%${resourceName}%`})
+          LIMIT 5
+        `);
+        
+        if (!capabilities.rows || capabilities.rows.length === 0) {
+          return { content: `No resource found matching "${resourceName}".`, error: false };
+        }
+        
+        const resource = capabilities.rows[0] as any;
+        let response = `🔧 **${resource.resource_name} Details:**\n\n`;
+        response += `• Type: ${resource.resource_type || 'Not specified'}\n`;
+        response += `• Description: ${resource.description || 'No description'}\n\n`;
+        
+        response += '*Resource capabilities are defined through the system configuration.*';
+        
+        return { content: response, error: false };
+      }
+      
+      if (capabilityMatch) {
+        const capability = capabilityMatch[1].trim();
+        const resources = await db.execute(sql`
+          SELECT r.name as resource_name, r.resource_type
+          FROM ptresources r
+          WHERE LOWER(r.resource_type) LIKE LOWER(${`%${capability}%`})
+             OR LOWER(r.description) LIKE LOWER(${`%${capability}%`})
+          LIMIT 20
+        `);
+        
+        if (!resources.rows || resources.rows.length === 0) {
+          return { content: `No resources found matching "${capability}".`, error: false };
+        }
+        
+        let response = `🔧 **Resources matching "${capability}":**\n\n`;
+        for (const r of resources.rows as any[]) {
+          response += `• ${r.resource_name} (${r.resource_type || 'Unknown type'})\n`;
+        }
+        
+        return { content: response, error: false };
+      }
+      
+      // General resource overview
+      const resourceTypes = await db.execute(sql`
+        SELECT resource_type, COUNT(*) as count
+        FROM ptresources
+        WHERE resource_type IS NOT NULL
+        GROUP BY resource_type
+        ORDER BY count DESC
+        LIMIT 15
+      `);
+      
+      let response = '🔧 **Resource Types Overview:**\n\n';
+      if (resourceTypes.rows && resourceTypes.rows.length > 0) {
+        for (const rt of resourceTypes.rows as any[]) {
+          response += `• ${rt.resource_type}: ${rt.count} resource(s)\n`;
+        }
+      } else {
+        response += '*No resource types defined in the system.*';
+      }
+      
+      response += '\n\nAsk "What can [resource] do?" for details about a specific resource.';
+      return { content: response, error: false };
+    } catch (error: any) {
+      return { content: `Error fetching capabilities: ${error.message}`, error: true };
+    }
+  }
+  
+  private async getResourceUtilization(context: AgentContext): Promise<AgentResponse> {
+    try {
+      const utilization = await db.execute(sql`
+        SELECT 
+          r.name as resource_name,
+          r.resource_type,
+          COUNT(DISTINCT jo.id) as scheduled_ops,
+          SUM(COALESCE(jo.cycle_hrs, 0) + COALESCE(jo.setup_hours, 0)) as total_hours
+        FROM ptresources r
+        LEFT JOIN ptjobresources jr ON r.id::text = jr.default_resource_id
+        LEFT JOIN ptjoboperations jo ON jr.operation_id = jo.id
+          AND jo.scheduled_start >= NOW() - INTERVAL '7 days'
+          AND jo.scheduled_end <= NOW() + INTERVAL '7 days'
+        GROUP BY r.id, r.name, r.resource_type
+        ORDER BY total_hours DESC NULLS LAST
+        LIMIT 15
+      `);
+      
+      if (!utilization.rows || utilization.rows.length === 0) {
+        return { content: 'No resources found to analyze.', error: false };
+      }
+      
+      let response = '📊 **Resource Utilization (Last/Next 7 Days):**\n\n';
+      response += '**Busiest Resources:**\n';
+      
+      const rows = utilization.rows as any[];
+      const busiest = rows.filter(r => r.total_hours > 0).slice(0, 5);
+      const idle = rows.filter(r => !r.total_hours || r.total_hours === 0).slice(0, 5);
+      
+      if (busiest.length > 0) {
+        for (const r of busiest) {
+          response += `• ${r.resource_name}: ${r.scheduled_ops} ops, ${Math.round(r.total_hours || 0)} hours\n`;
+        }
+      } else {
+        response += '*No busy resources in this period.*\n';
+      }
+      
+      response += '\n**Idle/Available Resources:**\n';
+      if (idle.length > 0) {
+        for (const r of idle) {
+          response += `• ${r.resource_name} (${r.resource_type || 'Unknown'})\n`;
+        }
+      } else {
+        response += '*All resources have scheduled work.*\n';
+      }
+      
+      return { content: response, error: false };
+    } catch (error: any) {
+      return { content: `Error fetching utilization: ${error.message}`, error: true };
+    }
+  }
+  
+  private async getResourceAvailability(context: AgentContext): Promise<AgentResponse> {
+    try {
+      const availability = await db.execute(sql`
+        SELECT 
+          r.name as resource_name,
+          r.resource_type,
+          CASE 
+            WHEN EXISTS (
+              SELECT 1 FROM ptjoboperations jo
+              JOIN ptjobresources jr ON jo.id = jr.operation_id
+              WHERE jr.default_resource_id = r.id::text
+                AND jo.scheduled_start <= NOW()
+                AND jo.scheduled_end >= NOW()
+            ) THEN 'In Use'
+            ELSE 'Available'
+          END as current_status,
+          (
+            SELECT jo.scheduled_end 
+            FROM ptjoboperations jo
+            JOIN ptjobresources jr ON jo.id = jr.operation_id
+            WHERE jr.default_resource_id = r.id::text
+              AND jo.scheduled_start <= NOW()
+              AND jo.scheduled_end >= NOW()
+            ORDER BY jo.scheduled_end DESC
+            LIMIT 1
+          ) as available_at
+        FROM ptresources r
+        WHERE r.is_active = true
+        ORDER BY r.name
+        LIMIT 20
+      `);
+      
+      if (!availability.rows || availability.rows.length === 0) {
+        return { content: 'No scheduling resources found.', error: false };
+      }
+      
+      let response = '📋 **Resource Availability:**\n\n';
+      
+      const available = (availability.rows as any[]).filter(r => r.current_status === 'Available');
+      const inUse = (availability.rows as any[]).filter(r => r.current_status === 'In Use');
+      
+      response += `✅ **Available Now (${available.length}):**\n`;
+      for (const r of available.slice(0, 8)) {
+        response += `• ${r.resource_name} (${r.resource_type || r.department_name || 'Unknown'})\n`;
+      }
+      if (available.length > 8) response += `  ...and ${available.length - 8} more\n`;
+      
+      response += `\n🔄 **Currently In Use (${inUse.length}):**\n`;
+      for (const r of inUse.slice(0, 8)) {
+        const availAt = r.available_at ? new Date(r.available_at).toLocaleString() : 'Unknown';
+        response += `• ${r.resource_name} - Available at: ${availAt}\n`;
+      }
+      if (inUse.length > 8) response += `  ...and ${inUse.length - 8} more\n`;
+      
+      return { content: response, error: false };
+    } catch (error: any) {
+      return { content: `Error fetching availability: ${error.message}`, error: true };
+    }
   }
   
   private async addResource(message: string, context: AgentContext): Promise<AgentResponse> {
@@ -2110,6 +2425,509 @@ export class ProductionSchedulingAgent extends BaseAgent {
       },
       error: false
     };
+  }
+  
+  // ========== SCHEDULED DATE QUERIES ==========
+  
+  private async handleScheduledDateQuery(message: string, context: AgentContext): Promise<AgentResponse> {
+    const lowerMessage = message.toLowerCase();
+    
+    try {
+      if (lowerMessage.includes('starting today')) {
+        return await this.getJobsStartingToday(context);
+      } else if (lowerMessage.includes('starting this week')) {
+        return await this.getJobsStartingThisWeek(context);
+      } else if (lowerMessage.includes('ending today')) {
+        return await this.getJobsEndingToday(context);
+      } else if (lowerMessage.includes('ending this week')) {
+        return await this.getJobsEndingThisWeek(context);
+      } else if (lowerMessage.includes('scheduled start')) {
+        const jobMatch = message.match(/scheduled\s+start\s+(?:of|for)\s+(.+?)(?:\?|$)/i);
+        if (jobMatch) {
+          return await this.getJobScheduledDates(jobMatch[1].trim(), context);
+        }
+      } else if (lowerMessage.includes('scheduled end')) {
+        const jobMatch = message.match(/scheduled\s+end\s+(?:of|for)\s+(.+?)(?:\?|$)/i);
+        if (jobMatch) {
+          return await this.getJobScheduledDates(jobMatch[1].trim(), context);
+        }
+      }
+      
+      return {
+        content: 'I can help with scheduled dates. Try:\n' +
+                 '• **Jobs starting today** - Operations beginning today\n' +
+                 '• **Jobs ending this week** - Jobs completing this week\n' +
+                 '• **Scheduled start of [job]** - Get specific job dates',
+        error: false
+      };
+    } catch (error: any) {
+      return { content: `Error: ${error.message}`, error: true };
+    }
+  }
+  
+  private async getJobsStartingToday(context: AgentContext): Promise<AgentResponse> {
+    try {
+      const jobs = await db.execute(sql`
+        SELECT DISTINCT j.id, j.name, j.external_id, j.priority,
+               MIN(jo.scheduled_start) as first_start
+        FROM ptjobs j
+        JOIN ptjoboperations jo ON j.id = jo.job_id
+        WHERE DATE(jo.scheduled_start) = CURRENT_DATE
+        GROUP BY j.id, j.name, j.external_id, j.priority
+        ORDER BY first_start ASC
+        LIMIT 15
+      `);
+      
+      if (!jobs.rows || jobs.rows.length === 0) {
+        return { content: '📅 No jobs have operations starting today.', error: false };
+      }
+      
+      let response = `📅 **Jobs Starting Today (${jobs.rows.length}):**\n\n`;
+      for (const job of jobs.rows as any[]) {
+        const startTime = job.first_start ? new Date(job.first_start).toLocaleTimeString() : 'Unknown';
+        response += `• **${job.name || job.external_id}** - Starts at ${startTime} (Priority: ${job.priority})\n`;
+      }
+      
+      return { content: response, error: false };
+    } catch (error: any) {
+      return { content: `Error: ${error.message}`, error: true };
+    }
+  }
+  
+  private async getJobsStartingThisWeek(context: AgentContext): Promise<AgentResponse> {
+    try {
+      const jobs = await db.execute(sql`
+        SELECT DISTINCT j.id, j.name, j.external_id, j.priority,
+               MIN(jo.scheduled_start) as first_start
+        FROM ptjobs j
+        JOIN ptjoboperations jo ON j.id = jo.job_id
+        WHERE jo.scheduled_start >= DATE_TRUNC('week', CURRENT_DATE)
+          AND jo.scheduled_start < DATE_TRUNC('week', CURRENT_DATE) + INTERVAL '7 days'
+        GROUP BY j.id, j.name, j.external_id, j.priority
+        ORDER BY first_start ASC
+        LIMIT 20
+      `);
+      
+      if (!jobs.rows || jobs.rows.length === 0) {
+        return { content: '📅 No jobs have operations starting this week.', error: false };
+      }
+      
+      let response = `📅 **Jobs Starting This Week (${jobs.rows.length}):**\n\n`;
+      for (const job of jobs.rows as any[]) {
+        const startDate = job.first_start ? new Date(job.first_start).toLocaleDateString() : 'Unknown';
+        response += `• **${job.name || job.external_id}** - Starts ${startDate} (Priority: ${job.priority})\n`;
+      }
+      
+      return { content: response, error: false };
+    } catch (error: any) {
+      return { content: `Error: ${error.message}`, error: true };
+    }
+  }
+  
+  private async getJobsEndingToday(context: AgentContext): Promise<AgentResponse> {
+    try {
+      const jobs = await db.execute(sql`
+        SELECT DISTINCT j.id, j.name, j.external_id, j.need_date_time,
+               MAX(jo.scheduled_end) as last_end
+        FROM ptjobs j
+        JOIN ptjoboperations jo ON j.id = jo.job_id
+        WHERE DATE(jo.scheduled_end) = CURRENT_DATE
+        GROUP BY j.id, j.name, j.external_id, j.need_date_time
+        ORDER BY last_end ASC
+        LIMIT 15
+      `);
+      
+      if (!jobs.rows || jobs.rows.length === 0) {
+        return { content: '📅 No jobs have operations ending today.', error: false };
+      }
+      
+      let response = `📅 **Jobs Completing Today (${jobs.rows.length}):**\n\n`;
+      for (const job of jobs.rows as any[]) {
+        const endTime = job.last_end ? new Date(job.last_end).toLocaleTimeString() : 'Unknown';
+        const needDate = job.need_date_time ? new Date(job.need_date_time).toLocaleDateString() : 'Not set';
+        response += `• **${job.name || job.external_id}** - Ends at ${endTime} (Due: ${needDate})\n`;
+      }
+      
+      return { content: response, error: false };
+    } catch (error: any) {
+      return { content: `Error: ${error.message}`, error: true };
+    }
+  }
+  
+  private async getJobsEndingThisWeek(context: AgentContext): Promise<AgentResponse> {
+    try {
+      const jobs = await db.execute(sql`
+        SELECT DISTINCT j.id, j.name, j.external_id, j.need_date_time,
+               MAX(jo.scheduled_end) as last_end
+        FROM ptjobs j
+        JOIN ptjoboperations jo ON j.id = jo.job_id
+        WHERE jo.scheduled_end >= DATE_TRUNC('week', CURRENT_DATE)
+          AND jo.scheduled_end < DATE_TRUNC('week', CURRENT_DATE) + INTERVAL '7 days'
+        GROUP BY j.id, j.name, j.external_id, j.need_date_time
+        ORDER BY last_end ASC
+        LIMIT 20
+      `);
+      
+      if (!jobs.rows || jobs.rows.length === 0) {
+        return { content: '📅 No jobs have operations ending this week.', error: false };
+      }
+      
+      let response = `📅 **Jobs Completing This Week (${jobs.rows.length}):**\n\n`;
+      for (const job of jobs.rows as any[]) {
+        const endDate = job.last_end ? new Date(job.last_end).toLocaleDateString() : 'Unknown';
+        const needDate = job.need_date_time ? new Date(job.need_date_time).toLocaleDateString() : 'Not set';
+        const onTime = job.need_date_time && job.last_end && new Date(job.last_end) <= new Date(job.need_date_time) ? '✅' : '⚠️';
+        response += `${onTime} **${job.name || job.external_id}** - Ends ${endDate} (Due: ${needDate})\n`;
+      }
+      
+      return { content: response, error: false };
+    } catch (error: any) {
+      return { content: `Error: ${error.message}`, error: true };
+    }
+  }
+  
+  private async getJobScheduledDates(jobName: string, context: AgentContext): Promise<AgentResponse> {
+    try {
+      const job = await db.execute(sql`
+        SELECT j.id, j.name, j.external_id, j.need_date_time,
+               MIN(jo.scheduled_start) as scheduled_start,
+               MAX(jo.scheduled_end) as scheduled_end,
+               COUNT(jo.id) as operation_count
+        FROM ptjobs j
+        LEFT JOIN ptjoboperations jo ON j.id = jo.job_id
+        WHERE LOWER(j.name) LIKE LOWER(${`%${jobName}%`})
+           OR j.id::text = ${jobName}
+        GROUP BY j.id, j.name, j.external_id, j.need_date_time
+        LIMIT 1
+      `);
+      
+      if (!job.rows || job.rows.length === 0) {
+        return { content: `Job "${jobName}" not found.`, error: false };
+      }
+      
+      const j = job.rows[0] as any;
+      const startDate = j.scheduled_start ? new Date(j.scheduled_start).toLocaleString() : 'Not scheduled';
+      const endDate = j.scheduled_end ? new Date(j.scheduled_end).toLocaleString() : 'Not scheduled';
+      const needDate = j.need_date_time ? new Date(j.need_date_time).toLocaleString() : 'Not set';
+      
+      let response = `📅 **Scheduled Dates for ${j.name || j.external_id}:**\n\n`;
+      response += `• **Scheduled Start:** ${startDate}\n`;
+      response += `• **Scheduled End:** ${endDate}\n`;
+      response += `• **Need Date:** ${needDate}\n`;
+      response += `• **Operations:** ${j.operation_count}\n`;
+      
+      if (j.scheduled_end && j.need_date_time) {
+        const diff = Math.floor((new Date(j.need_date_time).getTime() - new Date(j.scheduled_end).getTime()) / (1000 * 60 * 60 * 24));
+        if (diff >= 0) {
+          response += `\n✅ **On-Time** - Completing ${diff} day(s) early`;
+        } else {
+          response += `\n⚠️ **Late** - ${Math.abs(diff)} day(s) past need date`;
+        }
+      }
+      
+      return { content: response, error: false };
+    } catch (error: any) {
+      return { content: `Error: ${error.message}`, error: true };
+    }
+  }
+  
+  // ========== OPERATION DETAIL QUERIES ==========
+  
+  private async handleOperationDetailQuery(message: string, context: AgentContext): Promise<AgentResponse> {
+    const lowerMessage = message.toLowerCase();
+    
+    try {
+      if (lowerMessage.includes('next operation')) {
+        const jobMatch = message.match(/next\s+operation\s+(?:for|of|in)\s+(.+?)(?:\?|$)/i);
+        if (jobMatch) {
+          return await this.getNextOperation(jobMatch[1].trim(), context);
+        }
+        return { content: 'Please specify a job. Example: "Next operation for Wheat Beer #104"', error: false };
+      }
+      
+      if (lowerMessage.includes('current operation')) {
+        const jobMatch = message.match(/current\s+operation\s+(?:for|of|in)\s+(.+?)(?:\?|$)/i);
+        if (jobMatch) {
+          return await this.getCurrentOperation(jobMatch[1].trim(), context);
+        }
+        return { content: 'Please specify a job. Example: "Current operation for Wheat Beer #104"', error: false };
+      }
+      
+      if (lowerMessage.includes('bottleneck')) {
+        return await this.getBottleneckOperations(context);
+      }
+      
+      return {
+        content: 'I can help with operation details. Try:\n' +
+                 '• **Next operation for [job]** - What\'s coming up\n' +
+                 '• **Current operation for [job]** - What\'s running now\n' +
+                 '• **Bottleneck operations** - Longest/blocking operations',
+        error: false
+      };
+    } catch (error: any) {
+      return { content: `Error: ${error.message}`, error: true };
+    }
+  }
+  
+  private async getNextOperation(jobName: string, context: AgentContext): Promise<AgentResponse> {
+    try {
+      const ops = await db.execute(sql`
+        SELECT jo.id, jo.name, jo.sequence_number, jo.scheduled_start, jo.scheduled_end,
+               jo.percent_finished, r.resource_name, j.name as job_name
+        FROM ptjoboperations jo
+        JOIN ptjobs j ON jo.job_id = j.id
+        LEFT JOIN ptjobresources jr ON jo.id = jr.operation_id
+        LEFT JOIN ptresources r ON jr.default_resource_id = r.resource_id
+        WHERE (LOWER(j.name) LIKE LOWER(${`%${jobName}%`}) OR j.id::text = ${jobName})
+          AND jo.percent_finished < 100
+        ORDER BY jo.sequence_number ASC
+        LIMIT 1
+      `);
+      
+      if (!ops.rows || ops.rows.length === 0) {
+        return { content: `No pending operations found for "${jobName}". The job may be complete or not found.`, error: false };
+      }
+      
+      const op = ops.rows[0] as any;
+      const startDate = op.scheduled_start ? new Date(op.scheduled_start).toLocaleString() : 'Not scheduled';
+      
+      let response = `⏭️ **Next Operation for ${op.job_name}:**\n\n`;
+      response += `• **${op.name}** (Sequence: ${op.sequence_number})\n`;
+      response += `• Resource: ${op.resource_name || 'Not assigned'}\n`;
+      response += `• Scheduled Start: ${startDate}\n`;
+      response += `• Progress: ${op.percent_finished || 0}%\n`;
+      
+      return { content: response, error: false };
+    } catch (error: any) {
+      return { content: `Error: ${error.message}`, error: true };
+    }
+  }
+  
+  private async getCurrentOperation(jobName: string, context: AgentContext): Promise<AgentResponse> {
+    try {
+      const ops = await db.execute(sql`
+        SELECT jo.id, jo.name, jo.sequence_number, jo.scheduled_start, jo.scheduled_end,
+               jo.percent_finished, r.resource_name, j.name as job_name
+        FROM ptjoboperations jo
+        JOIN ptjobs j ON jo.job_id = j.id
+        LEFT JOIN ptjobresources jr ON jo.id = jr.operation_id
+        LEFT JOIN ptresources r ON jr.default_resource_id = r.resource_id
+        WHERE (LOWER(j.name) LIKE LOWER(${`%${jobName}%`}) OR j.id::text = ${jobName})
+          AND jo.percent_finished > 0 AND jo.percent_finished < 100
+        ORDER BY jo.sequence_number ASC
+        LIMIT 1
+      `);
+      
+      if (!ops.rows || ops.rows.length === 0) {
+        return { content: `No in-progress operations found for "${jobName}". Check if work has started.`, error: false };
+      }
+      
+      const op = ops.rows[0] as any;
+      const endDate = op.scheduled_end ? new Date(op.scheduled_end).toLocaleString() : 'Not scheduled';
+      
+      let response = `🔄 **Current Operation for ${op.job_name}:**\n\n`;
+      response += `• **${op.name}** (Sequence: ${op.sequence_number})\n`;
+      response += `• Resource: ${op.resource_name || 'Not assigned'}\n`;
+      response += `• Progress: ${op.percent_finished}%\n`;
+      response += `• Expected End: ${endDate}\n`;
+      
+      return { content: response, error: false };
+    } catch (error: any) {
+      return { content: `Error: ${error.message}`, error: true };
+    }
+  }
+  
+  private async getBottleneckOperations(context: AgentContext): Promise<AgentResponse> {
+    try {
+      const bottlenecks = await db.execute(sql`
+        SELECT jo.id, jo.name, jo.cycle_hrs, jo.setup_hours,
+               (COALESCE(jo.cycle_hrs, 0) + COALESCE(jo.setup_hours, 0)) as total_hours,
+               j.name as job_name, r.name as resource_name
+        FROM ptjoboperations jo
+        JOIN ptjobs j ON jo.job_id = j.id
+        LEFT JOIN ptjobresources jr ON jo.id = jr.operation_id
+        LEFT JOIN ptresources r ON jr.default_resource_id = r.id::text
+        WHERE jo.percent_finished < 100
+        ORDER BY (COALESCE(jo.cycle_hrs, 0) + COALESCE(jo.setup_hours, 0)) DESC
+        LIMIT 10
+      `);
+      
+      if (!bottlenecks.rows || bottlenecks.rows.length === 0) {
+        return { content: 'No pending operations found to analyze.', error: false };
+      }
+      
+      let response = '🚧 **Potential Bottleneck Operations (Longest Duration):**\n\n';
+      for (const op of bottlenecks.rows as any[]) {
+        const hours = Math.round((op.total_hours || 0) * 10) / 10;
+        response += `• **${op.name}** - ${hours} hours\n`;
+        response += `  Job: ${op.job_name} | Resource: ${op.resource_name || 'Not assigned'}\n\n`;
+      }
+      
+      return { content: response, error: false };
+    } catch (error: any) {
+      return { content: `Error: ${error.message}`, error: true };
+    }
+  }
+  
+  // ========== LOCATION QUERIES ==========
+  
+  private async handleLocationQuery(message: string, context: AgentContext): Promise<AgentResponse> {
+    const lowerMessage = message.toLowerCase();
+    
+    try {
+      const plantMatch = message.match(/(?:jobs?\s+(?:at|in)|by)\s+plant\s+(.+?)(?:\?|$)/i);
+      const deptMatch = message.match(/(?:jobs?\s+(?:at|in)|by)\s+department\s+(.+?)(?:\?|$)/i);
+      
+      if (plantMatch) {
+        return await this.getJobsByPlant(plantMatch[1].trim(), context);
+      }
+      
+      if (deptMatch) {
+        return await this.getJobsByDepartment(deptMatch[1].trim(), context);
+      }
+      
+      // Generic "by plant" or "by department" - show summary
+      if (lowerMessage.includes('by plant')) {
+        return await this.getJobsGroupedByPlant(context);
+      }
+      
+      if (lowerMessage.includes('by department')) {
+        return await this.getJobsGroupedByDepartment(context);
+      }
+      
+      return {
+        content: 'I can filter jobs by location. Try:\n' +
+                 '• **Jobs at Plant 1** - Jobs at a specific plant\n' +
+                 '• **Jobs by plant** - Summary by plant\n' +
+                 '• **Jobs in Brewing department** - Jobs in a department',
+        error: false
+      };
+    } catch (error: any) {
+      return { content: `Error: ${error.message}`, error: true };
+    }
+  }
+  
+  private async getJobsByPlant(plantName: string, context: AgentContext): Promise<AgentResponse> {
+    try {
+      const jobs = await db.execute(sql`
+        SELECT DISTINCT j.id, j.name, j.external_id, j.priority, j.need_date_time, p.name as plant_name
+        FROM ptjobs j
+        JOIN ptjoboperations jo ON j.id = jo.job_id
+        JOIN ptjobresources jr ON jo.id = jr.operation_id
+        JOIN ptresources r ON jr.default_resource_id = r.id::text
+        JOIN ptplants p ON r.plant_id = p.id
+        WHERE LOWER(p.name) LIKE LOWER(${`%${plantName}%`})
+        ORDER BY j.priority ASC, j.need_date_time ASC
+        LIMIT 20
+      `);
+      
+      if (!jobs.rows || jobs.rows.length === 0) {
+        return { content: `No jobs found at plant matching "${plantName}".`, error: false };
+      }
+      
+      const actualPlant = (jobs.rows[0] as any).plant_name;
+      let response = `🏭 **Jobs at ${actualPlant} (${jobs.rows.length}):**\n\n`;
+      
+      for (const job of jobs.rows as any[]) {
+        const needDate = job.need_date_time ? new Date(job.need_date_time).toLocaleDateString() : 'Not set';
+        response += `• **${job.name || job.external_id}** - Priority: ${job.priority}, Due: ${needDate}\n`;
+      }
+      
+      return { content: response, error: false };
+    } catch (error: any) {
+      return { content: `Error: ${error.message}`, error: true };
+    }
+  }
+  
+  private async getJobsByDepartment(deptName: string, context: AgentContext): Promise<AgentResponse> {
+    try {
+      // Since we don't have a departments table, search by resource type as a proxy
+      const jobs = await db.execute(sql`
+        SELECT DISTINCT j.id, j.name, j.external_id, j.priority, j.need_date_time, r.resource_type
+        FROM ptjobs j
+        JOIN ptjoboperations jo ON j.id = jo.job_id
+        JOIN ptjobresources jr ON jo.id = jr.operation_id
+        JOIN ptresources r ON jr.default_resource_id = r.id::text
+        WHERE LOWER(r.resource_type) LIKE LOWER(${`%${deptName}%`})
+        ORDER BY j.priority ASC, j.need_date_time ASC
+        LIMIT 20
+      `);
+      
+      if (!jobs.rows || jobs.rows.length === 0) {
+        return { content: `No jobs found for department/type matching "${deptName}". Try searching by plant instead.`, error: false };
+      }
+      
+      const actualDept = (jobs.rows[0] as any).resource_type || deptName;
+      let response = `🏢 **Jobs using ${actualDept} resources (${jobs.rows.length}):**\n\n`;
+      
+      for (const job of jobs.rows as any[]) {
+        const needDate = job.need_date_time ? new Date(job.need_date_time).toLocaleDateString() : 'Not set';
+        response += `• **${job.name || job.external_id}** - Priority: ${job.priority}, Due: ${needDate}\n`;
+      }
+      
+      return { content: response, error: false };
+    } catch (error: any) {
+      return { content: `Error: ${error.message}`, error: true };
+    }
+  }
+  
+  private async getJobsGroupedByPlant(context: AgentContext): Promise<AgentResponse> {
+    try {
+      const summary = await db.execute(sql`
+        SELECT p.name as plant_name, COUNT(DISTINCT j.id) as job_count
+        FROM ptjobs j
+        JOIN ptjoboperations jo ON j.id = jo.job_id
+        JOIN ptjobresources jr ON jo.id = jr.operation_id
+        JOIN ptresources r ON jr.default_resource_id = r.id::text
+        JOIN ptplants p ON r.plant_id = p.id
+        GROUP BY p.name
+        ORDER BY job_count DESC
+      `);
+      
+      if (!summary.rows || summary.rows.length === 0) {
+        return { content: 'No plant data available for jobs.', error: false };
+      }
+      
+      let response = '🏭 **Jobs by Plant:**\n\n';
+      for (const row of summary.rows as any[]) {
+        response += `• **${row.plant_name}**: ${row.job_count} job(s)\n`;
+      }
+      
+      response += '\nAsk "Jobs at [plant name]" for details.';
+      return { content: response, error: false };
+    } catch (error: any) {
+      return { content: `Error: ${error.message}`, error: true };
+    }
+  }
+  
+  private async getJobsGroupedByDepartment(context: AgentContext): Promise<AgentResponse> {
+    try {
+      // Use resource_type as a proxy for departments
+      const summary = await db.execute(sql`
+        SELECT r.resource_type, COUNT(DISTINCT j.id) as job_count
+        FROM ptjobs j
+        JOIN ptjoboperations jo ON j.id = jo.job_id
+        JOIN ptjobresources jr ON jo.id = jr.operation_id
+        JOIN ptresources r ON jr.default_resource_id = r.id::text
+        WHERE r.resource_type IS NOT NULL
+        GROUP BY r.resource_type
+        ORDER BY job_count DESC
+      `);
+      
+      if (!summary.rows || summary.rows.length === 0) {
+        return { content: 'No resource type data available for jobs. Try "Jobs by plant" instead.', error: false };
+      }
+      
+      let response = '🏢 **Jobs by Resource Type:**\n\n';
+      for (const row of summary.rows as any[]) {
+        response += `• **${row.resource_type}**: ${row.job_count} job(s)\n`;
+      }
+      
+      response += '\nAsk "Jobs in [resource type]" for details.';
+      return { content: response, error: false };
+    } catch (error: any) {
+      return { content: `Error: ${error.message}`, error: true };
+    }
   }
 }
 
