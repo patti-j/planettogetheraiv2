@@ -1,53 +1,4 @@
 # Workday Summary
-# Workday Summary
-
-## December 5, 2025
-
-### Session Activities
-
-#### Bug Fixes & Improvements
-1. **Job Operations Display Format** - Changed from arrow notation (`→`) to numbered list format for better readability
-   - File: `server/services/agents/production-scheduling-agent.service.ts`
-   - Now displays as:
-     ```
-     1. Grain Milling
-     2. Mashing
-     3. Lautering
-     ...
-     ```
-### Demo Questions (Verified Working)
-1. "Which jobs are behind schedule" - Shows 5 overdue jobs
-2. "list scheduled jobs" - Shows all 5 jobs
-3. "show operations for job 64" - Shows 9 brewing operations in numbered list
-4. 
-#### Production Deployment
-- Reconfigured deployment settings for autoscale
-- Simplified run command: `node dist/index.js`
-- Identified extra port mapping issue (24678 → 3000) that may cause autoscale failures
-- **Note:** User needs to manually remove extra `[[ports]]` section from `.replit`
-
-#### Documentation
-- Compiled comprehensive list of existing AI agents with:
-  - Specialized training documents
-  - Trigger keywords for access
-  - Implementation status (active vs training-only)
-
-### Active Agents Summary
-| Agent | Status | Service File |
-|-------|--------|--------------|
-| Production Scheduling Agent | Active | `production-scheduling-agent.service.ts` |
-| FP&A Agent | Active | `fpa-agent.service.ts` |
-| Max AI Agent | Training Only | - |
-| Shop Floor Agent | Training Only | - |
-| Quality Analysis Agent | Training Only | - |
-| Predictive Maintenance Agent | Training Only | - |
-
-
-## Connecting ChatGPT to GitHub repository
-- removed connection to AI App v1
-- indexed V2 repo
-- connecting v2 to ChatGPT
----
 
 ## December 8, 2025
 
@@ -78,6 +29,54 @@ Created comprehensive Azure infrastructure migration document: `docs/azure-infra
 - Compute options: App Service, Container Apps, AKS
 - Supporting services: Key Vault, App Insights, Storage, Redis
 - Cost estimates and migration timeline
+
+---
+
+## December 9, 2025
+
+### Max AI Agent System - Three-Phase Implementation Complete
+
+Collaborated with ChatGPT 5.1 to implement systematic agent improvements for the Max AI assistant.
+
+**Phase 1: Routing & Connectivity ✅**
+- Verified AI endpoint connectivity
+- Both `/api/ai-agent/command` and `/api/max-ai/chat` working with GPT-5.1
+
+**Phase 2: Agent Attribution & Navigation ✅**
+- Added `agentId` and `agentName` to `MaxResponse` interface
+- Updated all return paths with proper attribution:
+  - Max responses: `agentId: "max"`, `agentName: "Max"`
+  - Production queries: `agentId: "production_scheduling"`, `agentName: "Production Scheduling Agent"`
+- Added `detectNavigationIntent()` deterministic helper for 11 pages:
+  - Production Scheduler, Jobs, Dashboard, Control Tower, Master Data
+  - Analytics, Reports, Inventory, Settings, Alerts, Canvas
+
+**Phase 3: Tool-Calling Style Actions ✅**
+- Extended `MaxResponse.action.type` to include `refresh_scheduler` and `apply_algorithm`
+- Added `detectSchedulingActionIntent()` deterministic helper:
+  - ASAP algorithm with direction (forward/backward)
+  - ALAP algorithm with direction (forward/backward)
+  - Refresh scheduler action
+- All actions properly attributed to Production Scheduling Agent
+- Frontend integration ready - matches handlers in `ai-left-panel.tsx`
+
+**Test Results:**
+```bash
+# Apply Algorithm (ASAP)
+curl /api/max-ai/chat "Run ASAP schedule forward"
+→ action.type: "apply_algorithm", data: { algorithm: "ASAP", direction: "forward" }
+
+# Refresh Scheduler
+curl /api/max-ai/chat "refresh the schedule"
+→ action.type: "refresh_scheduler"
+
+# Navigation
+curl /api/max-ai/chat "Take me to production scheduler"
+→ action.type: "navigate", target: "/production-scheduler"
+```
+
+**Files Modified:**
+- `server/services/max-ai-service.ts` - Added detection helpers and action types
 
 ---
 
