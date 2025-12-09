@@ -29,22 +29,12 @@ Collaborated with ChatGPT 5.1 to implement systematic agent improvements for the
 - Frontend integration ready - matches handlers in `ai-left-panel.tsx`
 
 **Test Results:**
-```bash
-# Apply Algorithm (ASAP)
-curl /api/max-ai/chat "Run ASAP schedule forward"
-→ action.type: "apply_algorithm", data: { algorithm: "ASAP", direction: "forward" }
-
-# Refresh Scheduler
-curl /api/max-ai/chat "refresh the schedule"
-→ action.type: "refresh_scheduler"
-
-# Navigation
-curl /api/max-ai/chat "Take me to production scheduler"
-→ action.type: "navigate", target: "/production-scheduler"
-```
+- Apply Algorithm (ASAP): action.type = "apply_algorithm", data = { algorithm: "ASAP", direction: "forward" }
+- Refresh Scheduler: action.type = "refresh_scheduler"
+- Navigation: action.type = "navigate", target = "/production-scheduler"
 
 **Files Modified:**
-- `server/services/max-ai-service.ts` - Added detection helpers and action types
+- server/services/max-ai-service.ts - Added detection helpers and action types
 
 ---
 
@@ -53,9 +43,9 @@ curl /api/max-ai/chat "Take me to production scheduler"
 ### GPT-5.1 API Upgrade
 Updated the entire application to use OpenAI GPT-5.1 model (released November 13, 2025):
 
-**Central Config Updated:** `server/config/ai-model.ts`
-- Primary model: `gpt-5.1`
-- Added model variants: `gpt-5.1-chat-latest`, `gpt-5.1-codex`, `gpt-5.1-codex-mini`
+**Central Config Updated:** server/config/ai-model.ts
+- Primary model: gpt-5.1
+- Added model variants: gpt-5.1-chat-latest, gpt-5.1-codex, gpt-5.1-codex-mini
 - Added reasoning effort levels: none, minimal, low, medium, high
 - Enabled 24-hour prompt caching (90% cheaper cached tokens)
 
@@ -71,7 +61,7 @@ Updated the entire application to use OpenAI GPT-5.1 model (released November 13
 - server/services/openai-config.ts
 
 ### Azure Migration Documentation
-Created comprehensive Azure infrastructure migration document: `docs/azure-infrastructure-requirements.md`
+Created comprehensive Azure infrastructure migration document: docs/azure-infrastructure-requirements.md
 - Full application migration (not just database)
 - Database options: PostgreSQL vs Azure SQL (decision pending Cloud Admin)
 - Compute options: App Service, Container Apps, AKS
