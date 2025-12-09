@@ -532,7 +532,10 @@ Format as: "Based on what I remember about you: [relevant info]" or return empty
   // Search for job by name, product name, or batch name
   async searchJobByName(searchTerm: string): Promise<any> {
     try {
-      const searchPattern = `%${searchTerm}%`;
+      // Remove special characters and create flexible search pattern
+      // Convert "Porter Batch 105" to match "Porter Batch #105"
+      const cleanedTerm = searchTerm.replace(/[#\-_]/g, ' ').replace(/\s+/g, '%');
+      const searchPattern = `%${cleanedTerm}%`;
       const jobResult = await db.execute(sql`
         SELECT 
           j.id,
@@ -717,12 +720,47 @@ Format as: "Based on what I remember about you: [relevant info]" or return empty
       const lowerQuery = query.toLowerCase();
       
       // Handle specific job queries (status, info, details, or just mentioning a job number/name)
-      // Match patterns like: "job 64", "batch 105", "Porter Batch 105", "Dark Stout"
-      const jobNumberMatch = query.match(/(?:job|order|jo|mo|batch)[-\s#]*(\d+|[A-Z0-9-]+)/i);
+      // Match patterns like: "job 64", "batch 105", but NOT "batch number" (common words)
+      const jobNumberMatch = query.match(/(?:job|order|jo|mo|batch)[-\s#]*(\d+|[A-Z]+-\d+)/i);
       
       // Also check for name-based queries: "status of Porter Batch" or "What is the status of Dark Stout"
       const statusQueryMatch = query.match(/(?:status|info|details?|progress)\s+(?:of|for|on)?\s*(?:the\s+)?(.+?)(?:\?|$)/i);
       const nameSearchTerm = statusQueryMatch ? statusQueryMatch[1].trim() : null;
+      
+      // Check for direct batch name mentions (e.g., "Porter batch 105", "I meant Porter batch number 105")
+      const batchNameMatch = query.match(/(\w+)\s+batch\s*(?:number\s*)?#?(\d+)/i);
+      
+      if (batchNameMatch && batchNameMatch[2]) {
+        // User mentioned a batch with a number - search by name
+        const batchPrefix = batchNameMatch[1]?.trim() || '';
+        const batchNumber = batchNameMatch[2];
+        // Include "Batch" in search since job names are like "Porter Batch #105"
+        const searchTerm = batchPrefix ? `${batchPrefix} Batch ${batchNumber}` : `Batch ${batchNumber}`;
+        console.log(`[Max AI] Searching for batch: ${searchTerm}`);
+        const jobs = await this.searchJobByName(searchTerm);
+        if (jobs.length === 1) {
+          const jobStatus = await this.getJobStatus(jobs[0].id.toString());
+          if (jobStatus) {
+            let statusMessage = `📊 **Job ${jobStatus.jobNumber} Status**\n\n`;
+            statusMessage += `**Product:** ${jobStatus.productName || jobStatus.productCode}\n`;
+            if (jobStatus.productDescription) {
+              statusMessage += `**Description:** ${jobStatus.productDescription}\n`;
+            }
+            statusMessage += `**Priority:** ${jobStatus.priority || 'Standard'}\n`;
+            statusMessage += `**Current Status:** ${jobStatus.status.scheduledStatus || 'Scheduled'}\n`;
+            return statusMessage;
+          }
+        } else if (jobs.length > 1) {
+          let response = `I found ${jobs.length} jobs matching "${searchTerm}":\n\n`;
+          for (const job of jobs) {
+            response += `• **${job.name}** (ID: ${job.id}) - ${job.scheduled_status || 'Scheduled'}\n`;
+          }
+          response += `\nPlease specify which job you'd like details for.`;
+          return response;
+        } else {
+          return `I couldn't find any jobs matching "${searchTerm}". You can say "list jobs" to see available jobs.`;
+        }
+      }
       
       if (jobNumberMatch && jobNumberMatch[1]) {
         // User is asking about a specific job by ID/number - always look it up

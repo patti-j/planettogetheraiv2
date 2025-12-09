@@ -1227,6 +1227,17 @@ export class ProductionSchedulingAgent extends BaseAgent {
         }
       }
       
+      // Check for direct batch/job name references (e.g., "Porter batch 105", "I meant Porter batch number 105")
+      // This handles follow-up messages and direct references without "status" keyword
+      const batchMatch = message.match(/(?:batch|meant|about|the)\s+(?:number\s+)?(.+?)(?:\s*\?|$|\.|,)/i);
+      if (batchMatch && batchMatch[1] && lowerMessage.includes('batch')) {
+        const searchTerm = batchMatch[1].trim();
+        if (searchTerm && searchTerm.length > 2) {
+          console.log(`[Production Scheduling Agent] Searching for batch by name: ${searchTerm}`);
+          return await this.searchJobByName(searchTerm, context);
+        }
+      }
+      
       // Check for GENERAL status queries (only if no specific job was found)
       if (lowerMessage.includes('status') && !specificJobIdMatch) {
         return await this.getJobsByStatus(context);
