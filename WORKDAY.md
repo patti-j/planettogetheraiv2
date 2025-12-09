@@ -22,6 +22,17 @@ Integrated knowledge base retrieval-augmented generation (RAG) into Max AI for d
 - External links have ExternalLink icon and open in new tab
 - Shows top 3 sources as clickable citations
 
+**HubSpot KB Import:**
+- Created `scripts/import-knowledge-base.ts` for monthly refresh
+- Handles UTF-16 encoded HubSpot TSV exports
+- Strips HTML, chunks content (~400 tokens), creates DB records
+- Successfully imported 168 articles from HubSpot export
+- Created documentation: `docs/KNOWLEDGE-BASE-IMPORT.md`
+
+**Files Created:**
+- `scripts/import-knowledge-base.ts` - Reusable import script
+- `docs/KNOWLEDGE-BASE-IMPORT.md` - Monthly refresh documentation
+
 **Files Modified:**
 - `server/services/max-ai-service.ts` - RAG import, KBSource interface, isKnowledgeQuestion(), generateKBResponse(), flow integration
 - `client/src/components/navigation/ai-left-panel.tsx` - Sources display, ExternalLink import, addMessage with sources
