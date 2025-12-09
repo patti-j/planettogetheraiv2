@@ -17,6 +17,7 @@ import { PowerBIService } from './powerbi';
 import { agentRegistry } from './agents/agent-registry';
 import type { AgentContext } from './agents/agent-registry';
 import { agentBridge } from './agents/agent-bridge';
+import { knowledgeRetrievalService, KBSearchResult } from './knowledge-retrieval.service';
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -85,6 +86,14 @@ interface MaxContext {
   };
 }
 
+interface KBSource {
+  articleId: number;
+  title: string;
+  url?: string | null;
+  snippet: string;
+  score: number;
+}
+
 interface MaxResponse {
   content: string;
   action?: {
@@ -109,6 +118,7 @@ interface MaxResponse {
   learnedPreference?: any;
   reasoning?: AIReasoning;
   playbooksUsed?: PlaybookReference[];
+  sources?: KBSource[];
 }
 
 interface AIReasoning {
@@ -6184,6 +6194,88 @@ class ProactiveRecommendationEngine {
     this.userPatterns.set(userId, pattern);
   }
 
+  // Check if query could benefit from knowledge base search
+  private isKnowledgeQuestion(message: string): boolean {
+    const kbIndicators = [
+      'how do i', 'how to', 'what is', 'what are', 'explain', 'tell me about',
+      'help with', 'guide', 'documentation', 'best practice', 'configure',
+      'setup', 'install', 'troubleshoot', 'error', 'problem with',
+      'planettogether', 'pt ', 'aps', 'scheduling', 'feature', 'capability'
+    ];
+    const lower = message.toLowerCase();
+    return kbIndicators.some(indicator => lower.includes(indicator));
+  }
+
+  // Generate RAG-augmented response using knowledge base
+  private async generateKBResponse(
+    query: string, 
+    context: MaxContext,
+    playbooks: PlaybookReference[]
+  ): Promise<MaxResponse | null> {
+    try {
+      // Search knowledge base
+      const kbResults = await knowledgeRetrievalService.search(query, 5);
+      
+      if (kbResults.length === 0 || kbResults[0].score < 0.3) {
+        console.log('[Max AI] No relevant KB results found');
+        return null;
+      }
+
+      console.log(`[Max AI] Found ${kbResults.length} KB results, top score: ${kbResults[0].score.toFixed(2)}`);
+
+      // Build sources for citations
+      const sources: KBSource[] = kbResults.map(r => ({
+        articleId: r.articleId,
+        title: r.title,
+        url: r.sourceUrl,
+        snippet: r.content.substring(0, 150) + '...',
+        score: r.score
+      }));
+
+      // Build RAG prompt with retrieved passages
+      const sourcesText = kbResults.map((r, i) => 
+        `[${i + 1}] ${r.title}\n${r.content}`
+      ).join('\n\n');
+
+      const systemPrompt = `You are Max, PlanetTogether's knowledge assistant. Answer the user's question using ONLY the provided source passages.
+- When you cite a fact, reference the source number like [1] or [2].
+- If none of the sources answer the question, say: "I couldn't find that specific information in our knowledge base."
+- Be concise and helpful (2-6 sentences for most answers).
+- If the question is ambiguous, ask one clarifying question.`;
+
+      const userPrompt = `QUESTION:
+${query}
+
+SOURCES:
+${sourcesText}
+
+Please answer using the provided sources.`;
+
+      const completion = await openai.chat.completions.create({
+        model: DEFAULT_MODEL,
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: userPrompt }
+        ],
+        temperature: 0.1, // Low temperature for factual KB answers
+        max_completion_tokens: 600
+      });
+
+      const responseContent = completion.choices[0].message.content || "I couldn't process that question.";
+
+      return {
+        content: responseContent,
+        sources,
+        confidence: Math.min(kbResults[0].score + 0.2, 0.95),
+        playbooksUsed: playbooks,
+        error: false
+      };
+    } catch (error) {
+      console.error('[Max AI] KB response generation failed:', error);
+      return null;
+    }
+  }
+
   // Main chat method to respond to user messages
   async respondToMessage(message: string, context: MaxContext & { agentId?: string }): Promise<MaxResponse> {
     try {
@@ -6215,6 +6307,27 @@ class ProactiveRecommendationEngine {
 
       // Search for relevant playbooks
       const playbooks = await this.searchRelevantPlaybooks(message, context);
+
+      // Try knowledge base for help/how-to questions
+      if (this.isKnowledgeQuestion(message)) {
+        const kbResponse = await this.generateKBResponse(message, context, playbooks);
+        if (kbResponse) {
+          console.log('[Max AI] Using KB-augmented response');
+          
+          // Add response to conversation history
+          this.addToConversationHistory(context.userId, {
+            role: 'assistant',
+            content: kbResponse.content,
+            timestamp: new Date()
+          });
+
+          // Store memory and track action
+          await this.detectAndStoreMemory(context.userId, message, kbResponse.content);
+          await this.trackAIAction(context, message, kbResponse.content, playbooks);
+
+          return kbResponse;
+        }
+      }
 
       // Try to analyze internal data first
       const internalDataResponse = await this.analyzeInternalDataQuery(message, context);

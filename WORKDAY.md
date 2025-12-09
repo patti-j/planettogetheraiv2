@@ -2,6 +2,30 @@
 
 ## December 9, 2025
 
+### Knowledge Base RAG Integration ✅
+Integrated knowledge base retrieval-augmented generation (RAG) into Max AI for documentation-based responses.
+
+**RAG Architecture:**
+- Added `isKnowledgeQuestion()` to detect help/how-to queries (how, what, explain, guide, etc.)
+- Created `generateKBResponse()` method for KB-augmented answers
+- Uses `knowledgeRetrievalService.search()` with 0.3 score threshold
+- Builds prompt with retrieved passages and citation markers [1], [2], [3]
+
+**Max AI Integration:**
+- KB check happens after playbooks but before internal data analysis
+- Successful KB hits return early with sources array
+- Response includes `sources: KBSource[]` for citation display
+
+**Frontend UI Changes:**
+- Updated `MaxResponse` interface with `sources?: KBSource[]` field
+- AI panel displays "Sources" section with BookOpen icon for KB responses
+- External links have ExternalLink icon and open in new tab
+- Shows top 3 sources as clickable citations
+
+**Files Modified:**
+- `server/services/max-ai-service.ts` - RAG import, KBSource interface, isKnowledgeQuestion(), generateKBResponse(), flow integration
+- `client/src/components/navigation/ai-left-panel.tsx` - Sources display, ExternalLink import, addMessage with sources
+
 ### Ad-Hoc Reporting Agent Implementation ✅
 Implemented a new specialized agent for on-demand report generation.
 

@@ -1216,6 +1216,48 @@ export const playbookUsage = pgTable("playbook_usage", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// ============================================
+// Knowledge Base System (RAG)
+// ============================================
+
+// Knowledge Articles for AI knowledge base
+export const knowledgeArticles = pgTable("knowledge_articles", {
+  id: serial("id").primaryKey(),
+  title: varchar("title", { length: 500 }).notNull(),
+  content: text("content").notNull(),
+  category: varchar("category", { length: 200 }),
+  tags: text("tags"), // Comma-separated tags
+  source: varchar("source", { length: 200 }), // e.g., "hubspot", "internal", "documentation"
+  sourceUrl: varchar("source_url", { length: 500 }), // Original article URL
+  isActive: boolean("is_active").default(true),
+  createdBy: integer("created_by").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow()
+}, (table) => {
+  return {
+    categoryIdx: index("knowledge_articles_category_idx").on(table.category),
+    activeIdx: index("knowledge_articles_active_idx").on(table.isActive)
+  };
+});
+
+// Knowledge Chunks - passages for better retrieval (300-800 tokens each)
+export const knowledgeChunks = pgTable("knowledge_chunks", {
+  id: serial("id").primaryKey(),
+  articleId: integer("article_id").references(() => knowledgeArticles.id).notNull(),
+  chunkIndex: integer("chunk_index").notNull(), // Order within article
+  content: text("content").notNull(), // The actual passage text
+  embedding: jsonb("embedding"), // OpenAI embedding vector stored as JSONB
+  tokenCount: integer("token_count"), // Approximate token count
+  model: varchar("model", { length: 100 }).default('text-embedding-3-small'),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow()
+}, (table) => {
+  return {
+    articleIdx: index("knowledge_chunks_article_idx").on(table.articleId),
+    chunkOrderIdx: index("knowledge_chunks_order_idx").on(table.articleId, table.chunkIndex)
+  };
+});
+
 // Voice recordings cache for AI chat and tour narration
 export const voiceRecordingsCache = pgTable("voice_recordings_cache", {
   id: serial("id").primaryKey(),
@@ -1373,6 +1415,8 @@ export const insertAgentRecommendationSchema = createInsertSchema(agentRecommend
 export const insertAiMemorySchema = createInsertSchema(aiMemories);
 export const insertPlaybookSchema = createInsertSchema(playbooks);
 export const insertPlaybookUsageSchema = createInsertSchema(playbookUsage);
+export const insertKnowledgeArticleSchema = createInsertSchema(knowledgeArticles).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertKnowledgeChunkSchema = createInsertSchema(knowledgeChunks).omit({ id: true, createdAt: true, updatedAt: true });
 export const insertVoiceRecordingsCacheSchema = createInsertSchema(voiceRecordingsCache);
 export const insertMicrophoneRecordingSchema = createInsertSchema(microphoneRecordings);
 
@@ -1568,6 +1612,10 @@ export type Playbook = typeof playbooks.$inferSelect;
 export type InsertPlaybook = z.infer<typeof insertPlaybookSchema>;
 export type PlaybookUsage = typeof playbookUsage.$inferSelect;
 export type InsertPlaybookUsage = z.infer<typeof insertPlaybookUsageSchema>;
+export type KnowledgeArticle = typeof knowledgeArticles.$inferSelect;
+export type InsertKnowledgeArticle = z.infer<typeof insertKnowledgeArticleSchema>;
+export type KnowledgeChunk = typeof knowledgeChunks.$inferSelect;
+export type InsertKnowledgeChunk = z.infer<typeof insertKnowledgeChunkSchema>;
 export type VoiceRecordingsCache = typeof voiceRecordingsCache.$inferSelect;
 export type InsertVoiceRecordingsCache = z.infer<typeof insertVoiceRecordingsCacheSchema>;
 export type MicrophoneRecording = typeof microphoneRecordings.$inferSelect;

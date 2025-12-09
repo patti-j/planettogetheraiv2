@@ -16752,5 +16752,117 @@ router.post("/api/roadmap-features/finalize", async (req, res) => {
   }
 });
 
+// ============================================
+// Knowledge Base API Routes
+// ============================================
+
+import { knowledgeRetrievalService, KBSearchResult } from './services/knowledge-retrieval.service';
+import { knowledgeArticles, knowledgeChunks } from '@shared/schema';
+
+// Search knowledge base
+router.post("/api/knowledge/search", async (req, res) => {
+  try {
+    const { query, topK = 6 } = req.body;
+    
+    if (!query || typeof query !== 'string') {
+      return res.status(400).json({ error: "Query is required" });
+    }
+    
+    const results = await knowledgeRetrievalService.search(query, topK);
+    res.json({ results });
+  } catch (error: any) {
+    console.error("[Knowledge API] Search failed:", error);
+    res.status(500).json({ error: "Search failed", message: error.message });
+  }
+});
+
+// Get knowledge base stats
+router.get("/api/knowledge/stats", async (req, res) => {
+  try {
+    const articleCount = await knowledgeRetrievalService.getArticleCount();
+    const chunkCount = await knowledgeRetrievalService.getChunkCount();
+    
+    res.json({ 
+      articles: articleCount,
+      chunks: chunkCount,
+      status: articleCount > 0 ? 'active' : 'empty'
+    });
+  } catch (error: any) {
+    console.error("[Knowledge API] Stats failed:", error);
+    res.status(500).json({ error: "Failed to get stats" });
+  }
+});
+
+// Ingest a new article
+router.post("/api/knowledge/articles", async (req, res) => {
+  try {
+    const { title, content, category, tags, source, sourceUrl } = req.body;
+    
+    if (!title || !content) {
+      return res.status(400).json({ error: "Title and content are required" });
+    }
+    
+    const result = await knowledgeRetrievalService.ingestArticle({
+      title,
+      content,
+      category,
+      tags,
+      source,
+      sourceUrl,
+    });
+    
+    res.json({ success: true, ...result });
+  } catch (error: any) {
+    console.error("[Knowledge API] Ingest failed:", error);
+    res.status(500).json({ error: "Failed to ingest article", message: error.message });
+  }
+});
+
+// List all articles
+router.get("/api/knowledge/articles", async (req, res) => {
+  try {
+    const articles = await getDb().select({
+      id: knowledgeArticles.id,
+      title: knowledgeArticles.title,
+      category: knowledgeArticles.category,
+      source: knowledgeArticles.source,
+      sourceUrl: knowledgeArticles.sourceUrl,
+      isActive: knowledgeArticles.isActive,
+      createdAt: knowledgeArticles.createdAt,
+    })
+    .from(knowledgeArticles)
+    .where(eq(knowledgeArticles.isActive, true))
+    .orderBy(desc(knowledgeArticles.createdAt));
+    
+    res.json({ articles });
+  } catch (error: any) {
+    console.error("[Knowledge API] List failed:", error);
+    res.status(500).json({ error: "Failed to list articles" });
+  }
+});
+
+// Reindex an article
+router.post("/api/knowledge/articles/:id/reindex", async (req, res) => {
+  try {
+    const articleId = parseInt(req.params.id);
+    await knowledgeRetrievalService.reindexArticle(articleId);
+    res.json({ success: true, message: `Article ${articleId} reindexed` });
+  } catch (error: any) {
+    console.error("[Knowledge API] Reindex failed:", error);
+    res.status(500).json({ error: "Failed to reindex article", message: error.message });
+  }
+});
+
+// Initialize all embeddings (bulk operation)
+router.post("/api/knowledge/initialize-embeddings", async (req, res) => {
+  try {
+    await knowledgeRetrievalService.initializeAllEmbeddings();
+    res.json({ success: true, message: "Embeddings initialized" });
+  } catch (error: any) {
+    console.error("[Knowledge API] Initialize embeddings failed:", error);
+    res.status(500).json({ error: "Failed to initialize embeddings", message: error.message });
+  }
+});
+
 // Forced rebuild - all duplicate keys fixed
 export default router;

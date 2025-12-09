@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useLocation } from 'wouter';
-import { Sparkles, TrendingUp, Lightbulb, Activity, ChevronLeft, ChevronRight, Play, RefreshCw, MessageSquare, Send, User, GripVertical, Settings, Volume2, VolumeX, Palette, Zap, Shield, Bell, X, Copy, Check, ChevronDown, Square, BookOpen, Bookmark, History, Monitor, Layers, Calendar, Factory, Wrench, Package, Target, Truck, DollarSign, MessageCircle, Paperclip, FileText, Image, File, Mic, MicOff, StopCircle, CheckCircle, Loader2, Brain } from 'lucide-react';
+import { Sparkles, TrendingUp, Lightbulb, Activity, ChevronLeft, ChevronRight, Play, RefreshCw, MessageSquare, Send, User, GripVertical, Settings, Volume2, VolumeX, Palette, Zap, Shield, Bell, X, Copy, Check, ChevronDown, Square, BookOpen, Bookmark, History, Monitor, Layers, Calendar, Factory, Wrench, Package, Target, Truck, DollarSign, MessageCircle, Paperclip, FileText, Image, File, Mic, MicOff, StopCircle, CheckCircle, Loader2, Brain, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -1091,7 +1091,9 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
           content: responseContent,
           source: 'panel',
           agentId: 'max',
-          agentName: 'Max'
+          agentName: 'Max',
+          // Include KB sources if available
+          ...(data?.sources && { sources: data.sources })
         });
 
         // Don't play voice response for Max (only for other agents like Nova)
@@ -1958,6 +1960,35 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
                                 ? renderContentWithClickableKeywords(message.content)
                                 : message.content
                               }
+                              
+                              {/* KB Sources - show if available */}
+                              {message.role === 'assistant' && (message as any).sources && (message as any).sources.length > 0 && (
+                                <div className="mt-2 pt-2 border-t border-border/50">
+                                  <div className="text-xs font-medium text-muted-foreground mb-1 flex items-center gap-1">
+                                    <BookOpen className="h-3 w-3" />
+                                    Sources
+                                  </div>
+                                  <div className="space-y-1">
+                                    {((message as any).sources as Array<{articleId: number; title: string; url?: string | null; snippet: string}>).slice(0, 3).map((source, idx) => (
+                                      <div key={idx} className="text-xs">
+                                        {source.url ? (
+                                          <a 
+                                            href={source.url} 
+                                            target="_blank" 
+                                            rel="noopener noreferrer"
+                                            className="text-primary hover:underline flex items-center gap-1"
+                                          >
+                                            [{idx + 1}] {source.title}
+                                            <ExternalLink className="h-2.5 w-2.5" />
+                                          </a>
+                                        ) : (
+                                          <span className="text-muted-foreground">[{idx + 1}] {source.title}</span>
+                                        )}
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
                             </div>
                             
                             {/* Copy button for assistant messages */}
