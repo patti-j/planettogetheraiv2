@@ -88,7 +88,7 @@ interface MaxContext {
 interface MaxResponse {
   content: string;
   action?: {
-    type: 'navigate' | 'show_data' | 'execute_function' | 'create_chart' | 'multi_step' | 'clarify' | 'switch_agent';
+    type: 'navigate' | 'show_data' | 'execute_function' | 'create_chart' | 'multi_step' | 'clarify' | 'switch_agent' | 'refresh_scheduler' | 'apply_algorithm';
     target?: string;
     title?: string;
     agentId?: string;
@@ -2282,6 +2282,79 @@ Rules:
     return { type: 'chat', confidence: 0.5 };
   }
 
+  // Deterministic scheduling action detection (rule-based, fast, predictable)
+  private detectSchedulingActionIntent(message: string): { 
+    type: string; 
+    content: string; 
+    action: MaxResponse['action'] 
+  } | null {
+    const lower = message.toLowerCase().trim();
+
+    // ASAP scheduling algorithm
+    if (
+      lower.includes('run asap') ||
+      lower.includes('apply asap') ||
+      lower.includes('schedule asap') ||
+      lower.includes('asap schedule') ||
+      (lower.includes('asap') && (lower.includes('algorithm') || lower.includes('scheduling')))
+    ) {
+      const direction = lower.includes('backward') ? 'backward' : 'forward';
+      return {
+        type: 'apply_algorithm',
+        content: `Applying ASAP scheduling algorithm (${direction} direction)...`,
+        action: {
+          type: 'apply_algorithm',
+          data: {
+            algorithm: 'ASAP',
+            direction: direction
+          }
+        }
+      };
+    }
+
+    // ALAP scheduling algorithm
+    if (
+      lower.includes('run alap') ||
+      lower.includes('apply alap') ||
+      lower.includes('schedule alap') ||
+      lower.includes('alap schedule') ||
+      (lower.includes('alap') && (lower.includes('algorithm') || lower.includes('scheduling')))
+    ) {
+      const direction = lower.includes('forward') ? 'forward' : 'backward';
+      return {
+        type: 'apply_algorithm',
+        content: `Applying ALAP scheduling algorithm (${direction} direction)...`,
+        action: {
+          type: 'apply_algorithm',
+          data: {
+            algorithm: 'ALAP',
+            direction: direction
+          }
+        }
+      };
+    }
+
+    // Refresh scheduler
+    if (
+      lower.includes('refresh the schedule') ||
+      lower.includes('refresh scheduler') ||
+      lower.includes('refresh the scheduler') ||
+      lower.includes('update the schedule') ||
+      lower.includes('reload the schedule') ||
+      (lower.includes('refresh') && lower.includes('schedule'))
+    ) {
+      return {
+        type: 'refresh_scheduler',
+        content: 'Refreshing the production scheduler view...',
+        action: {
+          type: 'refresh_scheduler'
+        }
+      };
+    }
+
+    return null;
+  }
+
   // Deterministic navigation intent detection (rule-based, fast, predictable)
   private detectNavigationIntent(message: string): { target: string; title: string } | null {
     const lower = message.toLowerCase().trim();
@@ -2429,6 +2502,20 @@ Rules:
               target: navIntent.target,
               title: navIntent.title,
             },
+          };
+        }
+
+        // PRIORITY 0.5: Detect scheduling algorithm and refresh intents (deterministic)
+        const schedulingActionIntent = this.detectSchedulingActionIntent(query);
+        if (schedulingActionIntent) {
+          console.log(`[Max AI] ⚙️ Scheduling action intent detected: ${schedulingActionIntent.type}`);
+          return {
+            content: schedulingActionIntent.content,
+            error: false,
+            confidence: 0.99,
+            agentId: 'production_scheduling',
+            agentName: 'Production Scheduling Agent',
+            action: schedulingActionIntent.action,
           };
         }
 
