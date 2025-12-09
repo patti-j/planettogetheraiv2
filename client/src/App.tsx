@@ -91,7 +91,25 @@ function useAuthStatus() {
         } else if (response.ok) {
           const userData = await response.json();
           console.log('🔐 [App.tsx] Authentication successful, user:', userData.user?.username);
-          localStorage.setItem('user', JSON.stringify(userData));
+          
+          try {
+            // Store only a minimal user object to avoid localStorage quota issues
+            const minimalUser = {
+              user: {
+                id: userData.user?.id,
+                username: userData.user?.username,
+                role: userData.user?.role,
+              },
+              tenant: {
+                id: userData.tenant?.id,
+                name: userData.tenant?.name,
+              },
+            };
+            localStorage.setItem('user', JSON.stringify(minimalUser));
+          } catch (storageError) {
+            console.warn('Failed to store user in localStorage:', storageError);
+          }
+          
           setIsAuthenticated(true);
         } else {
           // Authentication failed
