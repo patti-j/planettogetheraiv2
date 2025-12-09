@@ -21,3 +21,18 @@ Files: `client/src/App.tsx`
 - Verified scheduler uses relative paths (`/api/resources`, `/api/pt-operations`, etc.)
 - No hardcoded Replit URLs found in `public/production-scheduler.html`
 - Connection errors are Vite HMR (Hot Module Replacement), not API failures
+
+### Job Name/Batch Search Enhancement ✅
+Updated Max AI to recognize jobs by name and batch references, not just IDs.
+
+**Changes:**
+- Added `searchJobByName()` method to Production Scheduling Agent
+- Updated `handleJobQuery()` to detect name-based status queries before falling back to generic status
+- Flexible search pattern removes `#`, `-`, `_` for fuzzy matching
+
+**Supported queries:**
+- "What is the status of Porter Batch 105?" → Finds "Porter Batch #105"
+- "What is the status of Dark Stout?" → Finds "Dark Stout #103"
+- "What is the status of batch 105?" → Finds matching batch
+
+Files: `server/services/agents/production-scheduling-agent.service.ts`, `server/services/max-ai-service.ts`

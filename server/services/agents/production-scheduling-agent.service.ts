@@ -1215,6 +1215,18 @@ export class ProductionSchedulingAgent extends BaseAgent {
         }
       }
       
+      // Check for name-based job status queries (batch, product name, etc.)
+      // Match: "status of Porter Batch 105", "status of Dark Stout", "status of batch 105"
+      const nameStatusMatch = message.match(/(?:status|info|details?|progress)\s+(?:of|for|on)?\s*(?:the\s+)?(.+?)(?:\?|$)/i);
+      if (nameStatusMatch && nameStatusMatch[1]) {
+        const searchTerm = nameStatusMatch[1].trim();
+        // Skip if it's just a generic term like "jobs" or "all jobs"
+        if (searchTerm && !['jobs', 'all jobs', 'all', 'the jobs'].includes(searchTerm.toLowerCase())) {
+          console.log(`[Production Scheduling Agent] Searching for job by name: ${searchTerm}`);
+          return await this.searchJobByName(searchTerm, context);
+        }
+      }
+      
       // Check for GENERAL status queries (only if no specific job was found)
       if (lowerMessage.includes('status') && !specificJobIdMatch) {
         return await this.getJobsByStatus(context);
@@ -1305,6 +1317,105 @@ export class ProductionSchedulingAgent extends BaseAgent {
     }
   }
   
+  private async searchJobByName(searchTerm: string, context: AgentContext): Promise<AgentResponse> {
+    try {
+      // Remove special characters and create flexible search pattern
+      // Convert "Porter Batch 105" to match "Porter Batch #105"
+      const cleanedTerm = searchTerm.replace(/[#\-_]/g, ' ').replace(/\s+/g, '%');
+      const searchPattern = `%${cleanedTerm}%`;
+      const jobs = await db.execute(sql`
+        SELECT 
+          j.id,
+          j.external_id,
+          j.name,
+          j.description,
+          j.priority,
+          j.need_date_time,
+          j.scheduled_status,
+          COUNT(DISTINCT o.id) as total_operations,
+          COUNT(DISTINCT CASE WHEN o.percent_finished = 100 THEN o.id END) as completed_operations,
+          MAX(o.scheduled_end) as last_op_end
+        FROM ptjobs j
+        LEFT JOIN ptjoboperations o ON j.id = o.job_id
+        WHERE LOWER(j.name) LIKE LOWER(${searchPattern})
+           OR LOWER(j.description) LIKE LOWER(${searchPattern})
+        GROUP BY j.id, j.external_id, j.name, j.description, 
+                 j.priority, j.need_date_time, j.scheduled_status
+        LIMIT 5
+      `);
+      
+      if (!jobs.rows || jobs.rows.length === 0) {
+        return { 
+          content: `I couldn't find any jobs matching "${searchTerm}". You can say "list jobs" to see available jobs.`, 
+          error: false 
+        };
+      }
+      
+      if (jobs.rows.length === 1) {
+        // Found exactly one job - show detailed status
+        const job = jobs.rows[0] as any;
+        const needDate = job.need_date_time ? new Date(job.need_date_time).toLocaleDateString() : 'Not set';
+        const scheduledEnd = job.last_op_end ? new Date(job.last_op_end).toLocaleDateString() : 'Not set';
+        const progressPct = job.total_operations > 0 
+          ? Math.round((job.completed_operations / job.total_operations) * 100)
+          : 0;
+        
+        // Calculate on-time status
+        let onTimeStatus = '';
+        if (job.need_date_time && job.last_op_end) {
+          const needBy = new Date(job.need_date_time);
+          const schedEnd = new Date(job.last_op_end);
+          const daysDiff = Math.floor((needBy.getTime() - schedEnd.getTime()) / (1000 * 60 * 60 * 24));
+          if (daysDiff >= 0) {
+            onTimeStatus = `✅ **ON-TIME** - ${daysDiff} days early`;
+          } else {
+            onTimeStatus = `⚠️ **LATE** - ${Math.abs(daysDiff)} days overdue`;
+          }
+        }
+        
+        let response = `📊 **Job ${job.name} Status**\n\n`;
+        response += `**Description:** ${job.description || 'N/A'}\n`;
+        response += `**Priority:** ${job.priority || 'Standard'}\n`;
+        response += `**Current Status:** ${job.scheduled_status || 'Scheduled'}\n\n`;
+        
+        response += `📅 **SCHEDULE PERFORMANCE:**\n`;
+        response += onTimeStatus ? `${onTimeStatus}\n` : `❓ **SCHEDULE STATUS UNKNOWN**\n`;
+        response += `• Need Date: ${needDate}\n`;
+        response += `• Scheduled End: ${scheduledEnd}\n\n`;
+        
+        response += `**Progress:** `;
+        if (job.total_operations > 0) {
+          if (job.completed_operations === job.total_operations) {
+            response += `✅ COMPLETED - All ${job.total_operations} operations finished\n`;
+          } else if (job.completed_operations > 0) {
+            response += `IN PROGRESS (${progressPct}%) - ${job.completed_operations} of ${job.total_operations} operations completed\n`;
+          } else {
+            response += `NOT STARTED - 0 of ${job.total_operations} operations completed\n`;
+          }
+        } else {
+          response += `No operations tracked\n`;
+        }
+        
+        return { content: response, error: false };
+      }
+      
+      // Multiple matches - ask for clarification
+      let response = `I found ${jobs.rows.length} jobs matching "${searchTerm}":\n\n`;
+      for (const job of jobs.rows as any[]) {
+        response += `• **${job.name}** (ID: ${job.id}) - ${job.scheduled_status || 'Scheduled'}\n`;
+      }
+      response += `\nPlease specify which job you'd like details for.`;
+      
+      return { content: response, error: false };
+    } catch (error: any) {
+      console.error('Error searching job by name:', error);
+      return { 
+        content: `Failed to search for job: ${error.message}`, 
+        error: true 
+      };
+    }
+  }
+
   private async getJobsByStatus(context: AgentContext): Promise<AgentResponse> {
     try {
       const jobs = await db.execute(sql`

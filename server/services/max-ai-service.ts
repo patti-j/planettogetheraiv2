@@ -529,6 +529,43 @@ Format as: "Based on what I remember about you: [relevant info]" or return empty
     return 'general';
   }
   
+  // Search for job by name, product name, or batch name
+  async searchJobByName(searchTerm: string): Promise<any> {
+    try {
+      const searchPattern = `%${searchTerm}%`;
+      const jobResult = await db.execute(sql`
+        SELECT 
+          j.id,
+          j.external_id,
+          j.name,
+          j.description,
+          j.priority,
+          j.need_date_time,
+          j.scheduled_status,
+          j.manufacturing_release_date,
+          COUNT(DISTINCT o.id) as total_operations,
+          COUNT(DISTINCT CASE WHEN o.percent_finished = 100 THEN o.id END) as completed_operations,
+          COUNT(DISTINCT CASE WHEN o.percent_finished > 0 AND o.percent_finished < 100 THEN o.id END) as in_progress_operations,
+          COUNT(DISTINCT CASE WHEN o.percent_finished > 0 THEN o.id END) as started_operations,
+          MIN(o.scheduled_start) as first_op_start,
+          MAX(o.scheduled_end) as last_op_end
+        FROM ptjobs j
+        LEFT JOIN ptjoboperations o ON j.id = o.job_id
+        WHERE LOWER(j.name) LIKE LOWER(${searchPattern})
+           OR LOWER(j.description) LIKE LOWER(${searchPattern})
+        GROUP BY j.id, j.external_id, j.name, j.description, 
+                 j.priority, j.need_date_time, j.scheduled_status,
+                 j.manufacturing_release_date
+        LIMIT 5
+      `);
+      
+      return jobResult.rows;
+    } catch (error) {
+      console.error('Error searching job by name:', error);
+      return [];
+    }
+  }
+
   // Get detailed job status information
   async getJobStatus(jobId: string): Promise<any> {
     try {
@@ -679,14 +716,104 @@ Format as: "Based on what I remember about you: [relevant info]" or return empty
     try {
       const lowerQuery = query.toLowerCase();
       
-      // Handle specific job queries (status, info, details, or just mentioning a job number)
-      // Match patterns like: "job 64", "status of job 64", "what about job 64", "show me job 64"
-      const jobNumberMatch = query.match(/(?:job|order|jo|mo)[-\s#]*(\d+|[A-Z0-9-]+)/i);
+      // Handle specific job queries (status, info, details, or just mentioning a job number/name)
+      // Match patterns like: "job 64", "batch 105", "Porter Batch 105", "Dark Stout"
+      const jobNumberMatch = query.match(/(?:job|order|jo|mo|batch)[-\s#]*(\d+|[A-Z0-9-]+)/i);
+      
+      // Also check for name-based queries: "status of Porter Batch" or "What is the status of Dark Stout"
+      const statusQueryMatch = query.match(/(?:status|info|details?|progress)\s+(?:of|for|on)?\s*(?:the\s+)?(.+?)(?:\?|$)/i);
+      const nameSearchTerm = statusQueryMatch ? statusQueryMatch[1].trim() : null;
       
       if (jobNumberMatch && jobNumberMatch[1]) {
-        // User is asking about a specific job - always look it up
+        // User is asking about a specific job by ID/number - always look it up
         const jobNumber = jobNumberMatch[1];
-        console.log(`[Max AI] Looking up job: ${jobNumber}`);
+        console.log(`[Max AI] Looking up job by ID: ${jobNumber}`);
+        let jobStatus = await this.getJobStatus(jobNumber);
+        
+        // If not found by ID, try searching by name
+        if (!jobStatus && nameSearchTerm) {
+          console.log(`[Max AI] Job not found by ID, searching by name: ${nameSearchTerm}`);
+          const jobs = await this.searchJobByName(nameSearchTerm);
+          if (jobs.length === 1) {
+            jobStatus = await this.getJobStatus(jobs[0].id.toString());
+          } else if (jobs.length > 1) {
+            let response = `I found ${jobs.length} jobs matching "${nameSearchTerm}":\n\n`;
+            for (const job of jobs) {
+              response += `• **${job.name}** (ID: ${job.id}) - ${job.scheduled_status || 'Scheduled'}\n`;
+            }
+            response += `\nPlease specify which job you'd like details for.`;
+            return response;
+          }
+        }
+        
+        if (!jobStatus) {
+          return `I couldn't find Job ${jobNumber} in the system. Please check the job number and try again. You can say "list jobs" to see available jobs.`;
+        }
+      } else if (nameSearchTerm && (lowerQuery.includes('status') || lowerQuery.includes('batch') || lowerQuery.includes('info'))) {
+        // User is searching by name/batch name without a clear ID
+        console.log(`[Max AI] Searching jobs by name: ${nameSearchTerm}`);
+        const jobs = await this.searchJobByName(nameSearchTerm);
+        
+        if (jobs.length === 0) {
+          return `I couldn't find any jobs matching "${nameSearchTerm}". You can say "list jobs" to see available jobs.`;
+        } else if (jobs.length === 1) {
+          // Found exactly one match - get its full status
+          const jobStatus = await this.getJobStatus(jobs[0].id.toString());
+          if (jobStatus) {
+            // Build comprehensive status message (same as below)
+            let statusMessage = `📊 **Job ${jobStatus.jobNumber} Status**\n\n`;
+            statusMessage += `**Product:** ${jobStatus.productName || jobStatus.productCode}\n`;
+            if (jobStatus.productDescription) {
+              statusMessage += `**Description:** ${jobStatus.productDescription}\n`;
+            }
+            statusMessage += `**Priority:** ${jobStatus.priority || 'Standard'}\n`;
+            statusMessage += `**Current Status:** ${jobStatus.status.scheduledStatus || 'Scheduled'}\n\n`;
+            
+            statusMessage += `📅 **SCHEDULE PERFORMANCE:**\n`;
+            if (jobStatus.scheduling.onTimeStatus === 'on-time') {
+              statusMessage += `✅ **ON-TIME** - ${jobStatus.scheduling.daysEarlyOrLate} DAYS EARLY\n`;
+            } else if (jobStatus.scheduling.onTimeStatus === 'late') {
+              statusMessage += `⚠️ **LATE** - ${jobStatus.scheduling.daysEarlyOrLate} DAYS LATE (ATTENTION REQUIRED)\n`;
+            } else {
+              statusMessage += `❓ **SCHEDULE STATUS UNKNOWN**\n`;
+            }
+            
+            if (jobStatus.scheduling.needDate) {
+              statusMessage += `• Need Date: ${new Date(jobStatus.scheduling.needDate).toLocaleDateString()}\n`;
+            }
+            if (jobStatus.scheduling.scheduledEnd) {
+              statusMessage += `• Scheduled End: ${new Date(jobStatus.scheduling.scheduledEnd).toLocaleDateString()}\n`;
+            }
+            statusMessage += '\n';
+            
+            statusMessage += `**Progress Status:** `;
+            if (jobStatus.status.totalOperations > 0) {
+              if (jobStatus.status.isInProgress) {
+                statusMessage += `IN PROGRESS (${jobStatus.status.progressPercentage}% complete)\n`;
+              } else if (jobStatus.status.completedOperations === jobStatus.status.totalOperations) {
+                statusMessage += `✅ COMPLETED - All operations finished\n`;
+              } else {
+                statusMessage += `NOT STARTED - 0 of ${jobStatus.status.totalOperations} operations completed\n`;
+              }
+            } else {
+              statusMessage += `No operations tracked for this job\n`;
+            }
+            
+            return statusMessage;
+          }
+        } else {
+          // Multiple matches - ask user to clarify
+          let response = `I found ${jobs.length} jobs matching "${nameSearchTerm}":\n\n`;
+          for (const job of jobs) {
+            response += `• **${job.name}** (ID: ${job.id}) - ${job.scheduled_status || 'Scheduled'}\n`;
+          }
+          response += `\nPlease specify which job you'd like details for, or ask about a specific job ID.`;
+          return response;
+        }
+      }
+      
+      if (jobNumberMatch && jobNumberMatch[1]) {
+        const jobNumber = jobNumberMatch[1];
         const jobStatus = await this.getJobStatus(jobNumber);
         
         if (!jobStatus) {
