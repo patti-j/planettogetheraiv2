@@ -2,6 +2,44 @@
 
 ## December 9, 2025
 
+### Ad-Hoc Reporting Agent Implementation ✅
+Implemented a new specialized agent for on-demand report generation.
+
+**Agent Features:**
+- Template-based report system with 7 report types
+- Trigger keyword matching with action/report synonyms
+- Filter extraction (date ranges, priority, top N)
+- Direct database queries with proper schema joins
+
+**Report Types Implemented:**
+1. Late Jobs Overview - Jobs past need date with days late
+2. Bottleneck Operations - Top operations by duration
+3. Resource Utilization - Scheduled hours and utilization %
+4. WIP Aging - In-progress jobs bucketed by age
+5. On-Time Delivery - OTD% with at-risk detection
+6. Setup vs Run Time - Setup percentage by resource
+7. Capacity Load vs Available - Overload detection
+
+**Schema Compliance:**
+- Uses `ptresources.name` (not resource_name)
+- Joins on `ptresources.id::text = ptjobresources.default_resource_id`
+- CTEs for complex aggregations (OTD report)
+
+**Frontend Integration:**
+- New `open_report` action type in MaxResponse
+- AI panel handler creates canvas table widgets
+- Session storage for report data persistence
+
+**Files Created:**
+- `server/services/agents/adhoc-reporting-templates.ts`
+- `server/services/agents/adhoc-reporting-agent.service.ts`
+- `server/training/agents/adhoc-reporting-agent.md`
+
+**Files Modified:**
+- `server/services/agents/agent-registry.ts` - Register agent
+- `server/services/max-ai-service.ts` - Add open_report action
+- `client/src/components/navigation/ai-left-panel.tsx` - Handle open_report
+
 ### Max AI Agent System - Three-Phase Implementation ✅
 Collaborated with ChatGPT 5.1 to implement systematic agent improvements.
 

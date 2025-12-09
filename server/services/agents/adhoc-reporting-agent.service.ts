@@ -185,30 +185,44 @@ export class AdHocReportingAgent extends BaseAgent {
         j.priority,
         j.status,
         MAX(jo.scheduled_end) as scheduled_end,
-        EXTRACT(DAY FROM (MAX(jo.scheduled_end) - j.need_date_time)) as days_late
+        GREATEST(0, EXTRACT(DAY FROM (MAX(jo.scheduled_end) - j.need_date_time))) as days_late
       FROM ptjobs j
       LEFT JOIN ptjoboperations jo ON j.id = jo.job_id
       WHERE j.need_date_time IS NOT NULL
-        AND MAX(jo.scheduled_end) > j.need_date_time
       GROUP BY j.id, j.external_id, j.name, j.need_date_time, j.priority, j.status
       HAVING MAX(jo.scheduled_end) > j.need_date_time
       ORDER BY days_late DESC NULLS LAST
       LIMIT ${limit}
-    `).catch(async () => {
+    `).catch(async (err) => {
+      console.error('[AdHoc Reporting] Late jobs query failed, using fallback:', err.message);
       return await db.execute(sql`
+        WITH job_schedules AS (
+          SELECT 
+            j.id,
+            j.external_id as job_number,
+            j.name as job_name,
+            j.need_date_time as need_date,
+            j.priority,
+            j.status,
+            MAX(jo.scheduled_end) as scheduled_end
+          FROM ptjobs j
+          LEFT JOIN ptjoboperations jo ON j.id = jo.job_id
+          WHERE j.need_date_time IS NOT NULL
+          GROUP BY j.id, j.external_id, j.name, j.need_date_time, j.priority, j.status
+        )
         SELECT 
-          j.id,
-          j.external_id as job_number,
-          j.name as job_name,
-          j.need_date_time as need_date,
-          j.priority,
-          j.status,
-          j.need_date_time as scheduled_end,
-          0 as days_late
-        FROM ptjobs j
-        WHERE j.need_date_time < NOW()
-          AND j.status != 'Completed'
-        ORDER BY j.need_date_time ASC
+          id,
+          job_number,
+          job_name,
+          need_date,
+          priority,
+          status,
+          scheduled_end,
+          GREATEST(0, EXTRACT(DAY FROM (COALESCE(scheduled_end, NOW()) - need_date))) as days_late
+        FROM job_schedules
+        WHERE COALESCE(scheduled_end, NOW()) > need_date
+          OR (need_date < NOW() AND status != 'Completed')
+        ORDER BY days_late DESC NULLS LAST
         LIMIT ${limit}
       `);
     });
@@ -454,18 +468,44 @@ export class AdHocReportingAgent extends BaseAgent {
 
   private async executeOtdReport(filters: Record<string, any>): Promise<{ content: string; data: any[] }> {
     const result = await db.execute(sql`
+      WITH job_completion AS (
+        SELECT 
+          j.id,
+          j.name,
+          j.need_date_time,
+          j.status,
+          COALESCE(MAX(jo.scheduled_end), j.need_date_time + INTERVAL '30 days') as scheduled_completion
+        FROM ptjobs j
+        LEFT JOIN ptjoboperations jo ON j.id = jo.job_id
+        WHERE j.need_date_time IS NOT NULL
+        GROUP BY j.id, j.name, j.need_date_time, j.status
+      )
       SELECT 
         COUNT(*) as total_orders,
-        SUM(CASE WHEN j.status = 'Completed' AND j.need_date_time >= NOW() THEN 1 ELSE 0 END) as on_time_orders,
-        SUM(CASE WHEN j.need_date_time < NOW() AND j.status != 'Completed' THEN 1 ELSE 0 END) as late_orders
-      FROM ptjobs j
-      WHERE j.need_date_time IS NOT NULL
+        SUM(CASE 
+          WHEN status = 'Completed' THEN 1
+          WHEN scheduled_completion <= need_date_time THEN 1 
+          ELSE 0 
+        END) as on_time_orders,
+        SUM(CASE 
+          WHEN status != 'Completed' AND scheduled_completion > need_date_time THEN 1 
+          WHEN need_date_time < NOW() AND status != 'Completed' THEN 1 
+          ELSE 0 
+        END) as late_orders,
+        SUM(CASE 
+          WHEN status != 'Completed'
+            AND scheduled_completion > need_date_time - INTERVAL '2 days' 
+            AND scheduled_completion <= need_date_time THEN 1 
+          ELSE 0 
+        END) as at_risk_orders
+      FROM job_completion
     `);
 
     const summary = result.rows[0] as any;
     const total = parseInt(summary.total_orders) || 0;
     const onTime = parseInt(summary.on_time_orders) || 0;
     const late = parseInt(summary.late_orders) || 0;
+    const atRisk = parseInt(summary.at_risk_orders) || 0;
     const otdPct = total > 0 ? Math.round((onTime / total) * 100) : 0;
 
     let content = `**On-Time Delivery Report**\n\n`;
@@ -475,11 +515,12 @@ export class AdHocReportingAgent extends BaseAgent {
     content += `- Total orders: ${total}\n`;
     content += `- On-time orders: ${onTime}\n`;
     content += `- Late orders: ${late}\n`;
+    content += `- At-risk orders (within 2 days): ${atRisk}\n`;
     content += `- On-Time %: ${otdPct}%\n`;
 
     return { 
       content, 
-      data: [{ total_orders: total, on_time_orders: onTime, late_orders: late, otd_pct: otdPct }] 
+      data: [{ total_orders: total, on_time_orders: onTime, late_orders: late, at_risk_orders: atRisk, otd_pct: otdPct }] 
     };
   }
 
