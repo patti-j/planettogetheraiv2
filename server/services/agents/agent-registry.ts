@@ -1,6 +1,7 @@
 import { IAgent, AgentContext, AgentResponse } from './base-agent.interface';
 import { productionSchedulingAgent } from './production-scheduling-agent.service';
 import { fpaAgent } from './fpa-agent.service';
+import { adhocReportingAgent } from './adhoc-reporting-agent.service';
 
 /**
  * Agent Registry - Manages all available agents and routes requests
@@ -37,6 +38,7 @@ export class AgentRegistry {
     // Register all available agents
     this.registerAgent(productionSchedulingAgent);
     this.registerAgent(fpaAgent);
+    this.registerAgent(adhocReportingAgent);
     
     // Future agents would be registered here:
     // this.registerAgent(demandForecastingAgent);

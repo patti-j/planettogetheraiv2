@@ -931,6 +931,86 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
       // IMPORTANT: Check for actions BEFORE checking for content
       // This ensures actions with content are processed correctly
       
+      // Handle open_report action from Ad-Hoc Reporting Agent
+      if (data?.action?.type === 'open_report') {
+        console.log('AI Left Panel - Handling open_report action:', data.action);
+        
+        const reportData = data.action.data;
+        if (reportData) {
+          // Store report data in sessionStorage for the analytics page to pick up
+          sessionStorage.setItem('adhocReportData', JSON.stringify({
+            reportId: reportData.reportId,
+            reportName: reportData.reportName,
+            filters: reportData.filters,
+            data: reportData.data,
+            columns: reportData.columns,
+            timestamp: new Date().toISOString()
+          }));
+          
+          // Add the report to canvas as a table widget
+          if (reportData.data && reportData.data.length > 0 && setCanvasItems) {
+            const tableItem: CanvasItem = {
+              id: `report_${reportData.reportId}_${Date.now()}`,
+              type: 'table',
+              title: reportData.reportName || 'Ad-Hoc Report',
+              content: {
+                title: reportData.reportName || 'Ad-Hoc Report',
+                rows: reportData.data,
+                columns: reportData.columns || Object.keys(reportData.data[0] || {}).map((key: string) => ({
+                  id: key,
+                  label: key.replace(/_/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase()),
+                  format: 'text'
+                }))
+              },
+              timestamp: new Date().toISOString()
+            };
+            
+            setCanvasItems(prev => [...prev, tableItem]);
+            
+            // Save widget to database for persistence
+            try {
+              const widgetData = {
+                type: 'table',
+                title: tableItem.title,
+                position: { x: 0, y: 0, w: 10, h: 8 },
+                config: {
+                  data: tableItem.content,
+                  reportId: reportData.reportId,
+                  filters: reportData.filters,
+                  createdByMaxAI: true,
+                  isAdHocReport: true
+                },
+                dashboardId: 1
+              };
+
+              const response = await apiRequest('POST', '/api/canvas/widgets', widgetData);
+              if (response.ok) {
+                console.log('Report widget saved to database successfully');
+                queryClient.invalidateQueries({ queryKey: ['/api/canvas/widgets'] });
+              }
+            } catch (error) {
+              console.error('Error saving report widget:', error);
+            }
+            
+            // Navigate to canvas to show the report
+            if (setCanvasVisible) {
+              setCanvasVisible(true);
+            }
+            navigate('/canvas');
+          }
+        }
+        
+        // Show report response message
+        await addMessage({
+          role: 'assistant',
+          content: data.content || 'Report generated successfully.',
+          source: 'panel',
+          agentId: data.agentId || 'adhoc_reporting',
+          agentName: data.agentName || 'Ad-Hoc Reporting Agent'
+        });
+        return;
+      }
+      
       // Handle table/grid creation actions for any entity data
       if (data?.action?.type === 'create_table' || data?.action?.type === 'show_jobs_table' || data?.action?.type === 'show_table') {
         console.log('AI Left Panel - Handling table creation action:', data.action);

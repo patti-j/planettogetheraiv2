@@ -88,7 +88,7 @@ interface MaxContext {
 interface MaxResponse {
   content: string;
   action?: {
-    type: 'navigate' | 'show_data' | 'execute_function' | 'create_chart' | 'multi_step' | 'clarify' | 'switch_agent' | 'refresh_scheduler' | 'apply_algorithm';
+    type: 'navigate' | 'show_data' | 'execute_function' | 'create_chart' | 'multi_step' | 'clarify' | 'switch_agent' | 'refresh_scheduler' | 'apply_algorithm' | 'open_report';
     target?: string;
     title?: string;
     agentId?: string;
