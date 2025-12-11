@@ -64,6 +64,8 @@ The system uses a modular agent architecture designed for role-based access cont
 -   **Advanced Paginated Reports Designer**: Professional report builder with split-pane layout, advanced column chooser, smart aggregation, report templates, grouping, conditional formatting, save/load configurations, enhanced export capabilities (CSV, Excel, PDF), server-side totals, and full SQL Server/Power BI dataset support.
 -   **Customer Requirements Upload & Lifecycle Tracking**: Spreadsheet upload capability for importing custom customer requirements with full lifecycle tracking through modeling, testing, and deployment phases, supported by dedicated database tables, API endpoints, and a "Requirements Tracking" tab.
 -   **FP&A Dashboard with AI Integration**: Comprehensive Financial Planning & Analysis dashboard with an FP&A agent, AI recommendations for cost reduction and cash flow optimization, real-time financial KPIs, and interactive AI features.
+-   **Knowledge Base RAG System**: Retrieval-Augmented Generation for documentation-based AI responses. Includes HubSpot KB import (`scripts/import-knowledge-base.ts`), hybrid semantic/keyword search, chunked passages for accurate retrieval, and source citations in AI responses. Monthly refresh via `npx tsx scripts/import-knowledge-base.ts <file> --clear`.
+-   **Ad-Hoc Reporting Agent**: Specialized agent for on-demand report generation with 7 report templates (Late Jobs, Bottlenecks, Resource Utilization, WIP Aging, OTD, Setup Time, Capacity Load).
 
 ## External Dependencies
 -   **Database Provider**: Neon Database (serverless PostgreSQL)
