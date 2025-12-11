@@ -2,6 +2,18 @@
 
 ## December 9, 2025
 
+### Max AI Stop Button ✅
+Added a visible stop button when Max AI is processing a request.
+
+**Changes:**
+- Added thinking indicator with animated bouncing dots
+- Red "Stop" button appears during processing
+- Clicking Stop cancels the request via AbortController
+- Shows "Request cancelled." message when stopped
+
+**Files Modified:**
+- `client/src/components/navigation/ai-left-panel.tsx` - Added thinking UI with stop button
+
 ### Knowledge Base RAG Integration ✅
 Integrated knowledge base retrieval-augmented generation (RAG) into Max AI for documentation-based responses.
 

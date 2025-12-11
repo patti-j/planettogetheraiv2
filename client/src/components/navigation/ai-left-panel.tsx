@@ -2039,6 +2039,36 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
                         </div>
                       </div>
                     ))}
+                    
+                    {/* Thinking indicator with stop button */}
+                    {showMaxThinking && (
+                      <div className="flex items-start gap-2 px-2 py-3">
+                        <div className="flex flex-col gap-1 max-w-[90%]">
+                          <div className="flex items-center gap-1 px-1">
+                            <Sparkles className="h-3 w-3 text-purple-500" />
+                            <span className="text-xs font-medium text-muted-foreground">Max</span>
+                          </div>
+                          <div className="flex items-center gap-2 px-3 py-2 rounded-3xl bg-muted">
+                            <div className="flex gap-1">
+                              <div className="w-2 h-2 bg-purple-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                              <div className="w-2 h-2 bg-purple-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                              <div className="w-2 h-2 bg-purple-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                            </div>
+                            <span className="text-sm text-muted-foreground">Thinking...</span>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={cancelMaxRequest}
+                              className="h-6 px-2 ml-2 text-xs bg-red-100 hover:bg-red-200 dark:bg-red-900/30 dark:hover:bg-red-900/50 text-red-600 dark:text-red-400"
+                              data-testid="button-stop-ai"
+                            >
+                              <Square className="h-3 w-3 mr-1 fill-current" />
+                              Stop
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    )}
                     </div>
                   )}
                 </div>
