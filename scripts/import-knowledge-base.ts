@@ -106,6 +106,123 @@ function chunkContent(content: string, maxChars: number = 1600, overlap: number 
   return chunks.length > 0 ? chunks : [content];
 }
 
+// Parse CSV row handling quoted fields with embedded commas/newlines
+function parseCSVRow(row: string): string[] {
+  const fields: string[] = [];
+  let field = '';
+  let inQuotes = false;
+  
+  for (let i = 0; i < row.length; i++) {
+    const char = row[i];
+    
+    if (char === '"') {
+      if (inQuotes && row[i + 1] === '"') {
+        field += '"';
+        i++;
+      } else {
+        inQuotes = !inQuotes;
+      }
+    } else if (char === ',' && !inQuotes) {
+      fields.push(field);
+      field = '';
+    } else {
+      field += char;
+    }
+  }
+  fields.push(field);
+  
+  return fields.map(f => f.trim());
+}
+
+// Parse CSV content (handles quoted fields with embedded newlines)
+function parseCSV(content: string): KBArticle[] {
+  const articles: KBArticle[] = [];
+  
+  // Split into rows handling quoted newlines
+  const rows: string[] = [];
+  let currentRow = '';
+  let inQuotes = false;
+  
+  for (const char of content) {
+    if (char === '"') {
+      inQuotes = !inQuotes;
+      currentRow += char;
+    } else if (char === '\n' && !inQuotes) {
+      if (currentRow.trim()) {
+        rows.push(currentRow);
+      }
+      currentRow = '';
+    } else if (char !== '\r') {
+      currentRow += char;
+    }
+  }
+  if (currentRow.trim()) {
+    rows.push(currentRow);
+  }
+  
+  if (rows.length < 2) {
+    throw new Error('CSV file must have header row and at least one data row');
+  }
+  
+  // Parse header
+  const headers = parseCSVRow(rows[0]).map(h => h.toLowerCase().replace(/^\ufeff/, ''));
+  console.log('📋 Detected columns:', headers);
+  
+  // Map HubSpot column names to our fields
+  const columnMap: Record<string, string> = {
+    'article title': 'title',
+    'article subtitle': 'subtitle',
+    'article url': 'url',
+    'article body': 'content',
+    'category': 'category',
+    'category name': 'category',
+    'subcategory': 'subcategory',
+    'subcategory name': 'subcategory',
+    'article language': 'language',
+    'tags': 'tags'
+  };
+  
+  const fieldIndices: Record<string, number> = {};
+  headers.forEach((h, i) => {
+    const mapped = columnMap[h] || h.replace(/\s+/g, '_');
+    fieldIndices[mapped] = i;
+  });
+  
+  console.log('📋 Field mapping:', fieldIndices);
+  
+  for (let i = 1; i < rows.length; i++) {
+    const values = parseCSVRow(rows[i]);
+    
+    const title = values[fieldIndices['title']]?.trim();
+    const content = values[fieldIndices['content']]?.trim();
+    
+    if (!title || !content) {
+      console.warn(`⚠️  Skipping row ${i + 1}: missing title or content`);
+      continue;
+    }
+    
+    // Build category from category + subcategory columns
+    let category = values[fieldIndices['category']]?.trim();
+    const subcategory = values[fieldIndices['subcategory']]?.trim();
+    if (subcategory && category) {
+      category = `${category} > ${subcategory}`;
+    } else if (subcategory) {
+      category = subcategory;
+    }
+    
+    articles.push({
+      title,
+      subtitle: values[fieldIndices['subtitle']]?.trim(),
+      url: values[fieldIndices['url']]?.trim(),
+      content: stripHtml(content),
+      category,
+      tags: values[fieldIndices['tags']]?.trim()
+    });
+  }
+  
+  return articles;
+}
+
 // Parse TSV content (HubSpot format)
 function parseTSV(content: string): KBArticle[] {
   const lines = content.split('\n');
@@ -238,8 +355,13 @@ async function importKnowledgeBase(filePath: string, clearExisting: boolean = fa
   // Parse based on file type
   if (ext === '.xlsx' || ext === '.xls') {
     articles = await parseExcel(filePath);
+  } else if (ext === '.csv') {
+    console.log('📄 Parsing as CSV...');
+    const content = readFileWithEncoding(filePath);
+    articles = parseCSV(content);
   } else {
-    // TSV or CSV
+    // TSV (default for .txt files)
+    console.log('📄 Parsing as TSV...');
     const content = readFileWithEncoding(filePath);
     articles = parseTSV(content);
   }
