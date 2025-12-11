@@ -3676,14 +3676,35 @@ Be helpful, concise, and professional. If you don't have specific information ab
             content: command
           }
         ],
-        max_completion_tokens: 800
+        max_tokens: 4096
       });
       
       console.log('[AI Agent] OpenAI response received:', response.choices?.length, 'choices');
-      const aiMessage = response.choices[0]?.message?.content;
       
+      const choice = response.choices[0];
+      const aiMessage = choice?.message?.content;
+      
+      // Check for refusal or other response types
       if (!aiMessage) {
-        console.warn('[AI Agent] OpenAI returned empty content');
+        console.warn('[AI Agent] OpenAI returned empty content, finish_reason:', choice?.finish_reason);
+        
+        // Handle different failure cases
+        if (choice?.finish_reason === 'length') {
+          return {
+            success: true,
+            message: "I'm processing your request but need more time. Please try a simpler question or break it into smaller parts.",
+            data: null
+          };
+        }
+        
+        if ((choice?.message as any)?.refusal) {
+          return {
+            success: true,
+            message: "I'm unable to answer that question. Please try asking about PlanetTogether features, production scheduling, or manufacturing operations.",
+            data: null
+          };
+        }
+        
         return {
           success: true,
           message: "I apologize, but I wasn't able to generate a response. Could you please rephrase your question?",
