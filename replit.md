@@ -38,7 +38,7 @@ The system uses a modular agent architecture designed for role-based access cont
 -   **Database**: PostgreSQL with Drizzle ORM.
 -   **API Design**: RESTful API with JSON responses, role-based authentication.
 -   **Authentication System**: Unified role-based permissions system with JWT authentication.
--   **AI Integration**: OpenAI GPT-4o for NLP, intelligent data generation, custom metric calculation, AI-powered modifications, and dynamic content creation, utilizing structured outputs with Zod schemas and retry logic.
+-   **AI Integration**: OpenAI GPT-5.1 (released November 2025) for NLP, intelligent data generation, custom metric calculation, AI-powered modifications, and dynamic content creation, utilizing structured outputs with Zod schemas and retry logic. GPT-5.1 features adaptive reasoning with configurable `reasoning_effort` parameter.
 -   **Hint System Service**: Intelligent contextual hints with user interaction tracking.
 -   **Power BI Integration**: Complete feature parity with SQL Server for grouped data, using DAX SUMMARIZE queries.
 
@@ -69,7 +69,7 @@ The system uses a modular agent architecture designed for role-based access cont
 
 ## External Dependencies
 -   **Database Provider**: Neon Database (serverless PostgreSQL)
--   **AI/ML**: OpenAI API (GPT-4o, Whisper, TTS-1, gpt-realtime-mini)
+-   **AI/ML**: OpenAI API (GPT-5.1, Whisper, TTS-1, gpt-realtime-mini)
 -   **UI Libraries**: Radix UI, Shadcn/UI, Bryntum Scheduler Pro
 -   **Styling**: Tailwind CSS
 -   **State Management**: TanStack Query (React Query)
