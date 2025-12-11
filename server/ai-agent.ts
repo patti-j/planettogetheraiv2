@@ -3654,33 +3654,54 @@ Please answer using the provided sources.`;
 
     // For text-only commands, use regular OpenAI completion
     try {
+      console.log('[AI Agent] Making OpenAI call for general question...');
       const response = await openai.chat.completions.create({
         model: DEFAULT_MODEL,
         messages: [
           {
             role: "system",
-            content: "You are Max, an AI assistant for PlanetTogether manufacturing system. Help users with production scheduling, resource management, and manufacturing operations."
+            content: `You are Max, an AI assistant for PlanetTogether, a manufacturing Advanced Planning and Scheduling (APS) system. 
+            
+You help users with:
+- Production scheduling and optimization
+- Resource management and capacity planning
+- Supply chain operations and logistics
+- Manufacturing analytics and KPIs
+- General business questions related to manufacturing
+
+Be helpful, concise, and professional. If you don't have specific information about something, provide general guidance or suggest what the user might look for.`
           },
           {
             role: "user",
             content: command
           }
         ],
-        max_completion_tokens: 500
+        max_completion_tokens: 800
       });
       
-      const aiMessage = response.choices[0]?.message?.content || "I couldn't process your request.";
+      console.log('[AI Agent] OpenAI response received:', response.choices?.length, 'choices');
+      const aiMessage = response.choices[0]?.message?.content;
       
+      if (!aiMessage) {
+        console.warn('[AI Agent] OpenAI returned empty content');
+        return {
+          success: true,
+          message: "I apologize, but I wasn't able to generate a response. Could you please rephrase your question?",
+          data: null
+        };
+      }
+      
+      console.log('[AI Agent] OpenAI response length:', aiMessage.length);
       return {
         success: true,
         message: aiMessage,
         data: null
       };
-    } catch (error) {
-      console.error("OpenAI API error:", error);
+    } catch (error: any) {
+      console.error("[AI Agent] OpenAI API error:", error?.message || error);
       return {
-        success: false,
-        message: "I encountered an error processing your request. Please try again.",
+        success: true,
+        message: "I'm having trouble connecting to my AI service right now. Please try again in a moment.",
         data: null
       };
     }
