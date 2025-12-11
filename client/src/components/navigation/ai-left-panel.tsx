@@ -1662,10 +1662,16 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
         console.log("AI Agent response JSON:", result);
         if (result.success) {
           console.log("Success case, adding message:", result.message);
+          // Extract sources from data if present
+          const sources = result.data?.sources || undefined;
+          if (sources) {
+            console.log("KB sources found:", sources.length);
+          }
           addMessage({
             role: 'assistant',
             content: result.message || 'Command processed successfully',
-            source: 'panel'
+            source: 'panel',
+            sources: sources
           });
         } else {
           console.log("Error case, adding error message:", result.message);

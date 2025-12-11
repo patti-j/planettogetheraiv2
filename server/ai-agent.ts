@@ -3560,6 +3560,80 @@ export async function processCommand(command: string, attachments: AttachmentFil
       }
     }
     
+    // PRIORITY 3: Check if this is a knowledge base question
+    const kbIndicators = [
+      'how do i', 'how to', 'what is', 'what are', 'explain', 'tell me about',
+      'help with', 'guide', 'documentation', 'best practice', 'configure',
+      'setup', 'install', 'troubleshoot', 'error', 'problem with',
+      'planettogether', 'pt ', 'aps', 'scheduling', 'feature', 'capability'
+    ];
+    const lowerCommand = command.toLowerCase();
+    const isKnowledgeQuestion = kbIndicators.some(indicator => lowerCommand.includes(indicator));
+    
+    if (isKnowledgeQuestion) {
+      try {
+        console.log('[AI Agent] Detected knowledge question, searching KB...');
+        const { knowledgeRetrievalService } = await import('./services/knowledge-retrieval.service');
+        const kbResults = await knowledgeRetrievalService.search(command, 5);
+        
+        if (kbResults.length > 0 && kbResults[0].score >= 0.3) {
+          console.log(`[AI Agent] Found ${kbResults.length} KB results, top score: ${kbResults[0].score.toFixed(2)}`);
+          
+          // Build RAG prompt with retrieved passages
+          const sourcesText = kbResults.map((r, i) => 
+            `[${i + 1}] ${r.title}\n${r.content}`
+          ).join('\n\n');
+
+          const systemPrompt = `You are Max, PlanetTogether's knowledge assistant. Answer the user's question using ONLY the provided source passages.
+- When you cite a fact, reference the source number like [1] or [2].
+- If none of the sources answer the question, say: "I couldn't find that specific information in our knowledge base."
+- Be concise and helpful (2-6 sentences for most answers).
+- If the question is ambiguous, ask one clarifying question.`;
+
+          const userPrompt = `QUESTION:
+${command}
+
+SOURCES:
+${sourcesText}
+
+Please answer using the provided sources.`;
+
+          const response = await openai.chat.completions.create({
+            model: DEFAULT_MODEL,
+            messages: [
+              { role: 'system', content: systemPrompt },
+              { role: 'user', content: userPrompt }
+            ],
+            temperature: 0.1,
+            max_completion_tokens: 600
+          });
+
+          const aiMessage = response.choices[0]?.message?.content || "I couldn't process that question.";
+          
+          // Build sources for the response
+          const sources = kbResults.map(r => ({
+            articleId: r.articleId,
+            title: r.title,
+            url: r.sourceUrl,
+            snippet: r.content.substring(0, 150) + '...',
+            score: r.score
+          }));
+
+          console.log('[AI Agent] KB response generated with sources');
+          return {
+            success: true,
+            message: aiMessage,
+            data: { sources }
+          };
+        } else {
+          console.log('[AI Agent] No relevant KB results, falling through to OpenAI');
+        }
+      } catch (kbError) {
+        console.error('[AI Agent] KB retrieval error:', kbError);
+        // Fall through to regular OpenAI
+      }
+    }
+
     // For text-only commands, use regular OpenAI completion
     try {
       const response = await openai.chat.completions.create({
