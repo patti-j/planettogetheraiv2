@@ -3676,7 +3676,7 @@ Be helpful, concise, and professional. If you don't have specific information ab
             content: command
           }
         ],
-        max_tokens: 4096
+        max_completion_tokens: 4096
       });
       
       console.log('[AI Agent] OpenAI response received:', response.choices?.length, 'choices');
