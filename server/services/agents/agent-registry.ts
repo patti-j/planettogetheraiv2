@@ -36,9 +36,11 @@ export class AgentRegistry {
     console.log('[AgentRegistry] Initializing agent registry...');
     
     // Register all available agents
-    this.registerAgent(productionSchedulingAgent);
-    this.registerAgent(fpaAgent);
+    // IMPORTANT: Ad-hoc reporting agent must be registered FIRST so it can handle
+    // report requests with proper open_report actions that display on canvas
     this.registerAgent(adhocReportingAgent);
+    this.registerAgent(fpaAgent);
+    this.registerAgent(productionSchedulingAgent);
     
     // Future agents would be registered here:
     // this.registerAgent(demandForecastingAgent);

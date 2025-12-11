@@ -1668,6 +1668,61 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
           if (sources) {
             console.log("KB sources found:", sources.length);
           }
+          
+          // Handle open_report action - display report on canvas
+          if (result.action?.type === 'open_report' && result.action?.data) {
+            console.log("📊 open_report action detected, displaying on canvas");
+            const reportData = result.action.data;
+            
+            if (reportData.data && reportData.data.length > 0 && setCanvasItems) {
+              const tableItem: CanvasItem = {
+                id: `report_${reportData.reportId}_${Date.now()}`,
+                type: 'table',
+                title: reportData.reportName || 'Ad-Hoc Report',
+                content: {
+                  title: reportData.reportName || 'Ad-Hoc Report',
+                  rows: reportData.data,
+                  columns: reportData.columns || Object.keys(reportData.data[0] || {}).map((key: string) => ({
+                    id: key,
+                    label: key.replace(/_/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase()),
+                    format: 'text'
+                  }))
+                },
+                timestamp: new Date().toISOString()
+              };
+              
+              setCanvasItems(prev => [...prev, tableItem]);
+              
+              // Save widget to database for persistence
+              try {
+                const widgetData = {
+                  type: 'table',
+                  title: tableItem.title,
+                  position: { x: 0, y: 0, w: 10, h: 8 },
+                  config: {
+                    data: tableItem.content,
+                    reportId: reportData.reportId,
+                    filters: reportData.filters,
+                    createdByMaxAI: true,
+                    isAdHocReport: true
+                  },
+                  dashboardId: 1
+                };
+                
+                await apiRequest('POST', '/api/canvas/widgets', widgetData);
+                queryClient.invalidateQueries({ queryKey: ['/api/canvas/widgets'] });
+              } catch (error) {
+                console.error('Error saving report widget:', error);
+              }
+              
+              // Navigate to canvas to show the report
+              if (setCanvasVisible) {
+                setCanvasVisible(true);
+              }
+              navigate('/canvas');
+            }
+          }
+          
           addMessage({
             role: 'assistant',
             content: result.message || 'Command processed successfully',

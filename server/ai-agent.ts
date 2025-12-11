@@ -3424,7 +3424,8 @@ export async function processCommand(command: string, attachments: AttachmentFil
               success: true,
               message: agentResponse.content,
               data: agentResponse.data || null,
-              actions: agentResponse.actions || []
+              actions: agentResponse.actions || [],
+              action: agentResponse.action  // Pass through open_report action for canvas display
             };
           } else if (agentResponse && agentResponse.error) {
             console.log(`[AI Agent] ⚠️ ${bestAgent.name} returned an error, falling back`);
