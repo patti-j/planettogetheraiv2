@@ -3383,42 +3383,60 @@ export async function processCommand(command: string, attachments: AttachmentFil
   try {
     console.log("Processing AI command:", { command, attachmentsCount: attachments.length });
 
-    // PRIORITY 1: Check with AgentRegistry for specialized agents first
-    // This routes job queries to Production Scheduling Agent, FP&A to FP&A Agent, etc.
-    try {
-      const { agentRegistry } = await import("./services/agents/agent-registry");
-      
-      // Create context for the agent
-      const context = {
-        userId: 1, // Default user ID
-        permissions: ['*'], // Full permissions for now
-        sessionId: `session-${Date.now()}`,
-        metadata: {}
-      };
-      
-      // Check if a specialized agent can handle this
-      const bestAgent = agentRegistry.findBestAgent(command, context.permissions);
-      
-      if (bestAgent) {
-        console.log(`[AI Agent] Delegating to specialized agent: ${bestAgent.name}`);
-        const agentResponse = await bestAgent.process(command, context);
+    // PRIORITY 1: Check with AgentRegistry for specialized agents ONLY for specific queries
+    // Don't use agents for general/open-ended questions that are better answered by OpenAI
+    const isSpecificAgentQuery = (msg: string): boolean => {
+      const lower = msg.toLowerCase();
+      // Only route to agents for very specific operational queries
+      const specificPatterns = [
+        /(?:job|order|mo|jo)[-\s#]*\d+/i,           // job 64, order #123
+        /(?:list|show|get)\s+(?:all\s+)?jobs/i,      // list jobs, show all jobs
+        /(?:run|apply|execute)\s+(?:asap|alap)/i,    // run ASAP algorithm
+        /(?:generate|create|run)\s+report/i,          // generate report
+        /(?:fpa|financial|fp&a|budget|forecast)\s+(?:report|analysis)/i,  // FP&A specific
+        /late\s+jobs|bottleneck|capacity\s+load/i,   // specific reports
+      ];
+      return specificPatterns.some(pattern => pattern.test(lower));
+    };
+    
+    if (isSpecificAgentQuery(command)) {
+      try {
+        const { agentRegistry } = await import("./services/agents/agent-registry");
         
-        if (agentResponse && !agentResponse.error) {
-          console.log(`[AI Agent] ✅ ${bestAgent.name} handled the request`);
-          return {
-            success: true,
-            message: agentResponse.content,
-            data: agentResponse.data || null,
-            actions: agentResponse.actions || []
-          };
-        } else if (agentResponse && agentResponse.error) {
-          console.log(`[AI Agent] ⚠️ ${bestAgent.name} returned an error, falling back`);
-          // Fall through to OpenAI
+        // Create context for the agent
+        const context = {
+          userId: 1, // Default user ID
+          permissions: ['*'], // Full permissions for now
+          sessionId: `session-${Date.now()}`,
+          metadata: {}
+        };
+        
+        // Check if a specialized agent can handle this
+        const bestAgent = agentRegistry.findBestAgent(command, context.permissions);
+        
+        if (bestAgent) {
+          console.log(`[AI Agent] Delegating to specialized agent: ${bestAgent.name}`);
+          const agentResponse = await bestAgent.process(command, context);
+          
+          if (agentResponse && !agentResponse.error) {
+            console.log(`[AI Agent] ✅ ${bestAgent.name} handled the request`);
+            return {
+              success: true,
+              message: agentResponse.content,
+              data: agentResponse.data || null,
+              actions: agentResponse.actions || []
+            };
+          } else if (agentResponse && agentResponse.error) {
+            console.log(`[AI Agent] ⚠️ ${bestAgent.name} returned an error, falling back`);
+            // Fall through to OpenAI
+          }
         }
+      } catch (registryError) {
+        console.error(`[AI Agent] AgentRegistry error, falling through:`, registryError);
+        // Fall through to direct lookup and OpenAI
       }
-    } catch (registryError) {
-      console.error(`[AI Agent] AgentRegistry error, falling through:`, registryError);
-      // Fall through to direct lookup and OpenAI
+    } else {
+      console.log(`[AI Agent] General question detected, skipping specialized agents`);
     }
 
     // PRIORITY 2: Direct job lookup as fallback
