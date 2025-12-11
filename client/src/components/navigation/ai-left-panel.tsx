@@ -1962,14 +1962,14 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
                               }
                               
                               {/* KB Sources - show if available */}
-                              {message.role === 'assistant' && (message as any).sources && (message as any).sources.length > 0 && (
+                              {message.role === 'assistant' && message.sources && message.sources.length > 0 && (
                                 <div className="mt-2 pt-2 border-t border-border/50">
                                   <div className="text-xs font-medium text-muted-foreground mb-1 flex items-center gap-1">
                                     <BookOpen className="h-3 w-3" />
                                     Sources
                                   </div>
                                   <div className="space-y-1">
-                                    {((message as any).sources as Array<{articleId: number; title: string; url?: string | null; snippet: string}>).slice(0, 3).map((source, idx) => (
+                                    {message.sources.slice(0, 3).map((source, idx) => (
                                       <div key={idx} className="text-xs">
                                         {source.url ? (
                                           <a 

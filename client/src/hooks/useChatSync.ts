@@ -1,6 +1,15 @@
 import { useState, useEffect } from 'react';
 import { apiRequest } from '@/lib/queryClient';
 
+// Knowledge Base source for citations
+export interface KBSource {
+  articleId: number;
+  title: string;
+  url?: string | null;
+  snippet?: string;
+  score?: number;
+}
+
 export interface ChatMessage {
   id: number;
   role: 'user' | 'assistant';
@@ -10,6 +19,7 @@ export interface ChatMessage {
   agentId?: string; // Which agent sent this message (e.g., 'max', 'production_scheduling', 'quality_analysis')
   agentName?: string; // Display name of the agent (e.g., 'Max', 'Production Scheduling Agent')
   markedForPlaybook?: boolean; // Flag indicating if the message should be added to agent playbook
+  sources?: KBSource[]; // Knowledge base sources for RAG citations
 }
 
 // Current user ID - will be loaded from auth
