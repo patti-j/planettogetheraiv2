@@ -183,13 +183,13 @@ export class AdHocReportingAgent extends BaseAgent {
         j.name as job_name,
         j.need_date_time as need_date,
         j.priority,
-        j.status,
+        j.scheduled_status as status,
         MAX(jo.scheduled_end) as scheduled_end,
         GREATEST(0, EXTRACT(DAY FROM (MAX(jo.scheduled_end) - j.need_date_time))) as days_late
       FROM ptjobs j
       LEFT JOIN ptjoboperations jo ON j.id = jo.job_id
       WHERE j.need_date_time IS NOT NULL
-      GROUP BY j.id, j.external_id, j.name, j.need_date_time, j.priority, j.status
+      GROUP BY j.id, j.external_id, j.name, j.need_date_time, j.priority, j.scheduled_status
       HAVING MAX(jo.scheduled_end) > j.need_date_time
       ORDER BY days_late DESC NULLS LAST
       LIMIT ${limit}
@@ -203,12 +203,12 @@ export class AdHocReportingAgent extends BaseAgent {
             j.name as job_name,
             j.need_date_time as need_date,
             j.priority,
-            j.status,
+            j.scheduled_status as status,
             MAX(jo.scheduled_end) as scheduled_end
           FROM ptjobs j
           LEFT JOIN ptjoboperations jo ON j.id = jo.job_id
           WHERE j.need_date_time IS NOT NULL
-          GROUP BY j.id, j.external_id, j.name, j.need_date_time, j.priority, j.status
+          GROUP BY j.id, j.external_id, j.name, j.need_date_time, j.priority, j.scheduled_status
         )
         SELECT 
           id,
