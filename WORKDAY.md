@@ -2,6 +2,23 @@
 
 ## December 9, 2025
 
+### KB Sources UI Fix ✅
+Fixed Knowledge Base sources display in Max AI chat panel.
+
+**Problem:** Sources weren't appearing because:
+1. ChatMessage interface was missing `sources` field
+2. KBSource type wasn't defined in frontend
+3. Field name mismatch: backend used `url`, frontend was checking `sourceUrl`
+
+**Solution:**
+- Added `KBSource` interface and `sources` field to `ChatMessage` in `useChatSync.ts`
+- Updated `ai-left-panel.tsx` to use proper types instead of `any` casts
+- Aligned frontend field names with backend (`url` not `sourceUrl`)
+
+**Files Modified:**
+- `client/src/hooks/useChatSync.ts` - Added KBSource interface and sources field
+- `client/src/components/navigation/ai-left-panel.tsx` - Fixed sources rendering
+
 ### Max AI Stop Button ✅
 Added a visible stop button when Max AI is processing a request.
 
