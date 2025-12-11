@@ -687,6 +687,7 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
       currentRequestController.abort();
       setCurrentRequestController(null);
       setShowMaxThinking(false);
+      setIsSendingCommand(false);
       
       // Add cancellation message to chat
       addMessage({
@@ -2148,20 +2149,27 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
                     />
                   </div>
                   
-                  {/* Send Button */}
-                  <Button
-                    onClick={() => handleSendMessage()}
-                    size="sm"
-                    className="h-[42px] w-[42px] rounded-lg flex-shrink-0 self-start bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700 text-white border-0 shadow-md"
-                    disabled={(!prompt.trim() && attachments.length === 0) || isSendingCommand}
-                    data-testid="button-send-message"
-                  >
-                    {isSendingCommand ? (
-                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                    ) : (
+                  {/* Send/Stop Button */}
+                  {isSendingCommand ? (
+                    <Button
+                      onClick={() => cancelMaxRequest()}
+                      size="sm"
+                      className="h-[42px] w-[42px] rounded-lg flex-shrink-0 self-start bg-red-500 hover:bg-red-600 text-white border-0 shadow-md"
+                      data-testid="button-stop-message"
+                    >
+                      <StopCircle className="w-4 h-4" />
+                    </Button>
+                  ) : (
+                    <Button
+                      onClick={() => handleSendMessage()}
+                      size="sm"
+                      className="h-[42px] w-[42px] rounded-lg flex-shrink-0 self-start bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700 text-white border-0 shadow-md"
+                      disabled={!prompt.trim() && attachments.length === 0}
+                      data-testid="button-send-message"
+                    >
                       <Send className="w-4 h-4" />
-                    )}
-                  </Button>
+                    </Button>
+                  )}
                 </div>
                 
                 {/* Action buttons row */}
