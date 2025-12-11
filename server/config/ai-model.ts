@@ -4,13 +4,13 @@
 
 export const AI_MODEL_CONFIG = {
   // The primary model used for all AI operations
-  model: 'gpt-5.1',
+  model: 'gpt-4o',
   
   // Model display name for UI
-  displayName: 'GPT-5.1',
+  displayName: 'GPT-4o',
   
   // Model description
-  description: 'OpenAI GPT-5.1 with adaptive reasoning - smarter, faster, better at coding',
+  description: 'OpenAI GPT-4o - fast, intelligent, multimodal',
   
   // Model variants for specific use cases
   variants: {
