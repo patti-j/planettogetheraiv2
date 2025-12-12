@@ -30,6 +30,37 @@ function escapeHtml(text: string): string {
     .replace(/'/g, '&#039;');
 }
 
+function formatContentAsHtml(content: string): string {
+  if (!content) return '';
+  
+  const paragraphs = content
+    .split(/\n\n+/)
+    .map(p => p.trim())
+    .filter(p => p.length > 0);
+  
+  return paragraphs.map(para => {
+    const lines = para.split(/\n/).map(line => line.trim()).filter(line => line);
+    
+    if (lines.length === 1) {
+      return `<p>${escapeHtml(lines[0])}</p>`;
+    }
+    
+    const isBulletList = lines.every(line => 
+      /^[-•*]\s/.test(line) || /^\d+[.)]\s/.test(line)
+    );
+    
+    if (isBulletList) {
+      const listItems = lines.map(line => {
+        const cleanedLine = line.replace(/^[-•*]\s*/, '').replace(/^\d+[.)]\s*/, '');
+        return `<li>${escapeHtml(cleanedLine)}</li>`;
+      }).join('\n');
+      return `<ul>${listItems}</ul>`;
+    }
+    
+    return `<p>${lines.map(l => escapeHtml(l)).join('<br>')}</p>`;
+  }).join('\n');
+}
+
 async function generateKnowledgeBasePDF() {
   console.log('Fetching articles from database...');
   
@@ -81,7 +112,7 @@ async function generateKnowledgeBasePDF() {
         <section class="article" id="${articleSlug}">
           <h3 class="article-title">${escapeHtml(article.title)}</h3>
           ${article.sourceUrl ? `<p class="source-url"><a href="${escapeHtml(article.sourceUrl)}" target="_blank">Source</a></p>` : ''}
-          <div class="article-content">${article.content}</div>
+          <div class="article-content">${formatContentAsHtml(article.content)}</div>
         </section>
       `;
     }
