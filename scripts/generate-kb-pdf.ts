@@ -30,6 +30,23 @@ function escapeHtml(text: string): string {
     .replace(/'/g, '&#039;');
 }
 
+function applyInlineFormatting(text: string): string {
+  let result = escapeHtml(text);
+  
+  result = result.replace(/\*\*\*(.+?)\*\*\*/g, '<strong><em>$1</em></strong>');
+  result = result.replace(/___(.+?)___/g, '<strong><u>$1</u></strong>');
+  
+  result = result.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+  result = result.replace(/__(.+?)__/g, '<u>$1</u>');
+  
+  result = result.replace(/\*(.+?)\*/g, '<em>$1</em>');
+  result = result.replace(/_(.+?)_/g, '<em>$1</em>');
+  
+  result = result.replace(/`(.+?)`/g, '<code>$1</code>');
+  
+  return result;
+}
+
 function formatContentAsHtml(content: string): string {
   if (!content) return '';
   
@@ -41,8 +58,19 @@ function formatContentAsHtml(content: string): string {
   return paragraphs.map(para => {
     const lines = para.split(/\n/).map(line => line.trim()).filter(line => line);
     
-    if (lines.length === 1) {
-      return `<p>${escapeHtml(lines[0])}</p>`;
+    if (lines.length === 0) return '';
+    
+    const firstLine = lines[0];
+    if (/^#{1,4}\s/.test(firstLine)) {
+      const level = firstLine.match(/^(#+)/)?.[1].length || 1;
+      const headingLevel = Math.min(level + 3, 6);
+      const headingText = firstLine.replace(/^#+\s*/, '');
+      const restLines = lines.slice(1);
+      let result = `<h${headingLevel}>${applyInlineFormatting(headingText)}</h${headingLevel}>`;
+      if (restLines.length > 0) {
+        result += `<p>${restLines.map(l => applyInlineFormatting(l)).join('<br>')}</p>`;
+      }
+      return result;
     }
     
     const isBulletList = lines.every(line => 
@@ -50,14 +78,20 @@ function formatContentAsHtml(content: string): string {
     );
     
     if (isBulletList) {
+      const isNumbered = lines.every(line => /^\d+[.)]\s/.test(line));
+      const tag = isNumbered ? 'ol' : 'ul';
       const listItems = lines.map(line => {
         const cleanedLine = line.replace(/^[-•*]\s*/, '').replace(/^\d+[.)]\s*/, '');
-        return `<li>${escapeHtml(cleanedLine)}</li>`;
+        return `<li>${applyInlineFormatting(cleanedLine)}</li>`;
       }).join('\n');
-      return `<ul>${listItems}</ul>`;
+      return `<${tag}>${listItems}</${tag}>`;
     }
     
-    return `<p>${lines.map(l => escapeHtml(l)).join('<br>')}</p>`;
+    if (lines.length === 1) {
+      return `<p>${applyInlineFormatting(lines[0])}</p>`;
+    }
+    
+    return `<p>${lines.map(l => applyInlineFormatting(l)).join('<br>')}</p>`;
   }).join('\n');
 }
 
@@ -98,18 +132,19 @@ async function generateKnowledgeBasePDF() {
     const categorySlug = slugify(category);
     tocHtml += `<li class="toc-category"><a href="#cat-${categorySlug}">${escapeHtml(category)}</a><ul>`;
     
-    contentHtml += `<h2 id="cat-${categorySlug}" class="category-header">${escapeHtml(category)}</h2>`;
+    contentHtml += `<a name="cat-${categorySlug}"></a><h2 class="category-header">${escapeHtml(category)}</h2>`;
     
     const categoryArticles = categorizedArticles.get(category)!;
     
     for (const article of categoryArticles) {
       articleIndex++;
-      const articleSlug = `article-${article.id}-${slugify(article.title)}`;
+      const articleSlug = `art${article.id}`;
       
       tocHtml += `<li class="toc-article"><a href="#${articleSlug}">${escapeHtml(article.title)}</a></li>`;
       
       contentHtml += `
-        <section class="article" id="${articleSlug}">
+        <a name="${articleSlug}"></a>
+        <section class="article">
           <h3 class="article-title">${escapeHtml(article.title)}</h3>
           ${article.sourceUrl ? `<p class="source-url"><a href="${escapeHtml(article.sourceUrl)}" target="_blank">Source</a></p>` : ''}
           <div class="article-content">${formatContentAsHtml(article.content)}</div>
@@ -339,6 +374,31 @@ async function generateKnowledgeBasePDF() {
       background: #f8f9fa;
       font-style: italic;
     }
+    
+    .article-content strong {
+      font-weight: 700;
+      color: #1a1a1a;
+    }
+    
+    .article-content em {
+      font-style: italic;
+    }
+    
+    .article-content u {
+      text-decoration: underline;
+    }
+    
+    .article-content h4,
+    .article-content h5,
+    .article-content h6 {
+      color: #34495e;
+      font-weight: 600;
+      margin-top: 12px;
+      margin-bottom: 6px;
+    }
+    
+    .article-content h5 { font-size: 10.5pt; }
+    .article-content h6 { font-size: 10pt; }
     
     .footer {
       text-align: center;
