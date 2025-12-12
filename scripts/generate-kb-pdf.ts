@@ -1,16 +1,14 @@
-import { db } from '../server/db';
-import { knowledgeArticles } from '../shared/schema';
-import { eq, asc } from 'drizzle-orm';
 import * as fs from 'fs';
 import * as path from 'path';
 import { execSync } from 'child_process';
 
 interface Article {
-  id: number;
   title: string;
-  content: string;
-  category: string | null;
-  sourceUrl: string | null;
+  subtitle: string;
+  url: string;
+  body: string;
+  category: string;
+  subcategory: string;
 }
 
 function slugify(text: string): string {
@@ -30,182 +28,115 @@ function escapeHtml(text: string): string {
     .replace(/'/g, '&#039;');
 }
 
-function applyInlineFormatting(text: string): string {
-  let result = escapeHtml(text);
+function parseCSV(content: string): Article[] {
+  const articles: Article[] = [];
+  const lines: string[] = [];
+  let currentLine = '';
+  let inQuotes = false;
   
-  result = result.replace(/\*\*\*(.+?)\*\*\*/g, '<strong><em>$1</em></strong>');
-  result = result.replace(/___(.+?)___/g, '<strong><u>$1</u></strong>');
+  for (let i = 0; i < content.length; i++) {
+    const char = content[i];
+    
+    if (char === '"') {
+      if (inQuotes && content[i + 1] === '"') {
+        currentLine += '"';
+        i++;
+      } else {
+        inQuotes = !inQuotes;
+      }
+    } else if (char === '\n' && !inQuotes) {
+      lines.push(currentLine);
+      currentLine = '';
+    } else {
+      currentLine += char;
+    }
+  }
+  if (currentLine) {
+    lines.push(currentLine);
+  }
   
-  result = result.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
-  result = result.replace(/__(.+?)__/g, '<u>$1</u>');
+  const header = lines[0];
+  console.log('CSV Header:', header);
   
-  result = result.replace(/\*(.+?)\*/g, '<em>$1</em>');
-  result = result.replace(/_(.+?)_/g, '<em>$1</em>');
+  for (let i = 1; i < lines.length; i++) {
+    const line = lines[i];
+    if (!line.trim()) continue;
+    
+    const fields: string[] = [];
+    let field = '';
+    let inFieldQuotes = false;
+    
+    for (let j = 0; j < line.length; j++) {
+      const char = line[j];
+      
+      if (char === '"') {
+        if (inFieldQuotes && line[j + 1] === '"') {
+          field += '"';
+          j++;
+        } else {
+          inFieldQuotes = !inFieldQuotes;
+        }
+      } else if (char === ',' && !inFieldQuotes) {
+        fields.push(field);
+        field = '';
+      } else {
+        field += char;
+      }
+    }
+    fields.push(field);
+    
+    if (fields.length >= 7) {
+      const article: Article = {
+        title: fields[0] || '',
+        subtitle: fields[1] || '',
+        url: fields[3] || '',
+        body: fields[4] || '',
+        category: fields[5] || 'Uncategorized',
+        subcategory: fields[6] || '',
+      };
+      
+      if (article.title && article.body) {
+        articles.push(article);
+      }
+    }
+  }
   
-  result = result.replace(/`(.+?)`/g, '<code>$1</code>');
-  
-  return result;
+  return articles;
 }
 
-function formatContentAsHtml(content: string, articleId: number): string {
-  if (!content) return '';
+function processHtmlContent(html: string, articleIndex: number): string {
+  if (!html) return '';
   
-  const paragraphs = content
-    .split(/\n\n+/)
-    .map(p => p.trim())
-    .filter(p => p.length > 0);
+  let processed = html;
   
-  let jumpSectionNames: string[] = [];
-  let inJumpSection = false;
-  let jumpSectionEndIdx = -1;
+  processed = processed.replace(/class="([^"]*)"/g, 'class="$1"');
+  processed = processed.replace(/data-[a-z-]+="[^"]*"/g, '');
   
-  for (let i = 0; i < paragraphs.length; i++) {
-    const para = paragraphs[i];
-    const lines = para.split(/\n/).map(line => line.trim()).filter(line => line);
-    if (lines.length === 0) continue;
-    
-    if (/^Jump to section:?$/i.test(lines[0])) {
-      inJumpSection = true;
-      jumpSectionNames.push(...lines.slice(1));
-      jumpSectionEndIdx = i;
-      continue;
+  processed = processed.replace(
+    /<a\s+href="(https?:\/\/www\.planettogether\.com\/knowledge[^"]*)"([^>]*)>([^<]*)<\/a>/gi,
+    (match, url, attrs, text) => {
+      const articleSlug = url.split('/').pop()?.replace(/[^a-z0-9-]/gi, '-') || '';
+      return `<a href="#${articleSlug}" class="internal-link">${text}</a>`;
     }
-    
-    if (inJumpSection) {
-      const looksLikeSectionList = lines.every(line => 
-        /^[A-Z][A-Za-z0-9\s&\-\/:(),']+$/.test(line) && 
-        line.length < 80 &&
-        !line.includes('.')
-      );
-      if (looksLikeSectionList && lines.length <= 10) {
-        jumpSectionNames.push(...lines);
-        jumpSectionEndIdx = i;
-        continue;
-      }
-    }
-    
-    inJumpSection = false;
-  }
+  );
   
-  const sectionAnchors = new Map<string, string>();
-  for (const name of jumpSectionNames) {
-    const key = name.toLowerCase().trim();
-    const anchorId = `sec-${articleId}-${key.replace(/[^a-z0-9]+/g, '-').substring(0, 30)}`;
-    sectionAnchors.set(key, anchorId);
-  }
-  
-  const jumpSectionSet = new Set(jumpSectionNames.map(n => n.toLowerCase().trim()));
-  
-  const resultParts: string[] = [];
-  inJumpSection = false;
-  let currentJumpIdx = 0;
-  let afterJumpSection = false;
-  
-  for (let i = 0; i < paragraphs.length; i++) {
-    const para = paragraphs[i];
-    const lines = para.split(/\n/).map(line => line.trim()).filter(line => line);
-    if (lines.length === 0) continue;
-    
-    const firstLine = lines[0];
-    
-    if (/^Jump to section:?$/i.test(firstLine)) {
-      inJumpSection = true;
-      const jumpLinks = lines.slice(1).map(line => {
-        const key = line.toLowerCase().trim();
-        const anchorId = sectionAnchors.get(key) || `sec-${articleId}-missing`;
-        return `<li><a href="#${anchorId}">${escapeHtml(line)}</a></li>`;
-      }).join('\n');
-      resultParts.push(`<p><strong>Jump to section:</strong></p><ul class="jump-links">${jumpLinks}</ul>`);
-      continue;
-    }
-    
-    if (inJumpSection) {
-      const looksLikeSectionList = lines.every(line => 
-        /^[A-Z][A-Za-z0-9\s&\-\/:(),']+$/.test(line) && 
-        line.length < 80 &&
-        !line.includes('.')
-      );
-      if (looksLikeSectionList && lines.length <= 10) {
-        const jumpLinks = lines.map(line => {
-          const key = line.toLowerCase().trim();
-          const anchorId = sectionAnchors.get(key) || `sec-${articleId}-missing`;
-          return `<li><a href="#${anchorId}">${escapeHtml(line)}</a></li>`;
-        }).join('\n');
-        resultParts.push(`<ul class="jump-links">${jumpLinks}</ul>`);
-        continue;
-      }
-    }
-    
-    if (inJumpSection && i === jumpSectionEndIdx + 1) {
-      afterJumpSection = true;
-    }
-    inJumpSection = false;
-    
-    if (afterJumpSection && currentJumpIdx < jumpSectionNames.length) {
-      const expectedSection = jumpSectionNames[currentJumpIdx];
-      const key = expectedSection.toLowerCase().trim();
-      const anchorId = sectionAnchors.get(key)!;
-      resultParts.push(`<a name="${anchorId}"></a><h4 class="section-heading">${escapeHtml(expectedSection)}</h4>`);
-      currentJumpIdx++;
-      afterJumpSection = false;
-    }
-    
-    if (lines.length === 1 && jumpSectionSet.has(firstLine.toLowerCase().trim())) {
-      const key = firstLine.toLowerCase().trim();
-      const anchorId = sectionAnchors.get(key)!;
-      resultParts.push(`<a name="${anchorId}"></a><h4 class="section-heading">${applyInlineFormatting(firstLine)}</h4>`);
-      continue;
-    }
-    
-    if (/^#{1,4}\s/.test(firstLine)) {
-      const level = (firstLine.match(/^(#+)/)?.[1].length || 1) + 3;
-      const headingText = firstLine.replace(/^#+\s*/, '');
-      const headingLevel = Math.min(level, 6);
-      resultParts.push(`<h${headingLevel}>${applyInlineFormatting(headingText)}</h${headingLevel}>`);
-      continue;
-    }
-    
-    const isBulletList = lines.every(line => 
-      /^[-•*]\s/.test(line) || /^\d+[.)]\s/.test(line)
-    );
-    
-    if (isBulletList) {
-      const isNumbered = lines.every(line => /^\d+[.)]\s/.test(line));
-      const tag = isNumbered ? 'ol' : 'ul';
-      const listItems = lines.map(line => {
-        const cleanedLine = line.replace(/^[-•*]\s*/, '').replace(/^\d+[.)]\s*/, '');
-        return `<li>${applyInlineFormatting(cleanedLine)}</li>`;
-      }).join('\n');
-      resultParts.push(`<${tag}>${listItems}</${tag}>`);
-      continue;
-    }
-    
-    if (lines.length === 1) {
-      resultParts.push(`<p>${applyInlineFormatting(lines[0])}</p>`);
-    } else {
-      resultParts.push(`<p>${lines.map(l => applyInlineFormatting(l)).join('<br>')}</p>`);
-    }
-  }
-  
-  return resultParts.join('\n');
+  return processed;
 }
 
 async function generateKnowledgeBasePDF() {
-  console.log('Fetching articles from database...');
+  const csvPath = path.join(process.cwd(), 'attached_assets/hubspot-knowledge-base-export-empty-2025-12-11_1765485879660.csv');
   
-  const articles = await db
-    .select({
-      id: knowledgeArticles.id,
-      title: knowledgeArticles.title,
-      content: knowledgeArticles.content,
-      category: knowledgeArticles.category,
-      sourceUrl: knowledgeArticles.sourceUrl,
-    })
-    .from(knowledgeArticles)
-    .where(eq(knowledgeArticles.isActive, true))
-    .orderBy(asc(knowledgeArticles.category), asc(knowledgeArticles.title));
-
-  console.log(`Found ${articles.length} articles`);
+  console.log('Reading CSV file:', csvPath);
+  
+  if (!fs.existsSync(csvPath)) {
+    throw new Error(`CSV file not found: ${csvPath}`);
+  }
+  
+  const csvContent = fs.readFileSync(csvPath, 'utf8');
+  console.log(`CSV file size: ${(csvContent.length / 1024).toFixed(2)} KB`);
+  
+  const articles = parseCSV(csvContent);
+  console.log(`Parsed ${articles.length} articles from CSV`);
 
   const categorizedArticles = new Map<string, Article[]>();
   
@@ -214,7 +145,7 @@ async function generateKnowledgeBasePDF() {
     if (!categorizedArticles.has(category)) {
       categorizedArticles.set(category, []);
     }
-    categorizedArticles.get(category)!.push(article as Article);
+    categorizedArticles.get(category)!.push(article);
   }
 
   let tocHtml = '';
@@ -222,6 +153,7 @@ async function generateKnowledgeBasePDF() {
   let articleIndex = 0;
 
   const categories = Array.from(categorizedArticles.keys()).sort();
+  console.log(`Categories found: ${categories.join(', ')}`);
 
   for (const category of categories) {
     const categorySlug = slugify(category);
@@ -231,18 +163,23 @@ async function generateKnowledgeBasePDF() {
     
     const categoryArticles = categorizedArticles.get(category)!;
     
+    categoryArticles.sort((a, b) => a.title.localeCompare(b.title));
+    
     for (const article of categoryArticles) {
       articleIndex++;
-      const articleSlug = `art${article.id}`;
+      const articleSlug = slugify(article.title);
       
       tocHtml += `<li class="toc-article"><a href="#${articleSlug}">${escapeHtml(article.title)}</a></li>`;
+      
+      const processedBody = processHtmlContent(article.body, articleIndex);
       
       contentHtml += `
         <a name="${articleSlug}"></a>
         <section class="article">
           <h3 class="article-title">${escapeHtml(article.title)}</h3>
-          ${article.sourceUrl ? `<p class="source-url"><a href="${escapeHtml(article.sourceUrl)}" target="_blank">Source</a></p>` : ''}
-          <div class="article-content">${formatContentAsHtml(article.content, article.id)}</div>
+          ${article.subtitle ? `<p class="article-subtitle">${escapeHtml(article.subtitle)}</p>` : ''}
+          ${article.url ? `<p class="source-url"><a href="${escapeHtml(article.url)}" target="_blank">View Online</a></p>` : ''}
+          <div class="article-content">${processedBody}</div>
         </section>
       `;
     }
@@ -372,6 +309,13 @@ async function generateKnowledgeBasePDF() {
       page-break-after: avoid;
     }
     
+    .article-subtitle {
+      font-size: 10pt;
+      color: #666;
+      font-style: italic;
+      margin-bottom: 10px;
+    }
+    
     .source-url {
       font-size: 9pt;
       color: #6c757d;
@@ -390,7 +334,9 @@ async function generateKnowledgeBasePDF() {
     .article-content h1,
     .article-content h2,
     .article-content h3,
-    .article-content h4 {
+    .article-content h4,
+    .article-content h5,
+    .article-content h6 {
       color: #2c3e50;
       margin-top: 15px;
       margin-bottom: 8px;
@@ -401,6 +347,8 @@ async function generateKnowledgeBasePDF() {
     .article-content h2 { font-size: 13pt; }
     .article-content h3 { font-size: 12pt; }
     .article-content h4 { font-size: 11pt; }
+    .article-content h5 { font-size: 10.5pt; }
+    .article-content h6 { font-size: 10pt; }
     
     .article-content p {
       margin: 8px 0;
@@ -419,6 +367,12 @@ async function generateKnowledgeBasePDF() {
     .article-content a {
       color: #0a3d62;
       text-decoration: underline;
+    }
+    
+    .article-content .internal-link {
+      color: #0a3d62;
+      text-decoration: none;
+      border-bottom: 1px dashed #0a3d62;
     }
     
     .article-content code {
@@ -483,44 +437,26 @@ async function generateKnowledgeBasePDF() {
       text-decoration: underline;
     }
     
-    .article-content .jump-links {
+    /* HubSpot callout styles */
+    .hs-callout-type-tip,
+    .hs-callout-type-note,
+    .hs-callout-type-warning,
+    .hs-callout-type-info {
+      border-left: 4px solid #0a3d62;
+      margin: 15px 0;
+      padding: 10px 15px;
       background: #f0f7ff;
-      border-left: 3px solid #0a3d62;
-      padding: 10px 10px 10px 25px;
-      margin: 10px 0;
     }
     
-    .article-content .jump-links li {
-      margin: 3px 0;
+    .hs-callout-type-warning {
+      border-left-color: #f0ad4e;
+      background: #fff8e6;
     }
     
-    .article-content .jump-links a {
-      color: #0a3d62;
-      text-decoration: none;
+    .hs-callout-type-tip {
+      border-left-color: #5cb85c;
+      background: #f0fff0;
     }
-    
-    .article-content .jump-links a:hover {
-      text-decoration: underline;
-    }
-    
-    .section-heading {
-      color: #2c3e50;
-      border-bottom: 1px solid #e0e0e0;
-      padding-bottom: 4px;
-      margin-top: 16px;
-    }
-    
-    .article-content h4,
-    .article-content h5,
-    .article-content h6 {
-      color: #34495e;
-      font-weight: 600;
-      margin-top: 12px;
-      margin-bottom: 6px;
-    }
-    
-    .article-content h5 { font-size: 10.5pt; }
-    .article-content h6 { font-size: 10pt; }
     
     .footer {
       text-align: center;
@@ -549,7 +485,7 @@ async function generateKnowledgeBasePDF() {
   </main>
   
   <footer class="footer">
-    <p>PlanetTogether Knowledge Base - Generated from HubSpot KB Import</p>
+    <p>PlanetTogether Knowledge Base - Generated from HubSpot KB Export</p>
     <p>Total Articles: ${articles.length} | Categories: ${categories.length}</p>
   </footer>
 </body>
