@@ -47,31 +47,83 @@ function applyInlineFormatting(text: string): string {
   return result;
 }
 
-function formatContentAsHtml(content: string): string {
+function formatContentAsHtml(content: string, articleId: number): string {
   if (!content) return '';
+  
+  const sectionAnchors = new Map<string, string>();
   
   const paragraphs = content
     .split(/\n\n+/)
     .map(p => p.trim())
     .filter(p => p.length > 0);
   
-  return paragraphs.map(para => {
+  let sectionIndex = 0;
+  const processedParagraphs = paragraphs.map(para => {
     const lines = para.split(/\n/).map(line => line.trim()).filter(line => line);
-    
     if (lines.length === 0) return '';
     
     const firstLine = lines[0];
-    if (/^#{1,4}\s/.test(firstLine)) {
-      const level = firstLine.match(/^(#+)/)?.[1].length || 1;
-      const headingLevel = Math.min(level + 3, 6);
+    
+    const isHeading = /^[A-Z][A-Za-z0-9\s&\-\/:()]+$/.test(firstLine) && 
+                      firstLine.length < 80 && 
+                      lines.length === 1 &&
+                      !firstLine.includes('.') &&
+                      !/^(Note|Tip|Caution|Warning|Example|See|For|If|When|The|A |An |This|Each|All|Some|Any|Use|Set|In |On |At |To |From|With|Without|Before|After|During|While|However|Additionally|Furthermore|Moreover|Therefore|Thus|Hence|Also|As |Like|Such|Both|Either|Neither|Not|No |Yes|True|False|Good|Bad|Old|New)/.test(firstLine);
+    
+    if (isHeading || /^#{1,4}\s/.test(firstLine)) {
+      sectionIndex++;
       const headingText = firstLine.replace(/^#+\s*/, '');
-      const restLines = lines.slice(1);
-      let result = `<h${headingLevel}>${applyInlineFormatting(headingText)}</h${headingLevel}>`;
-      if (restLines.length > 0) {
-        result += `<p>${restLines.map(l => applyInlineFormatting(l)).join('<br>')}</p>`;
-      }
-      return result;
+      const anchorId = `sec-${articleId}-${sectionIndex}`;
+      sectionAnchors.set(headingText.toLowerCase(), anchorId);
+      
+      const level = /^#{1,4}\s/.test(firstLine) ? (firstLine.match(/^(#+)/)?.[1].length || 1) + 3 : 4;
+      const headingLevel = Math.min(level, 6);
+      
+      return `<a name="${anchorId}"></a><h${headingLevel} class="section-heading">${applyInlineFormatting(headingText)}</h${headingLevel}>`;
     }
+    
+    return null;
+  });
+  
+  let inJumpSection = false;
+  const finalParagraphs = paragraphs.map((para, idx) => {
+    if (processedParagraphs[idx] !== null) {
+      inJumpSection = false;
+      return processedParagraphs[idx];
+    }
+    
+    const lines = para.split(/\n/).map(line => line.trim()).filter(line => line);
+    if (lines.length === 0) return '';
+    
+    const firstLine = lines[0];
+    
+    if (/^Jump to section:?$/i.test(firstLine)) {
+      inJumpSection = true;
+      const jumpLinks = lines.slice(1).map(line => {
+        const anchorId = sectionAnchors.get(line.toLowerCase());
+        if (anchorId) {
+          return `<li><a href="#${anchorId}">${escapeHtml(line)}</a></li>`;
+        }
+        return `<li>${escapeHtml(line)}</li>`;
+      }).join('\n');
+      return `<p><strong>Jump to section:</strong></p><ul class="jump-links">${jumpLinks}</ul>`;
+    }
+    
+    if (inJumpSection && lines.length <= 5) {
+      const allAreLinks = lines.every(line => sectionAnchors.has(line.toLowerCase()));
+      if (allAreLinks || lines.every(line => /^[A-Z][A-Za-z0-9\s&\-\/:()]+$/.test(line) && line.length < 60)) {
+        const jumpLinks = lines.map(line => {
+          const anchorId = sectionAnchors.get(line.toLowerCase());
+          if (anchorId) {
+            return `<li><a href="#${anchorId}">${escapeHtml(line)}</a></li>`;
+          }
+          return `<li>${escapeHtml(line)}</li>`;
+        }).join('\n');
+        return `<ul class="jump-links">${jumpLinks}</ul>`;
+      }
+    }
+    
+    inJumpSection = false;
     
     const isBulletList = lines.every(line => 
       /^[-•*]\s/.test(line) || /^\d+[.)]\s/.test(line)
@@ -92,7 +144,9 @@ function formatContentAsHtml(content: string): string {
     }
     
     return `<p>${lines.map(l => applyInlineFormatting(l)).join('<br>')}</p>`;
-  }).join('\n');
+  });
+  
+  return finalParagraphs.filter(p => p).join('\n');
 }
 
 async function generateKnowledgeBasePDF() {
@@ -147,7 +201,7 @@ async function generateKnowledgeBasePDF() {
         <section class="article">
           <h3 class="article-title">${escapeHtml(article.title)}</h3>
           ${article.sourceUrl ? `<p class="source-url"><a href="${escapeHtml(article.sourceUrl)}" target="_blank">Source</a></p>` : ''}
-          <div class="article-content">${formatContentAsHtml(article.content)}</div>
+          <div class="article-content">${formatContentAsHtml(article.content, article.id)}</div>
         </section>
       `;
     }
@@ -386,6 +440,33 @@ async function generateKnowledgeBasePDF() {
     
     .article-content u {
       text-decoration: underline;
+    }
+    
+    .article-content .jump-links {
+      background: #f0f7ff;
+      border-left: 3px solid #0a3d62;
+      padding: 10px 10px 10px 25px;
+      margin: 10px 0;
+    }
+    
+    .article-content .jump-links li {
+      margin: 3px 0;
+    }
+    
+    .article-content .jump-links a {
+      color: #0a3d62;
+      text-decoration: none;
+    }
+    
+    .article-content .jump-links a:hover {
+      text-decoration: underline;
+    }
+    
+    .section-heading {
+      color: #2c3e50;
+      border-bottom: 1px solid #e0e0e0;
+      padding-bottom: 4px;
+      margin-top: 16px;
     }
     
     .article-content h4,
