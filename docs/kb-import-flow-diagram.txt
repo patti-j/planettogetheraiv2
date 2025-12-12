@@ -1,0 +1,132 @@
+KNOWLEDGE BASE IMPORT FLOW DIAGRAM
+===================================
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                    STEP 1: HUBSPOT KB EXPORT                                │
+│                                                                             │
+│  HubSpot Knowledge Base → Export as JSON                                    │
+│  File contains: articles with title, body (HTML), category, URL             │
+│  Example: hubspot-kb-export-2025-12.json                                    │
+└─────────────────────────────────────┬───────────────────────────────────────┘
+                                      │
+                                      ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                    STEP 2: RUN IMPORT SCRIPT                                │
+│                                                                             │
+│  Command: npx tsx scripts/import-knowledge-base.ts <file> --clear           │
+│                                                                             │
+│  --clear flag: Wipes existing KB data for fresh import                      │
+│  Recommended: Monthly refresh to keep KB current                            │
+└─────────────────────────────────────┬───────────────────────────────────────┘
+                                      │
+                                      ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                    STEP 3: PARSE & CLEAN HTML                               │
+│                    (import-knowledge-base.ts)                               │
+│                                                                             │
+│  For each article:                                                          │
+│    1. Strip HTML tags from body                                             │
+│    2. Normalize whitespace                                                  │
+│    3. Extract metadata (title, category, URL)                               │
+│    4. Calculate content length                                              │
+└─────────────────────────────────────┬───────────────────────────────────────┘
+                                      │
+                                      ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                    STEP 4: CHUNK CONTENT                                    │
+│                    (knowledge-chunking.ts)                                  │
+│                                                                             │
+│  Large articles are split into overlapping chunks:                          │
+│    - Chunk size: ~500-1000 tokens                                           │
+│    - Overlap: ~100 tokens (for context continuity)                          │
+│    - Preserves sentence boundaries when possible                            │
+│                                                                             │
+│  Example: 3000 word article → 4-6 chunks                                    │
+│  Each chunk retains: article_id, chunk_index, source_url                    │
+└─────────────────────────────────────┬───────────────────────────────────────┘
+                                      │
+                                      ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                    STEP 5: GENERATE EMBEDDINGS                              │
+│                    (OpenAI text-embedding-3-small)                          │
+│                                                                             │
+│  For each chunk:                                                            │
+│    POST https://api.openai.com/v1/embeddings                                │
+│    {                                                                        │
+│      model: "text-embedding-3-small",                                       │
+│      input: "<chunk text>"                                                  │
+│    }                                                                        │
+│                                                                             │
+│  Returns: 1536-dimensional vector                                           │
+│  Batched: Process multiple chunks per API call for efficiency               │
+└─────────────────────────────────────┬───────────────────────────────────────┘
+                                      │
+                                      ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                    STEP 6: STORE IN DATABASE                                │
+│                    (PostgreSQL with pgvector)                               │
+│                                                                             │
+│  Tables:                                                                    │
+│  ┌─────────────────────────────────────────────────────────────────────┐    │
+│  │ knowledge_articles                                                  │    │
+│  │   id, title, content, category, source_url, created_at              │    │
+│  └─────────────────────────────────────────────────────────────────────┘    │
+│  ┌─────────────────────────────────────────────────────────────────────┐    │
+│  │ knowledge_chunks                                                    │    │
+│  │   id, article_id, chunk_index, content, embedding (vector[1536])    │    │
+│  └─────────────────────────────────────────────────────────────────────┘    │
+│                                                                             │
+│  Current stats: 184 articles → 1,035 searchable chunks                      │
+└─────────────────────────────────────┬───────────────────────────────────────┘
+                                      │
+                                      ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                    STEP 7: READY FOR QUERIES                                │
+│                    (knowledge-retrieval.service.ts)                         │
+│                                                                             │
+│  KB is now available for Max AI RAG queries:                                │
+│                                                                             │
+│  User asks: "What is PlanetTogether?"                                       │
+│                                      │                                      │
+│                                      ▼                                      │
+│  ┌─────────────────────────────────────────────────────────────────────┐    │
+│  │ knowledgeRetrievalService.search(query)                            │    │
+│  │                                                                     │    │
+│  │ 1. Generate embedding for user query                                │    │
+│  │    POST /embeddings → query_vector[1536]                            │    │
+│  │                                                                     │    │
+│  │ 2. Hybrid search:                                                   │    │
+│  │    a. Semantic: cosine_similarity(query_vector, chunk.embedding)    │    │
+│  │    b. Keyword: ILIKE '%term%' on chunk content                      │    │
+│  │    c. Combine scores with weighting                                 │    │
+│  │                                                                     │    │
+│  │ 3. Return top N chunks (typically 3-5)                              │    │
+│  │    Each with: content, source_url, similarity_score                 │    │
+│  └─────────────────────────────────────────────────────────────────────┘    │
+│                                      │                                      │
+│                                      ▼                                      │
+│  ┌─────────────────────────────────────────────────────────────────────┐    │
+│  │ generateKBResponse() - RAG synthesis                                │    │
+│  │                                                                     │    │
+│  │ System prompt to GPT-5.1:                                           │    │
+│  │ "You are Max AI. Answer using ONLY the following sources:           │    │
+│  │  [Source 1: <chunk content> - <source_url>]                         │    │
+│  │  [Source 2: <chunk content> - <source_url>]                         │    │
+│  │  ...                                                                │    │
+│  │  Always cite your sources at the end of your response."             │    │
+│  │                                                                     │    │
+│  │ User prompt: "What is PlanetTogether?"                              │    │
+│  └─────────────────────────────────────────────────────────────────────┘    │
+│                                      │                                      │
+│                                      ▼                                      │
+│  ┌─────────────────────────────────────────────────────────────────────┐    │
+│  │ Response with citations:                                            │    │
+│  │                                                                     │    │
+│  │ "PlanetTogether is a leading Advanced Planning and Scheduling       │    │
+│  │ (APS) software that helps manufacturers optimize production..."     │    │
+│  │                                                                     │    │
+│  │ **Sources:**                                                        │    │
+│  │ - [What is PlanetTogether?](https://kb.planettogether.com/...)      │    │
+│  │ - [APS Overview](https://kb.planettogether.com/...)                 │    │
+│  └─────────────────────────────────────────────────────────────────────┘    │
+└─────────────────────────────────────────────────────────────────────────────┘

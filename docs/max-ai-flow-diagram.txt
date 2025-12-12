@@ -1,0 +1,175 @@
+GENERAL MAX AI QUERY FLOW DIAGRAM
+==================================
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                           USER PROMPT                                       │
+│              (typed in Max AI panel or voice input)                         │
+└─────────────────────────────────────┬───────────────────────────────────────┘
+                                      │
+                                      ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                      FRONTEND (ai-left-panel.tsx)                           │
+│  handleSendMessage() → POST /api/ai-agent/command                           │
+│  - Sends: { command: "user prompt", attachments: [...] }                    │
+└─────────────────────────────────────┬───────────────────────────────────────┘
+                                      │
+                                      ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                      BACKEND ROUTER (routes.ts)                             │
+│  POST /api/ai-agent/command → processCommand()                              │
+└─────────────────────────────────────┬───────────────────────────────────────┘
+                                      │
+                                      ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                      COMMAND PROCESSOR (ai-agent.ts)                        │
+│  processCommand() - Main orchestration function                             │
+│                                                                             │
+│  STEP 1: isSpecificAgentQuery() - Pattern matching                          │
+│    Patterns: /job\s+\d+/, /run\s+asap/, /generate\s+report/, etc.           │
+│    If TRUE → Route to Agent Registry                                        │
+│    If FALSE → Skip to Step 2                                                │
+└─────────────────────────────────────┬───────────────────────────────────────┘
+                                      │
+              ┌───────────────────────┴───────────────────────┐
+              │                                               │
+              ▼                                               ▼
+┌─────────────────────────────────┐         ┌─────────────────────────────────┐
+│    AGENT REGISTRY               │         │    DIRECT JOB LOOKUP            │
+│    (agent-registry.ts)          │         │    (ai-agent.ts)                │
+│                                 │         │                                 │
+│  findBestAgent() checks:        │         │  Pattern: /job[-\s#]*(\d+)/     │
+│  1. Ad-Hoc Reporting Agent      │         │  If match → getJobStatus()      │
+│  2. FPA Agent                   │         │  Returns job details directly   │
+│  3. Production Scheduling Agent │         │                                 │
+│                                 │         │  If no match → Fall through     │
+│  Returns specialized response   │         │                                 │
+│  OR falls through               │         │                                 │
+└────────────────┬────────────────┘         └────────────────┬────────────────┘
+                 │                                           │
+                 └───────────────────┬───────────────────────┘
+                                     │
+                                     ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                      MAX AI SERVICE (max-ai-service.ts)                     │
+│                      generateResponse() - Main AI orchestration             │
+│                                                                             │
+│  ┌─────────────────────────────────────────────────────────────────────┐    │
+│  │ PRIORITY 0: DETERMINISTIC NAVIGATION                               │    │
+│  │ detectNavigationIntent() - Rule-based, no OpenAI                   │    │
+│  │ "go to dashboard" → { action: 'navigate', target: '/home' }        │    │
+│  │ "take me to production scheduler" → /production-scheduler          │    │
+│  │ If match → RETURN IMMEDIATELY (no OpenAI call)                     │    │
+│  └─────────────────────────────────────────────────────────────────────┘    │
+│                                     │                                       │
+│                                     ▼                                       │
+│  ┌─────────────────────────────────────────────────────────────────────┐    │
+│  │ PRIORITY 0.5: DETERMINISTIC SCHEDULING                             │    │
+│  │ detectSchedulingActionIntent() - Rule-based, no OpenAI             │    │
+│  │ "run ASAP" → { action: 'apply_algorithm', data: {algorithm:'ASAP'}}│    │
+│  │ "apply ALAP" → { action: 'apply_algorithm', data:{algorithm:'ALAP'}}    │
+│  │ "refresh scheduler" → { action: 'refresh_scheduler' }              │    │
+│  │ If match → RETURN IMMEDIATELY (no OpenAI call)                     │    │
+│  └─────────────────────────────────────────────────────────────────────┘    │
+│                                     │                                       │
+│                                     ▼                                       │
+│  ┌─────────────────────────────────────────────────────────────────────┐    │
+│  │ PRIORITY 1: CHART/VISUALIZATION KEYWORDS                           │    │
+│  │ Keywords: 'plot', 'graph', 'chart', 'visualize'                    │    │
+│  │ getDynamicChart() → OpenAI for intent extraction + SQL generation  │    │
+│  │ If match → Create chart widget, RETURN                             │    │
+│  └─────────────────────────────────────────────────────────────────────┘    │
+│                                     │                                       │
+│                                     ▼                                       │
+│  ┌─────────────────────────────────────────────────────────────────────┐    │
+│  │ PRIORITY 2: KNOWLEDGE BASE CHECK                                   │    │
+│  │ isKnowledgeQuestion() - Check if question about PlanetTogether     │    │
+│  │ knowledgeRetrievalService.search() → Semantic + keyword search     │    │
+│  │ Returns KB chunks with embeddings similarity scores                │    │
+│  └─────────────────────────────────────────────────────────────────────┘    │
+│                                     │                                       │
+│                                     ▼                                       │
+│  ┌─────────────────────────────────────────────────────────────────────┐    │
+│  │ PRIORITY 3: INTERNAL DATA QUERY                                    │    │
+│  │ analyzeInternalDataQuery() - Job status, resource info, etc.       │    │
+│  │ Patterns: job numbers, batch names, "list jobs", "show resources"  │    │
+│  │ Database queries → Return formatted response                       │    │
+│  └─────────────────────────────────────────────────────────────────────┘    │
+│                                     │                                       │
+│                                     ▼                                       │
+│  ┌─────────────────────────────────────────────────────────────────────┐    │
+│  │ PRIORITY 4: AI INTENT ANALYSIS                                     │    │
+│  │ analyzeUserIntentWithAI() → OpenAI call to determine intent        │    │
+│  │ Intent types: navigate, show_data, create_chart, switch_agent      │    │
+│  └─────────────────────────────────────────────────────────────────────┘    │
+│                                     │                                       │
+│                                     ▼                                       │
+└─────────────────────────────────────────────────────────────────────────────┘
+                                      │
+                                      ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                         OPENAI API CALL                                     │
+│                         (ai-model.ts config)                                │
+│                                                                             │
+│  Model: gpt-5.1                                                             │
+│  Parameters:                                                                │
+│    - max_completion_tokens: 4096 (increased from 800)                       │
+│    - reasoning_effort: "low" | "medium" | "high" (adaptive reasoning)       │
+│    - temperature: 0.7                                                       │
+│                                                                             │
+│  Request body:                                                              │
+│  {                                                                          │
+│    model: "gpt-5.1",                                                        │
+│    messages: [                                                              │
+│      { role: "system", content: "You are Max AI..." },                      │
+│      { role: "user", content: "<user prompt>" },                            │
+│      ...conversation history...                                             │
+│    ],                                                                        │
+│    max_completion_tokens: 4096                                              │
+│  }                                                                          │
+│                                                                             │
+│  For KB questions, system prompt includes:                                  │
+│    - Retrieved KB chunks (RAG context)                                      │
+│    - Source citations                                                       │
+│    - Instructions to synthesize answer                                      │
+└─────────────────────────────────────┬───────────────────────────────────────┘
+                                      │
+                                      ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                         OPENAI RESPONSE                                     │
+│                                                                             │
+│  {                                                                          │
+│    choices: [{                                                              │
+│      message: { content: "AI generated response..." },                      │
+│      finish_reason: "stop" | "length"                                       │
+│    }],                                                                      │
+│    usage: { completion_tokens: X, prompt_tokens: Y }                        │
+│  }                                                                          │
+│                                                                             │
+│  Note: finish_reason: "length" = token exhaustion (increase max_tokens)     │
+└─────────────────────────────────────┬───────────────────────────────────────┘
+                                      │
+                                      ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                         RESPONSE FORMATTING                                 │
+│                         (max-ai-service.ts)                                 │
+│                                                                             │
+│  {                                                                          │
+│    content: "Formatted response with markdown...",                          │
+│    action: { type: 'navigate' | 'open_report' | ... },                      │
+│    data: { sources: [...KB sources...] },                                   │
+│    agentId: 'max',                                                          │
+│    agentName: 'Max'                                                         │
+│  }                                                                          │
+└─────────────────────────────────────┬───────────────────────────────────────┘
+                                      │
+                                      ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                         FRONTEND DISPLAY                                    │
+│                         (ai-left-panel.tsx)                                 │
+│                                                                             │
+│  1. Add message to chat history                                             │
+│  2. Display with markdown rendering                                         │
+│  3. Show KB source citations if present                                     │
+│  4. Handle actions (navigate, open_report, etc.)                            │
+│  5. Optional: Text-to-speech via OpenAI TTS-1                               │
+└─────────────────────────────────────────────────────────────────────────────┘
