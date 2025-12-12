@@ -72,6 +72,130 @@ User sees: Visual table with Late Jobs data
 - `server/services/agents/adhoc-reporting-agent.service.ts` - SQL column fix
 - `client/src/components/navigation/ai-left-panel.tsx` - Stop button, action handling
 
+## Queries Tested
+
+### Primary Test Query
+```
+"run Late Jobs Overview"
+```
+This was the main test case that revealed the SQL column name bug (`j.status` → `j.scheduled_status`).
+
+### Available Ad-Hoc Report Queries (12 total)
+
+| Report | Example Queries |
+|--------|----------------|
+| Late Jobs Overview | "run Late Jobs Overview", "show me late jobs", "which jobs are behind schedule" |
+| Late Jobs by Customer | "show late jobs by customer", "overdue orders by customer" |
+| Bottleneck Operations | "show bottleneck operations", "where are my bottlenecks", "longest operations" |
+| Resource Utilization | "show resource utilization", "how busy are my machines", "capacity usage report" |
+| WIP Aging | "show WIP aging report", "work in progress aging", "WIP summary" |
+| On-Time Delivery (OTD) | "show on time delivery report", "OTD summary", "service level report" |
+| Setup vs Run Time | "show setup vs run time", "changeover time report", "setup time analysis" |
+| Capacity Load vs Available | "show capacity load report", "load vs capacity", "capacity analysis" |
+| Changeover Time by Resource | "show changeover times by resource" |
+| Inventory Coverage | "show inventory coverage report" |
+| Schedule Stability | "show schedule stability report" |
+| OEE Summary | "show OEE summary", "overall equipment effectiveness" |
+
+## Query Flow Diagram
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                           USER INPUT                                        │
+│                    "run Late Jobs Overview"                                 │
+└─────────────────────────────────────┬───────────────────────────────────────┘
+                                      │
+                                      ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                      FRONTEND (ai-left-panel.tsx)                           │
+│  handleSendMessage() → POST /api/ai-agent/command                           │
+└─────────────────────────────────────┬───────────────────────────────────────┘
+                                      │
+                                      ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                      BACKEND (ai-agent.ts)                                  │
+│  processCommand() → isSpecificAgentQuery() returns TRUE                     │
+│  Pattern matched: /late\s+jobs|bottleneck|capacity\s+load/i                 │
+└─────────────────────────────────────┬───────────────────────────────────────┘
+                                      │
+                                      ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                   AGENT REGISTRY (agent-registry.ts)                        │
+│  findBestAgent() → Checks agents in registration order:                     │
+│    1. Ad-Hoc Reporting Agent ← MATCHES (has "late jobs" trigger)            │
+│    2. FPA Agent                                                             │
+│    3. Production Scheduling Agent                                           │
+└─────────────────────────────────────┬───────────────────────────────────────┘
+                                      │
+                                      ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│              AD-HOC REPORTING AGENT (adhoc-reporting-agent.service.ts)      │
+│  canHandle() → TRUE (ACTION_SYNONYMS has "run", triggerKeywords has "late") │
+│  process() → pickBestTemplate() → "late_jobs_overview"                      │
+│  executeReport() → executeLateJobsReport()                                  │
+└─────────────────────────────────────┬───────────────────────────────────────┘
+                                      │
+                                      ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                         DATABASE QUERY                                      │
+│  SELECT j.id, j.external_id as job_number, j.name as job_name,              │
+│         j.need_date_time as need_date, j.priority,                          │
+│         j.scheduled_status as status,  ← FIXED (was j.status)               │
+│         MAX(jo.scheduled_end) as scheduled_end,                             │
+│         GREATEST(0, EXTRACT(DAY FROM ...)) as days_late                     │
+│  FROM ptjobs j LEFT JOIN ptjoboperations jo ON j.id = jo.job_id             │
+│  WHERE j.need_date_time IS NOT NULL                                         │
+│  GROUP BY ... HAVING MAX(jo.scheduled_end) > j.need_date_time               │
+│  ORDER BY days_late DESC LIMIT 20                                           │
+└─────────────────────────────────────┬───────────────────────────────────────┘
+                                      │
+                                      ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                    AGENT RESPONSE                                           │
+│  {                                                                          │
+│    content: "**Late Jobs Report**\n\n...",                                  │
+│    action: {                                                                │
+│      type: "open_report",                                                   │
+│      data: {                                                                │
+│        reportId: "late_jobs_overview",                                      │
+│        reportName: "Late Jobs Overview",                                    │
+│        data: [ {job_number, job_name, need_date, days_late, ...}, ... ],    │
+│        columns: [ {id, label, format}, ... ]                                │
+│      }                                                                      │
+│    }                                                                        │
+│  }                                                                          │
+└─────────────────────────────────────┬───────────────────────────────────────┘
+                                      │
+                                      ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                   BACKEND PASSTHROUGH (ai-agent.ts)                         │
+│  return {                                                                   │
+│    success: true,                                                           │
+│    message: agentResponse.content,                                          │
+│    action: agentResponse.action  ← ADDED (was missing)                      │
+│  }                                                                          │
+└─────────────────────────────────────┬───────────────────────────────────────┘
+                                      │
+                                      ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                   FRONTEND HANDLER (ai-left-panel.tsx)                      │
+│  handleSendMessage() receives response                                      │
+│  if (result.action?.type === 'open_report') {  ← ADDED                      │
+│    1. Create tableItem with report data                                     │
+│    2. setCanvasItems(prev => [...prev, tableItem])                          │
+│    3. POST /api/canvas/widgets (save to DB)                                 │
+│    4. navigate('/canvas')                                                   │
+│  }                                                                          │
+└─────────────────────────────────────┬───────────────────────────────────────┘
+                                      │
+                                      ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                         CANVAS PAGE                                         │
+│  User sees: Visual table widget with Late Jobs data                         │
+│  Columns: Job #, Job Name, Need Date, Scheduled End, Days Late, Priority    │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
 ## Testing Notes
 - Login credentials: admin/admin123, Jim/planettogether, patti/planettogether
 - Test command: "run Late Jobs Overview" should display table on Canvas
