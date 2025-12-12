@@ -42,7 +42,7 @@ def generate_pdf():
         cat_slug = slugify(category)
         
         toc_html += f'<li class="toc-category"><a href="#cat-{cat_slug}">{escape_html(category)}</a><ul>'
-        content_html += f'<a name="cat-{cat_slug}"></a><h2 class="category-header">{escape_html(category)}</h2>'
+        content_html += f'<h2 class="category-header" id="cat-{cat_slug}">{escape_html(category)}</h2>'
         
         for _, article in cat_articles.iterrows():
             title = article['Article title']
@@ -55,8 +55,7 @@ def generate_pdf():
             toc_html += f'<li class="toc-article"><a href="#{art_slug}">{escape_html(title)}</a></li>'
             
             content_html += f'''
-            <a name="{art_slug}"></a>
-            <section class="article">
+            <section class="article" id="{art_slug}">
               <h3 class="article-title">{escape_html(title)}</h3>
               {f'<p class="article-subtitle">{escape_html(subtitle)}</p>' if subtitle else ''}
               {f'<p class="source-url"><a href="{escape_html(url)}" target="_blank">View Online</a></p>' if url else ''}
