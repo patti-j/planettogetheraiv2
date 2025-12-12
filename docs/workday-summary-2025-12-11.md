@@ -72,7 +72,57 @@ User sees: Visual table with Late Jobs data
 - `server/services/agents/adhoc-reporting-agent.service.ts` - SQL column fix
 - `client/src/components/navigation/ai-left-panel.tsx` - Stop button, action handling
 
-## Queries Tested
+## Max AI Queries Tested (Before Ad-Hoc Reports)
+
+### 1. Job Status Queries
+| Query | Expected Behavior |
+|-------|-------------------|
+| `"job 64"` | Returns job status with progress, on-time status |
+| `"status of job 64"` | Returns detailed job information |
+| `"what about the wheat beer job"` | Searches by job name, returns status |
+| `"Porter batch 105"` | Searches by batch name with number |
+| `"list jobs"` | Lists all jobs in the system |
+
+### 2. Knowledge Base Queries  
+| Query | Expected Behavior |
+|-------|-------------------|
+| `"What is PlanetTogether?"` | RAG response with KB sources |
+| `"How does ASAP scheduling work?"` | KB article with citations |
+| General product questions | GPT-5.1 synthesized answer from KB chunks |
+
+### 3. Scheduling Commands
+| Query | Expected Behavior |
+|-------|-------------------|
+| `"run ASAP"` | Applies ASAP scheduling algorithm (forward) |
+| `"apply ALAP"` | Applies ALAP scheduling algorithm (backward) |
+| `"run ASAP backward"` | ASAP with backward direction |
+| `"refresh the scheduler"` | Refreshes production scheduler view |
+
+### 4. Navigation Commands
+| Query | Expected Behavior |
+|-------|-------------------|
+| `"take me to production scheduler"` | Navigates to /production-scheduler |
+| `"go to dashboard"` | Navigates to /home |
+| `"open control tower"` | Navigates to /control-tower |
+| `"go to jobs"` | Navigates to /jobs |
+| `"open master data"` | Navigates to /master-data |
+
+### 5. Chart/Visualization Queries
+| Query | Expected Behavior |
+|-------|-------------------|
+| `"plot jobs by priority"` | Creates chart widget on canvas |
+| `"create a chart of resource utilization"` | Dynamic chart generation |
+| `"visualize production schedule"` | Chart with SQL generation |
+
+### 6. Agent Switching
+| Query | Expected Behavior |
+|-------|-------------------|
+| `"speak to production scheduling agent"` | Switches active agent |
+| `"talk to quality analysis"` | Switches to quality agent |
+
+---
+
+## Ad-Hoc Report Queries (Current Focus)
 
 ### Primary Test Query
 ```
